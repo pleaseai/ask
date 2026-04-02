@@ -1,16 +1,9 @@
 {
   "name": "@anthropic/ask",
+  "type": "module",
   "version": "0.1.0",
   "description": "Agent Skills Kit - Download version-specific library docs for AI coding agents",
-  "type": "module",
-  "bin": {
-    "ask": "./dist/index.js"
-  },
-  "scripts": {
-    "build": "tsc",
-    "dev": "tsc --watch",
-    "start": "node dist/index.js"
-  },
+  "license": "MIT",
   "keywords": [
     "ai",
     "agent",
@@ -19,13 +12,26 @@
     "claude",
     "agents-md"
   ],
-  "license": "MIT",
+  "bin": {
+    "ask": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/index.js",
+    "lint": "eslint",
+    "lint:fix": "eslint --fix"
+  },
   "dependencies": {
-    "commander": "^13.1.0",
+    "citty": "^0.2.2",
+    "consola": "^3.4.2",
     "node-html-markdown": "^1.3.0"
   },
   "devDependencies": {
+    "@pleaseai/eslint-config": "^0.0.1",
     "@types/node": "^22.0.0",
+    "eslint": "^10.1.0",
+    "jiti": "^2.6.1",
     "typescript": "^5.7.0"
   }
 }

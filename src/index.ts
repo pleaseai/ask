@@ -1,220 +1,233 @@
 #!/usr/bin/env node
 
-import { Command } from "commander";
-import { getSource } from "./sources/index.js";
 import type {
-  SourceConfig,
-  NpmSourceOptions,
   GithubSourceOptions,
+  NpmSourceOptions,
+  SourceConfig,
   WebSourceOptions,
-} from "./sources/index.js";
+} from './sources/index.js'
+import process from 'node:process'
+import { defineCommand, runMain } from 'citty'
+import { consola } from 'consola'
+import { generateAgentsMd } from './agents.js'
 import {
-  loadConfig,
   addDocEntry,
+  loadConfig,
   removeDocEntry,
-} from "./config.js";
-import { saveDocs, removeDocs, listDocs } from "./storage.js";
-import { generateSkill, removeSkill } from "./skill.js";
-import { generateAgentsMd } from "./agents.js";
+} from './config.js'
+import { generateSkill, removeSkill } from './skill.js'
+import { getSource } from './sources/index.js'
+import { listDocs, removeDocs, saveDocs } from './storage.js'
 
-const program = new Command();
-
-program
-  .name("ask")
-  .description("Agent Skills Kit - Download version-specific library docs for AI coding agents")
-  .version("0.1.0");
-
-const docs = program.command("docs").description("Manage library documentation");
-
-// ask docs add <name@version> --source <type> [options]
-docs
-  .command("add <spec>")
-  .description("Download documentation for a library")
-  .requiredOption("-s, --source <type>", "Source type: npm, github, web")
-  .option("--repo <owner/repo>", "GitHub repository (for github source)")
-  .option("--branch <branch>", "Git branch (for github source)")
-  .option("--tag <tag>", "Git tag (for github source)")
-  .option("--docs-path <path>", "Path to docs within the package/repo")
-  .option("--url <urls...>", "Documentation URLs (for web source)")
-  .option("--max-depth <n>", "Max crawl depth for web source", "1")
-  .option("--path-prefix <prefix>", "URL path prefix filter for web source")
-  .action(async (spec: string, opts) => {
-    const projectDir = process.cwd();
-    const { name, version } = parseSpec(spec);
-
-    console.log(`\nDownloading ${name}@${version} docs (source: ${opts.source})...\n`);
-
-    const sourceConfig = buildSourceConfig(name, version, opts);
-    const source = getSource(opts.source);
-
-    try {
-      const result = await source.fetch(sourceConfig);
-      console.log(`\nFetched ${result.files.length} doc files (resolved version: ${result.resolvedVersion})`);
-
-      // Save docs
-      const docsDir = saveDocs(projectDir, name, result.resolvedVersion, result.files);
-      console.log(`Docs saved to: ${docsDir}`);
-
-      // Update config
-      const configEntry = { ...sourceConfig, version: result.resolvedVersion };
-      addDocEntry(projectDir, configEntry);
-      console.log("Config updated: .please/config.json");
-
-      // Generate skill
-      const skillPath = generateSkill(
-        projectDir,
-        name,
-        result.resolvedVersion,
-        result.files.map((f) => f.path)
-      );
-      console.log(`Skill created: ${skillPath}`);
-
-      // Update AGENTS.md
-      const agentsPath = generateAgentsMd(projectDir);
-      console.log(`AGENTS.md updated: ${agentsPath}`);
-
-      console.log(`\nDone! ${name}@${result.resolvedVersion} docs are ready for AI agents.`);
-    } catch (err) {
-      console.error(`\nError: ${err instanceof Error ? err.message : err}`);
-      process.exit(1);
-    }
-  });
-
-// ask docs sync
-docs
-  .command("sync")
-  .description("Download/update all docs from .please/config.json")
-  .action(async () => {
-    const projectDir = process.cwd();
-    const config = loadConfig(projectDir);
-
-    if (config.docs.length === 0) {
-      console.log("No docs configured in .please/config.json");
-      return;
-    }
-
-    console.log(`Syncing ${config.docs.length} library docs...\n`);
-
-    for (const entry of config.docs) {
-      try {
-        console.log(`  ${entry.name}@${entry.version} (${entry.source})...`);
-        const source = getSource(entry.source);
-        const result = await source.fetch(entry);
-
-        saveDocs(projectDir, entry.name, result.resolvedVersion, result.files);
-        generateSkill(
-          projectDir,
-          entry.name,
-          result.resolvedVersion,
-          result.files.map((f) => f.path)
-        );
-
-        console.log(`    -> ${result.files.length} files (v${result.resolvedVersion})`);
-      } catch (err) {
-        console.error(
-          `    -> Error: ${err instanceof Error ? err.message : err}`
-        );
-      }
-    }
-
-    generateAgentsMd(projectDir);
-    console.log("\nSync complete. AGENTS.md updated.");
-  });
-
-// ask docs list
-docs
-  .command("list")
-  .description("List downloaded documentation")
-  .action(() => {
-    const projectDir = process.cwd();
-    const docs = listDocs(projectDir);
-
-    if (docs.length === 0) {
-      console.log("No docs downloaded yet. Use `ask docs add` to get started.");
-      return;
-    }
-
-    console.log("\nDownloaded documentation:\n");
-    for (const { name, version, fileCount } of docs) {
-      console.log(`  ${name}@${version}  (${fileCount} files)`);
-    }
-    console.log();
-  });
-
-// ask docs remove <name[@version]>
-docs
-  .command("remove <spec>")
-  .description("Remove downloaded documentation")
-  .action((spec: string) => {
-    const projectDir = process.cwd();
-    const { name, version } = parseSpec(spec);
-    // If no explicit version in spec (i.e., "zod" not "zod@3"), remove all versions
-    const hasExplicitVersion = spec.lastIndexOf("@") > 0;
-    const ver = hasExplicitVersion ? version : undefined;
-
-    removeDocs(projectDir, name, ver);
-    removeSkill(projectDir, name);
-    removeDocEntry(projectDir, name, ver);
-    generateAgentsMd(projectDir);
-
-    console.log(`Removed docs for ${name}${ver ? `@${ver}` : " (all versions)"}`);
-  });
-
-function parseSpec(spec: string): { name: string; version: string } {
-  // Handle scoped packages: @scope/pkg@version
-  const lastAt = spec.lastIndexOf("@");
+function parseSpec(spec: string): { name: string, version: string } {
+  const lastAt = spec.lastIndexOf('@')
   if (lastAt > 0) {
     return {
       name: spec.substring(0, lastAt),
       version: spec.substring(lastAt + 1),
-    };
+    }
   }
-  return { name: spec, version: "latest" };
+  return { name: spec, version: 'latest' }
 }
 
 function buildSourceConfig(
   name: string,
   version: string,
-  opts: Record<string, unknown>
+  opts: { source: string, repo?: string, branch?: string, tag?: string, docsPath?: string, url?: string[], maxDepth?: string, pathPrefix?: string },
 ): SourceConfig {
-  const base = { name, version };
+  const base = { name, version }
 
   switch (opts.source) {
-    case "npm":
+    case 'npm':
       return {
         ...base,
-        source: "npm",
-        docsPath: opts.docsPath as string | undefined,
-      } satisfies NpmSourceOptions;
+        source: 'npm',
+        docsPath: opts.docsPath,
+      } satisfies NpmSourceOptions
 
-    case "github":
+    case 'github':
       if (!opts.repo) {
-        throw new Error("--repo is required for github source");
+        throw new Error('--repo is required for github source')
       }
       return {
         ...base,
-        source: "github",
-        repo: opts.repo as string,
-        branch: opts.branch as string | undefined,
-        tag: opts.tag as string | undefined,
-        docsPath: opts.docsPath as string | undefined,
-      } satisfies GithubSourceOptions;
+        source: 'github',
+        repo: opts.repo,
+        branch: opts.branch,
+        tag: opts.tag,
+        docsPath: opts.docsPath,
+      } satisfies GithubSourceOptions
 
-    case "web":
-      if (!opts.url || (opts.url as string[]).length === 0) {
-        throw new Error("--url is required for web source");
+    case 'web':
+      if (!opts.url || opts.url.length === 0) {
+        throw new Error('--url is required for web source')
       }
       return {
         ...base,
-        source: "web",
-        urls: opts.url as string[],
-        maxDepth: parseInt(opts.maxDepth as string, 10),
-        allowedPathPrefix: opts.pathPrefix as string | undefined,
-      } satisfies WebSourceOptions;
+        source: 'web',
+        urls: opts.url,
+        maxDepth: Number.parseInt(opts.maxDepth ?? '1', 10),
+        allowedPathPrefix: opts.pathPrefix,
+      } satisfies WebSourceOptions
 
     default:
-      throw new Error(`Unknown source: ${opts.source}`);
+      throw new Error(`Unknown source: ${opts.source}`)
   }
 }
 
-program.parse();
+const addCmd = defineCommand({
+  meta: { name: 'add', description: 'Download documentation for a library' },
+  args: {
+    spec: { type: 'positional', description: 'Library spec (e.g. zod@3.22)', required: true },
+    source: { type: 'string', description: 'Source type: npm, github, web', alias: ['s'], required: true },
+    repo: { type: 'string', description: 'GitHub repository (for github source)' },
+    branch: { type: 'string', description: 'Git branch (for github source)' },
+    tag: { type: 'string', description: 'Git tag (for github source)' },
+    docsPath: { type: 'string', description: 'Path to docs within the package/repo' },
+    url: { type: 'string', description: 'Documentation URL (for web source)' },
+    maxDepth: { type: 'string', description: 'Max crawl depth for web source', default: '1' },
+    pathPrefix: { type: 'string', description: 'URL path prefix filter for web source' },
+  },
+  async run({ args }) {
+    const projectDir = process.cwd()
+    const { name, version } = parseSpec(args.spec)
+    const urls = args.url ? [args.url] : undefined
+
+    consola.start(`Downloading ${name}@${version} docs (source: ${args.source})...`)
+
+    const sourceConfig = buildSourceConfig(name, version, {
+      source: args.source,
+      repo: args.repo,
+      branch: args.branch,
+      tag: args.tag,
+      docsPath: args.docsPath,
+      url: urls,
+      maxDepth: args.maxDepth,
+      pathPrefix: args.pathPrefix,
+    })
+    const source = getSource(args.source)
+    const result = await source.fetch(sourceConfig)
+
+    consola.info(`Fetched ${result.files.length} doc files (resolved version: ${result.resolvedVersion})`)
+
+    const docsDir = saveDocs(projectDir, name, result.resolvedVersion, result.files)
+    consola.info(`Docs saved to: ${docsDir}`)
+
+    const configEntry = { ...sourceConfig, version: result.resolvedVersion }
+    addDocEntry(projectDir, configEntry)
+    consola.info('Config updated: .please/config.json')
+
+    const skillPath = generateSkill(
+      projectDir,
+      name,
+      result.resolvedVersion,
+      result.files.map(f => f.path),
+    )
+    consola.info(`Skill created: ${skillPath}`)
+
+    const agentsPath = generateAgentsMd(projectDir)
+    consola.info(`AGENTS.md updated: ${agentsPath}`)
+
+    consola.success(`Done! ${name}@${result.resolvedVersion} docs are ready for AI agents.`)
+  },
+})
+
+const syncCmd = defineCommand({
+  meta: { name: 'sync', description: 'Download/update all docs from .please/config.json' },
+  async run() {
+    const projectDir = process.cwd()
+    const config = loadConfig(projectDir)
+
+    if (config.docs.length === 0) {
+      consola.info('No docs configured in .please/config.json')
+      return
+    }
+
+    consola.start(`Syncing ${config.docs.length} library docs...`)
+
+    for (const entry of config.docs) {
+      try {
+        consola.info(`  ${entry.name}@${entry.version} (${entry.source})...`)
+        const source = getSource(entry.source)
+        const result = await source.fetch(entry)
+
+        saveDocs(projectDir, entry.name, result.resolvedVersion, result.files)
+        generateSkill(
+          projectDir,
+          entry.name,
+          result.resolvedVersion,
+          result.files.map(f => f.path),
+        )
+
+        consola.success(`  -> ${result.files.length} files (v${result.resolvedVersion})`)
+      }
+      catch (err) {
+        consola.error(`  -> Error: ${err instanceof Error ? err.message : err}`)
+      }
+    }
+
+    generateAgentsMd(projectDir)
+    consola.success('Sync complete. AGENTS.md updated.')
+  },
+})
+
+const listCmd = defineCommand({
+  meta: { name: 'list', description: 'List downloaded documentation' },
+  run() {
+    const projectDir = process.cwd()
+    const entries = listDocs(projectDir)
+
+    if (entries.length === 0) {
+      consola.info('No docs downloaded yet. Use `ask docs add` to get started.')
+      return
+    }
+
+    consola.info('Downloaded documentation:')
+    for (const { name, version, fileCount } of entries) {
+      consola.log(`  ${name}@${version}  (${fileCount} files)`)
+    }
+  },
+})
+
+const removeCmd = defineCommand({
+  meta: { name: 'remove', description: 'Remove downloaded documentation' },
+  args: {
+    spec: { type: 'positional', description: 'Library spec (e.g. zod or zod@3.22)', required: true },
+  },
+  run({ args }) {
+    const projectDir = process.cwd()
+    const { name, version } = parseSpec(args.spec)
+    const hasExplicitVersion = args.spec.lastIndexOf('@') > 0
+    const ver = hasExplicitVersion ? version : undefined
+
+    removeDocs(projectDir, name, ver)
+    removeSkill(projectDir, name)
+    removeDocEntry(projectDir, name, ver)
+    generateAgentsMd(projectDir)
+
+    consola.success(`Removed docs for ${name}${ver ? `@${ver}` : ' (all versions)'}`)
+  },
+})
+
+const docsCmd = defineCommand({
+  meta: { name: 'docs', description: 'Manage library documentation' },
+  subCommands: {
+    add: addCmd,
+    sync: syncCmd,
+    list: listCmd,
+    remove: removeCmd,
+  },
+})
+
+const main = defineCommand({
+  meta: {
+    name: 'ask',
+    version: '0.1.0',
+    description: 'Agent Skills Kit - Download version-specific library docs for AI coding agents',
+  },
+  subCommands: {
+    docs: docsCmd,
+  },
+})
+
+runMain(main)

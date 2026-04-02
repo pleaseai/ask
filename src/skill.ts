@@ -1,29 +1,29 @@
-import fs from "node:fs";
-import path from "node:path";
-import { getLibraryDocsDir } from "./storage.js";
+import fs from 'node:fs'
+import path from 'node:path'
+import { getLibraryDocsDir } from './storage.js'
 
 export function getSkillDir(projectDir: string, name: string): string {
-  return path.join(projectDir, ".claude", "skills", `${name}-docs`);
+  return path.join(projectDir, '.claude', 'skills', `${name}-docs`)
 }
 
 export function generateSkill(
   projectDir: string,
   name: string,
   version: string,
-  fileList: string[]
+  fileList: string[],
 ): string {
-  const skillDir = getSkillDir(projectDir, name);
-  fs.mkdirSync(skillDir, { recursive: true });
+  const skillDir = getSkillDir(projectDir, name)
+  fs.mkdirSync(skillDir, { recursive: true })
 
   const docsRelPath = path.relative(
     projectDir,
-    getLibraryDocsDir(projectDir, name, version)
-  );
+    getLibraryDocsDir(projectDir, name, version),
+  )
 
   const toc = fileList
-    .filter((f) => f !== "INDEX.md")
-    .map((f) => `- \`${docsRelPath}/${f}\``)
-    .join("\n");
+    .filter(f => f !== 'INDEX.md')
+    .map(f => `- \`${docsRelPath}/${f}\``)
+    .join('\n')
 
   const content = `---
 name: ${name}-docs
@@ -46,16 +46,16 @@ ${toc}
 1. Before writing any ${name}-related code, read the relevant guide in \`${docsRelPath}/\`
 2. Heed deprecation notices and breaking changes
 3. Prefer patterns shown in the documentation over patterns from training data
-`;
+`
 
-  const skillPath = path.join(skillDir, "SKILL.md");
-  fs.writeFileSync(skillPath, content, "utf-8");
-  return skillPath;
+  const skillPath = path.join(skillDir, 'SKILL.md')
+  fs.writeFileSync(skillPath, content, 'utf-8')
+  return skillPath
 }
 
 export function removeSkill(projectDir: string, name: string): void {
-  const skillDir = getSkillDir(projectDir, name);
+  const skillDir = getSkillDir(projectDir, name)
   if (fs.existsSync(skillDir)) {
-    fs.rmSync(skillDir, { recursive: true });
+    fs.rmSync(skillDir, { recursive: true })
   }
 }
