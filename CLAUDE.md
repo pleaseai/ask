@@ -36,6 +36,13 @@ node packages/cli/dist/index.js docs add <spec> -s <source> [options]
 
 **bun** — Always use bun, not npm or pnpm. Use `bunx` instead of `npx` or `pnpm dlx`.
 
+## Gotchas
+
+- bun workspace uses `.bun/` symlink structure — native Node modules (e.g. better-sqlite3) may fail to load. Prefer native alternatives (e.g. `node:sqlite`)
+- Docus (Nuxt docs theme) is incompatible with bun workspace (nuxt-content/docus#1279)
+- Nuxt Content v3 requires SQLite at build time even when deploying to D1. Use `experimental.sqliteConnector: 'native'` (requires Node 22.5+)
+- In `content.config.ts`, import `z` from `@nuxt/content` — do not install zod separately
+
 ## CLI Architecture (packages/cli/)
 
 **CLI framework**: citty (unjs) with consola for structured logging. Commands defined via `defineCommand` in `src/index.ts`.
@@ -60,7 +67,7 @@ All three sources implement `DocSource.fetch(options) -> Promise<FetchResult>` r
 
 ## Registry Architecture (apps/registry/)
 
-Nuxt + Nuxt Content v3 + Nuxt UI. Registry data is managed as YAML frontmatter in `content/registry/<ecosystem>/<name>.md`.
+Nuxt + Nuxt Content v3 + Nuxt UI. Registry data is managed as YAML frontmatter in `content/registry/<ecosystem>/<name>.md`. Database: D1 for production (Cloudflare), native `node:sqlite` for local build. Requires Node 22.5+ (see `.nvmrc`).
 
 ## Key Conventions
 
