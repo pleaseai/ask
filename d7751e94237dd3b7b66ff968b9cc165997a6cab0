@@ -1,0 +1,50 @@
+apps/registry/content/registry/npm/zod.md
+  85566759de124ebe 4,14
+apps/registry/app/pages/index.vue
+  85566759de124ebe 42,45-46,48,79
+apps/registry/nuxt.config.ts
+  85566759de124ebe 15-17
+apps/registry/app/pages/registry/[...slug].vue
+  85566759de124ebe 1-79
+apps/registry/content/registry/npm/tailwindcss.md
+  85566759de124ebe 4,16
+apps/registry/content/registry/npm/next.md
+  85566759de124ebe 4,17,19-21
+apps/registry/content/registry/pypi/fastapi.md
+  85566759de124ebe 4,19
+apps/registry/content.config.ts
+  85566759de124ebe 19-22
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "d7751e94237dd3b7b66ff968b9cc165997a6cab0",
+  "prompts": {
+    "3fca3e7d863effe1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8c7b3a5f-6326-4e2a-ab9d-f15c5da219c7",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 245,
+      "total_deletions": 0,
+      "accepted_lines": 245,
+      "overriden_lines": 0
+    },
+    "85566759de124ebe": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b83138d1-b4cb-49cc-9576-2ffbaa46e8ac",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 103,
+      "total_deletions": 17,
+      "accepted_lines": 131,
+      "overriden_lines": 9
+    }
+  }
+}
