@@ -20,3 +20,6 @@ dist/
 
 # Nuxt Content
 .data/
+
+# please plugin runtime state
+.please/state/
