@@ -26,13 +26,13 @@ const filtered = computed(() => {
         ASK Registry
       </h1>
       <p class="text-lg text-gray-500 dark:text-gray-400">
-        AI 에이전트를 위한 라이브러리 문서 레지스트리
+        Library documentation registry for AI coding agents
       </p>
     </div>
 
     <UInput
       v-model="search"
-      placeholder="라이브러리 검색..."
+      placeholder="Search libraries..."
       icon="i-heroicons-magnifying-glass"
       size="lg"
       class="mb-8 max-w-lg mx-auto"
@@ -76,7 +76,7 @@ const filtered = computed(() => {
     </div>
 
     <div v-if="filtered?.length === 0" class="text-center py-12 text-gray-400">
-      검색 결과가 없습니다.
+      No results found.
     </div>
   </div>
 </template>

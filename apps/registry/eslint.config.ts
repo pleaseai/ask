@@ -2,5 +2,4 @@ import pleaseai from '@pleaseai/eslint-config'
 
 export default pleaseai({
   vue: true,
-  nuxt: true,
 })
