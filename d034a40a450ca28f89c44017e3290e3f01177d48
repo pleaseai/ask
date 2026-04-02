@@ -1,0 +1,38 @@
+CLAUDE.md
+  3fca3e7d863effe1 9-13
+ARCHITECTURE.md
+  3fca3e7d863effe1 1-208
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "d034a40a450ca28f89c44017e3290e3f01177d48",
+  "prompts": {
+    "3fca3e7d863effe1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8c7b3a5f-6326-4e2a-ab9d-f15c5da219c7",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 213,
+      "total_deletions": 0,
+      "accepted_lines": 213,
+      "overriden_lines": 0
+    },
+    "85566759de124ebe": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b83138d1-b4cb-49cc-9576-2ffbaa46e8ac",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 38,
+      "overriden_lines": 0
+    }
+  }
+}
