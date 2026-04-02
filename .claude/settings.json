@@ -24,6 +24,8 @@
     "fetch@pleaseai": true,
     "gatekeeper@pleaseai": true,
     "bun@pleaseai": true,
+    "nuxt@pleaseai": true,
+    "docus@pleaseai": true,
     "cloudflare@cloudflare": true,
     "typescript-lsp@code-intelligence": true,
     "eslint-lsp@code-intelligence": true

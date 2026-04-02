@@ -1,0 +1,27 @@
+{
+  "name": "@pleaseai/ask-registry",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "nuxi build",
+    "dev": "nuxi dev",
+    "preview": "nuxi preview",
+    "lint": "eslint",
+    "lint:fix": "eslint --fix"
+  },
+  "dependencies": {
+    "@nuxt/content": "^3",
+    "@nuxt/ui": "^4",
+    "better-sqlite3": "^12.8.0",
+    "nuxt": "^4",
+    "tailwindcss": "^4",
+    "vue": "latest",
+    "vue-router": "latest"
+  },
+  "devDependencies": {
+    "@pleaseai/eslint-config": "^0.0.1",
+    "eslint": "^10.1.0",
+    "jiti": "^2.6.1",
+    "typescript": "^5.7.0"
+  }
+}

@@ -1,3 +1,22 @@
+# Dependencies
 node_modules/
+
+# Build outputs
 dist/
+.output/
+.nuxt/
 *.tgz
+
+# Turbo
+.turbo/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# OS
+.DS_Store
+
+# Nuxt Content
+.data/
