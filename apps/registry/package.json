@@ -3,7 +3,6 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "postinstall": "cd ../../node_modules/.bun/better-sqlite3@*/node_modules/better-sqlite3 && npx --yes prebuild-install || true",
     "build": "nuxt build",
     "dev": "nuxt dev",
     "preview": "nuxt preview",
@@ -13,7 +12,6 @@
   "dependencies": {
     "@nuxt/content": "^3",
     "@nuxt/ui": "^4",
-    "better-sqlite3": "^12.8.0",
     "nuxt": "^4",
     "tailwindcss": "^4",
     "vue": "latest",
