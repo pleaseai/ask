@@ -12,6 +12,10 @@ export default defineNuxtConfig({
         toc: { depth: 3 },
       },
     },
+    database: {
+      type: 'd1',
+      bindingName: 'DB',
+    },
   },
 
   compatibilityDate: '2026-04-03',
