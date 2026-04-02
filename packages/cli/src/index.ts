@@ -15,6 +15,7 @@ import {
   loadConfig,
   removeDocEntry,
 } from './config.js'
+import { parseEcosystem, resolveFromRegistry } from './registry.js'
 import { generateSkill, removeSkill } from './skill.js'
 import { getSource } from './sources/index.js'
 import { listDocs, removeDocs, saveDocs } from './storage.js'
@@ -78,8 +79,8 @@ function buildSourceConfig(
 const addCmd = defineCommand({
   meta: { name: 'add', description: 'Download documentation for a library' },
   args: {
-    spec: { type: 'positional', description: 'Library spec (e.g. zod@3.22)', required: true },
-    source: { type: 'string', description: 'Source type: npm, github, web', alias: ['s'], required: true },
+    spec: { type: 'positional', description: 'Library spec (e.g. zod@3.22 or npm:next@canary)', required: true },
+    source: { type: 'string', description: 'Source type: npm, github, web (auto-detected if omitted)', alias: ['s'] },
     repo: { type: 'string', description: 'GitHub repository (for github source)' },
     branch: { type: 'string', description: 'Git branch (for github source)' },
     tag: { type: 'string', description: 'Git tag (for github source)' },
@@ -90,27 +91,53 @@ const addCmd = defineCommand({
   },
   async run({ args }) {
     const projectDir = process.cwd()
-    const { name, version } = parseSpec(args.spec)
-    const urls = args.url ? [args.url] : undefined
+    const { spec: cleanSpec } = parseEcosystem(args.spec)
+    let sourceConfig: SourceConfig
 
-    consola.start(`Downloading ${name}@${version} docs (source: ${args.source})...`)
+    if (args.source) {
+      // Explicit source — use manual config
+      const { name, version } = parseSpec(cleanSpec)
+      const urls = args.url ? [args.url] : undefined
+      consola.start(`Downloading ${name}@${version} docs (source: ${args.source})...`)
+      sourceConfig = buildSourceConfig(name, version, {
+        source: args.source,
+        repo: args.repo,
+        branch: args.branch,
+        tag: args.tag,
+        docsPath: args.docsPath,
+        url: urls,
+        maxDepth: args.maxDepth,
+        pathPrefix: args.pathPrefix,
+      })
+    }
+    else {
+      // Auto-detect from registry
+      const resolved = await resolveFromRegistry(args.spec, projectDir)
+      if (!resolved) {
+        consola.error(`'${args.spec}' not found in registry. Use --source to specify manually.`)
+        process.exit(1)
+      }
+      const { strategy } = resolved
+      consola.start(`Downloading ${resolved.name}@${resolved.version} docs (source: ${strategy.source})...`)
+      sourceConfig = buildSourceConfig(resolved.name, resolved.version, {
+        source: strategy.source,
+        repo: strategy.repo,
+        docsPath: strategy.docsPath,
+        url: strategy.urls,
+        maxDepth: strategy.maxDepth?.toString(),
+        pathPrefix: strategy.allowedPathPrefix,
+        branch: strategy.branch,
+        tag: strategy.tag,
+      })
+    }
 
-    const sourceConfig = buildSourceConfig(name, version, {
-      source: args.source,
-      repo: args.repo,
-      branch: args.branch,
-      tag: args.tag,
-      docsPath: args.docsPath,
-      url: urls,
-      maxDepth: args.maxDepth,
-      pathPrefix: args.pathPrefix,
-    })
-    const source = getSource(args.source)
+    const source = getSource(sourceConfig.source)
     const result = await source.fetch(sourceConfig)
+    const libName = sourceConfig.name
 
     consola.info(`Fetched ${result.files.length} doc files (resolved version: ${result.resolvedVersion})`)
 
-    const docsDir = saveDocs(projectDir, name, result.resolvedVersion, result.files)
+    const docsDir = saveDocs(projectDir, libName, result.resolvedVersion, result.files)
     consola.info(`Docs saved to: ${docsDir}`)
 
     const configEntry = { ...sourceConfig, version: result.resolvedVersion }
@@ -119,7 +146,7 @@ const addCmd = defineCommand({
 
     const skillPath = generateSkill(
       projectDir,
-      name,
+      libName,
       result.resolvedVersion,
       result.files.map(f => f.path),
     )
@@ -128,7 +155,7 @@ const addCmd = defineCommand({
     const agentsPath = generateAgentsMd(projectDir)
     consola.info(`AGENTS.md updated: ${agentsPath}`)
 
-    consola.success(`Done! ${name}@${result.resolvedVersion} docs are ready for AI agents.`)
+    consola.success(`Done! ${libName}@${result.resolvedVersion} docs are ready for AI agents.`)
   },
 })
 

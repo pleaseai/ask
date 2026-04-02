@@ -34,13 +34,15 @@ node packages/cli/dist/index.js docs add <spec> -s <source> [options]
 
 ## Package Manager
 
-**bun** — npm/pnpm이 아닌 bun을 사용한다. `npx` 대신 `bunx`, `pnpm dlx` 대신 `bunx`.
+**bun** — Always use bun, not npm or pnpm. Use `bunx` instead of `npx` or `pnpm dlx`.
 
 ## CLI Architecture (packages/cli/)
 
 **CLI framework**: citty (unjs) with consola for structured logging. Commands defined via `defineCommand` in `src/index.ts`.
 
 **Command structure**: `ask docs {add|sync|list|remove}` — all subcommands defined inline in `src/index.ts`.
+
+**Registry auto-detection** (`src/registry.ts`): When `--source` is omitted, the CLI fetches library config from the ASK Registry API. Supports ecosystem prefixes (`npm:next`, `pypi:fastapi`) and auto-detects ecosystem from project files.
 
 **Source adapter pattern** (`src/sources/`):
 - `index.ts` — defines `DocSource` interface, `SourceConfig` union type, and `getSource()` factory
@@ -58,10 +60,11 @@ All three sources implement `DocSource.fetch(options) -> Promise<FetchResult>` r
 
 ## Registry Architecture (apps/registry/)
 
-Nuxt + Nuxt Content v3 + Nuxt UI. 레지스트리 데이터는 `content/registry/<ecosystem>/<name>.md` YAML frontmatter로 관리.
+Nuxt + Nuxt Content v3 + Nuxt UI. Registry data is managed as YAML frontmatter in `content/registry/<ecosystem>/<name>.md`.
 
 ## Key Conventions
 
+- CLAUDE.md and `.claude/rules/**/*.md` must be written in English
 - Pure ESM (`"type": "module"`) — all imports use `.js` extensions (CLI)
 - ESLint config: `@pleaseai/eslint-config` (based on `@antfu/eslint-config`) — 2-space indent, single quotes, no semicolons
 - Use `consola` for all user-facing output, never raw `console.log`
