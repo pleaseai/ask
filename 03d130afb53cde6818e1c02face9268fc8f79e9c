@@ -1,0 +1,27 @@
+.bunfig.toml
+  85566759de124ebe 1-3
+apps/registry/app/pages/index.vue
+  85566759de124ebe 29,35,79
+apps/registry/package.json
+  85566759de124ebe 6-8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "03d130afb53cde6818e1c02face9268fc8f79e9c",
+  "prompts": {
+    "85566759de124ebe": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b83138d1-b4cb-49cc-9576-2ffbaa46e8ac",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 189,
+      "total_deletions": 45,
+      "accepted_lines": 109,
+      "overriden_lines": 3
+    }
+  }
+}
