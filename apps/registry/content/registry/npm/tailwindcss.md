@@ -1,7 +1,7 @@
 ---
 name: tailwindcss
 ecosystem: npm
-description: 유틸리티 우선 CSS 프레임워크
+description: Utility-first CSS framework
 strategies:
   - source: web
     urls:
@@ -13,4 +13,4 @@ tags: [css, framework, utility]
 
 # Tailwind CSS
 
-유틸리티 우선 CSS 프레임워크. 공식 문서 사이트에서 크롤링합니다.
+Utility-first CSS framework. Documentation is crawled from the official website.

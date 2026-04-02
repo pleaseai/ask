@@ -12,10 +12,9 @@ export default defineNuxtConfig({
         toc: { depth: 3 },
       },
     },
-    database: {
-      type: 'd1',
-      bindingName: 'DB',
-    },
+    database: process.env.NUXT_CONTENT_DATABASE_TYPE === 'd1'
+      ? { type: 'd1' as const, bindingName: 'DB' }
+      : { type: 'sqlite' as const },
     experimental: {
       sqliteConnector: 'native',
     },

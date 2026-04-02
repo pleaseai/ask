@@ -16,7 +16,10 @@ export default defineContentConfig({
   collections: {
     content: defineCollection({
       type: 'page',
-      source: '**/*.md',
+      source: {
+        include: '**/*.md',
+        exclude: ['registry/**'],
+      },
     }),
     registry: defineCollection({
       type: 'page',

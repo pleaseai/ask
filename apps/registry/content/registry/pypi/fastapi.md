@@ -1,7 +1,7 @@
 ---
 name: fastapi
 ecosystem: pypi
-description: 고성능 Python 웹 프레임워크
+description: High-performance Python web framework
 strategies:
   - source: github
     repo: fastapi/fastapi
@@ -16,4 +16,4 @@ tags: [python, api, async, web]
 
 # FastAPI
 
-고성능 Python 웹 프레임워크. GitHub의 docs 디렉토리 또는 공식 사이트에서 문서를 가져옵니다.
+High-performance Python web framework. Documentation can be fetched from the GitHub docs directory or crawled from the official website.

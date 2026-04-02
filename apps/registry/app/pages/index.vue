@@ -39,10 +39,13 @@ const filtered = computed(() => {
     />
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      <UCard
+      <NuxtLink
         v-for="entry in filtered"
         :key="entry.path"
+        :to="entry.path"
+        class="block"
       >
+      <UCard>
         <template #header>
           <div class="flex items-center justify-between">
             <h3 class="font-semibold text-lg">
@@ -73,6 +76,7 @@ const filtered = computed(() => {
           <code class="text-xs">ask docs add {{ entry.ecosystem }}:{{ entry.name }}</code>
         </template>
       </UCard>
+      </NuxtLink>
     </div>
 
     <div v-if="filtered?.length === 0" class="text-center py-12 text-gray-400">
