@@ -1,0 +1,23 @@
+.gemini/settings.json
+  1220bdf96771f6c0 1-5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "e68f1945050c48e3bbd2e2e2d52efa65ecb2df20",
+  "prompts": {
+    "1220bdf96771f6c0": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d314409a-b86d-473b-93b0-9218665ff9e9",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 5,
+      "overriden_lines": 0
+    }
+  }
+}
