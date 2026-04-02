@@ -6,6 +6,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ASK (Agent Skills Kit) downloads version-specific library documentation and generates `AGENTS.md` + Claude Code skills so AI agents can reference accurate docs instead of relying on training data.
 
+## Key Documents
+
+- [`ARCHITECTURE.md`](ARCHITECTURE.md) — Bird's-eye view of the codebase (module structure, data flow, invariants)
+- [`.please/`](.please/INDEX.md) — Workspace index (tracks, product specs, decisions, knowledge docs)
+
 ## Monorepo Structure
 
 - `packages/cli/` — `@pleaseai/ask` CLI (npm publishable)
