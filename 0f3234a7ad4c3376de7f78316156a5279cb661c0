@@ -1,0 +1,38 @@
+.please/config.yml
+  1220bdf96771f6c0 20-27
+.please/docs/references/docus-llms.txt
+  85566759de124ebe 1,3,5,7,9,11,13,15-34,36,38,45-46,49-50,56-58,60-61
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "0f3234a7ad4c3376de7f78316156a5279cb661c0",
+  "prompts": {
+    "1220bdf96771f6c0": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d314409a-b86d-473b-93b0-9218665ff9e9",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 13,
+      "total_deletions": 0,
+      "accepted_lines": 13,
+      "overriden_lines": 0
+    },
+    "85566759de124ebe": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b83138d1-b4cb-49cc-9576-2ffbaa46e8ac",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 38,
+      "overriden_lines": 0
+    }
+  }
+}
