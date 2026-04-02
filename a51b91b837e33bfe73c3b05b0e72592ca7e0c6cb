@@ -1,0 +1,53 @@
+apps/registry/content/registry/pypi/fastapi.md
+  85566759de124ebe 1-19
+apps/registry/content.config.ts
+  85566759de124ebe 1-33
+apps/registry/tsconfig.json
+  85566759de124ebe 1-3
+.gitignore
+  85566759de124ebe 1,3-4,6-7,9-22
+apps/registry/app/app.vue
+  85566759de124ebe 1-7
+apps/registry/nuxt.config.ts
+  85566759de124ebe 1-18
+package.json
+  85566759de124ebe 2-3,5-8,10-13,15-17
+turbo.json
+  85566759de124ebe 1-19
+apps/registry/package.json
+  85566759de124ebe 1-14,16-27
+apps/registry/content/registry/npm/tailwindcss.md
+  85566759de124ebe 1-16
+apps/registry/content/registry/npm/next.md
+  85566759de124ebe 1-21
+apps/registry/content/registry/npm/zod.md
+  85566759de124ebe 1-14
+CLAUDE.md
+  85566759de124ebe 7,9-12,17-32,35,37,39,59-61,65
+apps/registry/eslint.config.ts
+  85566759de124ebe 1-6
+packages/cli/package.json
+  85566759de124ebe 1-36
+apps/registry/app/pages/index.vue
+  85566759de124ebe 1-82
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "a51b91b837e33bfe73c3b05b0e72592ca7e0c6cb",
+  "prompts": {
+    "85566759de124ebe": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b83138d1-b4cb-49cc-9576-2ffbaa46e8ac",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 388,
+      "total_deletions": 50,
+      "accepted_lines": 364,
+      "overriden_lines": 0
+    }
+  }
+}
