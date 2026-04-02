@@ -1,0 +1,29 @@
+README.md
+  85566759de124ebe 9-12,17-21,26-31,33-34,42-43,45-47,49-52,76,78,81-91,94,96-109,111,114,116,118,120,122,124,126,128,130
+packages/cli/src/index.ts
+  85566759de124ebe 18,82-83,94-95,97-132,134,136,140,149,158
+packages/cli/src/registry.ts
+  85566759de124ebe 1-119
+CLAUDE.md
+  85566759de124ebe 37,45-46,63,67
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "14fac43f6cafdd5fd29a9c4663d3f52af9873334",
+  "prompts": {
+    "85566759de124ebe": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b83138d1-b4cb-49cc-9576-2ffbaa46e8ac",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 238,
+      "total_deletions": 102,
+      "accepted_lines": 235,
+      "overriden_lines": 0
+    }
+  }
+}
