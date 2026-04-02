@@ -1,0 +1,54 @@
+.please/docs/knowledge/product.md
+  3fca3e7d863effe1 1-40
+.please/docs/tracks/tech-debt-tracker.md
+  3fca3e7d863effe1 1-13
+.please/docs/decisions/index.md
+  3fca3e7d863effe1 1-6
+.please/docs/knowledge/product-guidelines.md
+  3fca3e7d863effe1 1-34
+.please/INDEX.md
+  3fca3e7d863effe1 1-35
+.please/docs/product-specs/index.md
+  3fca3e7d863effe1 1-6
+.please/config.yml
+  3fca3e7d863effe1 1-19
+.gitignore
+  3fca3e7d863effe1 23-25
+.please/docs/knowledge/workflow.md
+  3fca3e7d863effe1 1-53
+.please/docs/knowledge/tech-stack.md
+  3fca3e7d863effe1 1-36
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "a8ffcb7b87d0eecb4f4c0b54d29701ab0aa3ac35",
+  "prompts": {
+    "3fca3e7d863effe1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8c7b3a5f-6326-4e2a-ab9d-f15c5da219c7",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 245,
+      "overriden_lines": 0
+    },
+    "85566759de124ebe": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b83138d1-b4cb-49cc-9576-2ffbaa46e8ac",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 38,
+      "overriden_lines": 0
+    }
+  }
+}
