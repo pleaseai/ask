@@ -1,0 +1,27 @@
+evals/next-canary/run-eval.sh
+  a5a4677787327966 1-154
+evals/next-canary/README.md
+  a5a4677787327966 1-125
+evals/next-canary/run-all.sh
+  a5a4677787327966 1-109
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "b20df2633aa2f3d7716bd20fb5b1c297c2c822b2",
+  "prompts": {
+    "a5a4677787327966": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "149c03b1-a648-4f97-892f-ec2d2dd1ffc7",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 388,
+      "total_deletions": 0,
+      "accepted_lines": 977,
+      "overriden_lines": 0
+    }
+  }
+}
