@@ -5,13 +5,14 @@ import { consola } from 'consola'
 const REGISTRY_BASE_URL = 'https://ask-registry.pages.dev'
 
 export interface RegistryStrategy {
-  source: 'npm' | 'github' | 'web'
+  source: 'npm' | 'github' | 'web' | 'llms-txt'
   package?: string
   repo?: string
   branch?: string
   tag?: string
   docsPath?: string
   urls?: string[]
+  url?: string
   maxDepth?: number
   allowedPathPrefix?: string
 }

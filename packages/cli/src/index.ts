@@ -2,6 +2,7 @@
 
 import type {
   GithubSourceOptions,
+  LlmsTxtSourceOptions,
   NpmSourceOptions,
   SourceConfig,
   WebSourceOptions,
@@ -71,6 +72,16 @@ function buildSourceConfig(
         allowedPathPrefix: opts.pathPrefix,
       } satisfies WebSourceOptions
 
+    case 'llms-txt':
+      if (!opts.url || opts.url.length === 0) {
+        throw new Error('--url is required for llms-txt source')
+      }
+      return {
+        ...base,
+        source: 'llms-txt',
+        url: opts.url[0],
+      } satisfies LlmsTxtSourceOptions
+
     default:
       throw new Error(`Unknown source: ${opts.source}`)
   }
@@ -80,7 +91,7 @@ const addCmd = defineCommand({
   meta: { name: 'add', description: 'Download documentation for a library' },
   args: {
     spec: { type: 'positional', description: 'Library spec (e.g. zod@3.22 or npm:next@canary)', required: true },
-    source: { type: 'string', description: 'Source type: npm, github, web (auto-detected if omitted)', alias: ['s'] },
+    source: { type: 'string', description: 'Source type: npm, github, web, llms-txt (auto-detected if omitted)', alias: ['s'] },
     repo: { type: 'string', description: 'GitHub repository (for github source)' },
     branch: { type: 'string', description: 'Git branch (for github source)' },
     tag: { type: 'string', description: 'Git tag (for github source)' },
@@ -123,7 +134,7 @@ const addCmd = defineCommand({
         source: strategy.source,
         repo: strategy.repo,
         docsPath: strategy.docsPath,
-        url: strategy.urls,
+        url: strategy.urls ?? (strategy.url ? [strategy.url] : undefined),
         maxDepth: strategy.maxDepth?.toString(),
         pathPrefix: strategy.allowedPathPrefix,
         branch: strategy.branch,

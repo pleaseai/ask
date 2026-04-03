@@ -1,4 +1,5 @@
 import { GithubSource } from './github.js'
+import { LlmsTxtSource } from './llms-txt.js'
 import { NpmSource } from './npm.js'
 import { WebSource } from './web.js'
 
@@ -38,19 +39,26 @@ export interface WebSourceOptions extends DocSourceOptions {
   allowedPathPrefix?: string
 }
 
+export interface LlmsTxtSourceOptions extends DocSourceOptions {
+  source: 'llms-txt'
+  url: string
+}
+
 export type SourceConfig
   = | NpmSourceOptions
     | GithubSourceOptions
     | WebSourceOptions
+    | LlmsTxtSourceOptions
 
 export interface DocSource {
   fetch: (options: SourceConfig) => Promise<FetchResult>
 }
 
 const sources: Record<string, DocSource> = {
-  npm: new NpmSource(),
-  github: new GithubSource(),
-  web: new WebSource(),
+  'npm': new NpmSource(),
+  'github': new GithubSource(),
+  'web': new WebSource(),
+  'llms-txt': new LlmsTxtSource(),
 }
 
 export function getSource(type: string): DocSource {

@@ -131,7 +131,7 @@ Crawls documentation websites and converts HTML to Markdown.
 
 ## Background
 
-The [Next.js evals](https://nextjs.org/evals) benchmark showed that AI agents perform significantly better when given access to version-specific documentation via `AGENTS.md`:
+The [Next.js evals](https://nextjs.org/evals) benchmark ([source code](https://github.com/vercel/next-evals-oss)) showed that AI agents perform significantly better when given access to version-specific documentation via `AGENTS.md`:
 
 | Agent | Without docs | With AGENTS.md |
 |-------|-------------|----------------|
@@ -140,6 +140,14 @@ The [Next.js evals](https://nextjs.org/evals) benchmark showed that AI agents pe
 | GPT 5.3 Codex | 86% | **100%** |
 
 ASK makes it easy to apply this pattern to any library in any project.
+
+## Related Projects
+
+- [next-evals-oss](https://github.com/vercel/next-evals-oss) — Vercel's open-source Next.js agent evals showing AGENTS.md impact
+- [skills-npm](https://github.com/antfu/skills-npm) — Convention for shipping agent skills inside npm packages (maintainer-side)
+- [TanStack Intent](https://github.com/TanStack/intent) — CLI for generating, validating, and shipping Agent Skills with npm packages
+- [Skilld](https://github.com/skilld-dev/skilld) — Generates agent skills from npm dependencies using docs, release notes, and GitHub discussions
+- [mdream](https://github.com/harlan-zw/mdream) — High-performance HTML to Markdown converter optimized for LLM applications
 
 ## License
 
