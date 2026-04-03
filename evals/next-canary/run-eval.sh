@@ -104,25 +104,26 @@ echo "--- Running claude ($MODEL) ---"
 START_TIME=$(date +%s)
 
 claude -p "$PROMPT" \
-  --model "claude-$MODEL" \
+  --model "$MODEL" \
   --output-format json \
   --max-turns 30 \
+  --allowedTools "Edit,Write,Read,Glob,Grep,Bash" \
   > "$RESULTS_DIR/transcript.json" 2>&1 || true
 
 END_TIME=$(date +%s)
 DURATION=$((END_TIME - START_TIME))
 echo "Duration: ${DURATION}s"
 
-# Copy EVAL.ts into sandbox for grading
-cp "$EVAL_PATH/EVAL.ts" "$SANDBOX/EVAL.ts"
+# Copy EVAL.ts into sandbox as EVAL.test.ts (vitest default include pattern)
+cp "$EVAL_PATH/EVAL.ts" "$SANDBOX/EVAL.test.ts"
 
 # Install vitest for grading
 npm install --save-dev vitest 2>&1 | tail -2
 
 # Run eval assertions
-echo "--- Running EVAL.ts assertions ---"
-npx vitest run EVAL.ts --reporter=json > "$RESULTS_DIR/eval-output.json" 2>&1 || true
-npx vitest run EVAL.ts 2>&1 | tee "$RESULTS_DIR/eval-output.txt" || true
+echo "--- Running EVAL.test.ts assertions ---"
+npx vitest run EVAL.test.ts --reporter=json > "$RESULTS_DIR/eval-output.json" 2>&1 || true
+npx vitest run EVAL.test.ts 2>&1 | tee "$RESULTS_DIR/eval-output.txt" || true
 
 # Check build
 echo "--- Running next build ---"
