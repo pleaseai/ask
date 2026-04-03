@@ -1,0 +1,39 @@
+evals/next-canary/experiments/claude-sonnet-4.6--with-ask.ts
+  a5a4677787327966 1-38
+evals/next-canary/experiments/claude-opus-4.6--with-ask.ts
+  a5a4677787327966 1-32
+evals/next-canary/.gitignore
+  a5a4677787327966 1-3
+evals/next-canary/README.md
+  a5a4677787327966 3,7,12,14,16,18,20,22-32,34,36,38-43,45,47-48,50,53-56,59,62-63,65-66,68-69,71-72,74-75,78,80-85,89,91,93-96,100-101,104
+evals/next-canary/.env.example
+  a5a4677787327966 1-6
+evals/next-canary/tsconfig.json
+  a5a4677787327966 1-11
+evals/next-canary/experiments/claude-opus-4.6.ts
+  a5a4677787327966 1-16
+evals/next-canary/package.json
+  a5a4677787327966 1-18
+evals/next-canary/experiments/claude-sonnet-4.6.ts
+  a5a4677787327966 1-16
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "a117c6f2ebfc1d0d8e33a109b6d20b98e5e29f56",
+  "prompts": {
+    "a5a4677787327966": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "149c03b1-a648-4f97-892f-ec2d2dd1ffc7",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 205,
+      "total_deletions": 86,
+      "accepted_lines": 794,
+      "overriden_lines": 0
+    }
+  }
+}
