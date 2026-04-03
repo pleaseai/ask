@@ -1,0 +1,18 @@
+{
+  "name": "@pleaseai/ask-next-evals",
+  "private": true,
+  "type": "module",
+  "description": "Next.js canary evals — validates ASK docs help agents use Next.js 16+ APIs",
+  "scripts": {
+    "eval": "agent-eval",
+    "eval:dry": "agent-eval --dry",
+    "eval:smoke": "agent-eval --smoke"
+  },
+  "dependencies": {
+    "@vercel/agent-eval": "^0.9.5"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  }
+}
