@@ -51,7 +51,7 @@ This suite tests the same approach using ASK's documentation pipeline.
 
 ```bash
 cd evals/next-canary
-npm install
+bun install
 cp .env.example .env
 # Edit .env: set ANTHROPIC_API_KEY
 ```
@@ -60,19 +60,19 @@ cp .env.example .env
 
 ```bash
 # Preview what would run (no API calls, no cost)
-npm run eval:dry
+bun run eval:dry
 
 # Quick sanity check (1 eval per experiment)
-npm run eval:smoke
+bun run eval:smoke
 
 # Run all experiments
-npm run eval
+bun run eval
 
 # Run a single experiment
-npx agent-eval claude-sonnet-4.6--with-ask
+bunx agent-eval claude-sonnet-4.6--with-ask
 
 # Force re-run (ignore cached results)
-npx agent-eval --force
+bunx agent-eval --force
 ```
 
 ## How it works

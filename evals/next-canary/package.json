@@ -4,9 +4,9 @@
   "type": "module",
   "description": "Next.js canary evals — validates ASK docs help agents use Next.js 16+ APIs",
   "scripts": {
-    "eval": "agent-eval",
-    "eval:dry": "agent-eval --dry",
-    "eval:smoke": "agent-eval --smoke"
+    "eval": "bunx agent-eval",
+    "eval:dry": "bunx agent-eval --dry",
+    "eval:smoke": "bunx agent-eval --smoke"
   },
   "dependencies": {
     "@vercel/agent-eval": "^0.9.5"
