@@ -1,0 +1,47 @@
+{
+  "skill_name": "ask-registry",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "registry에 react-query 추가해줘. tanstack/query가 github repo야.",
+      "expected_output": "apps/registry/content/registry/npm/react-query.md file with correct YAML frontmatter including name, ecosystem, description, strategies, and tags",
+      "files": [],
+      "expectations": [
+        "Creates file at apps/registry/content/registry/npm/ directory",
+        "Frontmatter name field is 'react-query' or '@tanstack/react-query'",
+        "Frontmatter ecosystem is 'npm'",
+        "Has at least one strategy with source: github and repo containing tanstack/query",
+        "Has a tags array with relevant tags",
+        "Has a description field that is not empty",
+        "Markdown body includes a heading and brief description"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "pydantic을 pypi registry에 등록해줘",
+      "expected_output": "apps/registry/content/registry/pypi/pydantic.md file with correct YAML frontmatter for a Python package",
+      "files": [],
+      "expectations": [
+        "Creates file at apps/registry/content/registry/pypi/pydantic.md",
+        "Frontmatter ecosystem is 'pypi'",
+        "Has a github strategy with repo pydantic/pydantic",
+        "docsPath field is present in at least one strategy",
+        "Tags include 'python'",
+        "Description mentions validation or data"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "deno/fresh를 registry에 추가하고 싶어. docs는 https://fresh.deno.dev/docs 에만 있어",
+      "expected_output": "apps/registry/content/registry/npm/fresh.md with web crawl strategy pointing to fresh.deno.dev",
+      "files": [],
+      "expectations": [
+        "Creates a registry .md file for fresh",
+        "Has a web strategy with urls containing https://fresh.deno.dev",
+        "maxDepth or allowedPathPrefix is set for the web strategy",
+        "Tags include 'deno'",
+        "Does not include npm or github strategy since user said docs are only on the website"
+      ]
+    }
+  ]
+}

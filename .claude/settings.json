@@ -7,6 +7,7 @@
   },
   "enabledPlugins": {
     "frontend-design@claude-plugins-official": true,
+    "skill-creator@claude-plugins-official": true,
     "gh-please@passionfactory": true,
     "scaffold@passionfactory": true,
     "please@passionfactory": true,
