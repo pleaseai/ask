@@ -1,0 +1,40 @@
+apps/registry/content/registry/npm/nuxt.md
+  dc6b735d87fe4c13 1-19
+.claude/skills/ask-registry/evals/evals.json
+  a5a4677787327966 1-47
+.claude/skills/ask-registry/SKILL.md
+  a5a4677787327966 1-247
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "fd0ec575f9fe9d1be44ae24a79a2943932b061d3",
+  "prompts": {
+    "a5a4677787327966": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "149c03b1-a648-4f97-892f-ec2d2dd1ffc7",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 954,
+      "total_deletions": 25,
+      "accepted_lines": 883,
+      "overriden_lines": 0
+    },
+    "dc6b735d87fe4c13": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b75979f1-c661-4bc7-916b-e75a9e0552da",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 19,
+      "total_deletions": 0,
+      "accepted_lines": 19,
+      "overriden_lines": 0
+    }
+  }
+}
