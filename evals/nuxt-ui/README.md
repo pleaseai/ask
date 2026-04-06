@@ -13,7 +13,7 @@ Libraries increasingly offer `llms.txt` / `llms-full.txt` as LLM-optimized docum
 | `base` | none | Baseline — agent relies on training data only |
 | `with-llms-txt` | `ui.nuxt.com/llms.txt` | Concise overview + doc links (~5KB) |
 | `with-llms-full-txt` | `ui.nuxt.com/llms-full.txt` | Complete docs inlined (~200KB) |
-| `with-github-docs` | `nuxt/ui` repo `docs/` | Raw documentation files from GitHub |
+| `with-github-docs` | `nuxt/ui` repo `docs/` | GitHub docs with ASK-style AGENTS.md |
 
 ## Evals
 
@@ -65,7 +65,7 @@ bunx agent-eval --force
 | base | Low | v4 chat components not in training data |
 | llms.txt | Medium | Overview helps but lacks API details |
 | llms-full.txt | High | Complete API docs, LLM-optimized |
-| github-docs | Medium-High | Complete but unstructured, requires navigation |
+| github-docs | Medium-High | Complete docs with ASK-style version warning |
 
 ## Results
 

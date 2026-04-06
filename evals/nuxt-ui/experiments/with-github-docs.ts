@@ -22,10 +22,21 @@ const config: ExperimentConfig = {
     ])
 
     await sandbox.writeFiles({
-      'AGENTS.md': `# Nuxt UI Documentation
+      'AGENTS.md': `<!-- BEGIN:ask-docs-auto-generated -->
+# Documentation References
 
-Refer to the \`nuxt-ui-docs/\` directory for complete Nuxt UI documentation.
-Browse the directory structure to find relevant component docs, getting started guides, and API references.
+The libraries in this project may have APIs and patterns that differ from your training data.
+**Always read the relevant documentation before writing code.**
+
+## @nuxt/ui v4
+
+> **WARNING:** This version may differ from your training data.
+> Read the docs in \`nuxt-ui-docs/\` before writing any @nuxt/ui-related code.
+> Heed deprecation notices and breaking changes.
+
+- **Version**: \`4\` — use \`"^4"\` in package.json (NOT older major versions)
+- Documentation: \`nuxt-ui-docs/\`
+<!-- END:ask-docs-auto-generated -->
 `,
       'CLAUDE.md': '@AGENTS.md\n',
     })
