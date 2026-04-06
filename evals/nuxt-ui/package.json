@@ -1,0 +1,18 @@
+{
+  "name": "@pleaseai/ask-nuxt-ui-evals",
+  "private": true,
+  "type": "module",
+  "description": "Nuxt UI evals — compares doc source quality (base, llms.txt, llms-full.txt, github docs)",
+  "scripts": {
+    "eval": "bunx agent-eval",
+    "eval:dry": "bunx agent-eval --dry",
+    "eval:smoke": "bunx agent-eval --smoke"
+  },
+  "dependencies": {
+    "@vercel/agent-eval": "^0.9.5"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  }
+}
