@@ -17,12 +17,15 @@ export function generateAgentsMd(projectDir: string): string {
       getLibraryDocsDir(projectDir, name, version),
     )
 
+    const major = version.split('.')[0]
+
     return `## ${name} v${version}
 
 > **WARNING:** This version may differ from your training data.
 > Read the docs in \`${docsRelPath}/\` before writing any ${name}-related code.
 > Heed deprecation notices and breaking changes.
 
+- **Version**: \`${version}\` — use \`"^${major}"\` in package.json (NOT older major versions)
 - Documentation: \`${docsRelPath}/\`
 - Index: \`${docsRelPath}/INDEX.md\``
   })

@@ -25,6 +25,8 @@ export function generateSkill(
     .map(f => `- \`${docsRelPath}/${f}\``)
     .join('\n')
 
+  const major = version.split('.')[0]
+
   const content = `---
 name: ${name}-docs
 description: ${name} v${version} documentation reference. TRIGGER when writing or modifying code that imports or uses ${name}.
@@ -36,6 +38,10 @@ This project uses **${name} v${version}**.
 The APIs and patterns may differ from your training data.
 **Read the relevant docs before writing any code.**
 
+## Version
+- Current: \`${version}\`
+- In package.json, use \`"^${major}"\` (NOT older major versions)
+
 ## Documentation Location
 \`${docsRelPath}/\`
 
@@ -46,6 +52,7 @@ ${toc}
 1. Before writing any ${name}-related code, read the relevant guide in \`${docsRelPath}/\`
 2. Heed deprecation notices and breaking changes
 3. Prefer patterns shown in the documentation over patterns from training data
+4. When adding ${name} to package.json, use version \`"^${major}"\`
 `
 
   const skillPath = path.join(skillDir, 'SKILL.md')
