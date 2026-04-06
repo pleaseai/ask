@@ -1,12 +1,13 @@
 import { defineCollection, defineContentConfig, z } from '@nuxt/content'
 
 const strategySchema = z.object({
-  source: z.enum(['npm', 'github', 'web']),
+  source: z.enum(['npm', 'github', 'web', 'llms-txt']),
   package: z.string().optional(),
   repo: z.string().optional(),
   branch: z.string().optional(),
   tag: z.string().optional(),
   docsPath: z.string().optional(),
+  url: z.string().optional(),
   urls: z.array(z.string()).optional(),
   maxDepth: z.number().optional(),
   allowedPathPrefix: z.string().optional(),
