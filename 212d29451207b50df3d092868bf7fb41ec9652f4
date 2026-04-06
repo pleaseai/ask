@@ -1,0 +1,38 @@
+apps/registry/content/registry/npm/nuxt-ui.md
+  f6f20649a7a78827 1-19
+apps/registry/content.config.ts
+  f6f20649a7a78827 4,10
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "212d29451207b50df3d092868bf7fb41ec9652f4",
+  "prompts": {
+    "a5a4677787327966": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "149c03b1-a648-4f97-892f-ec2d2dd1ffc7",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 589,
+      "overriden_lines": 0
+    },
+    "f6f20649a7a78827": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6050c0d9-a2a7-4128-b547-603873a93686",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 627,
+      "total_deletions": 11,
+      "accepted_lines": 617,
+      "overriden_lines": 0
+    }
+  }
+}
