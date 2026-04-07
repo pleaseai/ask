@@ -36,14 +36,21 @@ describe('migrateLegacyWorkspace', () => {
     expect(fs.existsSync(path.join(tmpDir, '.please'))).toBe(false)
   })
 
-  it('is a no-op when .ask already exists', () => {
+  it('is a no-op when .ask/config.json already exists (sentinel)', () => {
+    // The sentinel is .ask/config.json specifically — a bare .ask/ directory
+    // could exist for unrelated reasons, so the migration only short-circuits
+    // when the new config file is in place.
     fs.mkdirSync(path.join(tmpDir, '.ask'), { recursive: true })
+    fs.writeFileSync(
+      path.join(tmpDir, '.ask', 'config.json'),
+      '{"schemaVersion":1,"docs":[]}\n',
+    )
     fs.mkdirSync(path.join(tmpDir, '.please', 'docs', 'foo@1.0.0'), { recursive: true })
     fs.writeFileSync(path.join(tmpDir, '.please', 'docs', 'foo@1.0.0', 'README.md'), 'old')
     migrateLegacyWorkspace(tmpDir)
     // .please/docs should still be there because migration was skipped
     expect(fs.existsSync(path.join(tmpDir, '.please', 'docs', 'foo@1.0.0'))).toBe(true)
-    // .ask remains as we created it (no docs added by migration)
+    // .ask/docs not created because migration was skipped
     expect(fs.existsSync(path.join(tmpDir, '.ask', 'docs'))).toBe(false)
   })
 

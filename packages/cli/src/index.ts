@@ -50,11 +50,17 @@ function buildLockEntry(
         ...(meta.commit ? { commit: meta.commit } : {}),
       }
     case 'npm':
+      if (!meta.tarball) {
+        throw new Error(
+          `npm source did not return a tarball URL for ${config.name}@${result.resolvedVersion}. `
+          + 'Cannot record lockfile entry without it.',
+        )
+      }
       return {
         ...base,
         source: 'npm',
-        tarball: meta.tarball ?? '',
-        integrity: meta.integrity ?? '',
+        tarball: meta.tarball,
+        ...(meta.integrity ? { integrity: meta.integrity } : {}),
       }
     case 'web':
       return {
@@ -261,14 +267,19 @@ const syncCmd = defineCommand({
           continue
         }
 
-        // Drift confirmed: save new docs, then delete the old version dir
-        // (only after the new fetch succeeded, so we never end up empty)
+        // Drift confirmed. Order is intentional: every write that can throw
+        // (saveDocs, addDocEntry/Zod, upsertLockEntry/Zod) happens BEFORE the
+        // destructive removeDocs of the old version. A mid-flow failure
+        // leaves both directories on disk and the config/lock pointing at
+        // the old version — recoverable on the next sync. Reversing this
+        // order would let a failed write leave config pointing at a deleted
+        // directory.
         saveDocs(projectDir, entry.name, result.resolvedVersion, result.files)
+        addDocEntry(projectDir, { ...entry, version: result.resolvedVersion })
+        upsertLockEntry(projectDir, entry.name, newLockEntry)
         if (previousLock && previousLock.version !== result.resolvedVersion) {
           removeDocs(projectDir, entry.name, previousLock.version)
         }
-        addDocEntry(projectDir, { ...entry, version: result.resolvedVersion })
-        upsertLockEntry(projectDir, entry.name, newLockEntry)
         generateSkill(
           projectDir,
           entry.name,

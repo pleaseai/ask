@@ -81,7 +81,16 @@ export function readConfig(projectDir: string): Config {
     return { ...EMPTY_CONFIG, docs: [] }
   }
   const raw = fs.readFileSync(file, 'utf-8')
-  const parsed = JSON.parse(raw) as unknown
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(raw)
+  }
+  catch (err) {
+    throw new Error(
+      `Failed to parse ${file}: ${err instanceof Error ? err.message : err}. `
+      + 'The file may be corrupt — delete it and re-run `ask docs sync` to regenerate.',
+    )
+  }
   return ConfigSchema.parse(parsed)
 }
 
@@ -116,7 +125,16 @@ export function readLock(projectDir: string): Lock {
     return { ...EMPTY_LOCK, entries: {} }
   }
   const raw = fs.readFileSync(file, 'utf-8')
-  const parsed = JSON.parse(raw) as unknown
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(raw)
+  }
+  catch (err) {
+    throw new Error(
+      `Failed to parse ${file}: ${err instanceof Error ? err.message : err}. `
+      + 'The file may be corrupt — delete it and re-run `ask docs sync` to regenerate.',
+    )
+  }
   return LockSchema.parse(parsed)
 }
 

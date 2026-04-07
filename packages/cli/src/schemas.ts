@@ -3,13 +3,21 @@ import { z } from 'zod'
 const NameField = z.string().min(1)
 const VersionField = z.string().min(1)
 
+// Git ref names must match a conservative subset to prevent shell-injection or
+// path-traversal style mischief — git itself permits broader characters but
+// the ASK lockfile only needs alphanumerics, dot, slash, underscore, hyphen.
+const GitRefField = z.string().regex(
+  /^[\w./-]+$/,
+  'git ref must contain only [A-Za-z0-9 _ . / -]',
+)
+
 const GithubSourceConfig = z.object({
   source: z.literal('github'),
   name: NameField,
   version: VersionField,
   repo: z.string().regex(/^[^/]+\/[^/]+$/, 'repo must be in "owner/name" form'),
-  branch: z.string().optional(),
-  tag: z.string().optional(),
+  branch: GitRefField.optional(),
+  tag: GitRefField.optional(),
   docsPath: z.string().optional(),
 })
 
@@ -82,7 +90,7 @@ const NpmLockEntry = z.object({
   integrity: z.string().regex(
     /^sha(?:256|384|512)-[A-Za-z0-9+/=]+$/,
     'integrity must be a valid Subresource Integrity hash',
-  ),
+  ).optional(),
 })
 
 const WebLockEntry = z.object({
