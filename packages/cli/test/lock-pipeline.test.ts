@@ -108,10 +108,12 @@ describe('add pipeline (T013): saveDocs + addDocEntry + upsertLockEntry', () => 
     })
     const generatedAtA = readLock(tmpDir).generatedAt
 
-    // `generatedAt` comes from `new Date().toISOString()` (ms resolution).
-    // Without this gap, two back-to-back writes on fast machines can land
-    // in the same millisecond and collide, making the assertion below flaky.
-    await new Promise(resolve => setTimeout(resolve, 2))
+    // `generatedAt` uses `new Date().toISOString()` (ms resolution).
+    // Instead of a fixed sleep, spin until the ISO string actually differs
+    // so the test is deterministic regardless of machine speed.
+    while (new Date().toISOString() === generatedAtA) {
+      await new Promise(resolve => setTimeout(resolve, 1))
+    }
 
     const filesB = [
       ...filesA,
