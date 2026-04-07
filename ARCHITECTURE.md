@@ -67,8 +67,9 @@ src/
 3. **Fetch** — `sources/*.ts` downloads docs via the appropriate adapter
 4. **Store** — `storage.ts` writes files to `.ask/docs/<name>@<version>/`
 5. **Configure** — `config.ts` saves entry to `.ask/config.json` for later `sync`
-6. **Skill** — `skill.ts` generates `.claude/skills/<name>-docs/SKILL.md`
-7. **Agents** — `agents.ts` updates `AGENTS.md` with all downloaded doc references
+6. **Lock** — `io.ts` upserts version/hash into `.ask/ask.lock` for drift detection
+7. **Skill** — `skill.ts` generates `.claude/skills/<name>-docs/SKILL.md`
+8. **Agents** — `agents.ts` updates `AGENTS.md` with all downloaded doc references
 
 ### `apps/registry/` — Registry Browser (`@pleaseai/ask-registry`)
 
@@ -139,12 +140,12 @@ interface RegistryEntry {
 These constraints must be maintained across all changes:
 
 1. **Source adapters are stateless** — each `DocSource.fetch()` call is independent. No shared state between fetches.
-2. **Output pipeline is sequential** — storage → config → skill → agents. Each step depends on the previous.
+2. **Output pipeline is sequential** — storage → config → lock → skill → agents. Each step depends on the previous.
 3. **Registry is read-only for CLI** — the CLI only fetches from the registry API, never writes to it.
 4. **Pure ESM everywhere** — all imports use `.js` extensions. No CommonJS.
 5. **CLI output via consola only** — never use raw `console.log`. Use `consola.info/success/warn/error`.
 6. **Ecosystem detection is file-based** — `package.json` → npm, `pyproject.toml` → pypi, etc. No network calls for detection.
-7. **Generated files have markers** — `AGENTS.md` uses comment markers (`<!-- ASK:BEGIN -->` / `<!-- ASK:END -->`) for the auto-generated block. Other content outside markers is preserved.
+7. **Generated files have markers** — `AGENTS.md` uses comment markers (`<!-- BEGIN:ask-docs-auto-generated -->` / `<!-- END:ask-docs-auto-generated -->`) for the auto-generated block. Other content outside markers is preserved.
 
 ## Files Generated in User Projects
 
@@ -152,8 +153,9 @@ When a developer runs `ask docs add`, these files are created/updated:
 
 ```
 project-root/
-├── .please/
+├── .ask/
 │   ├── config.json                    # Tracks all downloaded docs for sync
+│   ├── ask.lock                       # Records exact versions/hashes fetched
 │   └── docs/
 │       └── <name>@<version>/
 │           ├── INDEX.md               # Auto-generated file listing

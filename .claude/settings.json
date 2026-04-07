@@ -29,7 +29,8 @@
     "docus@pleaseai": true,
     "cloudflare@cloudflare": true,
     "typescript-lsp@code-intelligence": true,
-    "eslint-lsp@code-intelligence": true
+    "eslint-lsp@code-intelligence": true,
+    "gardening@passionfactory": true
   },
   "extraKnownMarketplaces": {
     "passionfactory": {

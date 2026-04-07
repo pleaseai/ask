@@ -72,10 +72,11 @@ node packages/cli/dist/index.js docs add <spec> -s <source> [options]
 All three sources implement `DocSource.fetch(options) -> Promise<FetchResult>` returning `{ files: DocFile[], resolvedVersion: string }`.
 
 **Output pipeline** (executed in sequence by `add` command):
-1. `storage.ts` — saves doc files to `.please/docs/<name>@<version>/`, creates `INDEX.md`
-2. `config.ts` — persists source config to `.please/config.json` for `sync` re-download
-3. `skill.ts` — generates `.claude/skills/<name>-docs/SKILL.md` with trigger metadata
-4. `agents.ts` — generates/updates `AGENTS.md` with auto-generated block between marker comments
+1. `storage.ts` — saves doc files to `.ask/docs/<name>@<version>/`, creates `INDEX.md`
+2. `config.ts` — persists source config to `.ask/config.json` for `sync` re-download
+3. `io.ts` — upserts entry into `.ask/ask.lock` for drift detection
+4. `skill.ts` — generates `.claude/skills/<name>-docs/SKILL.md` with trigger metadata
+5. `agents.ts` — generates/updates `AGENTS.md` with auto-generated block between marker comments
 
 ## Registry Architecture (apps/registry/)
 
