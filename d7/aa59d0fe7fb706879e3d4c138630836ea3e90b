@@ -1,0 +1,25 @@
+CLAUDE.md
+  d2c82e4e7222c393 75-79
+ARCHITECTURE.md
+  d2c82e4e7222c393 70-72,143,148,156,158
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "d7aa59d0fe7fb706879e3d4c138630836ea3e90b",
+  "prompts": {
+    "d2c82e4e7222c393": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "444608fc-6897-4fc4-a95d-20328e694b01",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 68,
+      "total_deletions": 9,
+      "accepted_lines": 68,
+      "overriden_lines": 0
+    }
+  }
+}
