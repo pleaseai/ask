@@ -1,0 +1,27 @@
+.please/docs/tracks/active/parallelize-sync-fetches-20260407/metadata.json
+  7e9bbdec0bb92bfa 1-10
+.please/docs/tracks/active/parallelize-sync-fetches-20260407/spec.md
+  7e9bbdec0bb92bfa 1-52
+.please/docs/tracks/active/parallelize-sync-fetches-20260407/plan.md
+  7e9bbdec0bb92bfa 1-72
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "25e4d9463d32e22c3e809aa6c98a1a27ca32d1f0",
+  "prompts": {
+    "7e9bbdec0bb92bfa": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a9e9fdd4-9843-4c01-baf2-d247b62c5b00",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 134,
+      "total_deletions": 0,
+      "accepted_lines": 134,
+      "overriden_lines": 0
+    }
+  }
+}
