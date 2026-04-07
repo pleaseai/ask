@@ -10,6 +10,8 @@ Inspired by [Next.js evals](https://nextjs.org/evals) showing that providing `AG
 ask docs add next@canary          # Auto-detect from registry
 ask docs add npm:zod@3.22         # Explicit ecosystem
 ask docs add pypi:fastapi@0.115   # Python libraries too
+ask docs add vercel/next.js       # GitHub shorthand (no registry needed)
+ask docs add vercel/next.js@v15.0.0  # …pinned to a tag or branch
 ```
 
 This single command:
@@ -46,11 +48,28 @@ ask docs add next@canary
 ask docs add npm:next@canary
 ask docs add pypi:fastapi@0.115
 
+# GitHub shorthand — owner/repo[@ref] skips the registry entirely
+ask docs add vercel/next.js                # latest default branch
+ask docs add vercel/next.js@v15.0.0        # pinned to a tag
+ask docs add vercel/next.js@canary         # …or a branch (ref is opaque)
+
 # Manual source specification (when not in registry)
 ask docs add mylib@1.0 -s npm --docs-path dist/docs
 ask docs add mylib@1.0 -s github --repo owner/repo --tag v1.0 --docs-path docs
 ask docs add mylib@1.0 -s web --url https://mylib.dev/docs
 ```
+
+### Identifier syntax
+
+`ask docs add <spec>` accepts three identifier shapes, disambiguated by punctuation:
+
+| Shape | Example | Behavior |
+|---|---|---|
+| `owner/repo[@ref]` | `vercel/next.js@canary` | GitHub fast-path. Skips the registry; passes the ref straight to the github source (tag or branch — opaque). |
+| `ecosystem:name[@version]` | `npm:next@^15` | Registry lookup with an explicit ecosystem prefix. |
+| `name[@version]` | `next@canary` | Registry lookup with the ecosystem auto-detected from project files (`package.json`, `pyproject.toml`, …). |
+
+The github shorthand is strict — exactly one slash, no colon. `a/b/c` and `org:team/repo` produce a parse error with actionable guidance.
 
 ### Sync all configured docs
 
