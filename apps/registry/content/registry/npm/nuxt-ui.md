@@ -5,6 +5,9 @@ description: A comprehensive Vue UI component library with 125+ accessible, prod
 strategies:
   - source: llms-txt
     url: https://ui.nuxt.com/llms.txt
+  - source: llms-txt
+    url: https://ui3.nuxt.com/llms.txt
+    version: '3'
   - source: github
     repo: nuxt/ui
     docsPath: docs
@@ -16,4 +19,5 @@ tags: [vue, nuxt, ui, components, tailwindcss]
 A comprehensive Vue UI component library (Nuxt optional) with 125+ accessible, production-ready, Tailwind CSS components. Full documentation available as llms.txt at ui.nuxt.com.
 
 ## Version notes
-- `latest`: Nuxt UI v3 stable
+- `latest`: Nuxt UI v4 (ui.nuxt.com)
+- `3`: Nuxt UI v3 (ui3.nuxt.com)

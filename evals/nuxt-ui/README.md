@@ -17,13 +17,16 @@ Libraries increasingly offer `llms.txt` / `llms-full.txt` as LLM-optimized docum
 
 ## Evals
 
-3 evals targeting Nuxt UI v4 features unlikely to be in training data:
+6 evals targeting Nuxt UI v4 features and breaking changes:
 
 | Eval | Feature tested | Why it's hard without docs |
 |---|---|---|
-| eval-001-chat-message | `UChatMessage` + `parts` prop | Brand new v4 component, AI SDK format |
+| eval-001-chat-message | `UChatMessage` + `parts` prop | Brand new v4 component, AI SDK format. Negative: detects deprecated `content` prop and `useChat()` |
 | eval-002-command-palette | `UCommandPalette` groups API | v4 API differs significantly from v2 |
-| eval-003-theme-customization | `@theme` directive + `app.config.ts` | v4 CSS-first theming replaces config-based |
+| eval-003-theme-customization | `@theme` directive + `app.config.ts` | v4 CSS-first theming replaces config-based. Negative: detects `tailwind.config` and `@nuxt/ui-pro` |
+| eval-004-field-group | `UFieldGroup` (was `UButtonGroup`) | v4 renamed ButtonGroup → FieldGroup. Negative: detects deprecated `UButtonGroup` |
+| eval-005-nullable-input | `v-model.nullable` (was `.nullify`) | v4 renamed nullify → nullable modifier. Negative: detects deprecated `.nullify` |
+| eval-006-nested-form | `nested` prop + `name` inheritance | v4 changed nested form pattern. Negative: detects deprecated `:state` on nested forms |
 
 ## Prerequisites
 
@@ -62,9 +65,9 @@ bunx agent-eval --force
 
 | Doc source | Expected pass rate | Reasoning |
 |---|---|---|
-| base | Low | v4 chat components not in training data |
-| llms.txt | Medium | Overview helps but lacks API details |
-| llms-full.txt | High | Complete API docs, LLM-optimized |
+| base | Low | Breaking changes (FieldGroup, nullable, nested) will cause v2/v3 patterns → negative assertions fail |
+| llms.txt | Low-Medium | Overview helps but may lack migration details |
+| llms-full.txt | High | Complete API docs including migration info |
 | github-docs | Medium-High | Complete docs with ASK-style version warning |
 
 ## Results

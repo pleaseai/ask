@@ -44,8 +44,8 @@ test('Uses UChatMessage component', () => {
 })
 
 test('ChatMessage uses parts prop with AI SDK format', () => {
-  // Must use :parts or parts= binding with type: text structure
-  expect(source).toMatch(/:?parts\s*=/)
+  // parts can appear as a template binding (:parts=) or as a data property key (parts: [...])
+  expect(source).toMatch(/:?parts\s*=|parts\s*:/)
   expect(source).toMatch(/type:\s*['"]text['"]/)
 })
 
@@ -60,4 +60,16 @@ test('Uses UChatMessages wrapper component', () => {
 
 test('Uses UChatPrompt input component', () => {
   expect(source).toMatch(/UChatPrompt|u-chat-prompt|ChatPrompt/)
+})
+
+// --- Negative assertions: detect deprecated v3 patterns ---
+
+test('Does NOT use deprecated content prop (v3) — must use parts (v4)', () => {
+  // v3 used :content="message.content", v4 uses :parts="message.parts"
+  expect(source).not.toMatch(/:content\s*=\s*"message\.content"/)
+})
+
+test('Does NOT use deprecated useChat composable (v3) — must use Chat class (v4)', () => {
+  // v3 used useChat() from @ai-sdk/vue, v4 uses new Chat()
+  expect(source).not.toMatch(/useChat\s*\(/)
 })

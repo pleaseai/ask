@@ -80,3 +80,16 @@ test('CSS imports follow v4 pattern', () => {
   expect(cssFile!.content).toMatch(/@import\s+["']tailwindcss["']/)
   expect(cssFile!.content).toMatch(/@import\s+["']@nuxt\/ui["']/)
 })
+
+// --- Negative assertions: detect deprecated v2/v3 patterns ---
+
+test('Does NOT use tailwind.config (v2/v3) — v4 uses CSS @theme directive', () => {
+  const hasTailwindConfig = sourceFiles.some(f =>
+    /tailwind\.config\.(js|ts|cjs|mjs)$/.test(f.path),
+  )
+  expect(hasTailwindConfig, 'tailwind.config should not exist in v4').toBe(false)
+})
+
+test('Does NOT use @nuxt/ui-pro (v3) — v4 merged ui-pro into @nuxt/ui', () => {
+  expect(source).not.toMatch(/@nuxt\/ui-pro/)
+})

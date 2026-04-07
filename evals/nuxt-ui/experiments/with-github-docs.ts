@@ -11,7 +11,7 @@ const config: ExperimentConfig = {
   runs: 4,
   earlyExit: true,
   timeout: 720,
-  sandbox: 'docker',
+  sandbox: process.env.SANDBOX_BACKEND as 'docker' | 'vercel' || 'docker',
   setup: async (sandbox) => {
     await sandbox.runCommand('npm', ['install'])
 
