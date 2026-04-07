@@ -1,6 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { consola } from 'consola'
+import { expandStrategies } from './registry-schema.js'
 
 const REGISTRY_BASE_URL = 'https://ask-registry.pages.dev'
 
@@ -21,6 +22,10 @@ export interface RegistryEntry {
   name: string
   ecosystem: string
   description: string
+  repo?: string
+  homepage?: string
+  license?: string
+  docsPath?: string
   strategies: RegistryStrategy[]
   tags?: string[]
 }
@@ -222,13 +227,23 @@ export async function resolveFromRegistry(
   consola.info(`Looking up ${ecosystem}:${name} in registry...`)
 
   const entry = await fetchRegistryEntry(ecosystem, name)
-  if (!entry || entry.strategies.length === 0) {
+  if (!entry) {
+    return null
+  }
+
+  const strategies = expandStrategies({
+    repo: entry.repo,
+    docsPath: entry.docsPath,
+    strategies: entry.strategies,
+  })
+
+  if (strategies.length === 0) {
     return null
   }
 
   consola.success(`Found ${entry.name} in registry: ${entry.description}`)
 
-  const strategy = selectBestStrategy(entry.strategies)
+  const strategy = selectBestStrategy(strategies)
   consola.info(`Using source: ${strategy.source}`)
 
   return {
