@@ -1,0 +1,138 @@
+apps/registry/content/registry/colinhacks/zod.md
+  ccda89fc721d2918 1-15
+apps/registry/content/registry/webpack/webpack.md
+  ccda89fc721d2918 1-15
+apps/registry/content/registry/modelcontextprotocol/typescript-sdk.md
+  ccda89fc721d2918 1-16
+apps/registry/content/registry/psf/requests.md
+  ccda89fc721d2918 1-16
+apps/registry/content/registry/spring-projects/spring-ai.md
+  ccda89fc721d2918 1-12
+apps/registry/content/registry/langchain-ai/langchain.md
+  ccda89fc721d2918 1-16
+apps/registry/content/registry/angular/angular.md
+  ccda89fc721d2918 1-16
+apps/registry/content/registry/microsoft/semantic-kernel.md
+  ccda89fc721d2918 1-17
+apps/registry/content/registry/expressjs/express.md
+  ccda89fc721d2918 1-15
+apps/registry/server/api/registry/[...slug].get.ts
+  ccda89fc721d2918 1-132
+apps/registry/content/registry/vuejs/core.md
+  ccda89fc721d2918 1-15
+apps/registry/content/registry/langchain-ai/langgraphjs.md
+  ccda89fc721d2918 1-16
+apps/registry/content/registry/ansible/ansible.md
+  ccda89fc721d2918 1-16
+apps/registry/content/registry/openai/codex.md
+  ccda89fc721d2918 1-15
+apps/registry/content/registry/huggingface/transformers.md
+  ccda89fc721d2918 1-16
+apps/registry/content/registry/pytorch/pytorch.md
+  ccda89fc721d2918 1-16
+apps/registry/content/registry/qodo-ai/pr-agent.md
+  ccda89fc721d2918 1-15
+apps/registry/content/registry/jlowin/fastmcp.md
+  ccda89fc721d2918 1-15
+apps/registry/content/registry/jquery/jquery.md
+  ccda89fc721d2918 1-15
+apps/registry/content/registry/spring-projects/spring-boot.md
+  ccda89fc721d2918 1-12
+packages/cli/src/registry.ts
+  ccda89fc721d2918 21-25,29-30,33,165-167,170-171,173,184
+apps/registry/content/registry/spring-projects/spring-framework.md
+  ccda89fc721d2918 1-12
+apps/registry/content/registry/nuxt/nuxt.md
+  ccda89fc721d2918 1-25
+apps/registry/content/registry/spring-projects/spring-integration.md
+  ccda89fc721d2918 1-12
+apps/registry/content/registry/kubernetes/kubernetes.md
+  ccda89fc721d2918 1-16
+apps/registry/content/registry/numpy/numpy.md
+  ccda89fc721d2918 1-16
+apps/registry/content/registry/deepset-ai/haystack.md
+  ccda89fc721d2918 1-16
+apps/registry/content.config.ts
+  ccda89fc721d2918 16-20,36-37,40,43
+apps/registry/content/registry/pandas-dev/pandas.md
+  ccda89fc721d2918 1-16
+apps/registry/content/registry/pallets/flask.md
+  ccda89fc721d2918 1-16
+apps/registry/content/registry/facebook/react.md
+  ccda89fc721d2918 1-15
+apps/registry/content/registry/stanfordnlp/stanza.md
+  ccda89fc721d2918 1-16
+apps/registry/content/registry/spring-projects/spring-security.md
+  ccda89fc721d2918 1-12
+packages/cli/src/index.ts
+  ccda89fc721d2918 26,165-166,173-183,191
+apps/registry/content/registry/BerriAI/litellm.md
+  ccda89fc721d2918 1-16
+apps/registry/content/registry/langchain-ai/langgraph.md
+  ccda89fc721d2918 1-16
+apps/registry/content/registry/jerryjliu/llama_index.md
+  ccda89fc721d2918 1-16
+apps/registry/content/registry/HKUDS/LightRAG.md
+  ccda89fc721d2918 1-15
+apps/registry/content/registry/axios/axios.md
+  ccda89fc721d2918 1-16
+apps/registry/content/registry/spring-projects/spring-modulith.md
+  ccda89fc721d2918 1-12
+apps/registry/content/registry/tensorflow/tensorflow.md
+  ccda89fc721d2918 1-16
+apps/registry/content/registry/lodash/lodash.md
+  ccda89fc721d2918 1-15
+apps/registry/content/registry/microsoft/agent-framework.md
+  ccda89fc721d2918 1-14
+apps/registry/content/registry/vercel/next.js.md
+  ccda89fc721d2918 1-27
+apps/registry/content/registry/jestjs/jest.md
+  ccda89fc721d2918 1-16
+apps/registry/content/registry/nuxt/ui.md
+  ccda89fc721d2918 1-28
+apps/registry/content/registry/modelcontextprotocol/go-sdk.md
+  ccda89fc721d2918 1-15
+apps/registry/content/registry/fastapi/fastapi.md
+  ccda89fc721d2918 1-25
+apps/registry/content/registry/modelcontextprotocol/python-sdk.md
+  ccda89fc721d2918 1-16
+apps/registry/content/registry/opencv/opencv.md
+  ccda89fc721d2918 1-16
+apps/registry/content/registry/tailwindlabs/tailwindcss.md
+  ccda89fc721d2918 1-23
+apps/registry/content/registry/Fizzadar/pyinfra.md
+  ccda89fc721d2918 1-16
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "b76dbe0642507d5b00ac6e0c3b13a1273fb34417",
+  "prompts": {
+    "ccda89fc721d2918": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7ed5a97f-cace-4947-81b4-4ca237b525ca",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 1361,
+      "total_deletions": 104,
+      "accepted_lines": 950,
+      "overriden_lines": 0
+    },
+    "d2c82e4e7222c393": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "444608fc-6897-4fc4-a95d-20328e694b01",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 56,
+      "overriden_lines": 0
+    }
+  }
+}
