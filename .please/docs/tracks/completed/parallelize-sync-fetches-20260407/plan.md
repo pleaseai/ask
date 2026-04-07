@@ -70,3 +70,29 @@ The lock object is read once at the start (already true today). Per-entry writes
 - Batching lock+config writes into a single read/write at end of sync (may revisit if T-2 finds atomicity issues)
 - Replacing `consola` with structured logging
 - Adding `--concurrency` CLI flag (hard-code 5 for now; can be exposed later if requested)
+
+## Outcomes & Retrospective
+
+### What Was Shipped
+
+- `runWithConcurrency` inline limiter (no new dep) + 8 unit tests
+- `syncEntry` extracted from the serial loop, never throws, preserves write ordering
+- Partition: github/npm/llms-txt parallel (cap=5), web serial
+- `runSync(projectDir, options)` exported with DI hook for testing
+- `runMain` entry-point guard so the module is importable from tests
+- Cross-platform fix using `pathToFileURL` (caught in code review)
+
+### What Went Well
+
+- T-2 atomicity audit was decisive — `addDocEntry`/`upsertLockEntry` are fully synchronous, so no serialization layer was needed and the design stayed simple.
+- Dependency injection on `runSync` enabled fast, deterministic partition tests without mocking the network or spawning child processes.
+- The code review caught a real cross-platform bug (Windows entry-point guard) that would have shipped silently.
+
+### What Could Improve
+
+- The initial entry-point guard (`\`file://\${process.argv[1]}\``) was a thinko — should have reached for `pathToFileURL` immediately. Worth a gotcha entry.
+- Manual smoke test (T-6) was skipped — partition tests cover the behavior, but a real-world wall-clock measurement would have strengthened the PR.
+
+### Tech Debt Created
+
+- None. Out-of-scope items (generic `readJson`/`writeJson`, lock+config write batching, `--concurrency` flag) were deferred deliberately and called out in spec/plan/PR.
