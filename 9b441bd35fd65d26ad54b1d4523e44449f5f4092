@@ -1,0 +1,31 @@
+.please/docs/tracks/active/parallelize-sync-fetches-20260407/plan.md
+  7e9bbdec0bb92bfa 23,29,34,40,47,52,57
+packages/cli/src/concurrency.ts
+  7e9bbdec0bb92bfa 1-36
+packages/cli/test/sync-partition.test.ts
+  7e9bbdec0bb92bfa 1-145
+packages/cli/test/concurrency.test.ts
+  7e9bbdec0bb92bfa 1-95
+packages/cli/src/index.ts
+  7e9bbdec0bb92bfa 3,17,231-262,264-266,269-280,282-286,288-296,298-341,343-349,351-361,363-373,438-442
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "9b441bd35fd65d26ad54b1d4523e44449f5f4092",
+  "prompts": {
+    "7e9bbdec0bb92bfa": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a9e9fdd4-9843-4c01-baf2-d247b62c5b00",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 438,
+      "total_deletions": 83,
+      "accepted_lines": 429,
+      "overriden_lines": 0
+    }
+  }
+}
