@@ -1,0 +1,27 @@
+evals/nuxt-ui/package.json
+  c3b0469f612f4526 9-12
+evals/nuxt-ui/README.md
+  c3b0469f612f4526 64,66-68,70-71,73-76,80-127
+evals/nuxt-ui/analyze.ts
+  c3b0469f612f4526 1-476
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "e8339ac467f30da736498cd3142c8113bfe54041",
+  "prompts": {
+    "c3b0469f612f4526": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7b6b5fe4-9822-4813-9a22-60ee7b0ddc5b",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 539,
+      "total_deletions": 11,
+      "accepted_lines": 539,
+      "overriden_lines": 0
+    }
+  }
+}
