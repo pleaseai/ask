@@ -170,4 +170,44 @@ We chose **incremental migration** over a big-bang refactor because each phase i
 
 ## Surprises & Discoveries
 
-(populated during implementation)
+- Observation: There were no tests in `packages/cli/` at all when this track started
+  Evidence: `ls packages/cli/test 2>/dev/null` returned nothing; `package.json` had no `test` script
+- Observation: The CLI has TWO parallel `SourceConfig` definitions (interface union in `sources/index.ts` and Zod inference in the new `schemas.ts`)
+  Evidence: discovered during the `/review:code-review` type-analyzer pass; the gap allows `urls: []` and malformed `repo` strings to type-check but crash at write time
+- Observation: `git ls-remote` adds a synchronous network round-trip per github fetch on top of the existing tarball download
+  Evidence: efficiency reviewer flagged it as "noticeable, mitigated by parallelization"; tracked in #2 as the highest-leverage future perf win
+- Observation: bun's built-in test runner needs `bun test` (not `bun run test`) — but adding a `"test": "bun test"` script in `package.json` makes the more conventional `bun run --cwd packages/cli test` work
+  Evidence: first invocation failed with "/bin/test exited with code 1" because there was no `test` script
+
+## Outcomes & Retrospective
+
+### What Was Shipped
+
+- ASK CLI now stores all managed artifacts under `.ask/` instead of the shared `.please/` workspace
+- Zod-validated `Config` and `Lock` schemas with discriminated unions on `source`; runtime errors surface at the file boundary with clear file paths
+- New `.ask/ask.lock` recording resolved versions, source-specific metadata (commit sha for github, integrity for npm), file count, and SHA-256 content hash
+- `sync` command uses the lockfile as the drift baseline (correct for `latest`-tracked entries that move between runs)
+- One-shot `.please/` → `.ask/` legacy migration with `.ask/config.json` as the idempotency sentinel; failures throw rather than silently leave a half-migrated workspace
+- Single source of truth for `SourceConfig` via the Zod schema (collapsed the parallel interface union)
+- 58 new unit + integration tests bootstrapping the CLI's test suite from zero
+- Command-injection hardening on `git ls-remote` (`execFileSync` instead of shell interpolation, plus a `GitRefField` regex constraint)
+
+### What Went Well
+
+- Three parallel review agents (code-reviewer, silent-failure-hunter, type-analyzer) found 9 distinct issues that a single reviewer would likely have missed; the consensus across agents on the npm-integrity bug and command injection raised confidence quickly
+- TDD per task kept the loop tight: every commit had a passing test before the implementation landed
+- The deterministic-serializer abstraction (`sortedJSON` + `contentHash`) paid off immediately — `upsertLockEntry`'s "no-op preserves mtime" property fell out for free
+- `/simplify` netted -21 lines (-30%) without changing any test, validating that the first pass was over-decorated rather than under-tested
+
+### What Could Improve
+
+- Test infrastructure should have been a Phase 0 task, not assumed. Discovering "no test runner exists" mid-T001 forced an unscheduled `package.json` edit and a brief tool-permission detour. Future tracks: verify quality gates exist before writing the first failing test.
+- The plan called for 15 tasks but reality had ~25 sub-fixes once review feedback landed. A more honest plan would budget for "review fixes" as a discrete phase rather than letting them accrete onto the implementation phase.
+- The initial `buildLockEntry` implementation used `?? ''` for required fields, which Zod immediately rejected downstream. Preferring "throw early at the source" over "coerce and crash later" should be a default reflex, not a review finding.
+
+### Tech Debt Created
+
+- **Parallelize sync fetches** — github + npm + llms-txt entries are still fetched serially. Tracked in #2 (priority p2). Highest-leverage future perf win.
+- **`FetchResult.meta` is structurally untyped per source** — flagged by type-analyzer at confidence 80; refactoring requires generic `FetchResult<S>` and broader source-adapter changes. Worth a follow-up if a fifth source variant lands.
+- **`readJson<T>`/`writeJson<T>` generic helpers** — `readConfig`/`readLock` and `writeConfig`/`writeLock` are near-identical. Skipped from `/simplify` as premature DRY (only 2 callers each), but revisit when a third consumer appears (e.g. a future plugin manifest reader).
+- **Archive download in `sources/github.ts:31-34`** still uses `execSync` with template-string interpolation. The new `GitRefField` regex constraint closes the injection vector for registry-resolved sources, but a future hardening pass should switch to `execFileSync` for defense in depth.
