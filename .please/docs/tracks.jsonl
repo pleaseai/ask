@@ -1,4 +1,5 @@
 {"id":"ask-workspace-migration-20260407","type":"feature","status":"review","phase":"review","issue":"","created":"2026-04-07","section":"completed","pr":"#3"}
+{"id":"parallelize-sync-fetches-20260407","type":"chore","status":"review","phase":"review","issue":"#2","created":"2026-04-07","section":"completed","pr":"#8"}
 {"id":"cli-shorthand-20260407","type":"feature","status":"planned","phase":"spec","issue":"#4","created":"2026-04-07","section":"active"}
 {"id":"registry-meta-20260407","type":"feature","status":"planned","phase":"spec","issue":"#5","created":"2026-04-07","section":"active"}
 {"id":"ecosystem-resolvers-20260407","type":"feature","status":"planned","phase":"spec","issue":"#6","created":"2026-04-07","section":"active"}
