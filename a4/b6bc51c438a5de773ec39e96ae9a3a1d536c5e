@@ -1,0 +1,50 @@
+packages/cli/src/registry.ts
+  ccda89fc721d2918 152-154
+apps/registry/content/registry/spring-projects/spring-ai.md
+  ccda89fc721d2918 7-9
+apps/registry/content/registry/spring-projects/spring-security.md
+  ccda89fc721d2918 7-9
+apps/registry/content/registry/spring-projects/spring-modulith.md
+  ccda89fc721d2918 7-9
+apps/registry/content/registry/spring-projects/spring-boot.md
+  ccda89fc721d2918 7-9
+apps/registry/content.config.ts
+  ccda89fc721d2918 17
+apps/registry/content/registry/spring-projects/spring-framework.md
+  ccda89fc721d2918 7-9
+apps/registry/content/registry/spring-projects/spring-integration.md
+  ccda89fc721d2918 7-9
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "a4b6bc51c438a5de773ec39e96ae9a3a1d536c5e",
+  "prompts": {
+    "ccda89fc721d2918": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7ed5a97f-cace-4947-81b4-4ca237b525ca",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 22,
+      "total_deletions": 1,
+      "accepted_lines": 150,
+      "overriden_lines": 0
+    },
+    "d2c82e4e7222c393": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "444608fc-6897-4fc4-a95d-20328e694b01",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 56,
+      "overriden_lines": 0
+    }
+  }
+}
