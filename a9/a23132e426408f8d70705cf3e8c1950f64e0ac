@@ -1,0 +1,25 @@
+.please/docs/tracks/active/ecosystem-resolvers-20260407/metadata.json
+  8eeb5c27b6616a4c 4,6
+.please/docs/tracks.jsonl
+  8eeb5c27b6616a4c 5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "a9a23132e426408f8d70705cf3e8c1950f64e0ac",
+  "prompts": {
+    "8eeb5c27b6616a4c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "db32c5de-d9d6-44ae-94e8-042c300fb1c2",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 3,
+      "total_deletions": 3,
+      "accepted_lines": 3,
+      "overriden_lines": 0
+    }
+  }
+}
