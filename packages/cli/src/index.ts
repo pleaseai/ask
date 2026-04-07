@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import type { LockEntry } from './schemas.js'
+import type { Lock, LockEntry } from './schemas.js'
 import type {
   FetchResult,
   GithubSourceOptions,
@@ -14,6 +14,7 @@ import process from 'node:process'
 import { defineCommand, runMain } from 'citty'
 import { consola } from 'consola'
 import { generateAgentsMd } from './agents.js'
+import { runWithConcurrency } from './concurrency.js'
 import {
   addDocEntry,
   loadConfig,
@@ -227,75 +228,149 @@ const addCmd = defineCommand({
   },
 })
 
+type SyncStatus = 'drifted' | 'unchanged' | 'failed'
+
+/**
+ * Sync a single doc entry: fetch, diff, write. Never throws — failures are
+ * captured and returned as `status: 'failed'`. Logs the same lines that the
+ * legacy serial loop emitted, so user-facing output is unchanged.
+ *
+ * The internal write order (saveDocs → addDocEntry → upsertLockEntry →
+ * removeDocs(old) → generateSkill) is preserved verbatim from the previous
+ * implementation. See the inline comment below for the rationale.
+ *
+ * Safe to call from `runWithConcurrency` because:
+ *   1. Only `source.fetch()` is async (network I/O).
+ *   2. All disk writes (`addDocEntry`, `upsertLockEntry`, `saveDocs`,
+ *      `removeDocs`, `generateSkill`) are fully synchronous fs operations
+ *      with no `await` between read and write — Node's single-threaded event
+ *      loop guarantees they execute atomically with respect to each other.
+ */
+async function syncEntry(
+  projectDir: string,
+  entry: SourceConfig,
+  lock: Lock,
+): Promise<SyncStatus> {
+  try {
+    consola.info(`  ${entry.name} (${entry.source})...`)
+    const source = getSource(entry.source)
+    const result = await source.fetch(entry)
+    const newLockEntry = buildLockEntry(entry, result)
+    const previousLock = lock.entries[entry.name]
+    const changed = !previousLock
+      || previousLock.contentHash !== newLockEntry.contentHash
+      || previousLock.version !== newLockEntry.version
+
+    if (!changed) {
+      consola.info(`  -> unchanged (v${result.resolvedVersion})`)
+      return 'unchanged'
+    }
+
+    // Drift confirmed. Order is intentional: every write that can throw
+    // (saveDocs, addDocEntry/Zod, upsertLockEntry/Zod) happens BEFORE the
+    // destructive removeDocs of the old version. A mid-flow failure
+    // leaves both directories on disk and the config/lock pointing at
+    // the old version — recoverable on the next sync. Reversing this
+    // order would let a failed write leave config pointing at a deleted
+    // directory.
+    saveDocs(projectDir, entry.name, result.resolvedVersion, result.files)
+    addDocEntry(projectDir, { ...entry, version: result.resolvedVersion })
+    upsertLockEntry(projectDir, entry.name, newLockEntry)
+    if (previousLock && previousLock.version !== result.resolvedVersion) {
+      removeDocs(projectDir, entry.name, previousLock.version)
+    }
+    generateSkill(
+      projectDir,
+      entry.name,
+      result.resolvedVersion,
+      result.files.map(f => f.path),
+    )
+    const fromVersion = previousLock?.version ?? '(new)'
+    consola.success(`  ⟳ ${fromVersion} → ${result.resolvedVersion} (${result.files.length} files)`)
+    return 'drifted'
+  }
+  catch (err) {
+    consola.error(`  -> Error: ${err instanceof Error ? err.message : err}`)
+    return 'failed'
+  }
+}
+
+// Sources that are safe to fetch in parallel. `web` is intentionally excluded
+// to remain polite toward upstream documentation servers (we don't know if
+// multiple URLs hit the same host, and crawl bursts can trip rate limits).
+const PARALLEL_SOURCES = new Set<SourceConfig['source']>(['github', 'npm', 'llms-txt'])
+const SYNC_CONCURRENCY = 5
+
+export interface RunSyncOptions {
+  /**
+   * Override the per-entry sync function. Used by tests; defaults to the
+   * real `syncEntry` which performs network fetches and disk writes.
+   */
+  syncEntryFn?: (projectDir: string, entry: SourceConfig, lock: Lock) => Promise<SyncStatus>
+  /**
+   * Skip the AGENTS.md regeneration step. Used by tests that don't care
+   * about that side effect.
+   */
+  skipAgentsMd?: boolean
+}
+
+export async function runSync(
+  projectDir: string,
+  options: RunSyncOptions = {},
+): Promise<{ drifted: number, unchanged: number, failed: number }> {
+  migrateLegacyWorkspace(projectDir)
+  const config = loadConfig(projectDir)
+  const lock = readLock(projectDir)
+
+  if (config.docs.length === 0) {
+    consola.info('No docs configured in .ask/config.json')
+    return { drifted: 0, unchanged: 0, failed: 0 }
+  }
+
+  consola.start(`Syncing ${config.docs.length} library docs...`)
+
+  const fn = options.syncEntryFn ?? syncEntry
+
+  const parallel: SourceConfig[] = []
+  const serial: SourceConfig[] = []
+  for (const entry of config.docs) {
+    if (PARALLEL_SOURCES.has(entry.source)) {
+      parallel.push(entry)
+    }
+    else {
+      serial.push(entry)
+    }
+  }
+
+  const parallelResults = await runWithConcurrency(
+    parallel,
+    SYNC_CONCURRENCY,
+    entry => fn(projectDir, entry, lock),
+  )
+
+  const serialResults: SyncStatus[] = []
+  for (const entry of serial) {
+    serialResults.push(await fn(projectDir, entry, lock))
+  }
+
+  const counts = { drifted: 0, unchanged: 0, failed: 0 }
+  for (const status of [...parallelResults, ...serialResults]) {
+    counts[status]++
+  }
+
+  if (!options.skipAgentsMd) {
+    generateAgentsMd(projectDir)
+  }
+  consola.success(
+    `Sync complete: ${counts.drifted} re-fetched, ${counts.unchanged} unchanged, ${counts.failed} failed. AGENTS.md updated.`,
+  )
+  return counts
+}
+
 const syncCmd = defineCommand({
   meta: { name: 'sync', description: 'Refresh docs from .ask/config.json, using .ask/ask.lock as the drift baseline' },
   async run() {
-    const projectDir = process.cwd()
-    migrateLegacyWorkspace(projectDir)
-    const config = loadConfig(projectDir)
-    const lock = readLock(projectDir)
-
-    if (config.docs.length === 0) {
-      consola.info('No docs configured in .ask/config.json')
-      return
-    }
-
-    consola.start(`Syncing ${config.docs.length} library docs...`)
-
-    let drifted = 0
-    let unchanged = 0
-    let failed = 0
-
-    for (const entry of config.docs) {
-      try {
-        consola.info(`  ${entry.name} (${entry.source})...`)
-        const source = getSource(entry.source)
-        const result = await source.fetch(entry)
-        const newLockEntry = buildLockEntry(entry, result)
-        const previousLock = lock.entries[entry.name]
-        const changed = !previousLock
-          || previousLock.contentHash !== newLockEntry.contentHash
-          || previousLock.version !== newLockEntry.version
-
-        if (!changed) {
-          unchanged++
-          consola.info(`  -> unchanged (v${result.resolvedVersion})`)
-          continue
-        }
-
-        // Drift confirmed. Order is intentional: every write that can throw
-        // (saveDocs, addDocEntry/Zod, upsertLockEntry/Zod) happens BEFORE the
-        // destructive removeDocs of the old version. A mid-flow failure
-        // leaves both directories on disk and the config/lock pointing at
-        // the old version — recoverable on the next sync. Reversing this
-        // order would let a failed write leave config pointing at a deleted
-        // directory.
-        saveDocs(projectDir, entry.name, result.resolvedVersion, result.files)
-        addDocEntry(projectDir, { ...entry, version: result.resolvedVersion })
-        upsertLockEntry(projectDir, entry.name, newLockEntry)
-        if (previousLock && previousLock.version !== result.resolvedVersion) {
-          removeDocs(projectDir, entry.name, previousLock.version)
-        }
-        generateSkill(
-          projectDir,
-          entry.name,
-          result.resolvedVersion,
-          result.files.map(f => f.path),
-        )
-        drifted++
-        const fromVersion = previousLock?.version ?? '(new)'
-        consola.success(`  ⟳ ${fromVersion} → ${result.resolvedVersion} (${result.files.length} files)`)
-      }
-      catch (err) {
-        failed++
-        consola.error(`  -> Error: ${err instanceof Error ? err.message : err}`)
-      }
-    }
-
-    generateAgentsMd(projectDir)
-    consola.success(
-      `Sync complete: ${drifted} re-fetched, ${unchanged} unchanged, ${failed} failed. AGENTS.md updated.`,
-    )
+    await runSync(process.cwd())
   },
 })
 
@@ -360,4 +435,8 @@ const main = defineCommand({
   },
 })
 
-runMain(main)
+// Only execute the CLI when this module is the program entry point.
+// Tests import `runSync` from this file and must NOT trigger CLI execution.
+if (import.meta.url === `file://${process.argv[1]}`) {
+  runMain(main)
+}

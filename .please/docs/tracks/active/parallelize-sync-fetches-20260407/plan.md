@@ -20,41 +20,41 @@ The lock object is read once at the start (already true today). Per-entry writes
 
 ## Tasks
 
-- [ ] **T-1**: Create `packages/cli/src/concurrency.ts` with `runWithConcurrency` + unit tests
+- [x] **T-1**: Create `packages/cli/src/concurrency.ts` with `runWithConcurrency` + unit tests
   - Signature: `runWithConcurrency<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]>`
   - Preserves input order in the result array
   - Each `fn` call is independent — errors from one item must not reject the whole batch; instead, the caller wraps `fn` to convert errors into a result variant (we'll do this in T-3)
   - Vitest table-driven tests: limit=1 (serial), limit=∞, limit < items.length, empty input, single item
 
-- [ ] **T-2**: Audit `addDocEntry` (`config.ts`) and `upsertLockEntry` (`io.ts`) for read-modify-write atomicity
+- [x] **T-2**: Audit `addDocEntry` (`config.ts`) and `upsertLockEntry` (`io.ts`) for read-modify-write atomicity
   - Read both functions; confirm no `await` between read and write
   - If safe → document the invariant in a comment above each
   - If unsafe → add a note to the plan and serialize writes by funneling them through a sequential post-fetch loop (the original "fetches first, writes after" design from the issue proposal)
 
-- [ ] **T-3**: Extract `syncEntry` helper in `packages/cli/src/index.ts`
+- [x] **T-3**: Extract `syncEntry` helper in `packages/cli/src/index.ts`
   - Pure-ish: takes `(projectDir, entry, lock)`, returns `{ status: 'drifted' | 'unchanged' | 'failed', resolvedVersion?: string, error?: unknown }`
   - Wraps the existing per-entry body (lines 250-292) verbatim — no behavior change, just relocation
   - Must NOT throw — catches errors internally and returns `status: 'failed'`
   - Logs the same `consola.info` / `consola.success` / `consola.error` lines as today
 
-- [ ] **T-4**: Refactor `syncCmd` body to partition + parallelize
+- [x] **T-4**: Refactor `syncCmd` body to partition + parallelize
   - Partition entries by `source` field
   - `await runWithConcurrency(parallelEntries, 5, e => syncEntry(projectDir, e, lock))`
   - `for (const e of serialEntries) await syncEntry(...)`
   - Aggregate `drifted` / `unchanged` / `failed` counters from both result sets
   - Final `consola.success` summary unchanged
 
-- [ ] **T-5**: Vitest coverage for `syncCmd` partition logic
+- [x] **T-5**: Vitest coverage for `syncCmd` partition logic
   - Mock `getSource` to return controlled fetch results (one `github`, one `npm`, one `web`, one failing)
   - Assert: counters are correct, web is processed serially (verify by recording call order), failed entry does not abort batch
   - May require small refactor to make `syncCmd.run` testable (export the inner function or run via `runMain` in a child process — prefer the export approach)
 
-- [ ] **T-6**: Manual smoke test
+- [x] **T-6**: Manual smoke test
   - Create a temp `.ask/config.json` with 3 github entries pointing at small public repos
   - Run `node packages/cli/dist/index.js docs sync` on this branch and on `main`
   - Eyeball wall-clock difference; record in PR description (no CI gate)
 
-- [ ] **T-7**: Run `bun run --cwd packages/cli lint` and `bun run --cwd packages/cli build` — both must pass
+- [x] **T-7**: Run `bun run --cwd packages/cli lint` and `bun run --cwd packages/cli build` — both must pass
 
 ## Verification
 
