@@ -49,3 +49,25 @@ If a `packages/shared` workspace doesn't exist, place the helper at `packages/cl
 
 - Independently shippable. Can run in parallel with `cli-shorthand`.
 - `ecosystem-resolvers` benefits from this schema, so completing this track first (or in parallel) is natural.
+
+## Outcomes & Retrospective
+
+### What Was Shipped
+- `expandStrategies` shared helper for auto-generating github strategies from `repo` field
+- Extended registry schema with `repo`, `homepage`, `license`, `docsPath` optional fields
+- Custom Nitro server route applying strategy expansion on API responses
+- CLI-side defensive expansion in `resolveFromRegistry`
+- All 6 existing registry entries migrated with metadata enrichment
+- Zod entry simplified to repo-only (no strategies array needed)
+
+### What Went Well
+- TDD approach caught edge cases early (empty array vs missing strategies)
+- Schema refinement ensures data integrity at build time
+- Review loop identified real error handling gaps (bare catch, uncaught throw)
+
+### What Could Improve
+- `expandStrategies` is duplicated between CLI and server due to Nitro build constraints — a shared package would be cleaner
+- Server route Strategy interface is also duplicated — consider a shared types package
+
+### Tech Debt Created
+- Duplicated `expandStrategies` and `Strategy` type between `packages/cli/src/registry-schema.ts` and `apps/registry/server/api/registry/[ecosystem]/[name].get.ts`
