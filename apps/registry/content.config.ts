@@ -29,9 +29,16 @@ export default defineContentConfig({
         name: z.string(),
         ecosystem: z.enum(['npm', 'pypi', 'pub', 'go', 'crates', 'hex', 'nuget']),
         description: z.string(),
-        strategies: z.array(strategySchema),
+        repo: z.string().optional(),
+        homepage: z.string().optional(),
+        license: z.string().optional(),
+        docsPath: z.string().optional(),
+        strategies: z.array(strategySchema).optional().default([]),
         tags: z.array(z.string()).optional(),
-      }),
+      }).refine(
+        data => (data.strategies && data.strategies.length > 0) || data.repo,
+        { message: 'At least one of `strategies` or `repo` is required' },
+      ),
     }),
   },
 })
