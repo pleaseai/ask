@@ -1,4 +1,8 @@
+import type { Config, Lock } from './schemas.js'
 import { createHash } from 'node:crypto'
+import fs from 'node:fs'
+import path from 'node:path'
+import { ConfigSchema, LockSchema } from './schemas.js'
 
 /**
  * Recursively sort object keys for deterministic JSON serialization.
@@ -47,4 +51,82 @@ export function contentHash(
     hash.update(NUL)
   }
   return `sha256-${hash.digest('hex')}`
+}
+
+const ASK_DIR = '.ask'
+const CONFIG_FILE = 'config.json'
+const LOCK_FILE = 'ask.lock'
+
+export function getAskDir(projectDir: string): string {
+  return path.join(projectDir, ASK_DIR)
+}
+
+export function getConfigPath(projectDir: string): string {
+  return path.join(getAskDir(projectDir), CONFIG_FILE)
+}
+
+export function getLockPath(projectDir: string): string {
+  return path.join(getAskDir(projectDir), LOCK_FILE)
+}
+
+const EMPTY_CONFIG: Config = { schemaVersion: 1, docs: [] }
+
+/**
+ * Read and validate `.ask/config.json`. Returns the default empty config when
+ * the file does not exist. Throws on invalid contents.
+ */
+export function readConfig(projectDir: string): Config {
+  const file = getConfigPath(projectDir)
+  if (!fs.existsSync(file)) {
+    return { ...EMPTY_CONFIG, docs: [] }
+  }
+  const raw = fs.readFileSync(file, 'utf-8')
+  const parsed = JSON.parse(raw) as unknown
+  return ConfigSchema.parse(parsed)
+}
+
+/**
+ * Validate, sort, and write `.ask/config.json`. Sorts `docs[]` by name.
+ * Throws (without writing) if the input fails Zod validation.
+ */
+export function writeConfig(projectDir: string, config: Config): void {
+  const validated = ConfigSchema.parse(config)
+  const sortedDocs = [...validated.docs].sort((a, b) =>
+    a.name < b.name ? -1 : a.name > b.name ? 1 : 0,
+  )
+  const out: Config = { ...validated, docs: sortedDocs }
+  const file = getConfigPath(projectDir)
+  fs.mkdirSync(path.dirname(file), { recursive: true })
+  fs.writeFileSync(file, sortedJSON(out), 'utf-8')
+}
+
+const EMPTY_LOCK: Lock = {
+  lockfileVersion: 1,
+  generatedAt: '1970-01-01T00:00:00Z',
+  entries: {},
+}
+
+/**
+ * Read and validate `.ask/ask.lock`. Returns the default empty lock when the
+ * file does not exist. Throws on invalid contents.
+ */
+export function readLock(projectDir: string): Lock {
+  const file = getLockPath(projectDir)
+  if (!fs.existsSync(file)) {
+    return { ...EMPTY_LOCK, entries: {} }
+  }
+  const raw = fs.readFileSync(file, 'utf-8')
+  const parsed = JSON.parse(raw) as unknown
+  return LockSchema.parse(parsed)
+}
+
+/**
+ * Validate, sort, and write `.ask/ask.lock`. Throws (without writing) if the
+ * input fails Zod validation.
+ */
+export function writeLock(projectDir: string, lock: Lock): void {
+  const validated = LockSchema.parse(lock)
+  const file = getLockPath(projectDir)
+  fs.mkdirSync(path.dirname(file), { recursive: true })
+  fs.writeFileSync(file, sortedJSON(validated), 'utf-8')
 }
