@@ -48,6 +48,29 @@ ask docs add npm:lodash
 - Git tag conventions differ (`v1.0.0` vs `1.0.0`) → try both, fall back on github 404
 - Semver range parsing pulls in a new dependency — consider adding `semver`
 
+## Outcomes & Retrospective
+
+### What Was Shipped
+- EcosystemResolver interface + factory (`getResolver`) for npm, pypi, pub
+- `parseRepoUrl` utility for normalizing GitHub URLs from varied formats
+- Semver range resolution for npm (`^15` → latest 15.x.x) via `semver` package
+- Git ref fallback (`v{version}` → `{version}` or vice versa)
+- Resolver fallback wired into `add` command on registry miss
+- 146 tests passing, lint + tsc clean
+
+### What Went Well
+- Clean TDD cycle — tests defined expected behavior, implementation followed
+- Spec compliance check caught semver range gap early before merge
+- Resolvers are fully decoupled from sources, testable with mock fetch
+
+### What Could Improve
+- FR-5 fallback refs are declared but not yet exercised at download time (github source would need retry logic)
+- Could add integration tests against real APIs (currently all mocked)
+
+### Tech Debt Created
+- `sources/npm.ts` marked deprecated but not removed — needs cleanup in a follow-up release
+- FR-5 fallback ref retry logic not wired into github source fetch path
+
 ## Dependencies
 
 - **Soft dependency** on `cli-shorthand-20260407`: once the github fast-path lands, the resolver can reuse the same code path. Parallel work is fine, but landing `cli-shorthand` first is preferable.
