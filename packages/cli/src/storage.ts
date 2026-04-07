@@ -3,7 +3,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 
 export function getDocsDir(projectDir: string): string {
-  return path.join(projectDir, '.please', 'docs')
+  return path.join(projectDir, '.ask', 'docs')
 }
 
 export function getLibraryDocsDir(
