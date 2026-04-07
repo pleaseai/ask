@@ -1,0 +1,23 @@
+apps/registry/server/api/registry/[ecosystem]/[name].get.ts
+  f663ed7534242729 1-69
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "b9863ce63c29680c900f24dcf5367d7a4b2b3ed8",
+  "prompts": {
+    "f663ed7534242729": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "73809ac3-2a59-44e4-ba3e-e17ed805720c",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 74,
+      "total_deletions": 5,
+      "accepted_lines": 69,
+      "overriden_lines": 0
+    }
+  }
+}
