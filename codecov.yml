@@ -1,0 +1,59 @@
+coverage:
+  status:
+    project:
+      default:
+        target: auto
+        threshold: 1%
+    patch:
+      default:
+        target: 80%
+
+comment:
+  layout: "condensed_header, diff, flags, components, condensed_files, condensed_footer"
+  hide_project_coverage: false
+  require_changes: false
+  behavior: default
+
+flag_management:
+  default_rules:
+    carryforward: true
+    statuses:
+      - type: project
+        target: auto
+        threshold: 1%
+      - type: patch
+        target: 80%
+  individual_flags:
+    - name: cli
+      paths:
+        - packages/cli/
+
+component_management:
+  default_rules:
+    statuses:
+      - type: project
+        target: auto
+        threshold: 1%
+  individual_components:
+    - component_id: cli_sources
+      name: CLI Sources
+      paths:
+        - packages/cli/src/sources/**
+    - component_id: cli_commands
+      name: CLI Commands
+      paths:
+        - packages/cli/src/index.ts
+        - packages/cli/src/registry.ts
+    - component_id: cli_pipeline
+      name: CLI Output Pipeline
+      paths:
+        - packages/cli/src/storage.ts
+        - packages/cli/src/config.ts
+        - packages/cli/src/skill.ts
+        - packages/cli/src/agents.ts
+
+ignore:
+  - "**/dist/**"
+  - "**/node_modules/**"
+  - "**/*.test.ts"
+  - "apps/registry/**"
