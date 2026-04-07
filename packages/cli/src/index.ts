@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import type { LockEntry } from './schemas.js'
 import type {
   GithubSourceOptions,
   LlmsTxtSourceOptions,
@@ -7,7 +8,6 @@ import type {
   SourceConfig,
   WebSourceOptions,
 } from './sources/index.js'
-import type { LockEntry } from './schemas.js'
 import process from 'node:process'
 import { defineCommand, runMain } from 'citty'
 import { consola } from 'consola'

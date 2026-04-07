@@ -1,8 +1,8 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { consola } from 'consola'
+import { writeConfig } from './io.js'
 import { ConfigSchema } from './schemas.js'
-import { sortedJSON } from './io.js'
 
 const LEGACY_DIR = '.please'
 const NEW_DIR = '.ask'
@@ -73,9 +73,7 @@ export function migrateLegacyWorkspace(projectDir: string): void {
         schemaVersion: 1,
         docs: legacy.docs ?? [],
       })
-      const newConfig = path.join(newDir, 'config.json')
-      fs.mkdirSync(path.dirname(newConfig), { recursive: true })
-      fs.writeFileSync(newConfig, sortedJSON(migrated), 'utf-8')
+      writeConfig(projectDir, migrated)
       fs.rmSync(legacyConfig, { force: true })
     }
     catch (err) {

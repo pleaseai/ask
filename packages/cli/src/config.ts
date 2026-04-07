@@ -1,5 +1,5 @@
-import type { SourceConfig } from './sources/index.js'
 import type { Config } from './schemas.js'
+import type { SourceConfig } from './sources/index.js'
 import {
   getConfigPath,
   readConfig,

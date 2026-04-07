@@ -12,6 +12,7 @@ import path from 'node:path'
 
 const RE_LEADING_V = /^v/
 const RE_SHA40 = /^[0-9a-f]{40}$/
+const RE_WHITESPACE = /\s+/
 
 export class GithubSource implements DocSource {
   async fetch(options: SourceConfig): Promise<FetchResult> {
@@ -119,7 +120,7 @@ export class GithubSource implements DocSource {
       // Prefer the dereferenced commit if present.
       const lines = out.split('\n').filter(Boolean)
       const dereferenced = lines.find(l => l.includes(`refs/tags/${ref}^{}`))
-      const sha = (dereferenced ?? lines[0])?.split(/\s+/)[0]
+      const sha = (dereferenced ?? lines[0])?.split(RE_WHITESPACE)[0]
       return sha && RE_SHA40.test(sha) ? sha : undefined
     }
     catch {

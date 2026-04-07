@@ -19,7 +19,8 @@
     "build": "tsc",
     "dev": "tsc --watch",
     "lint": "eslint",
-    "lint:fix": "eslint --fix"
+    "lint:fix": "eslint --fix",
+    "test": "bun test"
   },
   "dependencies": {
     "citty": "^0.2.2",
