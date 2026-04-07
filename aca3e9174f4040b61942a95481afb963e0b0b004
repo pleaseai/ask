@@ -1,0 +1,25 @@
+packages/cli/src/config.ts
+  76d45c9b1098e15a 2-7,9,11,14,18,26-28
+packages/cli/src/schemas.ts
+  76d45c9b1098e15a 29
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "aca3e9174f4040b61942a95481afb963e0b0b004",
+  "prompts": {
+    "76d45c9b1098e15a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "adb20158-3689-49b4-b5f0-e95b6243a7dd",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 16,
+      "total_deletions": 26,
+      "accepted_lines": 17,
+      "overriden_lines": 0
+    }
+  }
+}
