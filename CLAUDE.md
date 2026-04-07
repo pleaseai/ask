@@ -47,6 +47,12 @@ node packages/cli/dist/index.js docs add <spec> -s <source> [options]
 - Docus (Nuxt docs theme) is incompatible with bun workspace (nuxt-content/docus#1279)
 - Nuxt Content v3 requires SQLite at build time even when deploying to D1. Use `experimental.sqliteConnector: 'native'` (requires Node 22.5+)
 - In `content.config.ts`, import `z` from `@nuxt/content` — do not install zod separately
+- `getSource(type)` (`packages/cli/src/sources/index.ts:54`) returns a `DocSource`; pass config to `DocSource.fetch(options)`, not to `getSource`. It is a single-arg factory.
+- `packages/cli/src/index.ts:76` defines a private `parseSpec(spec) -> { name, version }`. Any new export named `parseSpec` from `registry.ts` will collide — rename one before introducing.
+- `apps/registry/server/api/` does not exist. Registry API is provided by Nuxt Content collection auto-API; custom response transforms need a Nitro plugin or new server route.
+- GitHub repo `pleaseai/ask` has no `type/*` or `status/*` labels created. `gh issue create --label type/feature` fails with "label not found". Create the labels first or omit `--label`.
+- A PreToolUse Bash hook blocks shell commands when the current commit has no recorded review. Run `/review:code-review` (or `/review:run-cubic` / `/review:run-gemini`) and let it call `save-review-state.sh` before further bash.
+- Track artifacts live under `.please/docs/tracks/active/{slug}-{YYYYMMDD}/` with `spec.md`, `plan.md`, `metadata.json`. Append a JSON line to `.please/docs/tracks.jsonl` when creating a track.
 
 ## CLI Architecture (packages/cli/)
 
@@ -76,7 +82,7 @@ Nuxt + Nuxt Content v3 + Nuxt UI. Registry data is managed as YAML frontmatter i
 
 ## Key Conventions
 
-- CLAUDE.md and `.claude/rules/**/*.md` must be written in English
+- All written artifacts (commit messages, PR titles/bodies, code comments, and documentation including CLAUDE.md, `.claude/rules/**/*.md`, spec/plan files) must be written in English
 - Pure ESM (`"type": "module"`) — all imports use `.js` extensions (CLI)
 - ESLint config: `@pleaseai/eslint-config` (based on `@antfu/eslint-config`) — 2-space indent, single quotes, no semicolons
 - Use `consola` for all user-facing output, never raw `console.log`
