@@ -6,7 +6,10 @@
   "scripts": {
     "eval": "bunx agent-eval",
     "eval:dry": "bunx agent-eval --dry",
-    "eval:smoke": "bunx agent-eval --smoke"
+    "eval:smoke": "bunx agent-eval --smoke",
+    "analyze": "tsx analyze.ts",
+    "analyze:json": "tsx analyze.ts --json",
+    "analyze:csv": "tsx analyze.ts --csv"
   },
   "dependencies": {
     "@vercel/agent-eval": "^0.9.5"
