@@ -1,0 +1,23 @@
+apps/registry/content.config.ts
+  f663ed7534242729 32-36,38-41
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "6ef5e7da5e5edffab11d6b69a1769bc28f49468c",
+  "prompts": {
+    "f663ed7534242729": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "73809ac3-2a59-44e4-ba3e-e17ed805720c",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 9,
+      "total_deletions": 2,
+      "accepted_lines": 9,
+      "overriden_lines": 0
+    }
+  }
+}
