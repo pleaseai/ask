@@ -1,0 +1,27 @@
+packages/cli/src/registry.ts
+  c3b0469f612f4526 90-119,122,145-146
+apps/registry/content/registry/npm/nuxt-ui.md
+  c3b0469f612f4526 6-8
+apps/registry/content/registry/npm/nuxt.md
+  c3b0469f612f4526 9-10
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "8317297f5ba9de2c625eaa549d43fe53aefe249f",
+  "prompts": {
+    "c3b0469f612f4526": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7b6b5fe4-9822-4813-9a22-60ee7b0ddc5b",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 50,
+      "total_deletions": 16,
+      "accepted_lines": 40,
+      "overriden_lines": 0
+    }
+  }
+}
