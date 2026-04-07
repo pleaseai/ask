@@ -31,7 +31,7 @@ tags: [react, ssr]
 ## Functional Requirements
 
 - **FR-1**: `content.config.ts`의 registry schema에 `repo`, `homepage`, `license`, `docsPath` optional 필드 추가
-- **FR-2**: `strategies`가 비어있거나 누락된 경우, `repo`로부터 default github strategy를 자동 생성하는 helper(`expandStrategies`) 추가
+- **FR-2**: `strategies`가 비어있거나 누락된 경우, `repo`로부터 default github strategy를 자동 생성하는 helper(`expandStrategies`) 추가. 이를 위해 schema의 `strategies` 필드를 `z.array(strategySchema).optional().default([])`로 변경 필수.
 - **FR-3**: `expandStrategies`는 CLI(`packages/cli/src/registry.ts`)와 registry API(`apps/registry/server/api/registry/...`) 양쪽에서 공유
 - **FR-4**: 기존 6개 엔트리 마이그레이션 — 가능한 곳은 `repo` top-level로 단순화
 

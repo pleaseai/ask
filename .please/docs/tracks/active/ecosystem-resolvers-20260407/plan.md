@@ -12,7 +12,7 @@ ask docs add npm:lodash
             └→ fetch https://registry.npmjs.org/lodash
             └→ extract repository.url → 'lodash/lodash'
             └→ resolve version → '4.17.21' → tag 'v4.17.21' or '4.17.21'
-       └→ getSource('github', { repo: 'lodash/lodash', tag: '4.17.21' }).fetch()
+       └→ getSource('github').fetch({ source: 'github', repo: 'lodash/lodash', tag: '4.17.21', name: 'lodash', version: '4.17.21' })
 ```
 
 ## Files
