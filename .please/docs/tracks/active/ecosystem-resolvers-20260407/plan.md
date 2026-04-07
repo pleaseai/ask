@@ -32,15 +32,15 @@ ask docs add npm:lodash
 
 ## Tasks
 
-- **T-1** [impl] `EcosystemResolver` interface, `parseRepoUrl` utility, and unit tests
-- **T-2** [impl] npm resolver — registry API + dist-tags + semver resolution
-- **T-3** [impl] pypi resolver — extract `project_urls`, PEP 440 handling
-- **T-4** [impl] pub resolver — extract `pubspec.repository`
-- **T-5** [test] Unit tests for each resolver (mocked fetch)
-- **T-6** [impl] Wire resolvers into the `add` command — registry-miss fallback
-- **T-7** [test] End-to-end smoke — `ask docs add npm:lodash`, `pub:riverpod`
-- **T-8** [docs] Update README
-- **T-9** [chore] Regression — confirm registry-hit `npm:next` still works
+- [x] **T-1** [impl] `EcosystemResolver` interface, `parseRepoUrl` utility, and unit tests
+- [x] **T-2** [impl] npm resolver — registry API + dist-tags + semver resolution
+- [x] **T-3** [impl] pypi resolver — extract `project_urls`, PEP 440 handling
+- [x] **T-4** [impl] pub resolver — extract `pubspec.repository`
+- [x] **T-5** [test] Unit tests for each resolver (mocked fetch)
+- [x] **T-6** [impl] Wire resolvers into the `add` command — registry-miss fallback
+- [x] **T-7** [test] End-to-end smoke — `ask docs add npm:lodash`, `pub:riverpod`
+- [x] **T-8** [docs] Update README
+- [x] **T-9** [chore] Regression — confirm registry-hit `npm:next` still works
 
 ## Risks
 
