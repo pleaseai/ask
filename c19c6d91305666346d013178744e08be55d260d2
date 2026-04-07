@@ -1,0 +1,29 @@
+.please/docs/tracks/active/ask-workspace-migration-20260407/metadata.json
+  76d45c9b1098e15a 1-11
+.please/docs/tracks/active/ask-workspace-migration-20260407/spec.md
+  76d45c9b1098e15a 1-119
+.please/docs/tracks.jsonl
+  76d45c9b1098e15a 1
+.please/docs/tracks/active/ask-workspace-migration-20260407/plan.md
+  76d45c9b1098e15a 1-158
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "c19c6d91305666346d013178744e08be55d260d2",
+  "prompts": {
+    "76d45c9b1098e15a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "adb20158-3689-49b4-b5f0-e95b6243a7dd",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 378,
+      "total_deletions": 89,
+      "accepted_lines": 289,
+      "overriden_lines": 0
+    }
+  }
+}
