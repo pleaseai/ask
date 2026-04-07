@@ -1,0 +1,25 @@
+packages/cli/test/io-helpers.test.ts
+  76d45c9b1098e15a 1-211
+packages/cli/src/io.ts
+  76d45c9b1098e15a 1,3-5,55-132
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "d771a95d9093634b3696b0b813229afe7b04d0b5",
+  "prompts": {
+    "76d45c9b1098e15a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "adb20158-3689-49b4-b5f0-e95b6243a7dd",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 293,
+      "total_deletions": 0,
+      "accepted_lines": 295,
+      "overriden_lines": 0
+    }
+  }
+}
