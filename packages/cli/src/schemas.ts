@@ -26,7 +26,7 @@ const WebSourceConfig = z.object({
   name: NameField,
   version: VersionField,
   urls: z.array(z.string().url()).min(1),
-  maxDepth: z.number().int().min(0).default(1),
+  maxDepth: z.number().int().min(0).optional(),
   allowedPathPrefix: z.string().optional(),
 })
 
