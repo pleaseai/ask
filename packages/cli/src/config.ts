@@ -1,14 +1,8 @@
 import type { Config } from './schemas.js'
 import type { SourceConfig } from './sources/index.js'
-import {
-  getConfigPath,
-  readConfig,
-  writeConfig,
-} from './io.js'
+import { readConfig, writeConfig } from './io.js'
 
 export type AskConfig = Config
-
-export { getConfigPath }
 
 export function loadConfig(projectDir: string): AskConfig {
   return readConfig(projectDir)

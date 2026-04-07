@@ -1,11 +1,10 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { consola } from 'consola'
-import { writeConfig } from './io.js'
+import { getAskDir, getConfigPath, writeConfig } from './io.js'
 import { ConfigSchema } from './schemas.js'
 
 const LEGACY_DIR = '.please'
-const NEW_DIR = '.ask'
 
 /**
  * One-shot migration from `.please/` (used by ASK before April 2026) to
@@ -30,10 +29,9 @@ const NEW_DIR = '.ask'
  * the next run.
  */
 export function migrateLegacyWorkspace(projectDir: string): void {
-  const newDir = path.join(projectDir, NEW_DIR)
-  const newConfig = path.join(newDir, 'config.json')
+  const newDir = getAskDir(projectDir)
+  const newConfig = getConfigPath(projectDir)
 
-  // Sentinel: .ask/config.json exists → migration is done.
   if (fs.existsSync(newConfig)) {
     return
   }
@@ -45,7 +43,6 @@ export function migrateLegacyWorkspace(projectDir: string): void {
   const hasLegacyConfig = fs.existsSync(legacyConfig)
 
   if (!hasLegacyDocs && !hasLegacyConfig) {
-    // No legacy layout at all — nothing to migrate.
     return
   }
 
@@ -54,7 +51,6 @@ export function migrateLegacyWorkspace(projectDir: string): void {
     + 'This is a one-time operation; future runs will not log this message.',
   )
 
-  // Step 1: parse legacy config in memory (no disk writes yet).
   let migratedConfig: ReturnType<typeof ConfigSchema.parse> | null = null
   if (hasLegacyConfig) {
     try {
@@ -73,21 +69,9 @@ export function migrateLegacyWorkspace(projectDir: string): void {
     }
   }
 
-  // Step 2: write the new config first. This creates .ask/ as a side effect
-  // and sets the idempotency sentinel.
   fs.mkdirSync(newDir, { recursive: true })
-  if (migratedConfig) {
-    writeConfig(projectDir, migratedConfig)
-  }
-  else {
-    // Legacy layout had docs but no config — write an empty config so the
-    // sentinel exists.
-    writeConfig(projectDir, { schemaVersion: 1, docs: [] })
-  }
+  writeConfig(projectDir, migratedConfig ?? { schemaVersion: 1, docs: [] })
 
-  // Step 3: move docs. If this fails partway, throw — the partial state is
-  // user-visible (some entries in .ask/docs, some still in .please/docs)
-  // and a silent retry would lose data.
   if (hasLegacyDocs) {
     const newDocs = path.join(newDir, 'docs')
     fs.mkdirSync(newDocs, { recursive: true })
@@ -108,14 +92,12 @@ export function migrateLegacyWorkspace(projectDir: string): void {
     }
   }
 
-  // Step 4: remove the legacy config (best-effort — the sentinel is the new
-  // config file, not the absence of the old one).
   if (hasLegacyConfig) {
     try {
       fs.rmSync(legacyConfig, { force: true })
     }
     catch {
-      // non-fatal
+      // best-effort: the new config is the sentinel, not the absence of the old one
     }
   }
 }

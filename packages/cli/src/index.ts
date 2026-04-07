@@ -2,12 +2,14 @@
 
 import type { LockEntry } from './schemas.js'
 import type {
+  FetchResult,
   GithubSourceOptions,
   LlmsTxtSourceOptions,
   NpmSourceOptions,
   SourceConfig,
   WebSourceOptions,
 } from './sources/index.js'
+import path from 'node:path'
 import process from 'node:process'
 import { defineCommand, runMain } from 'citty'
 import { consola } from 'consola'
@@ -17,27 +19,21 @@ import {
   loadConfig,
   removeDocEntry,
 } from './config.js'
-import { contentHash, readLock, upsertLockEntry } from './io.js'
+import { contentHash, getConfigPath, getLockPath, readLock, upsertLockEntry } from './io.js'
 import { migrateLegacyWorkspace } from './migrate-legacy.js'
 import { parseEcosystem, resolveFromRegistry } from './registry.js'
 import { generateSkill, removeSkill } from './skill.js'
 import { getSource } from './sources/index.js'
 import { listDocs, removeDocs, saveDocs } from './storage.js'
 
-function buildLockEntry(
-  config: SourceConfig,
-  result: { resolvedVersion: string, files: Array<{ path: string, content: string }>, meta?: { commit?: string, ref?: string, integrity?: string, tarball?: string, urls?: string[] } },
-): LockEntry {
-  const fetchedAt = new Date().toISOString()
-  const hashFiles = result.files.map(f => ({
-    relpath: f.path,
-    bytes: new TextEncoder().encode(f.content),
-  }))
+function buildLockEntry(config: SourceConfig, result: FetchResult): LockEntry {
   const base = {
     version: result.resolvedVersion,
-    fetchedAt,
+    fetchedAt: new Date().toISOString(),
     fileCount: result.files.length,
-    contentHash: contentHash(hashFiles),
+    contentHash: contentHash(
+      result.files.map(f => ({ relpath: f.path, content: f.content })),
+    ),
   }
   const meta = result.meta ?? {}
   switch (config.source) {
@@ -210,11 +206,11 @@ const addCmd = defineCommand({
 
     const configEntry = { ...sourceConfig, version: result.resolvedVersion }
     addDocEntry(projectDir, configEntry)
-    consola.info('Config updated: .ask/config.json')
+    consola.info(`Config updated: ${path.relative(projectDir, getConfigPath(projectDir))}`)
 
     const lockEntry = buildLockEntry(sourceConfig, result)
     upsertLockEntry(projectDir, libName, lockEntry)
-    consola.info('Lock updated: .ask/ask.lock')
+    consola.info(`Lock updated: ${path.relative(projectDir, getLockPath(projectDir))}`)
 
     const skillPath = generateSkill(
       projectDir,

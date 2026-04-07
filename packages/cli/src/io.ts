@@ -30,24 +30,33 @@ export function sortedJSON(value: unknown): string {
   return `${JSON.stringify(sortKeys(value), null, 2)}\n`
 }
 
+const ENCODER = new TextEncoder()
+const NUL = new Uint8Array([0])
+
 /**
  * Compute a deterministic content hash over a list of files.
  * Files are sorted by relative path; each file contributes
  * `<relpath>\0<bytes>\0` to the hash stream. The null separators prevent
  * `path + content` ambiguity (e.g. "ab" + "cd" vs "a" + "bcd").
+ *
+ * Accepts either pre-encoded bytes or string content (the common case for
+ * DocFile records returned by source adapters).
  */
-export function contentHash(
-  files: Array<{ relpath: string, bytes: Uint8Array }>,
-): string {
+export interface HashableFile {
+  relpath: string
+  bytes?: Uint8Array
+  content?: string
+}
+
+export function contentHash(files: HashableFile[]): string {
   const sorted = [...files].sort((a, b) =>
     a.relpath < b.relpath ? -1 : a.relpath > b.relpath ? 1 : 0,
   )
   const hash = createHash('sha256')
-  const NUL = new Uint8Array([0])
   for (const f of sorted) {
-    hash.update(new TextEncoder().encode(f.relpath))
+    hash.update(ENCODER.encode(f.relpath))
     hash.update(NUL)
-    hash.update(f.bytes)
+    hash.update(f.bytes ?? ENCODER.encode(f.content ?? ''))
     hash.update(NUL)
   }
   return `sha256-${hash.digest('hex')}`
@@ -69,8 +78,6 @@ export function getLockPath(projectDir: string): string {
   return path.join(getAskDir(projectDir), LOCK_FILE)
 }
 
-const EMPTY_CONFIG: Config = { schemaVersion: 1, docs: [] }
-
 /**
  * Read and validate `.ask/config.json`. Returns the default empty config when
  * the file does not exist. Throws on invalid contents.
@@ -78,7 +85,7 @@ const EMPTY_CONFIG: Config = { schemaVersion: 1, docs: [] }
 export function readConfig(projectDir: string): Config {
   const file = getConfigPath(projectDir)
   if (!fs.existsSync(file)) {
-    return { ...EMPTY_CONFIG, docs: [] }
+    return { schemaVersion: 1, docs: [] }
   }
   const raw = fs.readFileSync(file, 'utf-8')
   let parsed: unknown
@@ -109,12 +116,6 @@ export function writeConfig(projectDir: string, config: Config): void {
   fs.writeFileSync(file, sortedJSON(out), 'utf-8')
 }
 
-const EMPTY_LOCK: Lock = {
-  lockfileVersion: 1,
-  generatedAt: '1970-01-01T00:00:00Z',
-  entries: {},
-}
-
 /**
  * Read and validate `.ask/ask.lock`. Returns the default empty lock when the
  * file does not exist. Throws on invalid contents.
@@ -122,7 +123,11 @@ const EMPTY_LOCK: Lock = {
 export function readLock(projectDir: string): Lock {
   const file = getLockPath(projectDir)
   if (!fs.existsSync(file)) {
-    return { ...EMPTY_LOCK, entries: {} }
+    return {
+      lockfileVersion: 1,
+      generatedAt: '1970-01-01T00:00:00Z',
+      entries: {},
+    }
   }
   const raw = fs.readFileSync(file, 'utf-8')
   let parsed: unknown
@@ -162,15 +167,16 @@ export function upsertLockEntry(
   const previous = lock.entries[name]
   const changed = !previous
     || sortedJSON(stripFetchedAt(previous)) !== sortedJSON(stripFetchedAt(entry))
-  const next: Lock = {
-    lockfileVersion: 1,
-    generatedAt: changed ? new Date().toISOString() : lock.generatedAt,
-    entries: {
-      ...lock.entries,
-      [name]: entry,
-    },
+  // No-op short circuit: if nothing changed (modulo fetchedAt), don't rewrite
+  // the file at all. This preserves mtime for build caches and file watchers.
+  if (!changed) {
+    return
   }
-  writeLock(projectDir, next)
+  writeLock(projectDir, {
+    lockfileVersion: 1,
+    generatedAt: new Date().toISOString(),
+    entries: { ...lock.entries, [name]: entry },
+  })
 }
 
 function stripFetchedAt(entry: LockEntry): Omit<LockEntry, 'fetchedAt'> {
