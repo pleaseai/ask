@@ -119,21 +119,36 @@ We chose **incremental migration** over a big-bang refactor because each phase i
 
 ## Progress
 
-- [ ] T001 Add Zod schemas for Config and Lock
-- [ ] T002 Add deterministic JSON serializer and content hash utility
-- [ ] T003 Add config and lock reader/writer helpers
-- [ ] T004 Migrate storage paths from .please/docs to .ask/docs
-- [ ] T005 Replace config.ts JSON I/O with helpers
-- [ ] T006 Update AGENTS.md template to reference .ask/docs
-- [ ] T007 Expose commit sha from github source adapter
-- [ ] T008 Expose dist.integrity from npm source adapter
-- [ ] T009 Wire ask.lock upsert into the add command pipeline
-- [ ] T010 Implement sync subcommand using ask.lock as drift baseline
-- [ ] T011 Add legacy .please/ migration on CLI startup
-- [ ] T012 Schema unit tests
-- [ ] T013 Add command end-to-end test
-- [ ] T014 Sync command drift test
-- [ ] T015 Legacy migration test
+- [x] (2026-04-07 15:30 KST) T001 Add Zod schemas for Config and Lock
+  Evidence: 17 schema tests pass
+- [x] (2026-04-07 15:35 KST) T002 Add deterministic JSON serializer and content hash utility
+  Evidence: 11 io-utils tests pass
+- [x] (2026-04-07 15:40 KST) T003 Add config and lock reader/writer helpers
+  Evidence: 10 io-helpers tests pass (incl. byte-identity round-trip)
+- [x] (2026-04-07 15:45 KST) T004 Migrate storage paths from .please/docs to .ask/docs
+  Evidence: 4 storage tests pass, .please/docs absent in output
+- [x] (2026-04-07 15:50 KST) T005 Replace config.ts JSON I/O with helpers
+  Evidence: build clean; addDocEntry now matches by name only
+- [x] (2026-04-07 15:55 KST) T006 Update AGENTS.md template to reference .ask/docs
+  Evidence: 5 agents tests pass; storage path propagates through getLibraryDocsDir
+- [x] (2026-04-07 16:00 KST) T007 Expose commit sha from github source adapter
+  Evidence: FetchResult.meta.commit + ref via git ls-remote, build clean
+- [x] (2026-04-07 16:05 KST) T008 Expose dist.integrity from npm source adapter
+  Evidence: FetchResult.meta.integrity + tarball, build clean
+- [x] (2026-04-07 16:15 KST) T009 Wire ask.lock upsert into the add command pipeline
+  Evidence: buildLockEntry + upsertLockEntry; SC-4 byte-stable on no-op re-add
+- [x] (2026-04-07 16:25 KST) T010 Implement sync subcommand using ask.lock as drift baseline
+  Evidence: drift classification + summary report (drifted/unchanged/failed)
+- [x] (2026-04-07 16:35 KST) T011 Add legacy .please/ migration on CLI startup
+  Evidence: hooked into all 4 subcommands; README/ARCHITECTURE updated
+- [x] (2026-04-07 16:40 KST) T012 Schema unit tests
+  Evidence: 30-entry determinism stress test added; 48 tests total
+- [x] (2026-04-07 16:50 KST) T013 Add command end-to-end test
+  Evidence: lock-pipeline.test.ts SC-4 / SC-5 / drift detection
+- [x] (2026-04-07 16:50 KST) T014 Sync command drift test
+  Evidence: lock-pipeline.test.ts version bump + removeLockEntries prune
+- [x] (2026-04-07 16:55 KST) T015 Legacy migration test
+  Evidence: migrate-legacy.test.ts 5 cases incl. exactly-once tampered file
 
 ## Decision Log
 
