@@ -63,7 +63,7 @@ node packages/cli/dist/index.js docs add <spec> -s <source> [options]
 
 **Command structure**: `ask docs {add|sync|list|remove}` — all subcommands defined inline in `src/index.ts`.
 
-**Registry auto-detection** (`src/registry.ts`): When `--source` is omitted, the CLI fetches library config from the ASK Registry API. Supports ecosystem prefixes (`npm:next`, `pypi:fastapi`) and auto-detects ecosystem from project files.
+**Registry auto-detection** (`src/registry.ts`): When `--source` is omitted, the CLI fetches library config from the ASK Registry API. Supports ecosystem prefixes (`npm:next`, `pypi:fastapi`), auto-detects ecosystem from project files (package.json→npm, pom.xml/build.gradle→maven, etc.), and enriches `owner/repo` fast-path with registry `docsPath` when available.
 
 **Source adapter pattern** (`src/sources/`):
 - `index.ts` — defines `DocSource` interface, `SourceConfig` union type, and `getSource()` factory
@@ -89,7 +89,7 @@ Resolvers are orthogonal to sources — they only perform metadata lookups and h
 
 ## Registry Architecture (apps/registry/)
 
-Nuxt + Nuxt Content v3 + Nuxt UI. Registry data is managed as YAML frontmatter in `content/registry/<ecosystem>/<name>.md`. Database: D1 for production (Cloudflare), native `node:sqlite` for local build. Requires Node 22.5+ (see `.nvmrc`).
+Nuxt + Nuxt Content v3 + Nuxt UI. Registry entries are GitHub repo-based: `content/registry/<owner>/<repo>.md`. Each entry requires `repo` (owner/repo) and optional `aliases` for ecosystem lookups (e.g. `npm:react` → `facebook/react`). When `strategies` is empty, `expandStrategies()` auto-generates a github strategy from `repo` + `docsPath`. Supported ecosystems: npm, pypi, pub, go, crates, hex, nuget, maven. API: `GET /api/registry/<owner>/<repo>` (direct) or `<ecosystem>/<name>` (alias fallback). Database: D1 for production (Cloudflare), native `node:sqlite` for local build. Requires Node 22.5+ (see `.nvmrc`).
 
 ## Key Conventions
 
