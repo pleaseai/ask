@@ -1,3 +1,4 @@
+import type { ParsedDocSpec } from '../src/registry.js'
 import { describe, expect, it } from 'bun:test'
 import { parseDocSpec } from '../src/registry.js'
 
@@ -105,6 +106,29 @@ describe('parseDocSpec', () => {
         version: '3.22.4',
       })
     })
+  })
+
+  describe('regression: existing 6 registry entries still resolve as non-github', () => {
+    // T-6: ensure none of the shipped registry entries collide with the new
+    // github fast-path. All bare names must parse as `name`, prefixed names
+    // as `ecosystem`. A regression here would route them away from the
+    // registry lookup and break `ask docs add next` etc.
+    const entries: Array<[string, ParsedDocSpec['kind']]> = [
+      ['next', 'name'],
+      ['nuxt', 'name'],
+      ['nuxt-ui', 'name'],
+      ['tailwindcss', 'name'],
+      ['zod', 'name'],
+      ['fastapi', 'name'],
+      ['npm:next', 'ecosystem'],
+      ['npm:zod', 'ecosystem'],
+      ['pypi:fastapi', 'ecosystem'],
+    ]
+    for (const [input, expectedKind] of entries) {
+      it(`'${input}' → ${expectedKind}`, () => {
+        expect(parseDocSpec(input).kind).toBe(expectedKind)
+      })
+    }
   })
 
   describe('error cases', () => {
