@@ -1,0 +1,36 @@
+.claude-plugin/plugin.json
+  bd980ac55330ae84 1-13
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "88b40c7662937bba863b9e76ff3d1ddf8aa7b094",
+  "prompts": {
+    "bd980ac55330ae84": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "72b83295-cb18-4d8a-b375-00b4a095ae9c",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 13,
+      "total_deletions": 0,
+      "accepted_lines": 13,
+      "overriden_lines": 0
+    },
+    "d2c82e4e7222c393": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "444608fc-6897-4fc4-a95d-20328e694b01",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 56,
+      "overriden_lines": 0
+    }
+  }
+}
