@@ -1,4 +1,4 @@
-import type { Config, Lock } from './schemas.js'
+import type { Config, Lock, LockEntry } from './schemas.js'
 import { createHash } from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -129,4 +129,54 @@ export function writeLock(projectDir: string, lock: Lock): void {
   const file = getLockPath(projectDir)
   fs.mkdirSync(path.dirname(file), { recursive: true })
   fs.writeFileSync(file, sortedJSON(validated), 'utf-8')
+}
+
+/**
+ * Upsert a single entry into `.ask/ask.lock`. Updates `generatedAt` only when
+ * the entry actually changes (so byte-stable on no-op re-runs).
+ */
+export function upsertLockEntry(
+  projectDir: string,
+  name: string,
+  entry: LockEntry,
+): void {
+  const lock = readLock(projectDir)
+  const previous = lock.entries[name]
+  const changed = !previous
+    || sortedJSON(stripFetchedAt(previous)) !== sortedJSON(stripFetchedAt(entry))
+  const next: Lock = {
+    lockfileVersion: 1,
+    generatedAt: changed ? new Date().toISOString() : lock.generatedAt,
+    entries: {
+      ...lock.entries,
+      [name]: entry,
+    },
+  }
+  writeLock(projectDir, next)
+}
+
+function stripFetchedAt(entry: LockEntry): Omit<LockEntry, 'fetchedAt'> {
+  const { fetchedAt: _, ...rest } = entry
+  return rest as Omit<LockEntry, 'fetchedAt'>
+}
+
+/**
+ * Remove one or more entries from the lock by name. No-op if absent.
+ */
+export function removeLockEntries(
+  projectDir: string,
+  names: string[],
+): void {
+  if (names.length === 0)
+    return
+  const lock = readLock(projectDir)
+  const set = new Set(names)
+  const remaining = Object.fromEntries(
+    Object.entries(lock.entries).filter(([k]) => !set.has(k)),
+  )
+  writeLock(projectDir, {
+    lockfileVersion: 1,
+    generatedAt: new Date().toISOString(),
+    entries: remaining,
+  })
 }

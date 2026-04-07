@@ -7,6 +7,7 @@ import type {
   SourceConfig,
   WebSourceOptions,
 } from './sources/index.js'
+import type { LockEntry } from './schemas.js'
 import process from 'node:process'
 import { defineCommand, runMain } from 'citty'
 import { consola } from 'consola'
@@ -16,10 +17,58 @@ import {
   loadConfig,
   removeDocEntry,
 } from './config.js'
+import { contentHash, upsertLockEntry } from './io.js'
 import { parseEcosystem, resolveFromRegistry } from './registry.js'
 import { generateSkill, removeSkill } from './skill.js'
 import { getSource } from './sources/index.js'
 import { listDocs, removeDocs, saveDocs } from './storage.js'
+
+function buildLockEntry(
+  config: SourceConfig,
+  result: { resolvedVersion: string, files: Array<{ path: string, content: string }>, meta?: { commit?: string, ref?: string, integrity?: string, tarball?: string, urls?: string[] } },
+): LockEntry {
+  const fetchedAt = new Date().toISOString()
+  const hashFiles = result.files.map(f => ({
+    relpath: f.path,
+    bytes: new TextEncoder().encode(f.content),
+  }))
+  const base = {
+    version: result.resolvedVersion,
+    fetchedAt,
+    fileCount: result.files.length,
+    contentHash: contentHash(hashFiles),
+  }
+  const meta = result.meta ?? {}
+  switch (config.source) {
+    case 'github':
+      return {
+        ...base,
+        source: 'github',
+        repo: config.repo,
+        ref: meta.ref ?? config.tag ?? config.branch ?? 'main',
+        ...(meta.commit ? { commit: meta.commit } : {}),
+      }
+    case 'npm':
+      return {
+        ...base,
+        source: 'npm',
+        tarball: meta.tarball ?? '',
+        integrity: meta.integrity ?? '',
+      }
+    case 'web':
+      return {
+        ...base,
+        source: 'web',
+        urls: meta.urls ?? config.urls,
+      }
+    case 'llms-txt':
+      return {
+        ...base,
+        source: 'llms-txt',
+        url: (meta.urls ?? [])[0] ?? config.url,
+      }
+  }
+}
 
 function parseSpec(spec: string): { name: string, version: string } {
   const lastAt = spec.lastIndexOf('@')
@@ -153,7 +202,11 @@ const addCmd = defineCommand({
 
     const configEntry = { ...sourceConfig, version: result.resolvedVersion }
     addDocEntry(projectDir, configEntry)
-    consola.info('Config updated: .please/config.json')
+    consola.info('Config updated: .ask/config.json')
+
+    const lockEntry = buildLockEntry(sourceConfig, result)
+    upsertLockEntry(projectDir, libName, lockEntry)
+    consola.info('Lock updated: .ask/ask.lock')
 
     const skillPath = generateSkill(
       projectDir,
