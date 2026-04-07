@@ -14,7 +14,7 @@ const strategySchema = z.object({
 })
 
 const aliasSchema = z.object({
-  ecosystem: z.enum(['npm', 'pypi', 'pub', 'go', 'crates', 'hex', 'nuget']),
+  ecosystem: z.enum(['npm', 'pypi', 'pub', 'go', 'crates', 'hex', 'nuget', 'maven']),
   name: z.string(),
 })
 

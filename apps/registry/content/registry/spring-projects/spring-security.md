@@ -4,6 +4,9 @@ description: Authentication and access-control framework for Spring
 repo: spring-projects/spring-security
 homepage: https://spring.io/projects/spring-security
 license: Apache-2.0
+aliases:
+  - ecosystem: maven
+    name: spring-security
 tags: [java, spring, security, authentication, authorization]
 ---
 

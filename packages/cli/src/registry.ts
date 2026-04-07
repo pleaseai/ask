@@ -149,6 +149,9 @@ function detectEcosystem(projectDir: string): string {
     ['go.mod', 'go'],
     ['Cargo.toml', 'crates'],
     ['mix.exs', 'hex'],
+    ['pom.xml', 'maven'],
+    ['build.gradle', 'maven'],
+    ['build.gradle.kts', 'maven'],
   ]
 
   for (const [file, ecosystem] of checks) {
