@@ -16,7 +16,7 @@ This single command:
 
 1. Looks up the library in the [ASK Registry](https://ask-registry.pages.dev) for optimal source config
 2. Downloads the library's documentation from the resolved source
-3. Saves it to `.please/docs/<library>@<version>/`
+3. Saves it to `.ask/docs/<library>@<version>/`
 4. Creates a Claude Code skill in `.claude/skills/<library>-docs/SKILL.md`
 5. Generates/updates `AGENTS.md` with instructions for AI agents
 
@@ -58,7 +58,8 @@ ask docs add mylib@1.0 -s web --url https://mylib.dev/docs
 ask docs sync
 ```
 
-Re-downloads all libraries listed in `.please/config.json`.
+Re-downloads all libraries listed in `.ask/config.json` and updates `.ask/ask.lock`.
+Entries whose content has not changed since the last fetch are skipped.
 
 ### List downloaded docs
 

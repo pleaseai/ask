@@ -18,6 +18,7 @@ import {
   removeDocEntry,
 } from './config.js'
 import { contentHash, readLock, upsertLockEntry } from './io.js'
+import { migrateLegacyWorkspace } from './migrate-legacy.js'
 import { parseEcosystem, resolveFromRegistry } from './registry.js'
 import { generateSkill, removeSkill } from './skill.js'
 import { getSource } from './sources/index.js'
@@ -151,6 +152,7 @@ const addCmd = defineCommand({
   },
   async run({ args }) {
     const projectDir = process.cwd()
+    migrateLegacyWorkspace(projectDir)
     const { spec: cleanSpec } = parseEcosystem(args.spec)
     let sourceConfig: SourceConfig
 
@@ -227,6 +229,7 @@ const syncCmd = defineCommand({
   meta: { name: 'sync', description: 'Refresh docs from .ask/config.json, using .ask/ask.lock as the drift baseline' },
   async run() {
     const projectDir = process.cwd()
+    migrateLegacyWorkspace(projectDir)
     const config = loadConfig(projectDir)
     const lock = readLock(projectDir)
 
@@ -293,6 +296,7 @@ const listCmd = defineCommand({
   meta: { name: 'list', description: 'List downloaded documentation' },
   run() {
     const projectDir = process.cwd()
+    migrateLegacyWorkspace(projectDir)
     const entries = listDocs(projectDir)
 
     if (entries.length === 0) {
@@ -314,6 +318,7 @@ const removeCmd = defineCommand({
   },
   run({ args }) {
     const projectDir = process.cwd()
+    migrateLegacyWorkspace(projectDir)
     const { name, version } = parseSpec(args.spec)
     const hasExplicitVersion = args.spec.lastIndexOf('@') > 0
     const ver = hasExplicitVersion ? version : undefined

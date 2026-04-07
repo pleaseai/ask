@@ -26,7 +26,7 @@ Developer runs:  ask docs add next@canary
       └──────────┘ └────────┘ └──────┘
             │          │          │
             ▼          ▼          ▼
-      Config from   Download   .please/docs/
+      Config from   Download   .ask/docs/
       API or flags  docs       AGENTS.md
                                .claude/skills/
 ```
@@ -54,8 +54,8 @@ src/
 │   ├── npm.ts        # NpmSource — downloads npm tarballs, extracts docs
 │   ├── github.ts     # GithubSource — downloads GitHub repo archives
 │   └── web.ts        # WebSource — crawls HTML, converts to Markdown
-├── storage.ts        # Saves docs to .please/docs/<name>@<version>/, creates INDEX.md
-├── config.ts         # Persists source config to .please/config.json
+├── storage.ts        # Saves docs to .ask/docs/<name>@<version>/, creates INDEX.md
+├── config.ts         # Persists source config to .ask/config.json
 ├── skill.ts          # Generates .claude/skills/<name>-docs/SKILL.md
 └── agents.ts         # Generates/updates AGENTS.md + references in CLAUDE.md
 ```
@@ -65,8 +65,8 @@ src/
 1. **Parse** — `index.ts` parses spec string (`npm:zod@3.22` → ecosystem, name, version)
 2. **Resolve** — `registry.ts` fetches strategy from Registry API (if no `--source` flag)
 3. **Fetch** — `sources/*.ts` downloads docs via the appropriate adapter
-4. **Store** — `storage.ts` writes files to `.please/docs/<name>@<version>/`
-5. **Configure** — `config.ts` saves entry to `.please/config.json` for later `sync`
+4. **Store** — `storage.ts` writes files to `.ask/docs/<name>@<version>/`
+5. **Configure** — `config.ts` saves entry to `.ask/config.json` for later `sync`
 6. **Skill** — `skill.ts` generates `.claude/skills/<name>-docs/SKILL.md`
 7. **Agents** — `agents.ts` updates `AGENTS.md` with all downloaded doc references
 
