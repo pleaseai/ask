@@ -19,6 +19,7 @@
   },
   "devDependencies": {
     "@pleaseai/eslint-config": "^0.0.1",
+    "@vercel/config": "^0.1.0",
     "eslint": "^10.1.0",
     "jiti": "^2.6.1",
     "typescript": "^5.7.0"

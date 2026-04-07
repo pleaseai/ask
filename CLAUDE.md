@@ -52,6 +52,7 @@ node packages/cli/dist/index.js docs add <spec> -s <source> [options]
 - `apps/registry/server/api/` does not exist. Registry API is provided by Nuxt Content collection auto-API; custom response transforms need a Nitro plugin or new server route.
 - GitHub repo `pleaseai/ask` has no `type/*` or `status/*` labels created. `gh issue create --label type/feature` fails with "label not found". Create the labels first or omit `--label`.
 - A PreToolUse Bash hook blocks shell commands when the current commit has no recorded review. Run `/review:code-review` (or `/review:run-cubic` / `/review:run-gemini`) and let it call `save-review-state.sh` before further bash.
+- `apps/registry/` uses `vercel.ts` (programmatic config via `@vercel/config` devDep), not `vercel.json`. Use `git.deploymentEnabled` (not deprecated `github.enabled`) to control auto-deploy.
 - Track artifacts live under `.please/docs/tracks/active/{slug}-{YYYYMMDD}/` with `spec.md`, `plan.md`, `metadata.json`. Append a JSON line to `.please/docs/tracks.jsonl` when creating a track.
 
 ## CLI Architecture (packages/cli/)
