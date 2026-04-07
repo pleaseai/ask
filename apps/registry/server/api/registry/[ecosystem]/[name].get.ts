@@ -28,7 +28,7 @@ function expandStrategies(entry: {
     if (docsPath) s.docsPath = docsPath
     return [s]
   }
-  return []
+  throw new Error('Registry entry requires at least one of `repo` or `strategies`')
 }
 
 export default defineEventHandler(async (event) => {
@@ -51,6 +51,21 @@ export default defineEventHandler(async (event) => {
 
   const entry = entries[0]
 
+  let strategies: Strategy[]
+  try {
+    strategies = expandStrategies({
+      repo: entry.repo,
+      docsPath: entry.docsPath,
+      strategies: entry.strategies,
+    })
+  }
+  catch (error) {
+    throw createError({
+      statusCode: 422,
+      statusMessage: `Misconfigured registry entry ${ecosystem}/${name}: ${(error as Error).message}`,
+    })
+  }
+
   return {
     name: entry.name,
     ecosystem: entry.ecosystem,
@@ -59,11 +74,7 @@ export default defineEventHandler(async (event) => {
     homepage: entry.homepage,
     license: entry.license,
     docsPath: entry.docsPath,
-    strategies: expandStrategies({
-      repo: entry.repo,
-      docsPath: entry.docsPath,
-      strategies: entry.strategies,
-    }),
+    strategies,
     tags: entry.tags,
   }
 })

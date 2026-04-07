@@ -172,7 +172,8 @@ export async function fetchRegistryEntry(
     const data = await response.json() as RegistryEntry
     return data
   }
-  catch {
+  catch (error) {
+    consola.debug(`Registry lookup failed for ${ecosystem}/${name}:`, error)
     return null
   }
 }
@@ -196,6 +197,9 @@ const SOURCE_PRIORITY: Record<RegistryStrategy['source'], number> = {
  * order for ties (stable sort).
  */
 export function selectBestStrategy(strategies: RegistryStrategy[]): RegistryStrategy {
+  if (strategies.length === 0) {
+    throw new Error('selectBestStrategy requires at least one strategy')
+  }
   // Stable sort by priority — lower priority value wins
   const indexed = Array.from(strategies, (s, i) => ({ s, i }))
   indexed.sort((a, b) => {
@@ -231,13 +235,16 @@ export async function resolveFromRegistry(
     return null
   }
 
-  const strategies = expandStrategies({
-    repo: entry.repo,
-    docsPath: entry.docsPath,
-    strategies: entry.strategies,
-  })
-
-  if (strategies.length === 0) {
+  let strategies: RegistryStrategy[]
+  try {
+    strategies = expandStrategies({
+      repo: entry.repo,
+      docsPath: entry.docsPath,
+      strategies: entry.strategies,
+    })
+  }
+  catch (error) {
+    consola.warn(`Registry entry for ${name} is misconfigured: ${(error as Error).message}`)
     return null
   }
 
