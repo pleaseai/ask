@@ -46,3 +46,29 @@ The `add` command in `src/index.ts` branches on the parsed `kind`:
 
 - None. Independently shippable.
 - Can run in parallel with `registry-meta-20260407` and `ecosystem-resolvers-20260407`.
+
+## Outcomes & Retrospective
+
+### What Was Shipped
+
+- `parseDocSpec` discriminated union in `packages/cli/src/registry.ts` covering `github` / `ecosystem` / `name` shapes
+- github fast-path branch in `packages/cli/src/index.ts` `add` command — skips registry lookup entirely when input matches `owner/repo[@ref]`
+- 25 unit tests (16 shape tests + 9 regression tests for the 6 shipped registry entries)
+- README updated with the identifier-syntax table
+- PR #10
+
+### What Went Well
+
+- Clean separation: `parseDocSpec` is pure, no I/O, fully unit-testable
+- The `parseSpec` collision the plan worried about did not materialize because the new export was named `parseDocSpec`; the local helper kept its name unchanged
+- Regression test (T-6) is enumerated, not derived — surfaces immediately if a future registry entry accidentally matches the github shape
+
+### What Could Improve
+
+- `parseEcosystem` is now redundant in the `add` flow (parseDocSpec handles its job) but kept for caller compatibility — could be removed in a follow-up
+- T-4 real-network smoke test deferred — should be added once an offline-friendly fixture or mocked github source is available
+
+### Tech Debt Created
+
+- `parseEcosystem` redundancy in `registry.ts` (low priority, isolated)
+- `parseSpec` local helper in `index.ts` is now only used by the `remove` command — candidate for inlining
