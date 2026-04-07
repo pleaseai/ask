@@ -87,8 +87,39 @@ export async function fetchRegistryEntry(
 }
 
 /**
+ * Source type priority for selecting the best strategy from a registry entry.
+ *
+ * Lower number = higher priority. Based on Nuxt UI eval results (2026-04-07):
+ * GitHub docs achieved 100% pass rate at lowest cost, while llms.txt scored
+ * below baseline. See evals/nuxt-ui/README.md for full methodology.
+ */
+const SOURCE_PRIORITY: Record<RegistryStrategy['source'], number> = {
+  'github': 0,
+  'npm': 1,
+  'web': 2,
+  'llms-txt': 3,
+}
+
+/**
+ * Pick the highest-priority strategy from a list, preserving the original
+ * order for ties (stable sort).
+ */
+export function selectBestStrategy(strategies: RegistryStrategy[]): RegistryStrategy {
+  // Stable sort by priority — lower priority value wins
+  const indexed = Array.from(strategies, (s, i) => ({ s, i }))
+  indexed.sort((a, b) => {
+    const pa = SOURCE_PRIORITY[a.s.source] ?? 99
+    const pb = SOURCE_PRIORITY[b.s.source] ?? 99
+    if (pa !== pb)
+      return pa - pb
+    return a.i - b.i
+  })
+  return indexed[0].s
+}
+
+/**
  * Resolve source config from registry.
- * Returns the first strategy from the registry entry.
+ * Returns the highest-priority strategy from the registry entry.
  */
 export async function resolveFromRegistry(
   input: string,
@@ -111,10 +142,13 @@ export async function resolveFromRegistry(
 
   consola.success(`Found ${entry.name} in registry: ${entry.description}`)
 
+  const strategy = selectBestStrategy(entry.strategies)
+  consola.info(`Using source: ${strategy.source}`)
+
   return {
     ecosystem,
     name: entry.name,
     version,
-    strategy: entry.strategies[0],
+    strategy,
   }
 }

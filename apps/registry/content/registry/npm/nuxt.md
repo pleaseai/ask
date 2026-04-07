@@ -3,11 +3,11 @@ name: nuxt
 ecosystem: npm
 description: The Intuitive Vue Framework
 strategies:
-  - source: llms-txt
-    url: https://nuxt.com/llms.txt
   - source: github
     repo: nuxt/nuxt
     docsPath: docs
+  - source: llms-txt
+    url: https://nuxt.com/llms.txt
 tags: [vue, framework, ssr, nitro]
 ---
 
