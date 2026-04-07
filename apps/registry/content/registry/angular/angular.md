@@ -7,7 +7,15 @@ homepage: https://angular.dev
 license: MIT
 aliases:
   - ecosystem: npm
-    name: angular
+    name: '@angular/core'
+  - ecosystem: npm
+    name: '@angular/common'
+  - ecosystem: npm
+    name: '@angular/router'
+  - ecosystem: npm
+    name: '@angular/forms'
+  - ecosystem: npm
+    name: '@angular/platform-browser'
 tags: [typescript, framework, spa, google]
 ---
 

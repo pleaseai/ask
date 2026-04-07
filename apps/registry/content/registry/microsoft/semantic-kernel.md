@@ -6,8 +6,10 @@ homepage: https://learn.microsoft.com/semantic-kernel
 license: MIT
 aliases:
   - ecosystem: nuget
-    name: semantic-kernel
+    name: Microsoft.SemanticKernel
   - ecosystem: pypi
+    name: semantic-kernel
+  - ecosystem: maven
     name: semantic-kernel
 tags: [ai, llm, microsoft, dotnet, python, orchestration]
 ---

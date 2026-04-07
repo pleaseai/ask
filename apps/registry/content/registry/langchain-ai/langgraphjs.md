@@ -7,7 +7,9 @@ homepage: https://langchain-ai.github.io/langgraphjs/
 license: MIT
 aliases:
   - ecosystem: npm
-    name: langgraphjs
+    name: '@langchain/langgraph'
+  - ecosystem: npm
+    name: '@langchain/langgraph-sdk'
 tags: [ai, agents, langchain, graph, typescript]
 ---
 

@@ -7,6 +7,10 @@ license: MIT
 aliases:
   - ecosystem: npm
     name: vue
+  - ecosystem: npm
+    name: '@vue/reactivity'
+  - ecosystem: npm
+    name: '@vue/compiler-sfc'
 tags: [framework, reactive, components, spa]
 ---
 

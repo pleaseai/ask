@@ -7,7 +7,7 @@ homepage: https://modelcontextprotocol.io
 license: MIT
 aliases:
   - ecosystem: npm
-    name: mcp-typescript-sdk
+    name: '@modelcontextprotocol/sdk'
 tags: [mcp, ai, agents, typescript, sdk]
 ---
 
