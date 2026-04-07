@@ -1,0 +1,46 @@
+apps/registry/content/registry/vuejs/core.md
+  ccda89fc721d2918 10-13
+apps/registry/content/registry/facebook/react.md
+  ccda89fc721d2918 10-13
+apps/registry/content/registry/angular/angular.md
+  ccda89fc721d2918 10-18
+apps/registry/content/registry/langchain-ai/langgraphjs.md
+  ccda89fc721d2918 10-12
+apps/registry/content/registry/microsoft/semantic-kernel.md
+  ccda89fc721d2918 9,12
+apps/registry/content/registry/modelcontextprotocol/typescript-sdk.md
+  ccda89fc721d2918 10
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "6bc935771167da25484546ab861ab74e91f38adc",
+  "prompts": {
+    "ccda89fc721d2918": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7ed5a97f-cace-4947-81b4-4ca237b525ca",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 24,
+      "total_deletions": 4,
+      "accepted_lines": 152,
+      "overriden_lines": 0
+    },
+    "d2c82e4e7222c393": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "444608fc-6897-4fc4-a95d-20328e694b01",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 56,
+      "overriden_lines": 0
+    }
+  }
+}
