@@ -23,7 +23,7 @@ import {
 } from './config.js'
 import { contentHash, getConfigPath, getLockPath, readLock, upsertLockEntry } from './io.js'
 import { migrateLegacyWorkspace } from './migrate-legacy.js'
-import { parseEcosystem, resolveFromRegistry } from './registry.js'
+import { parseDocSpec, parseEcosystem, resolveFromRegistry } from './registry.js'
 import { generateSkill, removeSkill } from './skill.js'
 import { getSource } from './sources/index.js'
 import { listDocs, removeDocs, saveDocs } from './storage.js'
@@ -157,10 +157,28 @@ const addCmd = defineCommand({
   async run({ args }) {
     const projectDir = process.cwd()
     migrateLegacyWorkspace(projectDir)
+    const parsed = parseDocSpec(args.spec)
     const { spec: cleanSpec } = parseEcosystem(args.spec)
     let sourceConfig: SourceConfig
 
-    if (args.source) {
+    // github fast-path: `owner/repo[@ref]` skips the registry entirely.
+    // Only triggered when no explicit --source override was passed.
+    if (!args.source && parsed.kind === 'github') {
+      const { owner, repo, ref } = parsed
+      const repoSpec = `${owner}/${repo}`
+      const version = ref ?? 'latest'
+      consola.start(`Downloading ${repoSpec}${ref ? `@${ref}` : ''} docs (source: github)...`)
+      sourceConfig = {
+        source: 'github',
+        name: repo,
+        version,
+        repo: repoSpec,
+        // `ref` is opaque — let the github source resolve tag-vs-branch.
+        tag: ref,
+        docsPath: args.docsPath,
+      } satisfies GithubSourceOptions
+    }
+    else if (args.source) {
       // Explicit source — use manual config
       const { name, version } = parseSpec(cleanSpec)
       const urls = args.url ? [args.url] : undefined

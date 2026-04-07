@@ -42,6 +42,88 @@ export function parseEcosystem(input: string): { ecosystem: string | undefined, 
 }
 
 /**
+ * Parsed identifier passed to `ask docs add`.
+ *
+ * Three shapes are supported:
+ *   - `owner/repo[@ref]`        → github fast-path (no registry lookup)
+ *   - `ecosystem:name[@version]` → registry lookup with explicit ecosystem
+ *   - `name[@version]`          → registry lookup with auto-detected ecosystem
+ */
+export type ParsedDocSpec
+  = | { kind: 'github', owner: string, repo: string, ref?: string }
+    | { kind: 'ecosystem', ecosystem: string, name: string, version: string }
+    | { kind: 'name', name: string, version: string }
+
+function splitNameVersion(spec: string): { name: string, version: string } {
+  const lastAt = spec.lastIndexOf('@')
+  if (lastAt > 0) {
+    return {
+      name: spec.substring(0, lastAt),
+      version: spec.substring(lastAt + 1),
+    }
+  }
+  return { name: spec, version: 'latest' }
+}
+
+/**
+ * Parse a `docs add` identifier into a discriminated union.
+ *
+ * Disambiguation rules (checked in order):
+ *   1. Contains `/` and no `:` → github (`owner/repo[@ref]`).
+ *      Exactly one slash is required; more is an error. Empty owner or repo
+ *      is also an error.
+ *   2. Contains `:` (with non-empty prefix) → ecosystem (`prefix:name[@version]`).
+ *   3. Otherwise → bare name (`name[@version]`).
+ *
+ * @throws Error when input is empty or has malformed `owner/repo` shape.
+ */
+export function parseDocSpec(input: string): ParsedDocSpec {
+  if (!input) {
+    throw new Error('docs spec is empty — expected `owner/repo`, `ecosystem:name`, or `name`')
+  }
+
+  // 1. github shape: owner/repo[@ref]
+  if (input.includes('/')) {
+    const parts = input.split('/')
+    if (parts.length !== 2) {
+      throw new Error(
+        `invalid docs spec '${input}': github shorthand must contain exactly one slash (owner/repo)`,
+      )
+    }
+    const [owner, repoAndRef] = parts
+    if (!owner) {
+      throw new Error(`invalid docs spec '${input}': owner segment is empty`)
+    }
+    if (!repoAndRef) {
+      throw new Error(`invalid docs spec '${input}': repo segment is empty`)
+    }
+    const atIdx = repoAndRef.indexOf('@')
+    if (atIdx >= 0) {
+      const repo = repoAndRef.substring(0, atIdx)
+      const ref = repoAndRef.substring(atIdx + 1)
+      if (!repo) {
+        throw new Error(`invalid docs spec '${input}': repo segment is empty`)
+      }
+      return ref ? { kind: 'github', owner, repo, ref } : { kind: 'github', owner, repo }
+    }
+    return { kind: 'github', owner, repo: repoAndRef }
+  }
+
+  // 2. ecosystem shape: prefix:name[@version]
+  const colonIdx = input.indexOf(':')
+  if (colonIdx > 0) {
+    const ecosystem = input.substring(0, colonIdx)
+    const rest = input.substring(colonIdx + 1)
+    const { name, version } = splitNameVersion(rest)
+    return { kind: 'ecosystem', ecosystem, name, version }
+  }
+
+  // 3. bare name: name[@version]
+  const { name, version } = splitNameVersion(input)
+  return { kind: 'name', name, version }
+}
+
+/**
  * Detect ecosystem from project files in cwd.
  */
 function detectEcosystem(projectDir: string): string {
