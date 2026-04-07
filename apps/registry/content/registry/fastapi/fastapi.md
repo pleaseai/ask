@@ -1,10 +1,13 @@
 ---
-name: fastapi
-ecosystem: pypi
+name: FastAPI
 description: High-performance Python web framework
 repo: fastapi/fastapi
+docsPath: docs
 homepage: https://fastapi.tiangolo.com
 license: MIT
+aliases:
+  - ecosystem: pypi
+    name: fastapi
 strategies:
   - source: github
     repo: fastapi/fastapi
@@ -19,4 +22,4 @@ tags: [python, api, async, web]
 
 # FastAPI
 
-High-performance Python web framework. Documentation can be fetched from the GitHub docs directory or crawled from the official website.
+High-performance Python web framework.

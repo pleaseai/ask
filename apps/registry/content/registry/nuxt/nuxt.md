@@ -1,10 +1,13 @@
 ---
-name: nuxt
-ecosystem: npm
+name: Nuxt
 description: The Intuitive Vue Framework
 repo: nuxt/nuxt
+docsPath: docs
 homepage: https://nuxt.com
 license: MIT
+aliases:
+  - ecosystem: npm
+    name: nuxt
 strategies:
   - source: github
     repo: nuxt/nuxt
@@ -16,7 +19,7 @@ tags: [vue, framework, ssr, nitro]
 
 # Nuxt
 
-The Intuitive Vue Framework. Full documentation available as llms.txt at nuxt.com.
+The Intuitive Vue Framework.
 
 ## Version notes
 - `latest`: Nuxt 3 stable

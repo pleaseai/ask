@@ -18,14 +18,19 @@ export interface RegistryStrategy {
   allowedPathPrefix?: string
 }
 
+export interface RegistryAlias {
+  ecosystem: string
+  name: string
+}
+
 export interface RegistryEntry {
   name: string
-  ecosystem: string
   description: string
-  repo?: string
+  repo: string
+  docsPath?: string
   homepage?: string
   license?: string
-  docsPath?: string
+  aliases?: RegistryAlias[]
   strategies: RegistryStrategy[]
   tags?: string[]
 }
@@ -157,12 +162,15 @@ function detectEcosystem(projectDir: string): string {
 
 /**
  * Fetch registry entry from the registry API.
+ *
+ * Accepts either `(owner, repo)` for direct lookup or `(ecosystem, name)`
+ * for alias-based lookup — the API handles both patterns via catch-all slug.
  */
 export async function fetchRegistryEntry(
-  ecosystem: string,
-  name: string,
+  first: string,
+  second: string,
 ): Promise<RegistryEntry | null> {
-  const url = `${REGISTRY_BASE_URL}/api/registry/${ecosystem}/${name}`
+  const url = `${REGISTRY_BASE_URL}/api/registry/${first}/${second}`
 
   try {
     const response = await fetch(url)
@@ -173,7 +181,7 @@ export async function fetchRegistryEntry(
     return data
   }
   catch (error) {
-    consola.debug(`Registry lookup failed for ${ecosystem}/${name}:`, error)
+    consola.debug(`Registry lookup failed for ${first}/${second}:`, error)
     return null
   }
 }

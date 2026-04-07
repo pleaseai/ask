@@ -23,7 +23,7 @@ import {
 } from './config.js'
 import { contentHash, getConfigPath, getLockPath, readLock, upsertLockEntry } from './io.js'
 import { migrateLegacyWorkspace } from './migrate-legacy.js'
-import { parseDocSpec, parseEcosystem, resolveFromRegistry } from './registry.js'
+import { fetchRegistryEntry, parseDocSpec, parseEcosystem, resolveFromRegistry } from './registry.js'
 import { getResolver } from './resolvers/index.js'
 import { generateSkill, removeSkill } from './skill.js'
 import { getSource } from './sources/index.js'
@@ -162,26 +162,33 @@ const addCmd = defineCommand({
     const { spec: cleanSpec } = parseEcosystem(args.spec)
     let sourceConfig: SourceConfig
 
-    // github fast-path: `owner/repo[@ref]` skips the registry entirely.
+    // github fast-path: `owner/repo[@ref]` — try registry for docsPath,
+    // then fall back to bare repo download.
     // Only triggered when no explicit --source override was passed.
     if (!args.source && parsed.kind === 'github') {
       const { owner, repo, ref } = parsed
       const repoSpec = `${owner}/${repo}`
       const version = ref ?? 'latest'
-      // Stored library name includes the owner so two repos that share a
-      // bare name (e.g. `vercel/next.js` and `another/next.js`) don't
-      // collide on disk / config / lock. Slash is replaced with `-`
-      // because the name is used as a directory segment.
       const libName = `${owner}-${repo}`
+
+      // Enrich with registry metadata (docsPath, strategies) when available
+      let docsPath = args.docsPath
+      if (!docsPath) {
+        const entry = await fetchRegistryEntry(owner, repo)
+        if (entry) {
+          consola.info(`Found ${entry.name} in registry`)
+          docsPath = entry.docsPath
+        }
+      }
+
       consola.start(`Downloading ${repoSpec}${ref ? `@${ref}` : ''} docs (source: github)...`)
       sourceConfig = {
         source: 'github',
         name: libName,
         version,
         repo: repoSpec,
-        // `ref` is opaque — let the github source resolve tag-vs-branch.
         tag: ref,
-        docsPath: args.docsPath,
+        docsPath,
       } satisfies GithubSourceOptions
     }
     else if (args.source) {

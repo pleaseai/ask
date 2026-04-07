@@ -1,10 +1,13 @@
 ---
-name: nuxt-ui
-ecosystem: npm
-description: A comprehensive Vue UI component library with 125+ accessible, production-ready Tailwind CSS components
+name: Nuxt UI
+description: Comprehensive Vue UI component library with 125+ accessible Tailwind CSS components
 repo: nuxt/ui
+docsPath: docs
 homepage: https://ui.nuxt.com
 license: MIT
+aliases:
+  - ecosystem: npm
+    name: nuxt-ui
 strategies:
   - source: github
     repo: nuxt/ui
@@ -13,13 +16,12 @@ strategies:
     url: https://ui.nuxt.com/llms.txt
   - source: llms-txt
     url: https://ui3.nuxt.com/llms.txt
-    version: '3'
 tags: [vue, nuxt, ui, components, tailwindcss]
 ---
 
 # Nuxt UI
 
-A comprehensive Vue UI component library (Nuxt optional) with 125+ accessible, production-ready, Tailwind CSS components. Full documentation available as llms.txt at ui.nuxt.com.
+Comprehensive Vue UI component library (Nuxt optional) with 125+ accessible, production-ready Tailwind CSS components.
 
 ## Version notes
 - `latest`: Nuxt UI v4 (ui.nuxt.com)

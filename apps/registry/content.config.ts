@@ -13,6 +13,11 @@ const strategySchema = z.object({
   allowedPathPrefix: z.string().optional(),
 })
 
+const aliasSchema = z.object({
+  ecosystem: z.enum(['npm', 'pypi', 'pub', 'go', 'crates', 'hex', 'nuget']),
+  name: z.string(),
+})
+
 export default defineContentConfig({
   collections: {
     content: defineCollection({
@@ -27,18 +32,15 @@ export default defineContentConfig({
       source: 'registry/**/*.md',
       schema: z.object({
         name: z.string(),
-        ecosystem: z.enum(['npm', 'pypi', 'pub', 'go', 'crates', 'hex', 'nuget']),
         description: z.string(),
-        repo: z.string().optional(),
+        repo: z.string().regex(/^[^/]+\/[^/]+$/, 'repo must be in "owner/name" form'),
+        docsPath: z.string().optional(),
         homepage: z.string().optional(),
         license: z.string().optional(),
-        docsPath: z.string().optional(),
+        aliases: z.array(aliasSchema).optional().default([]),
         strategies: z.array(strategySchema).optional().default([]),
         tags: z.array(z.string()).optional(),
-      }).refine(
-        data => (data.strategies && data.strategies.length > 0) || data.repo,
-        { message: 'At least one of `strategies` or `repo` is required' },
-      ),
+      }),
     }),
   },
 })

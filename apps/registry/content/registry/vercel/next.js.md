@@ -1,10 +1,13 @@
 ---
-name: next
-ecosystem: npm
+name: Next.js
 description: The React framework by Vercel
 repo: vercel/next.js
+docsPath: docs
 homepage: https://nextjs.org
 license: MIT
+aliases:
+  - ecosystem: npm
+    name: next
 strategies:
   - source: npm
     package: next
