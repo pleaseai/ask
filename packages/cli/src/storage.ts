@@ -1,9 +1,10 @@
 import type { DocFile } from './sources/index.js'
 import fs from 'node:fs'
 import path from 'node:path'
+import { getAskDir } from './io.js'
 
 export function getDocsDir(projectDir: string): string {
-  return path.join(projectDir, '.please', 'docs')
+  return path.join(getAskDir(projectDir), 'docs')
 }
 
 export function getLibraryDocsDir(

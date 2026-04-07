@@ -1,12 +1,15 @@
 #!/usr/bin/env node
 
+import type { LockEntry } from './schemas.js'
 import type {
+  FetchResult,
   GithubSourceOptions,
   LlmsTxtSourceOptions,
   NpmSourceOptions,
   SourceConfig,
   WebSourceOptions,
 } from './sources/index.js'
+import path from 'node:path'
 import process from 'node:process'
 import { defineCommand, runMain } from 'citty'
 import { consola } from 'consola'
@@ -16,10 +19,59 @@ import {
   loadConfig,
   removeDocEntry,
 } from './config.js'
+import { contentHash, getConfigPath, getLockPath, readLock, upsertLockEntry } from './io.js'
+import { migrateLegacyWorkspace } from './migrate-legacy.js'
 import { parseEcosystem, resolveFromRegistry } from './registry.js'
 import { generateSkill, removeSkill } from './skill.js'
 import { getSource } from './sources/index.js'
 import { listDocs, removeDocs, saveDocs } from './storage.js'
+
+function buildLockEntry(config: SourceConfig, result: FetchResult): LockEntry {
+  const base = {
+    version: result.resolvedVersion,
+    fetchedAt: new Date().toISOString(),
+    fileCount: result.files.length,
+    contentHash: contentHash(
+      result.files.map(f => ({ relpath: f.path, content: f.content })),
+    ),
+  }
+  const meta = result.meta ?? {}
+  switch (config.source) {
+    case 'github':
+      return {
+        ...base,
+        source: 'github',
+        repo: config.repo,
+        ref: meta.ref ?? config.tag ?? config.branch ?? 'main',
+        ...(meta.commit ? { commit: meta.commit } : {}),
+      }
+    case 'npm':
+      if (!meta.tarball) {
+        throw new Error(
+          `npm source did not return a tarball URL for ${config.name}@${result.resolvedVersion}. `
+          + 'Cannot record lockfile entry without it.',
+        )
+      }
+      return {
+        ...base,
+        source: 'npm',
+        tarball: meta.tarball,
+        ...(meta.integrity ? { integrity: meta.integrity } : {}),
+      }
+    case 'web':
+      return {
+        ...base,
+        source: 'web',
+        urls: meta.urls ?? config.urls,
+      }
+    case 'llms-txt':
+      return {
+        ...base,
+        source: 'llms-txt',
+        url: (meta.urls ?? [])[0] ?? config.url,
+      }
+  }
+}
 
 function parseSpec(spec: string): { name: string, version: string } {
   const lastAt = spec.lastIndexOf('@')
@@ -102,6 +154,7 @@ const addCmd = defineCommand({
   },
   async run({ args }) {
     const projectDir = process.cwd()
+    migrateLegacyWorkspace(projectDir)
     const { spec: cleanSpec } = parseEcosystem(args.spec)
     let sourceConfig: SourceConfig
 
@@ -153,7 +206,11 @@ const addCmd = defineCommand({
 
     const configEntry = { ...sourceConfig, version: result.resolvedVersion }
     addDocEntry(projectDir, configEntry)
-    consola.info('Config updated: .please/config.json')
+    consola.info(`Config updated: ${path.relative(projectDir, getConfigPath(projectDir))}`)
+
+    const lockEntry = buildLockEntry(sourceConfig, result)
+    upsertLockEntry(projectDir, libName, lockEntry)
+    consola.info(`Lock updated: ${path.relative(projectDir, getLockPath(projectDir))}`)
 
     const skillPath = generateSkill(
       projectDir,
@@ -171,41 +228,74 @@ const addCmd = defineCommand({
 })
 
 const syncCmd = defineCommand({
-  meta: { name: 'sync', description: 'Download/update all docs from .please/config.json' },
+  meta: { name: 'sync', description: 'Refresh docs from .ask/config.json, using .ask/ask.lock as the drift baseline' },
   async run() {
     const projectDir = process.cwd()
+    migrateLegacyWorkspace(projectDir)
     const config = loadConfig(projectDir)
+    const lock = readLock(projectDir)
 
     if (config.docs.length === 0) {
-      consola.info('No docs configured in .please/config.json')
+      consola.info('No docs configured in .ask/config.json')
       return
     }
 
     consola.start(`Syncing ${config.docs.length} library docs...`)
 
+    let drifted = 0
+    let unchanged = 0
+    let failed = 0
+
     for (const entry of config.docs) {
       try {
-        consola.info(`  ${entry.name}@${entry.version} (${entry.source})...`)
+        consola.info(`  ${entry.name} (${entry.source})...`)
         const source = getSource(entry.source)
         const result = await source.fetch(entry)
+        const newLockEntry = buildLockEntry(entry, result)
+        const previousLock = lock.entries[entry.name]
+        const changed = !previousLock
+          || previousLock.contentHash !== newLockEntry.contentHash
+          || previousLock.version !== newLockEntry.version
 
+        if (!changed) {
+          unchanged++
+          consola.info(`  -> unchanged (v${result.resolvedVersion})`)
+          continue
+        }
+
+        // Drift confirmed. Order is intentional: every write that can throw
+        // (saveDocs, addDocEntry/Zod, upsertLockEntry/Zod) happens BEFORE the
+        // destructive removeDocs of the old version. A mid-flow failure
+        // leaves both directories on disk and the config/lock pointing at
+        // the old version — recoverable on the next sync. Reversing this
+        // order would let a failed write leave config pointing at a deleted
+        // directory.
         saveDocs(projectDir, entry.name, result.resolvedVersion, result.files)
+        addDocEntry(projectDir, { ...entry, version: result.resolvedVersion })
+        upsertLockEntry(projectDir, entry.name, newLockEntry)
+        if (previousLock && previousLock.version !== result.resolvedVersion) {
+          removeDocs(projectDir, entry.name, previousLock.version)
+        }
         generateSkill(
           projectDir,
           entry.name,
           result.resolvedVersion,
           result.files.map(f => f.path),
         )
-
-        consola.success(`  -> ${result.files.length} files (v${result.resolvedVersion})`)
+        drifted++
+        const fromVersion = previousLock?.version ?? '(new)'
+        consola.success(`  ⟳ ${fromVersion} → ${result.resolvedVersion} (${result.files.length} files)`)
       }
       catch (err) {
+        failed++
         consola.error(`  -> Error: ${err instanceof Error ? err.message : err}`)
       }
     }
 
     generateAgentsMd(projectDir)
-    consola.success('Sync complete. AGENTS.md updated.')
+    consola.success(
+      `Sync complete: ${drifted} re-fetched, ${unchanged} unchanged, ${failed} failed. AGENTS.md updated.`,
+    )
   },
 })
 
@@ -213,6 +303,7 @@ const listCmd = defineCommand({
   meta: { name: 'list', description: 'List downloaded documentation' },
   run() {
     const projectDir = process.cwd()
+    migrateLegacyWorkspace(projectDir)
     const entries = listDocs(projectDir)
 
     if (entries.length === 0) {
@@ -234,6 +325,7 @@ const removeCmd = defineCommand({
   },
   run({ args }) {
     const projectDir = process.cwd()
+    migrateLegacyWorkspace(projectDir)
     const { name, version } = parseSpec(args.spec)
     const hasExplicitVersion = args.spec.lastIndexOf('@') > 0
     const ver = hasExplicitVersion ? version : undefined

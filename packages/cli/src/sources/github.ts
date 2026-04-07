@@ -5,12 +5,15 @@ import type {
   GithubSourceOptions,
   SourceConfig,
 } from './index.js'
-import { execSync } from 'node:child_process'
+import { execFileSync, execSync } from 'node:child_process'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
+import { consola } from 'consola'
 
 const RE_LEADING_V = /^v/
+const RE_SHA40 = /^[0-9a-f]{40}$/
+const RE_WHITESPACE = /\s+/
 
 export class GithubSource implements DocSource {
   async fetch(options: SourceConfig): Promise<FetchResult> {
@@ -60,7 +63,13 @@ export class GithubSource implements DocSource {
       else {
         files = this.collectDocFiles(docsDir, docsDir)
       }
-      return { files, resolvedVersion }
+
+      const commit = this.resolveCommit(repo, ref)
+      return {
+        files,
+        resolvedVersion,
+        meta: { commit, ref },
+      }
     }
     finally {
       fs.rmSync(tmpDir, { recursive: true, force: true })
@@ -95,6 +104,37 @@ export class GithubSource implements DocSource {
     }
 
     return files
+  }
+
+  /**
+   * Resolve a ref (tag or branch) to a full commit sha via `git ls-remote`.
+   * Returns undefined when git is unavailable or the ref cannot be resolved
+   * — the lockfile leaves `commit` undefined rather than guessing.
+   */
+  private resolveCommit(repo: string, ref: string): string | undefined {
+    try {
+      // execFileSync (not execSync) to bypass the shell — `ref` originates
+      // from user-supplied tag/branch and must not be interpolated into a
+      // shell command line.
+      const out = execFileSync(
+        'git',
+        ['ls-remote', `https://github.com/${repo}.git`, ref],
+        { encoding: 'utf-8', stdio: ['ignore', 'pipe', 'ignore'] },
+      ).trim()
+      // ls-remote may return multiple lines (e.g. tag + ^{} dereference).
+      // Prefer the dereferenced commit if present.
+      const lines = out.split('\n').filter(Boolean)
+      const dereferenced = lines.find(l => l.includes(`refs/tags/${ref}^{}`))
+      const sha = (dereferenced ?? lines[0])?.split(RE_WHITESPACE)[0]
+      return sha && RE_SHA40.test(sha) ? sha : undefined
+    }
+    catch (err) {
+      consola.warn(
+        `Could not resolve commit for ${repo}@${ref}: ${err instanceof Error ? err.message : err}. `
+        + 'Lockfile will not pin a commit sha for this entry.',
+      )
+      return undefined
+    }
   }
 
   private isDocFile(filename: string): boolean {

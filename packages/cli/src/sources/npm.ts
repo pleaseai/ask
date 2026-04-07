@@ -26,6 +26,17 @@ export class NpmSource implements DocSource {
       encoding: 'utf-8',
     }).trim()
 
+    const integrity = (() => {
+      try {
+        return execSync(`npm view ${spec} dist.integrity`, {
+          encoding: 'utf-8',
+        }).trim() || undefined
+      }
+      catch {
+        return undefined
+      }
+    })()
+
     // Download and extract tarball
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ask-npm-'))
 
@@ -60,7 +71,11 @@ export class NpmSource implements DocSource {
       else {
         files = this.collectMarkdownFiles(docsDir, docsDir)
       }
-      return { files, resolvedVersion }
+      return {
+        files,
+        resolvedVersion,
+        meta: { tarball: tarballUrl, integrity },
+      }
     }
     finally {
       fs.rmSync(tmpDir, { recursive: true, force: true })
