@@ -243,6 +243,7 @@ const addCmd = defineCommand({
       else {
         consola.error(`'${args.spec}' not found in registry. Use --source to specify manually.`)
         process.exit(1)
+        return // unreachable — hints TS that control flow ends
       }
     }
 

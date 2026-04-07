@@ -34,6 +34,7 @@ describe('PypiResolver', () => {
     expect(result).toEqual({
       repo: 'fastapi/fastapi',
       ref: 'v0.115.0',
+      fallbackRefs: ['0.115.0'],
       resolvedVersion: '0.115.0',
     })
   })

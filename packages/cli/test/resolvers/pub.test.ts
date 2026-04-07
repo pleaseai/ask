@@ -34,6 +34,7 @@ describe('PubResolver', () => {
     expect(result).toEqual({
       repo: 'rrousselGit/riverpod',
       ref: '2.6.1',
+      fallbackRefs: ['v2.6.1'],
       resolvedVersion: '2.6.1',
     })
   })
@@ -53,6 +54,7 @@ describe('PubResolver', () => {
     expect(result).toEqual({
       repo: 'rrousselGit/riverpod',
       ref: '2.5.0',
+      fallbackRefs: ['v2.5.0'],
       resolvedVersion: '2.5.0',
     })
   })

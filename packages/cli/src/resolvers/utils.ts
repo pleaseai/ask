@@ -1,4 +1,5 @@
-const RE_GITHUB_URL = /github\.com[/:]([^/]+)\/([^/.#?]+)/
+const RE_GITHUB_URL = /github\.com[/:]([^/]+)\/([^/#?\s]+)/
+const RE_DOT_GIT = /\.git$/
 
 /**
  * Parse a repository URL into `owner/repo` form.
@@ -22,6 +23,6 @@ export function parseRepoUrl(url: string | undefined | null): string | null {
     return null
 
   const owner = match[1]
-  const repo = match[2]
+  const repo = match[2].replace(RE_DOT_GIT, '')
   return `${owner}/${repo}`
 }

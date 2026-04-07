@@ -1,6 +1,9 @@
 import type { EcosystemResolver, ResolveResult } from './index.js'
 import { consola } from 'consola'
+import { maxSatisfying, validRange } from 'semver'
 import { parseRepoUrl } from './utils.js'
+
+const RE_SEMVER_RANGE_CHARS = /[~^>=<|]/g
 
 /**
  * npm registry API response (partial — only fields we need).
@@ -15,9 +18,9 @@ interface NpmPackageMeta {
  * Resolve an npm package to a GitHub repo + git tag.
  *
  * 1. Fetch `https://registry.npmjs.org/<name>`
- * 2. If `version` is a dist-tag (e.g. `latest`, `canary`), resolve to semver
+ * 2. Resolve version: dist-tag → exact, semver range → best match, exact → passthrough
  * 3. Extract `repository.url` → `owner/repo`
- * 4. Try `v{version}` then `{version}` as the git ref
+ * 4. Return `v{version}` as the git ref
  */
 export class NpmResolver implements EcosystemResolver {
   async resolve(name: string, version: string): Promise<ResolveResult> {
@@ -29,12 +32,33 @@ export class NpmResolver implements EcosystemResolver {
 
     const meta = await response.json() as NpmPackageMeta
 
-    // Resolve dist-tag → semver
     const distTags = meta['dist-tags'] ?? {}
-    const resolvedVersion = distTags[version] ?? version
+    const allVersions = meta.versions ? Object.keys(meta.versions) : []
+
+    // Resolve version: dist-tag → semver range → exact
+    let resolvedVersion: string
+    if (distTags[version]) {
+      // dist-tag (e.g. 'latest', 'canary')
+      resolvedVersion = distTags[version]
+    }
+    else if (validRange(version) && version !== version.replace(RE_SEMVER_RANGE_CHARS, '')) {
+      // Semver range (e.g. '^15', '~3.22', '>=18.0.0')
+      const best = maxSatisfying(allVersions, version)
+      if (!best) {
+        throw new Error(
+          `No version matching '${version}' found for npm package '${name}'. `
+          + `Available dist-tags: ${Object.keys(distTags).join(', ')}`,
+        )
+      }
+      resolvedVersion = best
+    }
+    else {
+      // Exact version string
+      resolvedVersion = version
+    }
 
     // Verify the resolved version exists
-    if (meta.versions && !(resolvedVersion in meta.versions)) {
+    if (allVersions.length > 0 && !allVersions.includes(resolvedVersion)) {
       throw new Error(
         `Version '${resolvedVersion}' not found for npm package '${name}'. `
         + `Available dist-tags: ${Object.keys(distTags).join(', ')}`,
@@ -61,6 +85,7 @@ export class NpmResolver implements EcosystemResolver {
     return {
       repo,
       ref: `v${resolvedVersion}`,
+      fallbackRefs: [resolvedVersion],
       resolvedVersion,
     }
   }

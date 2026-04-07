@@ -67,6 +67,7 @@ export class PubResolver implements EcosystemResolver {
     return {
       repo,
       ref: resolvedVersion,
+      fallbackRefs: [`v${resolvedVersion}`],
       resolvedVersion,
     }
   }

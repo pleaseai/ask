@@ -76,6 +76,7 @@ export class PypiResolver implements EcosystemResolver {
     return {
       repo,
       ref: `v${resolvedVersion}`,
+      fallbackRefs: [resolvedVersion],
       resolvedVersion,
     }
   }

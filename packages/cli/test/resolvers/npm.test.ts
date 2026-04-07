@@ -31,6 +31,7 @@ describe('NpmResolver', () => {
     expect(result).toEqual({
       repo: 'lodash/lodash',
       ref: 'v4.17.21',
+      fallbackRefs: ['4.17.21'],
       resolvedVersion: '4.17.21',
     })
   })
@@ -46,6 +47,7 @@ describe('NpmResolver', () => {
     expect(result).toEqual({
       repo: 'colinhacks/zod',
       ref: 'v3.22.4',
+      fallbackRefs: ['3.22.4'],
       resolvedVersion: '3.22.4',
     })
   })
@@ -90,5 +92,41 @@ describe('NpmResolver', () => {
       'versions': { '1.0.0': {} },
     })
     await expect(resolver.resolve('pkg', '99.99.99')).rejects.toThrow(/not found/)
+  })
+
+  it('resolves a semver range like ^15', async () => {
+    mockFetchJson({
+      'repository': { url: 'https://github.com/vercel/next.js.git' },
+      'dist-tags': { latest: '15.2.3' },
+      'versions': { '14.2.0': {}, '15.0.0': {}, '15.1.0': {}, '15.2.3': {} },
+    })
+
+    const result = await resolver.resolve('next', '^15')
+    expect(result).toEqual({
+      repo: 'vercel/next.js',
+      ref: 'v15.2.3',
+      fallbackRefs: ['15.2.3'],
+      resolvedVersion: '15.2.3',
+    })
+  })
+
+  it('resolves ~3.22 to highest 3.22.x', async () => {
+    mockFetchJson({
+      'repository': { url: 'https://github.com/colinhacks/zod.git' },
+      'dist-tags': { latest: '3.23.8' },
+      'versions': { '3.22.0': {}, '3.22.4': {}, '3.23.0': {}, '3.23.8': {} },
+    })
+
+    const result = await resolver.resolve('zod', '~3.22')
+    expect(result.resolvedVersion).toBe('3.22.4')
+  })
+
+  it('throws when no version matches the semver range', async () => {
+    mockFetchJson({
+      'repository': { url: 'https://github.com/owner/repo.git' },
+      'dist-tags': { latest: '1.0.0' },
+      'versions': { '1.0.0': {} },
+    })
+    await expect(resolver.resolve('pkg', '^99')).rejects.toThrow(/No version matching/)
   })
 })

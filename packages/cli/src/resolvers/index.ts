@@ -9,8 +9,13 @@ import { PypiResolver } from './pypi.js'
 export interface ResolveResult {
   /** GitHub `owner/repo` */
   repo: string
-  /** Git tag or branch to download */
+  /** Primary git ref to try first (tag or branch) */
   ref: string
+  /**
+   * Fallback refs to try if the primary ref doesn't exist.
+   * Implements FR-5: try `v{version}`, then `{version}`, then default branch.
+   */
+  fallbackRefs?: string[]
   /** Resolved version string (e.g. `4.17.21`) */
   resolvedVersion: string
 }
