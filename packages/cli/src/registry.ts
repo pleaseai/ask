@@ -1,6 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { consola } from 'consola'
+import { expandStrategies } from './registry-schema.js'
 
 const REGISTRY_BASE_URL = 'https://ask-registry.pages.dev'
 
@@ -21,6 +22,10 @@ export interface RegistryEntry {
   name: string
   ecosystem: string
   description: string
+  repo?: string
+  homepage?: string
+  license?: string
+  docsPath?: string
   strategies: RegistryStrategy[]
   tags?: string[]
 }
@@ -167,7 +172,8 @@ export async function fetchRegistryEntry(
     const data = await response.json() as RegistryEntry
     return data
   }
-  catch {
+  catch (error) {
+    consola.debug(`Registry lookup failed for ${ecosystem}/${name}:`, error)
     return null
   }
 }
@@ -191,6 +197,9 @@ const SOURCE_PRIORITY: Record<RegistryStrategy['source'], number> = {
  * order for ties (stable sort).
  */
 export function selectBestStrategy(strategies: RegistryStrategy[]): RegistryStrategy {
+  if (strategies.length === 0) {
+    throw new Error('selectBestStrategy requires at least one strategy')
+  }
   // Stable sort by priority — lower priority value wins
   const indexed = Array.from(strategies, (s, i) => ({ s, i }))
   indexed.sort((a, b) => {
@@ -222,13 +231,26 @@ export async function resolveFromRegistry(
   consola.info(`Looking up ${ecosystem}:${name} in registry...`)
 
   const entry = await fetchRegistryEntry(ecosystem, name)
-  if (!entry || entry.strategies.length === 0) {
+  if (!entry) {
+    return null
+  }
+
+  let strategies: RegistryStrategy[]
+  try {
+    strategies = expandStrategies({
+      repo: entry.repo,
+      docsPath: entry.docsPath,
+      strategies: entry.strategies,
+    })
+  }
+  catch (error) {
+    consola.warn(`Registry entry for ${name} is misconfigured: ${(error as Error).message}`)
     return null
   }
 
   consola.success(`Found ${entry.name} in registry: ${entry.description}`)
 
-  const strategy = selectBestStrategy(entry.strategies)
+  const strategy = selectBestStrategy(strategies)
   consola.info(`Using source: ${strategy.source}`)
 
   return {

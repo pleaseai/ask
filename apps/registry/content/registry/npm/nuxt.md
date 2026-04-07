@@ -2,6 +2,9 @@
 name: nuxt
 ecosystem: npm
 description: The Intuitive Vue Framework
+repo: nuxt/nuxt
+homepage: https://nuxt.com
+license: MIT
 strategies:
   - source: github
     repo: nuxt/nuxt

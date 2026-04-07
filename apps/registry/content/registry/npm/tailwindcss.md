@@ -2,6 +2,9 @@
 name: tailwindcss
 ecosystem: npm
 description: Utility-first CSS framework
+repo: tailwindlabs/tailwindcss
+homepage: https://tailwindcss.com
+license: MIT
 strategies:
   - source: web
     urls:

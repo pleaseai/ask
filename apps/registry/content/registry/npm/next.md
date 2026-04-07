@@ -2,6 +2,9 @@
 name: next
 ecosystem: npm
 description: The React framework by Vercel
+repo: vercel/next.js
+homepage: https://nextjs.org
+license: MIT
 strategies:
   - source: npm
     package: next

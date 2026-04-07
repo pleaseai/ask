@@ -2,6 +2,9 @@
 name: fastapi
 ecosystem: pypi
 description: High-performance Python web framework
+repo: fastapi/fastapi
+homepage: https://fastapi.tiangolo.com
+license: MIT
 strategies:
   - source: github
     repo: fastapi/fastapi
