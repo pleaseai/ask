@@ -95,7 +95,7 @@ describe('add pipeline (T013): saveDocs + addDocEntry + upsertLockEntry', () => 
     expect(secondParsed.generatedAt).toBe(firstParsed.generatedAt)
   })
 
-  it('content change updates generatedAt and contentHash', () => {
+  it('content change updates generatedAt and contentHash', async () => {
     const filesA = fakeFiles()
     upsertLockEntry(tmpDir, 'fake', {
       source: 'npm',
@@ -107,6 +107,11 @@ describe('add pipeline (T013): saveDocs + addDocEntry + upsertLockEntry', () => 
       fetchedAt: '2026-04-07T06:00:00Z',
     })
     const generatedAtA = readLock(tmpDir).generatedAt
+
+    // `generatedAt` comes from `new Date().toISOString()` (ms resolution).
+    // Without this gap, two back-to-back writes on fast machines can land
+    // in the same millisecond and collide, making the assertion below flaky.
+    await new Promise(resolve => setTimeout(resolve, 2))
 
     const filesB = [
       ...filesA,
