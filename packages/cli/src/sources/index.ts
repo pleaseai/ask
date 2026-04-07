@@ -11,6 +11,19 @@ export interface DocFile {
 export interface FetchResult {
   files: DocFile[]
   resolvedVersion: string
+  /** Source-specific metadata propagated to ask.lock */
+  meta?: {
+    /** GitHub commit sha (40 hex chars) */
+    commit?: string
+    /** GitHub ref used (tag name or branch name) */
+    ref?: string
+    /** npm Subresource Integrity hash from dist.integrity */
+    integrity?: string
+    /** npm tarball URL */
+    tarball?: string
+    /** web/llms-txt source URL(s) */
+    urls?: string[]
+  }
 }
 
 export interface DocSourceOptions {
