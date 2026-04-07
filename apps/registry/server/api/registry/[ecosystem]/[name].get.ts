@@ -15,6 +15,12 @@ interface Strategy {
 
 /**
  * Expand a registry entry's strategies from `repo` when strategies is empty.
+ *
+ * NOTE: This function is intentionally duplicated from
+ * `packages/cli/src/registry-schema.ts`. The Nitro build process cannot
+ * reliably resolve cross-package workspace imports, so sharing via a
+ * workspace package is not feasible here. Keep this implementation in sync
+ * with the canonical source in registry-schema.ts.
  */
 function expandStrategies(entry: {
   repo?: string
