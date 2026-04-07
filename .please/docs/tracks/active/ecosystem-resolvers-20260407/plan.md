@@ -1,14 +1,14 @@
-# Plan: Ecosystem Resolver 도입
+# Plan: Ecosystem Resolvers
 
 ## Architecture
 
-resolver는 source와 직교하는 새 레이어. 호출 흐름:
+Resolvers are a new layer orthogonal to sources. Call flow:
 
 ```
 ask docs add npm:lodash
-  └→ parseSpec → { kind: 'ecosystem', ecosystem: 'npm', name: 'lodash', version: 'latest' }
-       └→ registry lookup (있으면 사용)
-       └→ 없으면 getResolver('npm').resolve('lodash', 'latest')
+  └→ parseDocSpec → { kind: 'ecosystem', ecosystem: 'npm', name: 'lodash', version: 'latest' }
+       └→ registry lookup (use if hit)
+       └→ otherwise: getResolver('npm').resolve('lodash', 'latest')
             └→ fetch https://registry.npmjs.org/lodash
             └→ extract repository.url → 'lodash/lodash'
             └→ resolve version → '4.17.21' → tag 'v4.17.21' or '4.17.21'
@@ -17,38 +17,38 @@ ask docs add npm:lodash
 
 ## Files
 
-| 변경 | 파일 | 내용 |
+| Change | File | Notes |
 |---|---|---|
 | Add | `packages/cli/src/resolvers/index.ts` | `EcosystemResolver` interface, `getResolver` factory |
 | Add | `packages/cli/src/resolvers/npm.ts` | npm registry API resolver |
 | Add | `packages/cli/src/resolvers/pypi.ts` | PyPI JSON API resolver |
 | Add | `packages/cli/src/resolvers/pub.ts` | pub.dev API resolver |
-| Add | `packages/cli/src/resolvers/utils.ts` | `parseRepoUrl(url)` — git+https://github.com/foo/bar.git → foo/bar |
-| Modify | `packages/cli/src/index.ts` | `add` 명령에서 ecosystem prefix 분기에 resolver 추가 (registry miss fallback) |
-| Add | `packages/cli/test/resolvers/npm.test.ts` | mock fetch로 단위 테스트 |
-| Add | `packages/cli/test/resolvers/pypi.test.ts` | 동일 |
-| Add | `packages/cli/test/resolvers/pub.test.ts` | 동일 |
-| Modify | `packages/cli/README.md` | 신규 ecosystem 지원 표 |
+| Add | `packages/cli/src/resolvers/utils.ts` | `parseRepoUrl(url)` — `git+https://github.com/foo/bar.git` → `foo/bar` |
+| Modify | `packages/cli/src/index.ts` | In the `add` command, fall back to a resolver when ecosystem prefix is present and the registry misses |
+| Add | `packages/cli/test/resolvers/npm.test.ts` | Unit tests with mocked fetch |
+| Add | `packages/cli/test/resolvers/pypi.test.ts` | Same |
+| Add | `packages/cli/test/resolvers/pub.test.ts` | Same |
+| Modify | `packages/cli/README.md` | Document the supported ecosystems |
 
 ## Tasks
 
-- **T-1** [impl] `EcosystemResolver` interface + `parseRepoUrl` 유틸 + 단위 테스트
-- **T-2** [impl] npm resolver — registry API + dist-tags + semver 해석
-- **T-3** [impl] pypi resolver — project_urls 추출 + PEP 440
-- **T-4** [impl] pub resolver — pubspec.repository 추출
-- **T-5** [test] 각 resolver 단위 테스트 (mock fetch)
-- **T-6** [impl] `add` 명령 통합 — registry miss 시 resolver fallback
-- **T-7** [test] e2e 스모크 — `ask docs add npm:lodash`, `pub:riverpod`
-- **T-8** [docs] README 업데이트
-- **T-9** [chore] 회귀 — 기존 `npm:next` 동작 (registry hit) 확인
+- **T-1** [impl] `EcosystemResolver` interface, `parseRepoUrl` utility, and unit tests
+- **T-2** [impl] npm resolver — registry API + dist-tags + semver resolution
+- **T-3** [impl] pypi resolver — extract `project_urls`, PEP 440 handling
+- **T-4** [impl] pub resolver — extract `pubspec.repository`
+- **T-5** [test] Unit tests for each resolver (mocked fetch)
+- **T-6** [impl] Wire resolvers into the `add` command — registry-miss fallback
+- **T-7** [test] End-to-end smoke — `ask docs add npm:lodash`, `pub:riverpod`
+- **T-8** [docs] Update README
+- **T-9** [chore] Regression — confirm registry-hit `npm:next` still works
 
 ## Risks
 
-- 패키지의 `repository` 필드가 누락되거나 부정확한 경우 → 명확한 에러 메시지, 사용자에게 `owner/repo` 직접 입력 안내
-- git tag 명명 규칙 불일치 (`v1.0.0` vs `1.0.0`) → 두 형태 모두 시도, github API 404 시 fallback
-- semver range 해석 라이브러리 의존 — `semver` 패키지 추가 검토
+- A package's `repository` field may be missing or wrong → emit a clear error and tell the user to fall back to `owner/repo` directly
+- Git tag conventions differ (`v1.0.0` vs `1.0.0`) → try both, fall back on github 404
+- Semver range parsing pulls in a new dependency — consider adding `semver`
 
 ## Dependencies
 
-- **Soft dependency**: `cli-shorthand-20260407` — github 직행 코드 경로가 먼저 정리되면 resolver가 그 경로를 재사용할 수 있어 자연스러움. 병렬 진행도 가능하지만 cli-shorthand가 먼저 merge되는 것을 권장.
-- **Soft dependency**: `registry-meta-20260407` — 신규 `repo` top-level 필드가 있으면 resolver의 결과를 그대로 레지스트리에 등록하기 쉬움 (후속 작업 연결고리).
+- **Soft dependency** on `cli-shorthand-20260407`: once the github fast-path lands, the resolver can reuse the same code path. Parallel work is fine, but landing `cli-shorthand` first is preferable.
+- **Soft dependency** on `registry-meta-20260407`: the new top-level `repo` field makes it trivial to upstream resolver results into the registry later (a follow-up).
