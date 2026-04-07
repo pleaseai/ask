@@ -1,0 +1,570 @@
+{
+  "agent": "claude-code",
+  "model": "claude-sonnet-4-6",
+  "events": [
+    {
+      "timestamp": "2026-04-07T02:09:40.387Z",
+      "type": "message",
+      "role": "user",
+      "content": "Build an AI chat interface using Nuxt UI's chat components.\n\nThe page should display a conversation between a user and an assistant with the following requirements:\n\n1. Use Nuxt UI's `ChatMessage` component to render individual messages\n2. Each message must use the `parts` prop with the AI SDK message part format: `[{ type: 'text', text: '...' }]`\n3. Messages must have a `role` prop set to either `\"user\"` or `\"assistant\"`\n4. User messages should appear on the right side, assistant messages on the left\n5. Use the `ChatMessages` component to wrap the list of messages\n6. Include a `ChatPrompt` component at the bottom for user input\n7. Include at least 2 hardcoded example messages (one user, one assistant) for demonstration\n\nThe chat does not need to be functional (no API calls required) — focus on correct component usage and props.\n",
+      "raw": {
+        "parentUuid": null,
+        "isSidechain": false,
+        "promptId": "9f53061f-28d4-404c-bb26-728a1475db53",
+        "type": "user",
+        "message": {
+          "role": "user",
+          "content": "Build an AI chat interface using Nuxt UI's chat components.\n\nThe page should display a conversation between a user and an assistant with the following requirements:\n\n1. Use Nuxt UI's `ChatMessage` component to render individual messages\n2. Each message must use the `parts` prop with the AI SDK message part format: `[{ type: 'text', text: '...' }]`\n3. Messages must have a `role` prop set to either `\"user\"` or `\"assistant\"`\n4. User messages should appear on the right side, assistant messages on the left\n5. Use the `ChatMessages` component to wrap the list of messages\n6. Include a `ChatPrompt` component at the bottom for user input\n7. Include at least 2 hardcoded example messages (one user, one assistant) for demonstration\n\nThe chat does not need to be functional (no API calls required) — focus on correct component usage and props.\n"
+        },
+        "uuid": "d14dd86d-601b-4f4e-b660-50e60351c66a",
+        "timestamp": "2026-04-07T02:09:40.387Z",
+        "permissionMode": "bypassPermissions",
+        "userType": "external",
+        "entrypoint": "sdk-cli",
+        "cwd": "/vercel/sandbox",
+        "sessionId": "306ff9ff-dda5-4716-8538-93730b359b37",
+        "version": "2.1.92",
+        "gitBranch": "master"
+      }
+    },
+    {
+      "timestamp": "2026-04-07T02:09:43.342Z",
+      "type": "thinking",
+      "content": "Let me start by reading the relevant documentation files to understand the Nuxt UI v4 chat components.",
+      "raw": {
+        "parentUuid": "d14dd86d-601b-4f4e-b660-50e60351c66a",
+        "isSidechain": false,
+        "message": {
+          "model": "claude-sonnet-4-6",
+          "id": "msg_013HGnVwpXcn13gCbfhkKJiq",
+          "type": "message",
+          "role": "assistant",
+          "content": [
+            {
+              "type": "thinking",
+              "thinking": "Let me start by reading the relevant documentation files to understand the Nuxt UI v4 chat components.",
+              "signature": "EqMCClsIDBgCKkDfI/JhK+0q8j8V4SIG37b8ZJKLB4VJ7rnG1tV/NHkFsHTyOgQnB/LKMwad+rImCrAhtX5R79P7xYu76MKcFLYjMhFjbGF1ZGUtc29ubmV0LTQtNjgAEgy1grmAylKHs6OjXpwaDN8LFpGNKFpuld3QoSIwkBuZ+swX7Q7tBtz+cEgGFbJ/83PmxX4qtB7izL/a2muwvm9z/QKUGoK1I/iL9Ko0Knb2lhcRZNj8lCN4Ipx80NYmzps3JL9quYdh+GJkIcz/+oEUdB+qAmRKU/RfXitb0HtiLIuJDyy1k0S/FsCab+xYarSNSqqVDSrvc2rbl6MW96AQUYnb0oxWy+5y24bPtPSeY6Lh02seW5zlcnMV4IPxWP3BCa2+GAE="
+            }
+          ],
+          "stop_reason": null,
+          "stop_sequence": null,
+          "stop_details": null,
+          "usage": {
+            "input_tokens": 2,
+            "cache_creation_input_tokens": 4807,
+            "cache_read_input_tokens": 11015,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 4807,
+              "ephemeral_1h_input_tokens": 0
+            },
+            "output_tokens": 0,
+            "service_tier": "standard",
+            "inference_geo": "not_available"
+          }
+        },
+        "requestId": "req_011CZobbasqG4EsDNf41yDQ8",
+        "type": "assistant",
+        "uuid": "78c877ea-c7ba-4ea8-b714-8a211fd6c105",
+        "timestamp": "2026-04-07T02:09:43.342Z",
+        "userType": "external",
+        "entrypoint": "sdk-cli",
+        "cwd": "/vercel/sandbox",
+        "sessionId": "306ff9ff-dda5-4716-8538-93730b359b37",
+        "version": "2.1.92",
+        "gitBranch": "master"
+      }
+    },
+    {
+      "timestamp": "2026-04-07T02:09:43.801Z",
+      "type": "tool_call",
+      "tool": {
+        "name": "glob",
+        "originalName": "Glob",
+        "args": {
+          "pattern": "**/*",
+          "path": "/vercel/sandbox"
+        }
+      },
+      "raw": {
+        "name": "Glob",
+        "input": {
+          "pattern": "**/*",
+          "path": "/vercel/sandbox"
+        }
+      }
+    },
+    {
+      "timestamp": "2026-04-07T02:09:44.474Z",
+      "type": "tool_call",
+      "tool": {
+        "name": "grep",
+        "originalName": "Grep",
+        "args": {
+          "pattern": "ChatMessage|ChatMessages|ChatPrompt",
+          "path": "/vercel/sandbox/NUXT_UI_DOCS.md",
+          "output_mode": "content",
+          "context": 5
+        }
+      },
+      "raw": {
+        "name": "Grep",
+        "input": {
+          "pattern": "ChatMessage|ChatMessages|ChatPrompt",
+          "path": "/vercel/sandbox/NUXT_UI_DOCS.md",
+          "output_mode": "content",
+          "context": 5
+        }
+      }
+    },
+    {
+      "timestamp": "2026-04-07T02:09:44.568Z",
+      "type": "tool_result",
+      "tool": {
+        "name": "unknown",
+        "originalName": "toolu_01RW3dbCyLbtmrchyyEqDGd5",
+        "result": "2629-+ import { findPageBreadcrumb } from '@nuxt/content/utils'\n2630-```\n2631-\n2632-### AI SDK v5 migration (optional)\n2633-\n2634:This section only applies if you're using the AI SDK and chat components (`ChatMessage`, `ChatMessages`, `ChatPrompt`, `ChatPromptSubmit`, `ChatPalette`). If you're not using AI features, you can skip this section.\n2635-\n2636-1. Update `@ai-sdk/vue` and `ai` dependencies in your `package.json`:\n2637-\n2638-```diff\n2639-{\n--\n2682-- }])\n2683-+ })\n2684-\n2685-// In templates\n2686-<template>\n2687:- <UChatMessage :content=\"message.content\" />\n2688:+ <UChatMessage :parts=\"message.parts\" />\n2689-</template>\n2690-```\n2691-\n2692-4. Some methods have been renamed:\n2693-\n--\n2710-import { isReasoningUIPart, isTextUIPart } from 'ai'\n2711-import { isPartStreaming } from '@nuxt/ui/utils/ai'\n2712-</script>\n2713-\n2714-<template>\n2715:  <UChatMessages :messages=\"chat.messages\" :status=\"chat.status\">\n2716-    <template #content=\"{ message }\">\n2717-      <template v-for=\"(part, index) in message.parts\" :key=\"`${message.id}-${part.type}-${index}`\">\n2718-        <UChatReasoning\n2719-          v-if=\"isReasoningUIPart(part)\"\n2720-          :text=\"part.text\"\n--\n2732-            {{ part.text }}\n2733-          </p>\n2734-        </template>\n2735-      </template>\n2736-    </template>\n2737:  </UChatMessages>\n2738-</template>\n2739-```\n2740-\n2741-\\> \\[!NOTE]\n2742-\\> See: https\\://ai-sdk.dev/docs/migration-guides/migration-guide-5-0\n--\n13943-\n13944-## Components\n13945-\n13946-| Component                                                                  | Description                                                     |\n13947-| -------------------------------------------------------------------------- | --------------------------------------------------------------- |\n13948:| [ChatMessages](https://ui.nuxt.com/docs/components/chat-messages)          | Scrollable message list with auto-scroll and loading indicator. |\n13949:| [ChatMessage](https://ui.nuxt.com/docs/components/chat-message)            | Individual message bubble with avatar, actions, and slots.      |\n13950:| [ChatPrompt](https://ui.nuxt.com/docs/components/chat-prompt)              | Enhanced textarea for submitting prompts.                       |\n13951:| [ChatPromptSubmit](https://ui.nuxt.com/docs/components/chat-prompt-submit) | Submit button with automatic status handling.                   |\n13952-| [ChatReasoning](https://ui.nuxt.com/docs/components/chat-reasoning)        | Collapsible block for AI reasoning / thinking process.          |\n13953-| [ChatTool](https://ui.nuxt.com/docs/components/chat-tool)                  | Collapsible block for AI tool invocation status.                |\n13954-| [ChatShimmer](https://ui.nuxt.com/docs/components/chat-shimmer)            | Text shimmer animation for streaming states.                    |\n13955-| [ChatPalette](https://ui.nuxt.com/docs/components/chat-palette)            | Layout wrapper for embedding chat in modals or drawers.         |\n13956-\n--\n14148-  input.value = ''\n14149-}\n14150-</script>\n14151-\n14152-<template>\n14153:  <UChatMessages\n14154-    :messages=\"chat.messages\"\n14155-    :status=\"chat.status\"\n14156-  >\n14157-    <template #content=\"{ message }\">\n14158-      <template\n--\n14188-            {{ part.text }}\n14189-          </p>\n14190-        </template>\n14191-      </template>\n14192-    </template>\n14193:  </UChatMessages>\n14194-\n14195:  <UChatPrompt\n14196-    v-model=\"input\"\n14197-    :error=\"chat.error\"\n14198-    @submit=\"onSubmit\"\n14199-  >\n14200:    <UChatPromptSubmit\n14201-      :status=\"chat.status\"\n14202-      @stop=\"chat.stop()\"\n14203-      @reload=\"chat.regenerate()\"\n14204-    />\n14205:  </UChatPrompt>\n14206-</template>\n14207-```\n14208-\n14209-\\> \\[!NOTE]\n14210-\\> In this example, we use the \\`MDC\\` component from \\[\\`@nuxtjs/mdc\\`]\\(https\\://github.com/nuxt-modules/mdc) to render messages as Markdown. As Nuxt UI provides pre-styled prose components, your content will be automatically styled.\n--\n14212-\\> \\[!TIP]\n14213-\\> See: /blog/how-to-build-an-ai-chat\n14214-\\> Read the full Build an AI Chatbot tutorial for a step-by-step guide.\n14215-\n14216-\n14217:# ChatMessage\n14218-\n14219-## Usage\n14220-\n14221:The ChatMessage component renders an `<article>` element for a `user` or `assistant` chat message.\n14222-\n14223-```vue\n14224-<template>\n14225-  <u-chat-message :avatar={\"src\":\"https://github.com/benjamincanac.png\",\"loading\":\"lazy\"} :parts=[{\"type\":\"text\",\"id\":\"1\",\"text\":\"Hello! Tell me more about building AI chatbots with Nuxt UI.\"}] id=1 role=user side=right variant=soft />\n14226-</template>\n14227-```\n14228-\n14229-\\> \\[!TIP]\n14230-\\> See: /docs/components/chat-messages\n14231:\\> Use the \\`ChatMessages\\` component to display a list of chat messages.\n14232-\n14233-### Parts\n14234-\n14235-Use the `parts` prop to display the message content using the AI SDK format.\n14236-\n14237-```vue\n14238-<template>\n14239:  <UChatMessage role=\"user\" id=\"1\" />\n14240-</template>\n14241-```\n14242-\n14243-\\> \\[!NOTE]\n14244:\\> The \\`parts\\` prop is the recommended format for the AI SDK. Each part has a \\`type\\` (e.g., 'text') and corresponding content. The ChatMessage component also supports the deprecated \\`content\\` prop for backward compatibility.\n14245-\n14246-### Side\n14247-\n14248-Use the `side` prop to display the message on the left or right.\n14249-\n14250-```vue\n14251-<template>\n14252:  <UChatMessage side=\"right\" role=\"user\" id=\"1\" />\n14253-</template>\n14254-```\n14255-\n14256-\\> \\[!NOTE]\n14257:\\> When using the \\[\\`ChatMessages\\`]\\(/docs/components/chat-messages) component, the \\`side\\` prop is set to \\`left\\` for \\`assistant\\` messages and \\`right\\` for \\`user\\` messages.\n14258-\n14259-### Variant\n14260-\n14261-Use the `variant` prop to change style of the message.\n14262-\n14263-```vue\n14264-<template>\n14265:  <UChatMessage variant=\"soft\" role=\"user\" id=\"1\" />\n14266-</template>\n14267-```\n14268-\n14269-\\> \\[!NOTE]\n14270:\\> When using the \\[\\`ChatMessages\\`]\\(/docs/components/chat-messages) component, the \\`variant\\` prop is set to \\`naked\\` for \\`assistant\\` messages and \\`soft\\` for \\`user\\` messages.\n14271-\n14272-### Icon\n14273-\n14274-Use the `icon` prop to display an [Icon](https://ui.nuxt.com/docs/components/icon) component next to the message.\n14275-\n14276-```vue\n14277-<template>\n14278:  <UChatMessage icon=\"i-lucide-user\" variant=\"soft\" side=\"right\" role=\"user\" id=\"1\" />\n14279-</template>\n14280-```\n14281-\n14282-### Avatar\n14283-\n14284-Use the `avatar` prop to display an [Avatar](https://ui.nuxt.com/docs/components/avatar) component next to the message.\n14285-\n14286-```vue\n14287-<template>\n14288:  <UChatMessage variant=\"soft\" side=\"right\" role=\"user\" id=\"1\" />\n14289-</template>\n14290-```\n14291-\n14292-You can also use the `avatar.icon` prop to display an icon as the avatar.\n14293-\n14294-```vue\n14295-<template>\n14296:  <UChatMessage role=\"assistant\" id=\"1\" />\n14297-</template>\n14298-```\n14299-\n14300-### Actions\n14301-\n--\n14305-<script setup lang=\"ts\">\n14306-import type { ButtonProps } from '@nuxt/ui'\n14307-</script>\n14308-\n14309-<template>\n14310:  <UChatMessage role=\"user\" id=\"1\" />\n14311-</template>\n14312-```\n14313-\n14314-## Examples\n14315-\n--\n14321-\n14322-### Props\n14323-\n14324-```ts\n14325-/**\n14326: * Props for the ChatMessage component\n14327- */\n14328:interface ChatMessageProps {\n14329-  /**\n14330-   * A unique identifier for the message.\n14331-   */\n14332-  id: string;\n14333-  /**\n--\n14376-\n14377-### Slots\n14378-\n14379-```ts\n14380-/**\n14381: * Slots for the ChatMessage component\n14382- */\n14383:interface ChatMessageSlots {\n14384-  leading(): any;\n14385-  files(): any;\n14386-  content(): any;\n14387-  actions(): any;\n14388-}\n--\n14522-})\n14523-```\n14524-\n14525-## Changelog\n14526-\n14527:See commit history for \\[component]\\(https\\://github.com/nuxt/ui/commits/v4/src/runtime/components/ChatMessage.vue) and \\[theme]\\(https\\://github.com/nuxt/ui/commits/v4/src/theme/chat-message.ts).\n14528-\n14529-\n14530:# ChatMessages\n14531-\n14532-## Usage\n14533-\n14534:The ChatMessages component displays a list of [ChatMessage](https://ui.nuxt.com/docs/components/chat-message) components using either the default slot or the `messages` prop.\n14535-\n14536-```vue {2,8}\n14537-<template>\n14538:  <UChatMessages>\n14539:    <UChatMessage\n14540-      v-for=\"(message, index) in messages\"\n\n[Showing results with pagination = limit: 250]",
+        "success": true
+      },
+      "raw": {
+        "tool_use_id": "toolu_01RW3dbCyLbtmrchyyEqDGd5",
+        "type": "tool_result",
+        "content": "2629-+ import { findPageBreadcrumb } from '@nuxt/content/utils'\n2630-```\n2631-\n2632-### AI SDK v5 migration (optional)\n2633-\n2634:This section only applies if you're using the AI SDK and chat components (`ChatMessage`, `ChatMessages`, `ChatPrompt`, `ChatPromptSubmit`, `ChatPalette`). If you're not using AI features, you can skip this section.\n2635-\n2636-1. Update `@ai-sdk/vue` and `ai` dependencies in your `package.json`:\n2637-\n2638-```diff\n2639-{\n--\n2682-- }])\n2683-+ })\n2684-\n2685-// In templates\n2686-<template>\n2687:- <UChatMessage :content=\"message.content\" />\n2688:+ <UChatMessage :parts=\"message.parts\" />\n2689-</template>\n2690-```\n2691-\n2692-4. Some methods have been renamed:\n2693-\n--\n2710-import { isReasoningUIPart, isTextUIPart } from 'ai'\n2711-import { isPartStreaming } from '@nuxt/ui/utils/ai'\n2712-</script>\n2713-\n2714-<template>\n2715:  <UChatMessages :messages=\"chat.messages\" :status=\"chat.status\">\n2716-    <template #content=\"{ message }\">\n2717-      <template v-for=\"(part, index) in message.parts\" :key=\"`${message.id}-${part.type}-${index}`\">\n2718-        <UChatReasoning\n2719-          v-if=\"isReasoningUIPart(part)\"\n2720-          :text=\"part.text\"\n--\n2732-            {{ part.text }}\n2733-          </p>\n2734-        </template>\n2735-      </template>\n2736-    </template>\n2737:  </UChatMessages>\n2738-</template>\n2739-```\n2740-\n2741-\\> \\[!NOTE]\n2742-\\> See: https\\://ai-sdk.dev/docs/migration-guides/migration-guide-5-0\n--\n13943-\n13944-## Components\n13945-\n13946-| Component                                                                  | Description                                                     |\n13947-| -------------------------------------------------------------------------- | --------------------------------------------------------------- |\n13948:| [ChatMessages](https://ui.nuxt.com/docs/components/chat-messages)          | Scrollable message list with auto-scroll and loading indicator. |\n13949:| [ChatMessage](https://ui.nuxt.com/docs/components/chat-message)            | Individual message bubble with avatar, actions, and slots.      |\n13950:| [ChatPrompt](https://ui.nuxt.com/docs/components/chat-prompt)              | Enhanced textarea for submitting prompts.                       |\n13951:| [ChatPromptSubmit](https://ui.nuxt.com/docs/components/chat-prompt-submit) | Submit button with automatic status handling.                   |\n13952-| [ChatReasoning](https://ui.nuxt.com/docs/components/chat-reasoning)        | Collapsible block for AI reasoning / thinking process.          |\n13953-| [ChatTool](https://ui.nuxt.com/docs/components/chat-tool)                  | Collapsible block for AI tool invocation status.                |\n13954-| [ChatShimmer](https://ui.nuxt.com/docs/components/chat-shimmer)            | Text shimmer animation for streaming states.                    |\n13955-| [ChatPalette](https://ui.nuxt.com/docs/components/chat-palette)            | Layout wrapper for embedding chat in modals or drawers.         |\n13956-\n--\n14148-  input.value = ''\n14149-}\n14150-</script>\n14151-\n14152-<template>\n14153:  <UChatMessages\n14154-    :messages=\"chat.messages\"\n14155-    :status=\"chat.status\"\n14156-  >\n14157-    <template #content=\"{ message }\">\n14158-      <template\n--\n14188-            {{ part.text }}\n14189-          </p>\n14190-        </template>\n14191-      </template>\n14192-    </template>\n14193:  </UChatMessages>\n14194-\n14195:  <UChatPrompt\n14196-    v-model=\"input\"\n14197-    :error=\"chat.error\"\n14198-    @submit=\"onSubmit\"\n14199-  >\n14200:    <UChatPromptSubmit\n14201-      :status=\"chat.status\"\n14202-      @stop=\"chat.stop()\"\n14203-      @reload=\"chat.regenerate()\"\n14204-    />\n14205:  </UChatPrompt>\n14206-</template>\n14207-```\n14208-\n14209-\\> \\[!NOTE]\n14210-\\> In this example, we use the \\`MDC\\` component from \\[\\`@nuxtjs/mdc\\`]\\(https\\://github.com/nuxt-modules/mdc) to render messages as Markdown. As Nuxt UI provides pre-styled prose components, your content will be automatically styled.\n--\n14212-\\> \\[!TIP]\n14213-\\> See: /blog/how-to-build-an-ai-chat\n14214-\\> Read the full Build an AI Chatbot tutorial for a step-by-step guide.\n14215-\n14216-\n14217:# ChatMessage\n14218-\n14219-## Usage\n14220-\n14221:The ChatMessage component renders an `<article>` element for a `user` or `assistant` chat message.\n14222-\n14223-```vue\n14224-<template>\n14225-  <u-chat-message :avatar={\"src\":\"https://github.com/benjamincanac.png\",\"loading\":\"lazy\"} :parts=[{\"type\":\"text\",\"id\":\"1\",\"text\":\"Hello! Tell me more about building AI chatbots with Nuxt UI.\"}] id=1 role=user side=right variant=soft />\n14226-</template>\n14227-```\n14228-\n14229-\\> \\[!TIP]\n14230-\\> See: /docs/components/chat-messages\n14231:\\> Use the \\`ChatMessages\\` component to display a list of chat messages.\n14232-\n14233-### Parts\n14234-\n14235-Use the `parts` prop to display the message content using the AI SDK format.\n14236-\n14237-```vue\n14238-<template>\n14239:  <UChatMessage role=\"user\" id=\"1\" />\n14240-</template>\n14241-```\n14242-\n14243-\\> \\[!NOTE]\n14244:\\> The \\`parts\\` prop is the recommended format for the AI SDK. Each part has a \\`type\\` (e.g., 'text') and corresponding content. The ChatMessage component also supports the deprecated \\`content\\` prop for backward compatibility.\n14245-\n14246-### Side\n14247-\n14248-Use the `side` prop to display the message on the left or right.\n14249-\n14250-```vue\n14251-<template>\n14252:  <UChatMessage side=\"right\" role=\"user\" id=\"1\" />\n14253-</template>\n14254-```\n14255-\n14256-\\> \\[!NOTE]\n14257:\\> When using the \\[\\`ChatMessages\\`]\\(/docs/components/chat-messages) component, the \\`side\\` prop is set to \\`left\\` for \\`assistant\\` messages and \\`right\\` for \\`user\\` messages.\n14258-\n14259-### Variant\n14260-\n14261-Use the `variant` prop to change style of the message.\n14262-\n14263-```vue\n14264-<template>\n14265:  <UChatMessage variant=\"soft\" role=\"user\" id=\"1\" />\n14266-</template>\n14267-```\n14268-\n14269-\\> \\[!NOTE]\n14270:\\> When using the \\[\\`ChatMessages\\`]\\(/docs/components/chat-messages) component, the \\`variant\\` prop is set to \\`naked\\` for \\`assistant\\` messages and \\`soft\\` for \\`user\\` messages.\n14271-\n14272-### Icon\n14273-\n14274-Use the `icon` prop to display an [Icon](https://ui.nuxt.com/docs/components/icon) component next to the message.\n14275-\n14276-```vue\n14277-<template>\n14278:  <UChatMessage icon=\"i-lucide-user\" variant=\"soft\" side=\"right\" role=\"user\" id=\"1\" />\n14279-</template>\n14280-```\n14281-\n14282-### Avatar\n14283-\n14284-Use the `avatar` prop to display an [Avatar](https://ui.nuxt.com/docs/components/avatar) component next to the message.\n14285-\n14286-```vue\n14287-<template>\n14288:  <UChatMessage variant=\"soft\" side=\"right\" role=\"user\" id=\"1\" />\n14289-</template>\n14290-```\n14291-\n14292-You can also use the `avatar.icon` prop to display an icon as the avatar.\n14293-\n14294-```vue\n14295-<template>\n14296:  <UChatMessage role=\"assistant\" id=\"1\" />\n14297-</template>\n14298-```\n14299-\n14300-### Actions\n14301-\n--\n14305-<script setup lang=\"ts\">\n14306-import type { ButtonProps } from '@nuxt/ui'\n14307-</script>\n14308-\n14309-<template>\n14310:  <UChatMessage role=\"user\" id=\"1\" />\n14311-</template>\n14312-```\n14313-\n14314-## Examples\n14315-\n--\n14321-\n14322-### Props\n14323-\n14324-```ts\n14325-/**\n14326: * Props for the ChatMessage component\n14327- */\n14328:interface ChatMessageProps {\n14329-  /**\n14330-   * A unique identifier for the message.\n14331-   */\n14332-  id: string;\n14333-  /**\n--\n14376-\n14377-### Slots\n14378-\n14379-```ts\n14380-/**\n14381: * Slots for the ChatMessage component\n14382- */\n14383:interface ChatMessageSlots {\n14384-  leading(): any;\n14385-  files(): any;\n14386-  content(): any;\n14387-  actions(): any;\n14388-}\n--\n14522-})\n14523-```\n14524-\n14525-## Changelog\n14526-\n14527:See commit history for \\[component]\\(https\\://github.com/nuxt/ui/commits/v4/src/runtime/components/ChatMessage.vue) and \\[theme]\\(https\\://github.com/nuxt/ui/commits/v4/src/theme/chat-message.ts).\n14528-\n14529-\n14530:# ChatMessages\n14531-\n14532-## Usage\n14533-\n14534:The ChatMessages component displays a list of [ChatMessage](https://ui.nuxt.com/docs/components/chat-message) components using either the default slot or the `messages` prop.\n14535-\n14536-```vue {2,8}\n14537-<template>\n14538:  <UChatMessages>\n14539:    <UChatMessage\n14540-      v-for=\"(message, index) in messages\"\n\n[Showing results with pagination = limit: 250]"
+      }
+    },
+    {
+      "timestamp": "2026-04-07T02:09:44.692Z",
+      "type": "tool_result",
+      "tool": {
+        "name": "unknown",
+        "originalName": "toolu_01R8zYk7683ocxoQVayGzGYn",
+        "result": "app/app.vue\napp/assets/css/main.css\napp/pages/index.vue\nnuxt.config.ts\npackage.json\nserver/api/chat.ts\n.gitignore\n.git/description\n.git/hooks/applypatch-msg.sample\n.git/hooks/commit-msg.sample\n.git/hooks/fsmonitor-watchman.sample\n.git/hooks/post-update.sample\n.git/hooks/pre-applypatch.sample\n.git/hooks/pre-commit.sample\n.git/hooks/pre-merge-commit.sample\n.git/hooks/pre-push.sample\n.git/hooks/pre-rebase.sample\n.git/hooks/pre-receive.sample\n.git/hooks/prepare-commit-msg.sample\n.git/hooks/push-to-checkout.sample\n.git/hooks/sendemail-validate.sample\n.git/hooks/update.sample\n.git/info/exclude\n.git/HEAD\n.git/config\n.git/objects/c2/658d7d1b31848c3b71960543cb0368e56cd4c7\n.git/objects/8d/d09d3f684d4c688fd57cbf3afa06563745686c\n.git/objects/7c/95c6f3a563df9026ae64b47fd4feebc0a5a587\n.git/objects/c7/6a4cc962ece3d5ffd4340a8843522bbeea9669\n.git/objects/66/d2dabc163f3cae37b24fcf33ce8e923658e4d7\n.git/objects/bc/aff03a45ebdcf45f7c3e72f3d1164d1f984f99\n.git/objects/86/354766bd1dbf92b19ff08b40780fa255d57e07\n.git/refs/heads/master\n.git/objects/22/071d77028a28f997eff8a6ff45ef5f182efdb6\n.git/objects/c4/9314ea1d1933c09c1a13bfbdc3fa70027d4e80\n.git/objects/b3/d4e0ca9fe40daf2b5b3aa34cc2cc455ee35a75\n.git/objects/ba/3739ac89b8c6c0023159356b6362b65362b264\n.git/objects/f1/a6cd00f76800297d1d2ac93a101fb6f1f0de52\n.git/objects/92/9abca490e95f7aded51175f6933fdec5dbeabf\n.git/objects/d3/24c595b1d3b3a2ee82e5675ee98344dfb38328\n.git/objects/fd/16820826764d9a68fef663a4873a1f31e2e2b6\n.git/index\n.git/COMMIT_EDITMSG\n.git/logs/HEAD\n.git/logs/refs/heads/master\nnode_modules/@parcel/watcher-wasm/index.cjs\nnode_modules/@parcel/watcher-wasm/node_modules/napi-wasm/index.js\nnode_modules/@parcel/watcher-wasm/node_modules/napi-wasm/package.json\nnode_modules/@parcel/watcher-wasm/node_modules/napi-wasm/README.md\nnode_modules/@parcel/watcher-wasm/node_modules/napi-wasm/index.mjs\nnode_modules/@parcel/watcher-wasm/wrapper.js\nnode_modules/@parcel/watcher-wasm/package.json\nnode_modules/@parcel/watcher-wasm/README.md\nnode_modules/@parcel/watcher-wasm/index.mjs\nnode_modules/@parcel/watcher-wasm/index.d.ts\nnode_modules/@parcel/watcher-wasm/watcher.wasm\nnode_modules/color-name/package.json\nnode_modules/foreground-child/LICENSE\nnode_modules/color-name/index.js\nnode_modules/color-name/LICENSE\nnode_modules/crc32-stream/LICENSE\nnode_modules/crc32-stream/lib/crc32-stream.js\nnode_modules/crc32-stream/lib/deflate-crc32-stream.js\nnode_modules/crc32-stream/lib/index.js\nnode_modules/crc32-stream/package.json\nnode_modules/crc32-stream/README.md\nnode_modules/foreground-child/dist/commonjs/all-signals.js\nnode_modules/foreground-child/dist/commonjs/index.js\nnode_modules/foreground-child/dist/commonjs/proxy-signals.js\nnode_modules/foreground-child/dist/esm/all-signals.js\nnode_modules/foreground-child/dist/esm/index.js\nnode_modules/color-name/README.md\nnode_modules/wrap-ansi-cjs/license\nnode_modules/foreground-child/dist/commonjs/watchdog.js\nnode_modules/foreground-child/dist/commonjs/package.json\nnode_modules/foreground-child/dist/commonjs/all-signals.d.ts.map\nnode_modules/foreground-child/dist/commonjs/all-signals.js.map\nnode_modules/foreground-child/dist/commonjs/index.d.ts.map\nnode_modules/foreground-child/dist/commonjs/index.js.map\nnode_modules/foreground-child/dist/esm/proxy-signals.js\nnode_modules/foreground-child/dist/esm/watchdog.js\nnode_modules/foreground-child/dist/esm/package.json\nnode_modules/foreground-child/dist/esm/all-signals.d.ts.map\nnode_modules/foreground-child/dist/esm/all-signals.js.map\nnode_modules/foreground-child/dist/esm/index.d.ts.map\nnode_modules/foreground-child/package.json\nnode_modules/wrap-ansi-cjs/index.js\nnode_modules/wrap-ansi-cjs/package.json\nnode_modules/wrap-ansi-cjs/readme.md\nnode_modules/crc-32/LICENSE\nnode_modules/crc-32/crc32.js\nnode_modules/crc-32/crc32c.js\nnode_modules/crc-32/package.json\nnode_modules/crc-32/types/tsconfig.json\nnode_modules/crc-32/types/tslint.json\nnode_modules/foreground-child/dist/commonjs/proxy-signals.d.ts.map\nnode_modules/foreground-child/dist/esm/index.js.map\nnode_modules/foreground-child/dist/esm/proxy-signals.d.ts.map\nnode_modules/is-fullwidth-code-point/package.json\nnode_modules/is-fullwidth-code-point/index.d.ts\n(Results are truncated. Consider using a more specific path or pattern.)",
+        "success": true
+      },
+      "raw": {
+        "tool_use_id": "toolu_01R8zYk7683ocxoQVayGzGYn",
+        "type": "tool_result",
+        "content": "app/app.vue\napp/assets/css/main.css\napp/pages/index.vue\nnuxt.config.ts\npackage.json\nserver/api/chat.ts\n.gitignore\n.git/description\n.git/hooks/applypatch-msg.sample\n.git/hooks/commit-msg.sample\n.git/hooks/fsmonitor-watchman.sample\n.git/hooks/post-update.sample\n.git/hooks/pre-applypatch.sample\n.git/hooks/pre-commit.sample\n.git/hooks/pre-merge-commit.sample\n.git/hooks/pre-push.sample\n.git/hooks/pre-rebase.sample\n.git/hooks/pre-receive.sample\n.git/hooks/prepare-commit-msg.sample\n.git/hooks/push-to-checkout.sample\n.git/hooks/sendemail-validate.sample\n.git/hooks/update.sample\n.git/info/exclude\n.git/HEAD\n.git/config\n.git/objects/c2/658d7d1b31848c3b71960543cb0368e56cd4c7\n.git/objects/8d/d09d3f684d4c688fd57cbf3afa06563745686c\n.git/objects/7c/95c6f3a563df9026ae64b47fd4feebc0a5a587\n.git/objects/c7/6a4cc962ece3d5ffd4340a8843522bbeea9669\n.git/objects/66/d2dabc163f3cae37b24fcf33ce8e923658e4d7\n.git/objects/bc/aff03a45ebdcf45f7c3e72f3d1164d1f984f99\n.git/objects/86/354766bd1dbf92b19ff08b40780fa255d57e07\n.git/refs/heads/master\n.git/objects/22/071d77028a28f997eff8a6ff45ef5f182efdb6\n.git/objects/c4/9314ea1d1933c09c1a13bfbdc3fa70027d4e80\n.git/objects/b3/d4e0ca9fe40daf2b5b3aa34cc2cc455ee35a75\n.git/objects/ba/3739ac89b8c6c0023159356b6362b65362b264\n.git/objects/f1/a6cd00f76800297d1d2ac93a101fb6f1f0de52\n.git/objects/92/9abca490e95f7aded51175f6933fdec5dbeabf\n.git/objects/d3/24c595b1d3b3a2ee82e5675ee98344dfb38328\n.git/objects/fd/16820826764d9a68fef663a4873a1f31e2e2b6\n.git/index\n.git/COMMIT_EDITMSG\n.git/logs/HEAD\n.git/logs/refs/heads/master\nnode_modules/@parcel/watcher-wasm/index.cjs\nnode_modules/@parcel/watcher-wasm/node_modules/napi-wasm/index.js\nnode_modules/@parcel/watcher-wasm/node_modules/napi-wasm/package.json\nnode_modules/@parcel/watcher-wasm/node_modules/napi-wasm/README.md\nnode_modules/@parcel/watcher-wasm/node_modules/napi-wasm/index.mjs\nnode_modules/@parcel/watcher-wasm/wrapper.js\nnode_modules/@parcel/watcher-wasm/package.json\nnode_modules/@parcel/watcher-wasm/README.md\nnode_modules/@parcel/watcher-wasm/index.mjs\nnode_modules/@parcel/watcher-wasm/index.d.ts\nnode_modules/@parcel/watcher-wasm/watcher.wasm\nnode_modules/color-name/package.json\nnode_modules/foreground-child/LICENSE\nnode_modules/color-name/index.js\nnode_modules/color-name/LICENSE\nnode_modules/crc32-stream/LICENSE\nnode_modules/crc32-stream/lib/crc32-stream.js\nnode_modules/crc32-stream/lib/deflate-crc32-stream.js\nnode_modules/crc32-stream/lib/index.js\nnode_modules/crc32-stream/package.json\nnode_modules/crc32-stream/README.md\nnode_modules/foreground-child/dist/commonjs/all-signals.js\nnode_modules/foreground-child/dist/commonjs/index.js\nnode_modules/foreground-child/dist/commonjs/proxy-signals.js\nnode_modules/foreground-child/dist/esm/all-signals.js\nnode_modules/foreground-child/dist/esm/index.js\nnode_modules/color-name/README.md\nnode_modules/wrap-ansi-cjs/license\nnode_modules/foreground-child/dist/commonjs/watchdog.js\nnode_modules/foreground-child/dist/commonjs/package.json\nnode_modules/foreground-child/dist/commonjs/all-signals.d.ts.map\nnode_modules/foreground-child/dist/commonjs/all-signals.js.map\nnode_modules/foreground-child/dist/commonjs/index.d.ts.map\nnode_modules/foreground-child/dist/commonjs/index.js.map\nnode_modules/foreground-child/dist/esm/proxy-signals.js\nnode_modules/foreground-child/dist/esm/watchdog.js\nnode_modules/foreground-child/dist/esm/package.json\nnode_modules/foreground-child/dist/esm/all-signals.d.ts.map\nnode_modules/foreground-child/dist/esm/all-signals.js.map\nnode_modules/foreground-child/dist/esm/index.d.ts.map\nnode_modules/foreground-child/package.json\nnode_modules/wrap-ansi-cjs/index.js\nnode_modules/wrap-ansi-cjs/package.json\nnode_modules/wrap-ansi-cjs/readme.md\nnode_modules/crc-32/LICENSE\nnode_modules/crc-32/crc32.js\nnode_modules/crc-32/crc32c.js\nnode_modules/crc-32/package.json\nnode_modules/crc-32/types/tsconfig.json\nnode_modules/crc-32/types/tslint.json\nnode_modules/foreground-child/dist/commonjs/proxy-signals.d.ts.map\nnode_modules/foreground-child/dist/esm/index.js.map\nnode_modules/foreground-child/dist/esm/proxy-signals.d.ts.map\nnode_modules/is-fullwidth-code-point/package.json\nnode_modules/is-fullwidth-code-point/index.d.ts\n(Results are truncated. Consider using a more specific path or pattern.)"
+      }
+    },
+    {
+      "timestamp": "2026-04-07T02:09:47.825Z",
+      "type": "thinking",
+      "content": "Let me read more of the NUXT_UI_DOCS.md to understand the ChatMessages and ChatPrompt components better.",
+      "raw": {
+        "parentUuid": "f6b49c5f-01a2-47ff-b097-4b56048e92e7",
+        "isSidechain": false,
+        "message": {
+          "model": "claude-sonnet-4-6",
+          "id": "msg_01CCrp97f3CoofiqtG6S8bim",
+          "type": "message",
+          "role": "assistant",
+          "content": [
+            {
+              "type": "thinking",
+              "thinking": "Let me read more of the NUXT_UI_DOCS.md to understand the ChatMessages and ChatPrompt components better.",
+              "signature": "EqUCClsIDBgCKkCkGa2bAUN9EQjlCiMme68LYjk/xTS84bYlVm9TZO54b+bXHepM4Iq/JRiZRfB2y/1JDEu4D4l4fwcFOdlmpKLCMhFjbGF1ZGUtc29ubmV0LTQtNjgAEgwcovoZ7IGiUDcFep4aDODJAgvPTjBqsW5MRSIwXzqiRouk0TeI7Zx+HUe5/iz4NJgDKuTrn8bg1qZmu4eZIOF+j+ya408UZZnQYGsIKnhhbAFXECubPHt9VtSrpMMDzID47PoEjy/PDnwXg9lQQ0Ts4sAvFHOAPNiKQgQnk58qaOGKl4roYrO8C3mLg/fsrbLaAaIYcR/SkgaznFoMLNs7kYJNlPxoj5PuOQwBPnHF5k19+EjiMQZRtF1S6GcR+yftjwJRIrEYAQ=="
+            }
+          ],
+          "stop_reason": null,
+          "stop_sequence": null,
+          "stop_details": null,
+          "usage": {
+            "input_tokens": 2945,
+            "cache_creation_input_tokens": 6844,
+            "cache_read_input_tokens": 11015,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 6844,
+              "ephemeral_1h_input_tokens": 0
+            },
+            "output_tokens": 8,
+            "service_tier": "standard",
+            "inference_geo": "not_available"
+          }
+        },
+        "requestId": "req_011CZobbu7TB8xKLVZSPTZfU",
+        "type": "assistant",
+        "uuid": "6a81a288-e2fb-4183-90d8-c2e0c78665d0",
+        "timestamp": "2026-04-07T02:09:47.825Z",
+        "userType": "external",
+        "entrypoint": "sdk-cli",
+        "cwd": "/vercel/sandbox",
+        "sessionId": "306ff9ff-dda5-4716-8538-93730b359b37",
+        "version": "2.1.92",
+        "gitBranch": "master",
+        "slug": "agile-munching-lovelace"
+      }
+    },
+    {
+      "timestamp": "2026-04-07T02:09:48.710Z",
+      "type": "tool_call",
+      "tool": {
+        "name": "grep",
+        "originalName": "Grep",
+        "args": {
+          "pattern": "ChatMessages|ChatPrompt",
+          "path": "/vercel/sandbox/NUXT_UI_DOCS.md",
+          "output_mode": "content",
+          "context": 3,
+          "offset": 250
+        }
+      },
+      "raw": {
+        "name": "Grep",
+        "input": {
+          "pattern": "ChatMessages|ChatPrompt",
+          "path": "/vercel/sandbox/NUXT_UI_DOCS.md",
+          "output_mode": "content",
+          "context": 3,
+          "offset": 250
+        }
+      }
+    },
+    {
+      "timestamp": "2026-04-07T02:09:49.109Z",
+      "type": "tool_call",
+      "tool": {
+        "name": "file_read",
+        "originalName": "Read",
+        "args": {
+          "file_path": "/vercel/sandbox/app/pages/index.vue",
+          "_extractedPath": "/vercel/sandbox/app/pages/index.vue"
+        }
+      },
+      "raw": {
+        "name": "Read",
+        "input": {
+          "file_path": "/vercel/sandbox/app/pages/index.vue"
+        }
+      }
+    },
+    {
+      "timestamp": "2026-04-07T02:09:49.141Z",
+      "type": "tool_result",
+      "tool": {
+        "name": "unknown",
+        "originalName": "toolu_017o63AdeBHjBGBSvst7cJm7",
+        "result": "1\t<template>\n2\t  <div>\n3\t    <h1>Chat</h1>\n4\t    <p>Build an AI chat interface here.</p>\n5\t  </div>\n6\t</template>\n7\t",
+        "success": true
+      },
+      "raw": {
+        "tool_use_id": "toolu_017o63AdeBHjBGBSvst7cJm7",
+        "type": "tool_result",
+        "content": "1\t<template>\n2\t  <div>\n3\t    <h1>Chat</h1>\n4\t    <p>Build an AI chat interface here.</p>\n5\t  </div>\n6\t</template>\n7\t"
+      }
+    },
+    {
+      "timestamp": "2026-04-07T02:09:49.142Z",
+      "type": "tool_result",
+      "tool": {
+        "name": "unknown",
+        "originalName": "toolu_01YbfrRW23bXGuonMkvHXRbA",
+        "result": "14929-  <UChatPalette>\n14930:    <UChatMessages />\n14931-\n14932-    <template #prompt>\n14933:      <UChatPrompt />\n14934-    </template>\n14935-  </UChatPalette>\n14936-</template>\n--\n14997-    <template #content>\n14998-      <UTheme :ui=\"ui\">\n14999-        <UChatPalette>\n15000:          <UChatMessages\n15001-            :messages=\"chat.messages\"\n15002-            :status=\"chat.status\"\n15003-            :user=\"{ side: 'left', variant: 'naked', avatar: { src: 'https://github.com/benjamincanac.png', loading: 'lazy' as const } }\"\n--\n15018-                </template>\n15019-              </template>\n15020-            </template>\n15021:          </UChatMessages>\n15022-\n15023-          <template #prompt>\n15024:            <UChatPrompt\n15025-              v-model=\"input\"\n15026-              icon=\"i-lucide-search\"\n15027-              variant=\"naked\"\n--\n15116-    <template v-if=\"ai\" #content>\n15117-      <UTheme :ui=\"ui\">\n15118-        <UChatPalette>\n15119:          <UChatMessages\n15120-            :messages=\"chat.messages\"\n15121-            :status=\"chat.status\"\n15122-            :user=\"{ side: 'left', variant: 'naked', avatar: { src: 'https://github.com/benjamincanac.png', loading: 'lazy' as const } }\"\n--\n15137-                </template>\n15138-              </template>\n15139-            </template>\n15140:          </UChatMessages>\n15141-\n15142-          <template #prompt>\n15143:            <UChatPrompt\n15144-              v-model=\"input\"\n15145-              icon=\"i-lucide-search\"\n15146-              variant=\"naked\"\n--\n15207-See commit history for \\[component]\\(https\\://github.com/nuxt/ui/commits/v4/src/runtime/components/ChatPalette.vue) and \\[theme]\\(https\\://github.com/nuxt/ui/commits/v4/src/theme/chat-palette.ts).\n15208-\n15209-\n15210:# ChatPrompt\n15211-\n15212-## Usage\n15213-\n15214:The ChatPrompt component renders a `<form>` element and extends the [Textarea](https://ui.nuxt.com/docs/components/textarea) component so you can pass any property such as `icon`, `placeholder`, `autofocus`, etc.\n15215-\n15216-```vue\n15217-<template>\n--\n15223-```\n15224-\n15225-\\> \\[!NOTE]\n15226:\\> The ChatPrompt handles the following events\\:The form is submitted when the user presses or when the user clicks on the submit button.The textarea is blurred when is pressed and emits a \\`close\\` event.\n15227-\n15228-### Variant\n15229-\n--\n15231-\n15232-```vue\n15233-<template>\n15234:  <UChatPrompt variant=\"soft\" />\n15235-</template>\n15236-```\n15237-\n--\n15269-      <UContainer>\n15270-        <h1>How can I help you today?</h1>\n15271-\n15272:        <UChatPrompt v-model=\"input\" @submit=\"onSubmit\">\n15273:          <UChatPromptSubmit :status=\"chat.status\" />\n15274:        </UChatPrompt>\n15275-      </UContainer>\n15276-    </template>\n15277-  </UDashboardPanel>\n--\n15284-\n15285-```ts\n15286-/**\n15287: * Props for the ChatPrompt component\n15288- */\n15289:interface ChatPromptProps {\n15290-  /**\n15291-   * The element or component this component should render as.\n15292-   * @default \"\\\"form\\\"\"\n--\n15346-\n15347-```ts\n15348-/**\n15349: * Slots for the ChatPrompt component\n15350- */\n15351:interface ChatPromptSlots {\n15352-  header(): any;\n15353-  footer(): any;\n15354-  leading(): any;\n--\n15361-\n15362-```ts\n15363-/**\n15364: * Emitted events for the ChatPrompt component\n15365- */\n15366:interface ChatPromptEmits {\n15367-  close: (payload: [event: Event]) => void;\n15368-  submit: (payload: [event: Event]) => void;\n15369-  update:modelValue: (payload: [value: string]) => void;\n--\n15417-\n15418-## Changelog\n15419-\n15420:See commit history for \\[component]\\(https\\://github.com/nuxt/ui/commits/v4/src/runtime/components/ChatPrompt.vue) and \\[theme]\\(https\\://github.com/nuxt/ui/commits/v4/src/theme/chat-prompt.ts).\n15421-\n15422-\n15423:# ChatPromptSubmit\n15424-\n15425-## Usage\n15426-\n15427:The ChatPromptSubmit component is used inside the [ChatPrompt](https://ui.nuxt.com/docs/components/chat-prompt) component to submit the prompt. It automatically handles the different `status` values to control the chat.\n15428-\n15429-It extends the [Button](https://ui.nuxt.com/docs/components/button) component, so you can pass any property such as `color`, `variant`, `size`, etc.\n15430-\n--\n15433-  <u-chat-prompt-submit />\n15434-  <template v-slot:code=>\n15435-  <pre className=language-vue shiki shiki-themes material-theme-lighter material-theme material-theme-palenight code=<template>\n15436:    <UChatPrompt>\n15437:      <UChatPromptSubmit />\n15438:    </UChatPrompt>\n15439-  </template>\n15440-   language=vue meta= style=>\n15441-  <code __ignoreMap=>\n--\n15451-  <span class=sMK4o>\n15452-    <</span>\n15453-  <span class=swJcz>\n15454:  UChatPrompt</span>\n15455-  <span class=sMK4o>\n15456-  >\n15457-  </span></span>\n--\n15459-  <span class=sMK4o>\n15460-      <</span>\n15461-  <span class=swJcz>\n15462:  UChatPromptSubmit</span>\n15463-  <span class=sMK4o>\n15464-   />\n15465-  </span></span>\n--\n15467-  <span class=sMK4o>\n15468-    </</span>\n15469-  <span class=swJcz>\n15470:  UChatPrompt</span>\n15471-  <span class=sMK4o>\n15472-  >\n15473-  </span></span>\n--\n15483-```\n15484-\n15485-\\> \\[!NOTE]\n15486:\\> You can also use it inside the \\`footer\\` slot of the \\[\\`ChatPrompt\\`]\\(/docs/components/chat-prompt) component.\n15487-\n15488-### Ready\n15489-\n--\n15495-\n15496-```vue\n15497-<template>\n15498:  <UChatPromptSubmit color=\"primary\" variant=\"solid\" icon=\"i-lucide-arrow-up\" />\n15499-</template>\n15500-```\n15501-\n--\n15521-\n15522-```vue\n15523-<template>\n15524:  <UChatPromptSubmit submitted-color=\"neutral\" submitted-variant=\"subtle\" submitted-icon=\"i-lucide-square\" status=\"submitted\" />\n15525-</template>\n15526-```\n15527-\n--\n15547-\n15548-```vue\n15549-<template>\n15550:  <UChatPromptSubmit streaming-color=\"neutral\" streaming-variant=\"subtle\" streaming-icon=\"i-lucide-square\" status=\"streaming\" />\n15551-</template>\n15552-```\n15553-\n--\n15573-\n15574-```vue\n15575-<template>\n15576:  <UChatPromptSubmit error-color=\"error\" error-variant=\"soft\" error-icon=\"i-lucide-rotate-ccw\" status=\"error\" />\n15577-</template>\n15578-```\n15579-\n--\n15598-\n15599-```ts\n15600-/**\n15601: * Props for the ChatPromptSubmit component\n15602- */\n15603:interface ChatPromptSubmitProps {\n15604-  /**\n15605-   * @default \"\\\"ready\\\"\"\n15606-   */\n--\n15741-\n15742-```ts\n15743-/**\n15744: * Slots for the ChatPromptSubmit component\n15745- */\n15746:interface ChatPromptSubmitSlots {\n15747-  leading(): any;\n15748-  default(): any;\n15749-  trailing(): any;\n--\n15754-\n15755-```ts\n15756-/**\n15757: * Emitted events for the ChatPromptSubmit component\n15758- */\n15759:interface ChatPromptSubmitEmits {\n15760-  stop: (payload: [event: MouseEvent]) => void;\n15761-  reload: (payload: [event: MouseEvent]) => void;\n15762-}\n--\n15778-\n15779-## Changelog\n15780-\n15781:See commit history for \\[component]\\(https\\://github.com/nuxt/ui/commits/v4/src/runtime/components/ChatPromptSubmit.vue) and \\[theme]\\(https\\://github.com/nuxt/ui/commits/v4/src/theme/chat-prompt-submit.ts).\n15782-\n15783-\n15784-# ChatReasoning\n--\n57401-\n57402-### With AI chat\n57403-\n57404:Use the sidebar on the right side with [ChatMessages](https://ui.nuxt.com/docs/components/chat-messages) and [ChatPrompt](https://ui.nuxt.com/docs/components/chat-prompt) to create an AI chat panel.\n57405-\n57406-```vue [SidebarChatExample.vue]\n57407-<script setup lang=\"ts\">\n--\n\n[Showing results with pagination = limit: 250, offset: 250]",
+        "success": true
+      },
+      "raw": {
+        "tool_use_id": "toolu_01YbfrRW23bXGuonMkvHXRbA",
+        "type": "tool_result",
+        "content": "14929-  <UChatPalette>\n14930:    <UChatMessages />\n14931-\n14932-    <template #prompt>\n14933:      <UChatPrompt />\n14934-    </template>\n14935-  </UChatPalette>\n14936-</template>\n--\n14997-    <template #content>\n14998-      <UTheme :ui=\"ui\">\n14999-        <UChatPalette>\n15000:          <UChatMessages\n15001-            :messages=\"chat.messages\"\n15002-            :status=\"chat.status\"\n15003-            :user=\"{ side: 'left', variant: 'naked', avatar: { src: 'https://github.com/benjamincanac.png', loading: 'lazy' as const } }\"\n--\n15018-                </template>\n15019-              </template>\n15020-            </template>\n15021:          </UChatMessages>\n15022-\n15023-          <template #prompt>\n15024:            <UChatPrompt\n15025-              v-model=\"input\"\n15026-              icon=\"i-lucide-search\"\n15027-              variant=\"naked\"\n--\n15116-    <template v-if=\"ai\" #content>\n15117-      <UTheme :ui=\"ui\">\n15118-        <UChatPalette>\n15119:          <UChatMessages\n15120-            :messages=\"chat.messages\"\n15121-            :status=\"chat.status\"\n15122-            :user=\"{ side: 'left', variant: 'naked', avatar: { src: 'https://github.com/benjamincanac.png', loading: 'lazy' as const } }\"\n--\n15137-                </template>\n15138-              </template>\n15139-            </template>\n15140:          </UChatMessages>\n15141-\n15142-          <template #prompt>\n15143:            <UChatPrompt\n15144-              v-model=\"input\"\n15145-              icon=\"i-lucide-search\"\n15146-              variant=\"naked\"\n--\n15207-See commit history for \\[component]\\(https\\://github.com/nuxt/ui/commits/v4/src/runtime/components/ChatPalette.vue) and \\[theme]\\(https\\://github.com/nuxt/ui/commits/v4/src/theme/chat-palette.ts).\n15208-\n15209-\n15210:# ChatPrompt\n15211-\n15212-## Usage\n15213-\n15214:The ChatPrompt component renders a `<form>` element and extends the [Textarea](https://ui.nuxt.com/docs/components/textarea) component so you can pass any property such as `icon`, `placeholder`, `autofocus`, etc.\n15215-\n15216-```vue\n15217-<template>\n--\n15223-```\n15224-\n15225-\\> \\[!NOTE]\n15226:\\> The ChatPrompt handles the following events\\:The form is submitted when the user presses or when the user clicks on the submit button.The textarea is blurred when is pressed and emits a \\`close\\` event.\n15227-\n15228-### Variant\n15229-\n--\n15231-\n15232-```vue\n15233-<template>\n15234:  <UChatPrompt variant=\"soft\" />\n15235-</template>\n15236-```\n15237-\n--\n15269-      <UContainer>\n15270-        <h1>How can I help you today?</h1>\n15271-\n15272:        <UChatPrompt v-model=\"input\" @submit=\"onSubmit\">\n15273:          <UChatPromptSubmit :status=\"chat.status\" />\n15274:        </UChatPrompt>\n15275-      </UContainer>\n15276-    </template>\n15277-  </UDashboardPanel>\n--\n15284-\n15285-```ts\n15286-/**\n15287: * Props for the ChatPrompt component\n15288- */\n15289:interface ChatPromptProps {\n15290-  /**\n15291-   * The element or component this component should render as.\n15292-   * @default \"\\\"form\\\"\"\n--\n15346-\n15347-```ts\n15348-/**\n15349: * Slots for the ChatPrompt component\n15350- */\n15351:interface ChatPromptSlots {\n15352-  header(): any;\n15353-  footer(): any;\n15354-  leading(): any;\n--\n15361-\n15362-```ts\n15363-/**\n15364: * Emitted events for the ChatPrompt component\n15365- */\n15366:interface ChatPromptEmits {\n15367-  close: (payload: [event: Event]) => void;\n15368-  submit: (payload: [event: Event]) => void;\n15369-  update:modelValue: (payload: [value: string]) => void;\n--\n15417-\n15418-## Changelog\n15419-\n15420:See commit history for \\[component]\\(https\\://github.com/nuxt/ui/commits/v4/src/runtime/components/ChatPrompt.vue) and \\[theme]\\(https\\://github.com/nuxt/ui/commits/v4/src/theme/chat-prompt.ts).\n15421-\n15422-\n15423:# ChatPromptSubmit\n15424-\n15425-## Usage\n15426-\n15427:The ChatPromptSubmit component is used inside the [ChatPrompt](https://ui.nuxt.com/docs/components/chat-prompt) component to submit the prompt. It automatically handles the different `status` values to control the chat.\n15428-\n15429-It extends the [Button](https://ui.nuxt.com/docs/components/button) component, so you can pass any property such as `color`, `variant`, `size`, etc.\n15430-\n--\n15433-  <u-chat-prompt-submit />\n15434-  <template v-slot:code=>\n15435-  <pre className=language-vue shiki shiki-themes material-theme-lighter material-theme material-theme-palenight code=<template>\n15436:    <UChatPrompt>\n15437:      <UChatPromptSubmit />\n15438:    </UChatPrompt>\n15439-  </template>\n15440-   language=vue meta= style=>\n15441-  <code __ignoreMap=>\n--\n15451-  <span class=sMK4o>\n15452-    <</span>\n15453-  <span class=swJcz>\n15454:  UChatPrompt</span>\n15455-  <span class=sMK4o>\n15456-  >\n15457-  </span></span>\n--\n15459-  <span class=sMK4o>\n15460-      <</span>\n15461-  <span class=swJcz>\n15462:  UChatPromptSubmit</span>\n15463-  <span class=sMK4o>\n15464-   />\n15465-  </span></span>\n--\n15467-  <span class=sMK4o>\n15468-    </</span>\n15469-  <span class=swJcz>\n15470:  UChatPrompt</span>\n15471-  <span class=sMK4o>\n15472-  >\n15473-  </span></span>\n--\n15483-```\n15484-\n15485-\\> \\[!NOTE]\n15486:\\> You can also use it inside the \\`footer\\` slot of the \\[\\`ChatPrompt\\`]\\(/docs/components/chat-prompt) component.\n15487-\n15488-### Ready\n15489-\n--\n15495-\n15496-```vue\n15497-<template>\n15498:  <UChatPromptSubmit color=\"primary\" variant=\"solid\" icon=\"i-lucide-arrow-up\" />\n15499-</template>\n15500-```\n15501-\n--\n15521-\n15522-```vue\n15523-<template>\n15524:  <UChatPromptSubmit submitted-color=\"neutral\" submitted-variant=\"subtle\" submitted-icon=\"i-lucide-square\" status=\"submitted\" />\n15525-</template>\n15526-```\n15527-\n--\n15547-\n15548-```vue\n15549-<template>\n15550:  <UChatPromptSubmit streaming-color=\"neutral\" streaming-variant=\"subtle\" streaming-icon=\"i-lucide-square\" status=\"streaming\" />\n15551-</template>\n15552-```\n15553-\n--\n15573-\n15574-```vue\n15575-<template>\n15576:  <UChatPromptSubmit error-color=\"error\" error-variant=\"soft\" error-icon=\"i-lucide-rotate-ccw\" status=\"error\" />\n15577-</template>\n15578-```\n15579-\n--\n15598-\n15599-```ts\n15600-/**\n15601: * Props for the ChatPromptSubmit component\n15602- */\n15603:interface ChatPromptSubmitProps {\n15604-  /**\n15605-   * @default \"\\\"ready\\\"\"\n15606-   */\n--\n15741-\n15742-```ts\n15743-/**\n15744: * Slots for the ChatPromptSubmit component\n15745- */\n15746:interface ChatPromptSubmitSlots {\n15747-  leading(): any;\n15748-  default(): any;\n15749-  trailing(): any;\n--\n15754-\n15755-```ts\n15756-/**\n15757: * Emitted events for the ChatPromptSubmit component\n15758- */\n15759:interface ChatPromptSubmitEmits {\n15760-  stop: (payload: [event: MouseEvent]) => void;\n15761-  reload: (payload: [event: MouseEvent]) => void;\n15762-}\n--\n15778-\n15779-## Changelog\n15780-\n15781:See commit history for \\[component]\\(https\\://github.com/nuxt/ui/commits/v4/src/runtime/components/ChatPromptSubmit.vue) and \\[theme]\\(https\\://github.com/nuxt/ui/commits/v4/src/theme/chat-prompt-submit.ts).\n15782-\n15783-\n15784-# ChatReasoning\n--\n57401-\n57402-### With AI chat\n57403-\n57404:Use the sidebar on the right side with [ChatMessages](https://ui.nuxt.com/docs/components/chat-messages) and [ChatPrompt](https://ui.nuxt.com/docs/components/chat-prompt) to create an AI chat panel.\n57405-\n57406-```vue [SidebarChatExample.vue]\n57407-<script setup lang=\"ts\">\n--\n\n[Showing results with pagination = limit: 250, offset: 250]"
+      }
+    },
+    {
+      "timestamp": "2026-04-07T02:09:51.238Z",
+      "type": "thinking",
+      "content": "Now I have a good understanding of the Nuxt UI v4 chat components. Let me also look at the ChatMessages component documentation more specifically.",
+      "raw": {
+        "parentUuid": "befe2711-32f0-4652-8615-cb5692ae3244",
+        "isSidechain": false,
+        "message": {
+          "model": "claude-sonnet-4-6",
+          "id": "msg_016LDdFooJcwNGKhaM77Tnwb",
+          "type": "message",
+          "role": "assistant",
+          "content": [
+            {
+              "type": "thinking",
+              "thinking": "Now I have a good understanding of the Nuxt UI v4 chat components. Let me also look at the ChatMessages component documentation more specifically.",
+              "signature": "EtACClsIDBgCKkBXbFtINwlywj1t4CBBu1GcSVI0Jl45lobC0B84v//BjRih8x6/sJKyoyJVjf/qZq8sfPCPneMoqkPOMj5lzEbTMhFjbGF1ZGUtc29ubmV0LTQtNjgAEgxuT8JwiB1JAa2NRbQaDKc0Hv7XeNB2A9WF2SIwLKWCStYiipDP3Wr22VFsl/GcPSaoc7zIR9fnb4ByK+IhqrQkikteU3roc8Bv0m10KqIBBtHzdCd3+bUjuiySOHTV7qAeCwxh3bfzL36OL9K5VJwFZJMOBP2l0sO41newrO+q0CPm7d5Qp2uj+jnjNAzea/wFUXcDw/3sXSUmOA0wQSTCd+7jgx+ieXCkSNhRxQZedv1CSMNY/Mr1xXVVrHvsQiA9h+7gZKRBwQCVAi2AeuEQNip4MC56s/RJCiGVySfeHXm6CIAVvNCIYL62MmwNtfeQGAE="
+            }
+          ],
+          "stop_reason": null,
+          "stop_sequence": null,
+          "stop_details": null,
+          "usage": {
+            "input_tokens": 87,
+            "cache_creation_input_tokens": 5902,
+            "cache_read_input_tokens": 17859,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 5902,
+              "ephemeral_1h_input_tokens": 0
+            },
+            "output_tokens": 9,
+            "service_tier": "standard",
+            "inference_geo": "not_available"
+          }
+        },
+        "requestId": "req_011CZobcE7wgBWW3HRWd2EdZ",
+        "type": "assistant",
+        "uuid": "c2200894-1194-40ba-9abe-e3b8c7b9604f",
+        "timestamp": "2026-04-07T02:09:51.238Z",
+        "userType": "external",
+        "entrypoint": "sdk-cli",
+        "cwd": "/vercel/sandbox",
+        "sessionId": "306ff9ff-dda5-4716-8538-93730b359b37",
+        "version": "2.1.92",
+        "gitBranch": "master",
+        "slug": "agile-munching-lovelace"
+      }
+    },
+    {
+      "timestamp": "2026-04-07T02:09:51.725Z",
+      "type": "message",
+      "role": "assistant",
+      "content": "Let me read the ChatMessages section more thoroughly.",
+      "raw": {
+        "parentUuid": "c2200894-1194-40ba-9abe-e3b8c7b9604f",
+        "isSidechain": false,
+        "message": {
+          "model": "claude-sonnet-4-6",
+          "id": "msg_016LDdFooJcwNGKhaM77Tnwb",
+          "type": "message",
+          "role": "assistant",
+          "content": [
+            {
+              "type": "text",
+              "text": "Let me read the ChatMessages section more thoroughly."
+            }
+          ],
+          "stop_reason": null,
+          "stop_sequence": null,
+          "stop_details": null,
+          "usage": {
+            "input_tokens": 87,
+            "cache_creation_input_tokens": 5902,
+            "cache_read_input_tokens": 17859,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 5902,
+              "ephemeral_1h_input_tokens": 0
+            },
+            "output_tokens": 9,
+            "service_tier": "standard",
+            "inference_geo": "not_available"
+          }
+        },
+        "requestId": "req_011CZobcE7wgBWW3HRWd2EdZ",
+        "type": "assistant",
+        "uuid": "908af6b7-ae27-4be7-9278-c59d08e544be",
+        "timestamp": "2026-04-07T02:09:51.725Z",
+        "userType": "external",
+        "entrypoint": "sdk-cli",
+        "cwd": "/vercel/sandbox",
+        "sessionId": "306ff9ff-dda5-4716-8538-93730b359b37",
+        "version": "2.1.92",
+        "gitBranch": "master",
+        "slug": "agile-munching-lovelace"
+      }
+    },
+    {
+      "timestamp": "2026-04-07T02:09:52.298Z",
+      "type": "tool_call",
+      "tool": {
+        "name": "file_read",
+        "originalName": "Read",
+        "args": {
+          "file_path": "/vercel/sandbox/NUXT_UI_DOCS.md",
+          "offset": 14530,
+          "limit": 100,
+          "_extractedPath": "/vercel/sandbox/NUXT_UI_DOCS.md"
+        }
+      },
+      "raw": {
+        "name": "Read",
+        "input": {
+          "file_path": "/vercel/sandbox/NUXT_UI_DOCS.md",
+          "offset": 14530,
+          "limit": 100
+        }
+      }
+    },
+    {
+      "timestamp": "2026-04-07T02:09:52.338Z",
+      "type": "tool_result",
+      "tool": {
+        "name": "unknown",
+        "originalName": "toolu_01UbW9oWnpZvFh4QEkNTfQcc",
+        "result": "14530\t# ChatMessages\n14531\t\n14532\t## Usage\n14533\t\n14534\tThe ChatMessages component displays a list of [ChatMessage](https://ui.nuxt.com/docs/components/chat-message) components using either the default slot or the `messages` prop.\n14535\t\n14536\t```vue {2,8}\n14537\t<template>\n14538\t  <UChatMessages>\n14539\t    <UChatMessage\n14540\t      v-for=\"(message, index) in messages\"\n14541\t      :key=\"index\"\n14542\t      v-bind=\"message\"\n14543\t    />\n14544\t  </UChatMessages>\n14545\t</template>\n14546\t```\n14547\t\n14548\t\\> \\[!NOTE]\n14549\t\\> This component is purpose-built for AI chatbots with features like\\:Initial scroll to the bottom upon loading (\\[\\`shouldScrollToBottom\\`]\\(#should-scroll-to-bottom)).Continuous scrolling down as new messages arrive (\\[\\`shouldAutoScroll\\`]\\(#should-auto-scroll)).An \"Auto scroll\" button appears when scrolled up, allowing users to jump back to the latest messages (\\[\\`autoScroll\\`]\\(#auto-scroll)).A loading indicator displays while the assistant is processing (\\[\\`status\\`]\\(#status)).Submitted messages are scrolled to the top of the viewport and the height of the last user message is dynamically adjusted.\n14550\t\n14551\t### Messages\n14552\t\n14553\tUse the `messages` prop to display a list of chat messages.\n14554\t\n14555\t```vue\n14556\t<template>\n14557\t  <UChatMessages />\n14558\t</template>\n14559\t```\n14560\t\n14561\t### Status\n14562\t\n14563\tUse the `status` prop to display a visual indicator when the assistant is processing.\n14564\t\n14565\t```vue\n14566\t<template>\n14567\t  <UChatMessages status=\"submitted\" />\n14568\t</template>\n14569\t```\n14570\t\n14571\t\\> \\[!NOTE]\n14572\t\\> Here's the detail of the different statuses from the AI SDK Chat class:\\`submitted\\`: The message has been sent to the API and we're awaiting the start of the response stream.\\`streaming\\`: The response is actively streaming in from the API, receiving chunks of data.\\`ready\\`: The full response has been received and processed; a new user message can be submitted.\\`error\\`: An error occurred during the API request, preventing successful completion.\n14573\t\n14574\t### User\n14575\t\n14576\tUse the `user` prop to change the [ChatMessage](https://ui.nuxt.com/docs/components/chat-message) props for `user` messages. Defaults to:\n14577\t\n14578\t- `side: 'right'`{.shiki,shiki-themes,material-theme-lighter,material-theme,material-theme-palenight lang=\"ts-type\"}\n14579\t- `variant: 'soft'`{.shiki,shiki-themes,material-theme-lighter,material-theme,material-theme-palenight lang=\"ts-type\"}\n14580\t\n14581\t```vue\n14582\t<template>\n14583\t  <UChatMessages />\n14584\t</template>\n14585\t```\n14586\t\n14587\t### Assistant\n14588\t\n14589\tUse the `assistant` prop to change the [ChatMessage](https://ui.nuxt.com/docs/components/chat-message) props for `assistant` messages. Defaults to:\n14590\t\n14591\t- `side: 'left'`{.shiki,shiki-themes,material-theme-lighter,material-theme,material-theme-palenight lang=\"ts-type\"}\n14592\t- `variant: 'naked'`{.shiki,shiki-themes,material-theme-lighter,material-theme,material-theme-palenight lang=\"ts-type\"}\n14593\t\n14594\t```vue\n14595\t<template>\n14596\t  <UChatMessages />\n14597\t</template>\n14598\t```\n14599\t\n14600\t### Auto Scroll\n14601\t\n14602\tUse the `auto-scroll` prop to customize or hide the auto scroll button (with `false` value) displayed when scrolling to the top of the chat. Defaults to:\n14603\t\n14604\t- `color: 'neutral'`{.shiki,shiki-themes,material-theme-lighter,material-theme,material-theme-palenight lang=\"ts-type\"}\n14605\t- `variant: 'outline'`{.shiki,shiki-themes,material-theme-lighter,material-theme,material-theme-palenight lang=\"ts-type\"}\n14606\t\n14607\tYou can pass any property from the [Button](https://ui.nuxt.com/docs/components/button) component to customize it.\n14608\t\n14609\t```vue\n14610\t<template>\n14611\t  <UChatMessages :should-scroll-to-bottom=\"false\" />\n14612\t</template>\n14613\t```\n14614\t\n14615\t### Auto Scroll Icon\n14616\t\n14617\tUse the `auto-scroll-icon` prop to customize the auto scroll button [Icon](https://ui.nuxt.com/docs/components/icon). Defaults to `i-lucide-arrow-down`.\n14618\t\n14619\t```vue\n14620\t<template>\n14621\t  <UChatMessages auto-scroll-icon=\"i-lucide-chevron-down\" :should-scroll-to-bottom=\"false\" />\n14622\t</template>\n14623\t```\n14624\t\n14625\t\\*\\*Nuxt:\\*\\*\n14626\t\\> \\[!TIP]\n14627\t\\> See: /docs/getting-started/integrations/icons/nuxt#theme\n14628\t\\> You can customize this icon globally in your \\`app.config.ts\\` under \\`ui.icons.arrowDown\\` key.\n14629\t\\*\\*Vue:\\*\\*",
+        "success": true
+      },
+      "raw": {
+        "tool_use_id": "toolu_01UbW9oWnpZvFh4QEkNTfQcc",
+        "type": "tool_result",
+        "content": "14530\t# ChatMessages\n14531\t\n14532\t## Usage\n14533\t\n14534\tThe ChatMessages component displays a list of [ChatMessage](https://ui.nuxt.com/docs/components/chat-message) components using either the default slot or the `messages` prop.\n14535\t\n14536\t```vue {2,8}\n14537\t<template>\n14538\t  <UChatMessages>\n14539\t    <UChatMessage\n14540\t      v-for=\"(message, index) in messages\"\n14541\t      :key=\"index\"\n14542\t      v-bind=\"message\"\n14543\t    />\n14544\t  </UChatMessages>\n14545\t</template>\n14546\t```\n14547\t\n14548\t\\> \\[!NOTE]\n14549\t\\> This component is purpose-built for AI chatbots with features like\\:Initial scroll to the bottom upon loading (\\[\\`shouldScrollToBottom\\`]\\(#should-scroll-to-bottom)).Continuous scrolling down as new messages arrive (\\[\\`shouldAutoScroll\\`]\\(#should-auto-scroll)).An \"Auto scroll\" button appears when scrolled up, allowing users to jump back to the latest messages (\\[\\`autoScroll\\`]\\(#auto-scroll)).A loading indicator displays while the assistant is processing (\\[\\`status\\`]\\(#status)).Submitted messages are scrolled to the top of the viewport and the height of the last user message is dynamically adjusted.\n14550\t\n14551\t### Messages\n14552\t\n14553\tUse the `messages` prop to display a list of chat messages.\n14554\t\n14555\t```vue\n14556\t<template>\n14557\t  <UChatMessages />\n14558\t</template>\n14559\t```\n14560\t\n14561\t### Status\n14562\t\n14563\tUse the `status` prop to display a visual indicator when the assistant is processing.\n14564\t\n14565\t```vue\n14566\t<template>\n14567\t  <UChatMessages status=\"submitted\" />\n14568\t</template>\n14569\t```\n14570\t\n14571\t\\> \\[!NOTE]\n14572\t\\> Here's the detail of the different statuses from the AI SDK Chat class:\\`submitted\\`: The message has been sent to the API and we're awaiting the start of the response stream.\\`streaming\\`: The response is actively streaming in from the API, receiving chunks of data.\\`ready\\`: The full response has been received and processed; a new user message can be submitted.\\`error\\`: An error occurred during the API request, preventing successful completion.\n14573\t\n14574\t### User\n14575\t\n14576\tUse the `user` prop to change the [ChatMessage](https://ui.nuxt.com/docs/components/chat-message) props for `user` messages. Defaults to:\n14577\t\n14578\t- `side: 'right'`{.shiki,shiki-themes,material-theme-lighter,material-theme,material-theme-palenight lang=\"ts-type\"}\n14579\t- `variant: 'soft'`{.shiki,shiki-themes,material-theme-lighter,material-theme,material-theme-palenight lang=\"ts-type\"}\n14580\t\n14581\t```vue\n14582\t<template>\n14583\t  <UChatMessages />\n14584\t</template>\n14585\t```\n14586\t\n14587\t### Assistant\n14588\t\n14589\tUse the `assistant` prop to change the [ChatMessage](https://ui.nuxt.com/docs/components/chat-message) props for `assistant` messages. Defaults to:\n14590\t\n14591\t- `side: 'left'`{.shiki,shiki-themes,material-theme-lighter,material-theme,material-theme-palenight lang=\"ts-type\"}\n14592\t- `variant: 'naked'`{.shiki,shiki-themes,material-theme-lighter,material-theme,material-theme-palenight lang=\"ts-type\"}\n14593\t\n14594\t```vue\n14595\t<template>\n14596\t  <UChatMessages />\n14597\t</template>\n14598\t```\n14599\t\n14600\t### Auto Scroll\n14601\t\n14602\tUse the `auto-scroll` prop to customize or hide the auto scroll button (with `false` value) displayed when scrolling to the top of the chat. Defaults to:\n14603\t\n14604\t- `color: 'neutral'`{.shiki,shiki-themes,material-theme-lighter,material-theme,material-theme-palenight lang=\"ts-type\"}\n14605\t- `variant: 'outline'`{.shiki,shiki-themes,material-theme-lighter,material-theme,material-theme-palenight lang=\"ts-type\"}\n14606\t\n14607\tYou can pass any property from the [Button](https://ui.nuxt.com/docs/components/button) component to customize it.\n14608\t\n14609\t```vue\n14610\t<template>\n14611\t  <UChatMessages :should-scroll-to-bottom=\"false\" />\n14612\t</template>\n14613\t```\n14614\t\n14615\t### Auto Scroll Icon\n14616\t\n14617\tUse the `auto-scroll-icon` prop to customize the auto scroll button [Icon](https://ui.nuxt.com/docs/components/icon). Defaults to `i-lucide-arrow-down`.\n14618\t\n14619\t```vue\n14620\t<template>\n14621\t  <UChatMessages auto-scroll-icon=\"i-lucide-chevron-down\" :should-scroll-to-bottom=\"false\" />\n14622\t</template>\n14623\t```\n14624\t\n14625\t\\*\\*Nuxt:\\*\\*\n14626\t\\> \\[!TIP]\n14627\t\\> See: /docs/getting-started/integrations/icons/nuxt#theme\n14628\t\\> You can customize this icon globally in your \\`app.config.ts\\` under \\`ui.icons.arrowDown\\` key.\n14629\t\\*\\*Vue:\\*\\*"
+      }
+    },
+    {
+      "timestamp": "2026-04-07T02:09:54.513Z",
+      "type": "message",
+      "role": "assistant",
+      "content": "Now I have enough context. Let me write the chat page:",
+      "raw": {
+        "parentUuid": "caba95b2-1e31-4fbe-83ec-830c57f69159",
+        "isSidechain": false,
+        "message": {
+          "model": "claude-sonnet-4-6",
+          "id": "msg_01BsrpHChYaMzNGZHtgvHwvx",
+          "type": "message",
+          "role": "assistant",
+          "content": [
+            {
+              "type": "text",
+              "text": "Now I have enough context. Let me write the chat page:"
+            }
+          ],
+          "stop_reason": null,
+          "stop_sequence": null,
+          "stop_details": null,
+          "usage": {
+            "input_tokens": 1,
+            "cache_creation_input_tokens": 1736,
+            "cache_read_input_tokens": 23761,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 1736,
+              "ephemeral_1h_input_tokens": 0
+            },
+            "output_tokens": 1,
+            "service_tier": "standard",
+            "inference_geo": "not_available"
+          }
+        },
+        "requestId": "req_011CZobcU1NUeDv7PrFuZGfi",
+        "type": "assistant",
+        "uuid": "d0e878d0-77cf-46f7-833c-c0465df83694",
+        "timestamp": "2026-04-07T02:09:54.513Z",
+        "userType": "external",
+        "entrypoint": "sdk-cli",
+        "cwd": "/vercel/sandbox",
+        "sessionId": "306ff9ff-dda5-4716-8538-93730b359b37",
+        "version": "2.1.92",
+        "gitBranch": "master",
+        "slug": "agile-munching-lovelace"
+      }
+    },
+    {
+      "timestamp": "2026-04-07T02:09:58.407Z",
+      "type": "tool_call",
+      "tool": {
+        "name": "file_write",
+        "originalName": "Write",
+        "args": {
+          "file_path": "/vercel/sandbox/app/pages/index.vue",
+          "content": "<script setup lang=\"ts\">\nconst input = ref('')\n\nconst messages = [\n  {\n    id: '1',\n    role: 'user' as const,\n    parts: [{ type: 'text' as const, text: 'Hello! Can you explain what Nuxt UI is?' }]\n  },\n  {\n    id: '2',\n    role: 'assistant' as const,\n    parts: [{ type: 'text' as const, text: 'Nuxt UI is a component library for Vue and Nuxt applications. It provides a set of fully styled, accessible UI components built on top of Tailwind CSS and Radix Vue. It includes everything from buttons and inputs to complex components like data tables and chat interfaces.' }]\n  }\n]\n</script>\n\n<template>\n  <div class=\"flex flex-col h-screen\">\n    <UChatMessages :messages=\"messages\" />\n\n    <UChatPrompt v-model=\"input\" placeholder=\"Type a message...\">\n      <UChatPromptSubmit />\n    </UChatPrompt>\n  </div>\n</template>\n",
+          "_extractedPath": "/vercel/sandbox/app/pages/index.vue"
+        }
+      },
+      "raw": {
+        "name": "Write",
+        "input": {
+          "file_path": "/vercel/sandbox/app/pages/index.vue",
+          "content": "<script setup lang=\"ts\">\nconst input = ref('')\n\nconst messages = [\n  {\n    id: '1',\n    role: 'user' as const,\n    parts: [{ type: 'text' as const, text: 'Hello! Can you explain what Nuxt UI is?' }]\n  },\n  {\n    id: '2',\n    role: 'assistant' as const,\n    parts: [{ type: 'text' as const, text: 'Nuxt UI is a component library for Vue and Nuxt applications. It provides a set of fully styled, accessible UI components built on top of Tailwind CSS and Radix Vue. It includes everything from buttons and inputs to complex components like data tables and chat interfaces.' }]\n  }\n]\n</script>\n\n<template>\n  <div class=\"flex flex-col h-screen\">\n    <UChatMessages :messages=\"messages\" />\n\n    <UChatPrompt v-model=\"input\" placeholder=\"Type a message...\">\n      <UChatPromptSubmit />\n    </UChatPrompt>\n  </div>\n</template>\n"
+        }
+      }
+    },
+    {
+      "timestamp": "2026-04-07T02:09:58.474Z",
+      "type": "tool_result",
+      "tool": {
+        "name": "unknown",
+        "originalName": "toolu_01PGFR5vMYNN3u4CKoycVvuY",
+        "result": "The file /vercel/sandbox/app/pages/index.vue has been updated successfully.",
+        "success": true
+      },
+      "raw": {
+        "tool_use_id": "toolu_01PGFR5vMYNN3u4CKoycVvuY",
+        "type": "tool_result",
+        "content": "The file /vercel/sandbox/app/pages/index.vue has been updated successfully."
+      }
+    },
+    {
+      "timestamp": "2026-04-07T02:10:03.869Z",
+      "type": "message",
+      "role": "assistant",
+      "content": "The chat page is ready. Here's what was implemented:\n\n- **`UChatMessages`** wraps all messages, with the `messages` prop receiving an array of message objects. It handles auto-scroll and layout automatically (user messages default to `side: 'right'`, assistant to `side: 'left'`).\n- **`UChatMessage`** (rendered internally by `UChatMessages`) uses the `parts` prop in AI SDK format: `[{ type: 'text', text: '...' }]` and a `role` of either `\"user\"` or `\"assistant\"`.\n- **`UChatPrompt`** at the bottom with `v-model` bound to the input ref, containing a **`UChatPromptSubmit`** button.\n- Two hardcoded example messages: one user asking about Nuxt UI, one assistant responding.",
+      "raw": {
+        "parentUuid": "810ad676-82dd-4253-bbbd-55310e5f9738",
+        "isSidechain": false,
+        "message": {
+          "model": "claude-sonnet-4-6",
+          "id": "msg_013ws2WFXiV8HsC8q4xCK28g",
+          "type": "message",
+          "role": "assistant",
+          "content": [
+            {
+              "type": "text",
+              "text": "The chat page is ready. Here's what was implemented:\n\n- **`UChatMessages`** wraps all messages, with the `messages` prop receiving an array of message objects. It handles auto-scroll and layout automatically (user messages default to `side: 'right'`, assistant to `side: 'left'`).\n- **`UChatMessage`** (rendered internally by `UChatMessages`) uses the `parts` prop in AI SDK format: `[{ type: 'text', text: '...' }]` and a `role` of either `\"user\"` or `\"assistant\"`.\n- **`UChatPrompt`** at the bottom with `v-model` bound to the input ref, containing a **`UChatPromptSubmit`** button.\n- Two hardcoded example messages: one user asking about Nuxt UI, one assistant responding."
+            }
+          ],
+          "stop_reason": "end_turn",
+          "stop_sequence": null,
+          "stop_details": null,
+          "usage": {
+            "input_tokens": 1,
+            "cache_creation_input_tokens": 387,
+            "cache_read_input_tokens": 25497,
+            "output_tokens": 199,
+            "server_tool_use": {
+              "web_search_requests": 0,
+              "web_fetch_requests": 0
+            },
+            "service_tier": "standard",
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 387
+            },
+            "inference_geo": "",
+            "iterations": [],
+            "speed": "standard"
+          }
+        },
+        "requestId": "req_011CZobcv3nKHyNU8WNjESst",
+        "type": "assistant",
+        "uuid": "fb1001b3-4cf2-46e6-a5e2-41ef146a1a28",
+        "timestamp": "2026-04-07T02:10:03.869Z",
+        "userType": "external",
+        "entrypoint": "sdk-cli",
+        "cwd": "/vercel/sandbox",
+        "sessionId": "306ff9ff-dda5-4716-8538-93730b359b37",
+        "version": "2.1.92",
+        "gitBranch": "master",
+        "slug": "agile-munching-lovelace"
+      }
+    }
+  ],
+  "summary": {
+    "totalTurns": 3,
+    "toolCalls": {
+      "file_read": 2,
+      "file_write": 1,
+      "file_edit": 0,
+      "shell": 0,
+      "web_fetch": 0,
+      "web_search": 0,
+      "glob": 1,
+      "grep": 2,
+      "list_dir": 0,
+      "agent_task": 0,
+      "unknown": 0
+    },
+    "totalToolCalls": 6,
+    "webFetches": [],
+    "filesRead": [
+      "/vercel/sandbox/app/pages/index.vue",
+      "/vercel/sandbox/NUXT_UI_DOCS.md"
+    ],
+    "filesModified": [
+      "/vercel/sandbox/app/pages/index.vue"
+    ],
+    "shellCommands": [],
+    "errors": [],
+    "thinkingBlocks": 3
+  },
+  "parseSuccess": true
+}

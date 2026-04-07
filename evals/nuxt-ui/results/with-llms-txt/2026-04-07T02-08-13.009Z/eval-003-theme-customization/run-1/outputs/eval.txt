@@ -1,0 +1,10 @@
+
+ RUN  v3.2.4 /vercel/sandbox
+
+ ✓ EVAL.ts (7 tests) 3ms
+
+ Test Files  1 passed (1)
+      Tests  7 passed (7)
+   Start at  02:10:15
+   Duration  218ms (transform 27ms, setup 0ms, collect 42ms, tests 3ms, environment 0ms, prepare 58ms)
+

@@ -1,0 +1,446 @@
+{
+  "agent": "claude-code",
+  "model": "claude-sonnet-4-6",
+  "events": [
+    {
+      "timestamp": "2026-04-07T04:00:04.802Z",
+      "type": "message",
+      "role": "user",
+      "content": "Build an invoice form with dynamic line items using Nuxt UI's nested form support.\n\nRequirements:\n\n1. Create a parent `UForm` with:\n   - **Customer** field (`UInput`, name: `customer`)\n   - **Date** field (`UInput` with type=\"date\", name: `date`)\n2. Below the header fields, render a dynamic list of line items where users can add/remove rows\n3. Each line item must be a **nested `UForm`** with:\n   - `nested` prop to link validation with the parent form\n   - `name` prop using the pattern `items.${index}` to inherit state from parent\n   - **Description** field (`UInput`, name: `description`)\n   - **Quantity** field (`UInputNumber`, name: `quantity`)\n   - **Price** field (`UInputNumber`, name: `price`)\n4. Add an \"Add Item\" button to dynamically push new items\n5. Add a \"Remove\" button per row\n6. Use Zod schemas for both the parent form and nested item validation\n7. Submit should log the complete form state including all items\n\nThe key requirement is using Nuxt UI v4's nested form pattern with `nested` prop and `name` inheritance — nested forms must NOT have their own `:state` prop.\n",
+      "raw": {
+        "parentUuid": null,
+        "isSidechain": false,
+        "promptId": "c7eba42d-5a24-45ea-a354-a757836a4c17",
+        "type": "user",
+        "message": {
+          "role": "user",
+          "content": "Build an invoice form with dynamic line items using Nuxt UI's nested form support.\n\nRequirements:\n\n1. Create a parent `UForm` with:\n   - **Customer** field (`UInput`, name: `customer`)\n   - **Date** field (`UInput` with type=\"date\", name: `date`)\n2. Below the header fields, render a dynamic list of line items where users can add/remove rows\n3. Each line item must be a **nested `UForm`** with:\n   - `nested` prop to link validation with the parent form\n   - `name` prop using the pattern `items.${index}` to inherit state from parent\n   - **Description** field (`UInput`, name: `description`)\n   - **Quantity** field (`UInputNumber`, name: `quantity`)\n   - **Price** field (`UInputNumber`, name: `price`)\n4. Add an \"Add Item\" button to dynamically push new items\n5. Add a \"Remove\" button per row\n6. Use Zod schemas for both the parent form and nested item validation\n7. Submit should log the complete form state including all items\n\nThe key requirement is using Nuxt UI v4's nested form pattern with `nested` prop and `name` inheritance — nested forms must NOT have their own `:state` prop.\n"
+        },
+        "uuid": "c9a57324-6f48-47a8-b17c-c236f03b774a",
+        "timestamp": "2026-04-07T04:00:04.802Z",
+        "permissionMode": "bypassPermissions",
+        "userType": "external",
+        "entrypoint": "sdk-cli",
+        "cwd": "/vercel/sandbox",
+        "sessionId": "1842f3d4-1e47-4b7b-a91d-34542d71226b",
+        "version": "2.1.92",
+        "gitBranch": "master"
+      }
+    },
+    {
+      "timestamp": "2026-04-07T04:00:07.781Z",
+      "type": "thinking",
+      "content": "Let me read the NUXT_UI_DOCS.md file to understand the nested form pattern before writing any code.",
+      "raw": {
+        "parentUuid": "c9a57324-6f48-47a8-b17c-c236f03b774a",
+        "isSidechain": false,
+        "message": {
+          "model": "claude-sonnet-4-6",
+          "id": "msg_01TsCtfZxAr3gPi2SmMbW3ia",
+          "type": "message",
+          "role": "assistant",
+          "content": [
+            {
+              "type": "thinking",
+              "thinking": "Let me read the NUXT_UI_DOCS.md file to understand the nested form pattern before writing any code.",
+              "signature": "EqACClsIDBgCKkDvg2+UBaZo+r82a5e268FlS+fN1X7wlfUAtQqqERK1BC8M2sDn8Rt7xx4sZvHgoerhN9E/NFne5RhSwmT+Uj/uMhFjbGF1ZGUtc29ubmV0LTQtNjgAEgxJnzk9q5x6cg13lTYaDHFDa5g1aIH1pcpIaCIwoekH8ZR7y7661Sus3SS0whZURgfbydQ8C7tLtfuJOPKzEvl5uQWc9HexuOW6xn4eKnO6gM7IIDbNzQYF1/G03EiZlcGJ9uOb7Onr2PP5aUwhKoAZRAoPo6GXZDWGVSLr84J1AyV7HnFaMWhMWW0kYyQEcDA4Db/M4CVuT4SNmcq8y9Ov3gNNQv5XHc3l+vaoBInX1+EKNQeNUEhch912QM/0OKn+GAE="
+            }
+          ],
+          "stop_reason": null,
+          "stop_sequence": null,
+          "stop_details": null,
+          "usage": {
+            "input_tokens": 2,
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 15818,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 0
+            },
+            "output_tokens": 1,
+            "service_tier": "standard",
+            "inference_geo": "not_available"
+          }
+        },
+        "requestId": "req_011CZok1uBGZuGCjeUHnk99o",
+        "type": "assistant",
+        "uuid": "26ad9a56-3de6-46d5-be71-63ed73e38b26",
+        "timestamp": "2026-04-07T04:00:07.781Z",
+        "userType": "external",
+        "entrypoint": "sdk-cli",
+        "cwd": "/vercel/sandbox",
+        "sessionId": "1842f3d4-1e47-4b7b-a91d-34542d71226b",
+        "version": "2.1.92",
+        "gitBranch": "master"
+      }
+    },
+    {
+      "timestamp": "2026-04-07T04:00:08.402Z",
+      "type": "tool_call",
+      "tool": {
+        "name": "file_read",
+        "originalName": "Read",
+        "args": {
+          "file_path": "/vercel/sandbox/NUXT_UI_DOCS.md",
+          "_extractedPath": "/vercel/sandbox/NUXT_UI_DOCS.md"
+        }
+      },
+      "raw": {
+        "name": "Read",
+        "input": {
+          "file_path": "/vercel/sandbox/NUXT_UI_DOCS.md"
+        }
+      }
+    },
+    {
+      "timestamp": "2026-04-07T04:00:08.413Z",
+      "type": "tool_result",
+      "tool": {
+        "name": "unknown",
+        "originalName": "toolu_016b2TYHi6qZ7WRPRNg5AQSA",
+        "result": "File content (1.9MB) exceeds maximum allowed size (256KB). Use offset and limit parameters to read specific portions of the file, or search for specific content instead of reading the whole file.",
+        "success": false
+      },
+      "raw": {
+        "type": "tool_result",
+        "content": "File content (1.9MB) exceeds maximum allowed size (256KB). Use offset and limit parameters to read specific portions of the file, or search for specific content instead of reading the whole file.",
+        "is_error": true,
+        "tool_use_id": "toolu_016b2TYHi6qZ7WRPRNg5AQSA"
+      }
+    },
+    {
+      "timestamp": "2026-04-07T04:00:10.777Z",
+      "type": "tool_call",
+      "tool": {
+        "name": "grep",
+        "originalName": "Grep",
+        "args": {
+          "pattern": "nested|UForm|UInputNumber",
+          "path": "/vercel/sandbox/NUXT_UI_DOCS.md",
+          "output_mode": "content",
+          "head_limit": 150
+        }
+      },
+      "raw": {
+        "name": "Grep",
+        "input": {
+          "pattern": "nested|UForm|UInputNumber",
+          "path": "/vercel/sandbox/NUXT_UI_DOCS.md",
+          "output_mode": "content",
+          "head_limit": 150
+        }
+      }
+    },
+    {
+      "timestamp": "2026-04-07T04:00:10.789Z",
+      "type": "tool_result",
+      "tool": {
+        "name": "unknown",
+        "originalName": "toolu_0124DMN66kBg8uB31rVPKQcP",
+        "result": "2583:The `Form` component has been improved in v4 with better state management and nested form handling. Here are the key changes you need to be aware of:\n2586:2. **Nested forms must be enabled explicitly** using the `nested` prop. This makes the component behavior more explicit and prevents accidental nested form creation.\n2587:3. **Nested forms should now provide a `name`** prop (similar to `UFormField`) and will automatically inherit their state from their parent form.\n2591:  <UForm :state=\"state\" :schema=\"schema\" @submit=\"onSubmit\">\n2592:    <UFormField label=\"Customer\" name=\"customer\">\n2594:    </UFormField>\n2597:      <UForm\n2601:+       nested\n2603:        <UFormField :label=\"!index ? 'Description' : undefined\" name=\"description\">\n2605:        </UFormField>\n2606:        <UFormField :label=\"!index ? 'Price' : undefined\" name=\"price\">\n2608:        </UFormField>\n2609:      </UForm>\n2611:  </UForm>\n3271:- <UForm :validate-on=\"['submit']\" />\n3272:+ <UForm :validate-on=\"[]\" />\n10902:  <UForm :state=\"state\" :validate=\"validate\" @submit=\"onSubmit\">\n10903:    <UFormField name=\"fullName\" label=\"Full name\">\n10905:    </UFormField>\n10909:  </UForm>\n22527:\\> Each item can take a \\`children\\` array of objects with the same properties as the \\`items\\` prop to create a nested menu which can be controlled using the \\`open\\`, \\`defaultOpen\\` and \\`content\\` properties.\n25512:    <UForm :state=\"state\" class=\"space-y-4\">\n25513:      <UFormField label=\"Email\" name=\"email\" required>\n25515:      </UFormField>\n25518:    </UForm>\n25541:You can nest drawers within each other by using the `nested` prop.\n25549:      <UDrawer nested :ui=\"{ content: 'h-full', overlay: 'bg-inverted/30' }\">\n25550:        <UButton color=\"neutral\" variant=\"outline\" label=\"Open nested\" />\n25681:   * Whether the drawer is nested in another drawer.\n25683:  nested?: boolean | undefined;\n26278:\\> Each item can take a \\`children\\` array of objects with the same properties as the \\`items\\` prop to create a nested menu which can be controlled using the \\`open\\`, \\`defaultOpen\\` and \\`content\\` properties.\n28142:\\> By default, placeholders only appear on top-level empty nodes. To show placeholders in nested elements like list items, set \\`includeChildren\\` to \\`true\\`:\n30099:  nestedOptions?: NormalizedNestedOptions | undefined;\n30104:   * Enable drag handles for nested content (list items, blockquotes, etc.).\n30106:   * When enabled, the drag handle will appear for nested blocks, not just\n30110:  nested?: boolean | NestedOptions | undefined;\n32862:  <UForm :schema=\"schema\" :state=\"state\" class=\"space-y-4 w-96\" @submit=\"onSubmit\">\n32863:    <UFormField name=\"image\" label=\"Image\" description=\"JPG, GIF or PNG. 2MB Max.\">\n32865:    </UFormField>\n32868:  </UForm>\n32946:  <UForm :schema=\"schema\" :state=\"state\" class=\"space-y-4 w-64\" @submit=\"onSubmit\">\n32947:    <UFormField name=\"avatar\" label=\"Avatar\" description=\"JPG, GIF or PNG. 1MB Max.\">\n32968:    </UFormField>\n32971:  </UForm>\n33793:      <UFormField name=\"email\" label=\"Subscribe to our newsletter\" size=\"lg\">\n33799:      </UFormField>\n33922:\\<UForm \\:schema=\"schema\" \\:state=\"state\" class=\"space-y-4\" @submit=\"onSubmit\">\n33923:\\<UFormField label=\"Email\" name=\"email\">\n33925:\\</UFormField>\n33926:\\<UFormField label=\"Password\" name=\"password\">\n33928:\\</UFormField>\n33932:\\</UForm>\n33955:\\<UForm \\:schema=\"schema\" \\:state=\"state\" class=\"space-y-4\" @submit=\"onSubmit\">\n33956:\\<UFormField label=\"Email\" name=\"email\">\n33958:\\</UFormField>\n33959:\\<UFormField label=\"Password\" name=\"password\">\n33961:\\</UFormField>\n33965:\\</UForm>\n33985:\\<UForm \\:schema=\"r$\" \\:state=\"r$.$value\" class=\"space-y-4\" @submit=\"onSubmit\">\n33986:\\<UFormField label=\"Email\" name=\"email\">\n33988:\\</UFormField>\n33989:\\<UFormField label=\"Password\" name=\"password\">\n33991:\\</UFormField>\n33995:\\</UForm>\n34021:\\<UForm \\:schema=\"schema\" \\:state=\"state\" class=\"space-y-4\" @submit=\"onSubmit\">\n34022:\\<UFormField label=\"Email\" name=\"email\">\n34024:\\</UFormField>\n34025:\\<UFormField label=\"Password\" name=\"password\">\n34027:\\</UFormField>\n34031:\\</UForm>\n34055:\\<UForm \\:schema=\"schema\" \\:state=\"state\" class=\"space-y-4\" @submit=\"onSubmit\">\n34056:\\<UFormField label=\"Email\" name=\"email\">\n34058:\\</UFormField>\n34059:\\<UFormField label=\"Password\" name=\"password\">\n34061:\\</UFormField>\n34065:\\</UForm>\n34090:\\<UForm \\:schema=\"schema\" \\:state=\"state\" class=\"space-y-4\" @submit=\"onSubmit\">\n34091:\\<UFormField label=\"Email\" name=\"email\">\n34093:\\</UFormField>\n34094:\\<UFormField label=\"Password\" name=\"password\">\n34096:\\</UFormField>\n34100:\\</UForm>\n34146:  <UForm :validate=\"validate\" :state=\"state\" class=\"space-y-4\" @submit=\"onSubmit\">\n34147:    <UFormField label=\"Email\" name=\"email\">\n34149:    </UFormField>\n34151:    <UFormField label=\"Password\" name=\"password\">\n34153:    </UFormField>\n34158:  </UForm>\n34239:  <UForm ref=\"form\" :state=\"state\" :schema=\"schema\" class=\"w-full\" @submit=\"onSubmit\">\n34241:      <UFormField label=\"Input\" name=\"input\">\n34243:      </UFormField>\n34246:        <UFormField name=\"switch\">\n34248:        </UFormField>\n34250:        <UFormField name=\"checkbox\">\n34252:        </UFormField>\n34255:      <UFormField name=\"slider\" label=\"Slider\">\n34257:      </UFormField>\n34259:      <UFormField name=\"select\" label=\"Select\">\n34261:      </UFormField>\n34263:      <UFormField name=\"selectMultiple\" label=\"Select (Multiple)\">\n34265:      </UFormField>\n34267:      <UFormField name=\"selectMenu\" label=\"Select Menu\">\n34269:      </UFormField>\n34271:      <UFormField name=\"selectMenuMultiple\" label=\"Select Menu (Multiple)\">\n34273:      </UFormField>\n34275:      <UFormField name=\"inputMenu\" label=\"Input Menu\">\n34277:      </UFormField>\n34279:      <UFormField name=\"inputMenuMultiple\" label=\"Input Menu (Multiple)\">\n34281:      </UFormField>\n34283:      <UFormField name=\"inputNumber\" label=\"Input Number\">\n34284:        <UInputNumber v-model=\"state.inputNumber\" class=\"w-full\" />\n34285:      </UFormField>\n34287:      <UFormField label=\"Textarea\" name=\"textarea\">\n34289:      </UFormField>\n34291:        <UFormField name=\"radioGroup\">\n34293:        </UFormField>\n34294:        <UFormField name=\"checkboxGroup\">\n34296:        </UFormField>\n34298:      <UFormField name=\"pin\" label=\"Pin Input\" :error-pattern=\"/(pin)\\..*/\">\n34300:      </UFormField>\n34302:      <UFormField name=\"file\" label=\"File Input\">\n34309:      </UFormField>\n34321:  </UForm>\n34372:  <UForm :validate=\"validate\" :state=\"state\" class=\"space-y-4\" @submit=\"onSubmit\" @error=\"onError\">\n34373:    <UFormField label=\"Email\" name=\"email\">\n34375:    </UFormField>\n34377:    <UFormField label=\"Password\" name=\"password\">\n34379:    </UFormField>\n34384:  </UForm>\n34417:    <UForm ref=\"form\" :state=\"state\" class=\"space-y-4\" @submit=\"onSubmit\">\n34418:      <UFormField label=\"Email\" name=\"email\">\n34420:      </UFormField>\n34422:      <UFormField label=\"Age\" name=\"age\">\n34424:      </UFormField>\n34425:    </UForm>\n34436:Use the `nested` prop to nest multiple Form components and link their validation functions. In this case, validating the parent form will automatically validate all the other forms inside it.\n34438:Nested forms directly inherit their parent's state, so you don't need to define a separate state for them. You can use the `name` prop to target a nested attribute within the parent's state.\n34454:const nestedSchema = z.object({\n34458:type NestedSchema = z.output<typeof nestedSchema>\n34470:  <UForm\n34477:    <UFormField label=\"Name\" name=\"name\">\n34479:    </UFormField>\n34485:    <UForm v-if=\"state.news\" :schema=\"nestedSchema\" nested>\n34486:      <UFormField label=\"Email\" name=\"email\">\n34488:      </UFormField>\n34489:    </UForm>\n34496:  </UForm>\n34544:  <UForm\n34550:    <UFormField label=\"Customer\" name=\"customer\">\n34552:    </UFormField>\n\n[Showing results with pagination = limit: 150]",
+        "success": true
+      },
+      "raw": {
+        "tool_use_id": "toolu_0124DMN66kBg8uB31rVPKQcP",
+        "type": "tool_result",
+        "content": "2583:The `Form` component has been improved in v4 with better state management and nested form handling. Here are the key changes you need to be aware of:\n2586:2. **Nested forms must be enabled explicitly** using the `nested` prop. This makes the component behavior more explicit and prevents accidental nested form creation.\n2587:3. **Nested forms should now provide a `name`** prop (similar to `UFormField`) and will automatically inherit their state from their parent form.\n2591:  <UForm :state=\"state\" :schema=\"schema\" @submit=\"onSubmit\">\n2592:    <UFormField label=\"Customer\" name=\"customer\">\n2594:    </UFormField>\n2597:      <UForm\n2601:+       nested\n2603:        <UFormField :label=\"!index ? 'Description' : undefined\" name=\"description\">\n2605:        </UFormField>\n2606:        <UFormField :label=\"!index ? 'Price' : undefined\" name=\"price\">\n2608:        </UFormField>\n2609:      </UForm>\n2611:  </UForm>\n3271:- <UForm :validate-on=\"['submit']\" />\n3272:+ <UForm :validate-on=\"[]\" />\n10902:  <UForm :state=\"state\" :validate=\"validate\" @submit=\"onSubmit\">\n10903:    <UFormField name=\"fullName\" label=\"Full name\">\n10905:    </UFormField>\n10909:  </UForm>\n22527:\\> Each item can take a \\`children\\` array of objects with the same properties as the \\`items\\` prop to create a nested menu which can be controlled using the \\`open\\`, \\`defaultOpen\\` and \\`content\\` properties.\n25512:    <UForm :state=\"state\" class=\"space-y-4\">\n25513:      <UFormField label=\"Email\" name=\"email\" required>\n25515:      </UFormField>\n25518:    </UForm>\n25541:You can nest drawers within each other by using the `nested` prop.\n25549:      <UDrawer nested :ui=\"{ content: 'h-full', overlay: 'bg-inverted/30' }\">\n25550:        <UButton color=\"neutral\" variant=\"outline\" label=\"Open nested\" />\n25681:   * Whether the drawer is nested in another drawer.\n25683:  nested?: boolean | undefined;\n26278:\\> Each item can take a \\`children\\` array of objects with the same properties as the \\`items\\` prop to create a nested menu which can be controlled using the \\`open\\`, \\`defaultOpen\\` and \\`content\\` properties.\n28142:\\> By default, placeholders only appear on top-level empty nodes. To show placeholders in nested elements like list items, set \\`includeChildren\\` to \\`true\\`:\n30099:  nestedOptions?: NormalizedNestedOptions | undefined;\n30104:   * Enable drag handles for nested content (list items, blockquotes, etc.).\n30106:   * When enabled, the drag handle will appear for nested blocks, not just\n30110:  nested?: boolean | NestedOptions | undefined;\n32862:  <UForm :schema=\"schema\" :state=\"state\" class=\"space-y-4 w-96\" @submit=\"onSubmit\">\n32863:    <UFormField name=\"image\" label=\"Image\" description=\"JPG, GIF or PNG. 2MB Max.\">\n32865:    </UFormField>\n32868:  </UForm>\n32946:  <UForm :schema=\"schema\" :state=\"state\" class=\"space-y-4 w-64\" @submit=\"onSubmit\">\n32947:    <UFormField name=\"avatar\" label=\"Avatar\" description=\"JPG, GIF or PNG. 1MB Max.\">\n32968:    </UFormField>\n32971:  </UForm>\n33793:      <UFormField name=\"email\" label=\"Subscribe to our newsletter\" size=\"lg\">\n33799:      </UFormField>\n33922:\\<UForm \\:schema=\"schema\" \\:state=\"state\" class=\"space-y-4\" @submit=\"onSubmit\">\n33923:\\<UFormField label=\"Email\" name=\"email\">\n33925:\\</UFormField>\n33926:\\<UFormField label=\"Password\" name=\"password\">\n33928:\\</UFormField>\n33932:\\</UForm>\n33955:\\<UForm \\:schema=\"schema\" \\:state=\"state\" class=\"space-y-4\" @submit=\"onSubmit\">\n33956:\\<UFormField label=\"Email\" name=\"email\">\n33958:\\</UFormField>\n33959:\\<UFormField label=\"Password\" name=\"password\">\n33961:\\</UFormField>\n33965:\\</UForm>\n33985:\\<UForm \\:schema=\"r$\" \\:state=\"r$.$value\" class=\"space-y-4\" @submit=\"onSubmit\">\n33986:\\<UFormField label=\"Email\" name=\"email\">\n33988:\\</UFormField>\n33989:\\<UFormField label=\"Password\" name=\"password\">\n33991:\\</UFormField>\n33995:\\</UForm>\n34021:\\<UForm \\:schema=\"schema\" \\:state=\"state\" class=\"space-y-4\" @submit=\"onSubmit\">\n34022:\\<UFormField label=\"Email\" name=\"email\">\n34024:\\</UFormField>\n34025:\\<UFormField label=\"Password\" name=\"password\">\n34027:\\</UFormField>\n34031:\\</UForm>\n34055:\\<UForm \\:schema=\"schema\" \\:state=\"state\" class=\"space-y-4\" @submit=\"onSubmit\">\n34056:\\<UFormField label=\"Email\" name=\"email\">\n34058:\\</UFormField>\n34059:\\<UFormField label=\"Password\" name=\"password\">\n34061:\\</UFormField>\n34065:\\</UForm>\n34090:\\<UForm \\:schema=\"schema\" \\:state=\"state\" class=\"space-y-4\" @submit=\"onSubmit\">\n34091:\\<UFormField label=\"Email\" name=\"email\">\n34093:\\</UFormField>\n34094:\\<UFormField label=\"Password\" name=\"password\">\n34096:\\</UFormField>\n34100:\\</UForm>\n34146:  <UForm :validate=\"validate\" :state=\"state\" class=\"space-y-4\" @submit=\"onSubmit\">\n34147:    <UFormField label=\"Email\" name=\"email\">\n34149:    </UFormField>\n34151:    <UFormField label=\"Password\" name=\"password\">\n34153:    </UFormField>\n34158:  </UForm>\n34239:  <UForm ref=\"form\" :state=\"state\" :schema=\"schema\" class=\"w-full\" @submit=\"onSubmit\">\n34241:      <UFormField label=\"Input\" name=\"input\">\n34243:      </UFormField>\n34246:        <UFormField name=\"switch\">\n34248:        </UFormField>\n34250:        <UFormField name=\"checkbox\">\n34252:        </UFormField>\n34255:      <UFormField name=\"slider\" label=\"Slider\">\n34257:      </UFormField>\n34259:      <UFormField name=\"select\" label=\"Select\">\n34261:      </UFormField>\n34263:      <UFormField name=\"selectMultiple\" label=\"Select (Multiple)\">\n34265:      </UFormField>\n34267:      <UFormField name=\"selectMenu\" label=\"Select Menu\">\n34269:      </UFormField>\n34271:      <UFormField name=\"selectMenuMultiple\" label=\"Select Menu (Multiple)\">\n34273:      </UFormField>\n34275:      <UFormField name=\"inputMenu\" label=\"Input Menu\">\n34277:      </UFormField>\n34279:      <UFormField name=\"inputMenuMultiple\" label=\"Input Menu (Multiple)\">\n34281:      </UFormField>\n34283:      <UFormField name=\"inputNumber\" label=\"Input Number\">\n34284:        <UInputNumber v-model=\"state.inputNumber\" class=\"w-full\" />\n34285:      </UFormField>\n34287:      <UFormField label=\"Textarea\" name=\"textarea\">\n34289:      </UFormField>\n34291:        <UFormField name=\"radioGroup\">\n34293:        </UFormField>\n34294:        <UFormField name=\"checkboxGroup\">\n34296:        </UFormField>\n34298:      <UFormField name=\"pin\" label=\"Pin Input\" :error-pattern=\"/(pin)\\..*/\">\n34300:      </UFormField>\n34302:      <UFormField name=\"file\" label=\"File Input\">\n34309:      </UFormField>\n34321:  </UForm>\n34372:  <UForm :validate=\"validate\" :state=\"state\" class=\"space-y-4\" @submit=\"onSubmit\" @error=\"onError\">\n34373:    <UFormField label=\"Email\" name=\"email\">\n34375:    </UFormField>\n34377:    <UFormField label=\"Password\" name=\"password\">\n34379:    </UFormField>\n34384:  </UForm>\n34417:    <UForm ref=\"form\" :state=\"state\" class=\"space-y-4\" @submit=\"onSubmit\">\n34418:      <UFormField label=\"Email\" name=\"email\">\n34420:      </UFormField>\n34422:      <UFormField label=\"Age\" name=\"age\">\n34424:      </UFormField>\n34425:    </UForm>\n34436:Use the `nested` prop to nest multiple Form components and link their validation functions. In this case, validating the parent form will automatically validate all the other forms inside it.\n34438:Nested forms directly inherit their parent's state, so you don't need to define a separate state for them. You can use the `name` prop to target a nested attribute within the parent's state.\n34454:const nestedSchema = z.object({\n34458:type NestedSchema = z.output<typeof nestedSchema>\n34470:  <UForm\n34477:    <UFormField label=\"Name\" name=\"name\">\n34479:    </UFormField>\n34485:    <UForm v-if=\"state.news\" :schema=\"nestedSchema\" nested>\n34486:      <UFormField label=\"Email\" name=\"email\">\n34488:      </UFormField>\n34489:    </UForm>\n34496:  </UForm>\n34544:  <UForm\n34550:    <UFormField label=\"Customer\" name=\"customer\">\n34552:    </UFormField>\n\n[Showing results with pagination = limit: 150]"
+      }
+    },
+    {
+      "timestamp": "2026-04-07T04:00:13.096Z",
+      "type": "tool_call",
+      "tool": {
+        "name": "file_read",
+        "originalName": "Read",
+        "args": {
+          "file_path": "/vercel/sandbox/NUXT_UI_DOCS.md",
+          "offset": 34436,
+          "limit": 150,
+          "_extractedPath": "/vercel/sandbox/NUXT_UI_DOCS.md"
+        }
+      },
+      "raw": {
+        "name": "Read",
+        "input": {
+          "file_path": "/vercel/sandbox/NUXT_UI_DOCS.md",
+          "offset": 34436,
+          "limit": 150
+        }
+      }
+    },
+    {
+      "timestamp": "2026-04-07T04:00:13.117Z",
+      "type": "tool_result",
+      "tool": {
+        "name": "unknown",
+        "originalName": "toolu_01TiDqoYsPLZhryVW1hcMW8Q",
+        "result": "34436\tUse the `nested` prop to nest multiple Form components and link their validation functions. In this case, validating the parent form will automatically validate all the other forms inside it.\n34437\t\n34438\tNested forms directly inherit their parent's state, so you don't need to define a separate state for them. You can use the `name` prop to target a nested attribute within the parent's state.\n34439\t\n34440\tIt can be used to dynamically add fields based on user's input:\n34441\t\n34442\t```vue [FormExampleNested.vue]\n34443\t<script setup lang=\"ts\">\n34444\timport * as z from 'zod'\n34445\timport type { FormSubmitEvent } from '@nuxt/ui'\n34446\t\n34447\tconst schema = z.object({\n34448\t  name: z.string().min(2),\n34449\t  news: z.boolean().default(false)\n34450\t})\n34451\t\n34452\ttype Schema = z.output<typeof schema>\n34453\t\n34454\tconst nestedSchema = z.object({\n34455\t  email: z.email()\n34456\t})\n34457\t\n34458\ttype NestedSchema = z.output<typeof nestedSchema>\n34459\t\n34460\tconst state = reactive<Partial<Schema & NestedSchema>>({ })\n34461\t\n34462\tconst toast = useToast()\n34463\tasync function onSubmit(event: FormSubmitEvent<Schema>) {\n34464\t  toast.add({ title: 'Success', description: 'The form has been submitted.', color: 'success' })\n34465\t  console.log(event.data)\n34466\t}\n34467\t</script>\n34468\t\n34469\t<template>\n34470\t  <UForm\n34471\t    ref=\"form\"\n34472\t    :state=\"state\"\n34473\t    :schema=\"schema\"\n34474\t    class=\"gap-4 flex flex-col w-60\"\n34475\t    @submit=\"onSubmit\"\n34476\t  >\n34477\t    <UFormField label=\"Name\" name=\"name\">\n34478\t      <UInput v-model=\"state.name\" placeholder=\"John Lennon\" />\n34479\t    </UFormField>\n34480\t\n34481\t    <div>\n34482\t      <UCheckbox v-model=\"state.news\" name=\"news\" label=\"Register to our newsletter\" @update:model-value=\"state.email = undefined\" />\n34483\t    </div>\n34484\t\n34485\t    <UForm v-if=\"state.news\" :schema=\"nestedSchema\" nested>\n34486\t      <UFormField label=\"Email\" name=\"email\">\n34487\t        <UInput v-model=\"state.email\" placeholder=\"john@lennon.com\" />\n34488\t      </UFormField>\n34489\t    </UForm>\n34490\t\n34491\t    <div>\n34492\t      <UButton type=\"submit\">\n34493\t        Submit\n34494\t      </UButton>\n34495\t    </div>\n34496\t  </UForm>\n34497\t</template>\n34498\t```\n34499\t\n34500\tOr to validate list inputs:\n34501\t\n34502\t```vue [FormExampleNestedList.vue]\n34503\t<script setup lang=\"ts\">\n34504\timport * as z from 'zod'\n34505\timport type { FormSubmitEvent } from '@nuxt/ui'\n34506\t\n34507\tconst schema = z.object({\n34508\t  customer: z.string().min(2)\n34509\t})\n34510\t\n34511\ttype Schema = z.output<typeof schema>\n34512\t\n34513\tconst itemSchema = z.object({\n34514\t  description: z.string().min(1),\n34515\t  price: z.number().min(0)\n34516\t})\n34517\t\n34518\ttype ItemSchema = z.output<typeof itemSchema>\n34519\t\n34520\tconst state = reactive<Partial<Schema & { items: Partial<ItemSchema>[] }>>({ })\n34521\t\n34522\tfunction addItem() {\n34523\t  if (!state.items) {\n34524\t    state.items = []\n34525\t  }\n34526\t  state.items.push({})\n34527\t}\n34528\t\n34529\tfunction removeItem() {\n34530\t  if (state.items) {\n34531\t    state.items.pop()\n34532\t  }\n34533\t}\n34534\t\n34535\tconst toast = useToast()\n34536\t\n34537\tasync function onSubmit(event: FormSubmitEvent<Schema>) {\n34538\t  toast.add({ title: 'Success', description: 'The form has been submitted.', color: 'success' })\n34539\t  console.log(event.data)\n34540\t}\n34541\t</script>\n34542\t\n34543\t<template>\n34544\t  <UForm\n34545\t    :state=\"state\"\n34546\t    :schema=\"schema\"\n34547\t    class=\"gap-4 flex flex-col w-60\"\n34548\t    @submit=\"onSubmit\"\n34549\t  >\n34550\t    <UFormField label=\"Customer\" name=\"customer\">\n34551\t      <UInput v-model=\"state.customer\" placeholder=\"Wonka Industries\" />\n34552\t    </UFormField>\n34553\t\n34554\t    <UForm\n34555\t      v-for=\"item, count in state.items\"\n34556\t      :key=\"count\"\n34557\t      :name=\"`items.${count}`\"\n34558\t      :schema=\"itemSchema\"\n34559\t      class=\"flex gap-2\"\n34560\t      nested\n34561\t    >\n34562\t      <UFormField :label=\"!count ? 'Description' : undefined\" name=\"description\">\n34563\t        <UInput v-model=\"item.description\" />\n34564\t      </UFormField>\n34565\t      <UFormField :label=\"!count ? 'Price' : undefined\" name=\"price\" class=\"w-20\">\n34566\t        <UInput v-model=\"item.price\" type=\"number\" />\n34567\t      </UFormField>\n34568\t    </UForm>\n34569\t\n34570\t    <div class=\"flex gap-2\">\n34571\t      <UButton color=\"neutral\" variant=\"subtle\" size=\"sm\" @click=\"addItem()\">\n34572\t        Add Item\n34573\t      </UButton>\n34574\t\n34575\t      <UButton color=\"neutral\" variant=\"ghost\" size=\"sm\" @click=\"removeItem()\">\n34576\t        Remove Item\n34577\t      </UButton>\n34578\t    </div>\n34579\t    <div>\n34580\t      <UButton type=\"submit\">\n34581\t        Submit\n34582\t      </UButton>\n34583\t    </div>\n34584\t  </UForm>\n34585\t</template>",
+        "success": true
+      },
+      "raw": {
+        "tool_use_id": "toolu_01TiDqoYsPLZhryVW1hcMW8Q",
+        "type": "tool_result",
+        "content": "34436\tUse the `nested` prop to nest multiple Form components and link their validation functions. In this case, validating the parent form will automatically validate all the other forms inside it.\n34437\t\n34438\tNested forms directly inherit their parent's state, so you don't need to define a separate state for them. You can use the `name` prop to target a nested attribute within the parent's state.\n34439\t\n34440\tIt can be used to dynamically add fields based on user's input:\n34441\t\n34442\t```vue [FormExampleNested.vue]\n34443\t<script setup lang=\"ts\">\n34444\timport * as z from 'zod'\n34445\timport type { FormSubmitEvent } from '@nuxt/ui'\n34446\t\n34447\tconst schema = z.object({\n34448\t  name: z.string().min(2),\n34449\t  news: z.boolean().default(false)\n34450\t})\n34451\t\n34452\ttype Schema = z.output<typeof schema>\n34453\t\n34454\tconst nestedSchema = z.object({\n34455\t  email: z.email()\n34456\t})\n34457\t\n34458\ttype NestedSchema = z.output<typeof nestedSchema>\n34459\t\n34460\tconst state = reactive<Partial<Schema & NestedSchema>>({ })\n34461\t\n34462\tconst toast = useToast()\n34463\tasync function onSubmit(event: FormSubmitEvent<Schema>) {\n34464\t  toast.add({ title: 'Success', description: 'The form has been submitted.', color: 'success' })\n34465\t  console.log(event.data)\n34466\t}\n34467\t</script>\n34468\t\n34469\t<template>\n34470\t  <UForm\n34471\t    ref=\"form\"\n34472\t    :state=\"state\"\n34473\t    :schema=\"schema\"\n34474\t    class=\"gap-4 flex flex-col w-60\"\n34475\t    @submit=\"onSubmit\"\n34476\t  >\n34477\t    <UFormField label=\"Name\" name=\"name\">\n34478\t      <UInput v-model=\"state.name\" placeholder=\"John Lennon\" />\n34479\t    </UFormField>\n34480\t\n34481\t    <div>\n34482\t      <UCheckbox v-model=\"state.news\" name=\"news\" label=\"Register to our newsletter\" @update:model-value=\"state.email = undefined\" />\n34483\t    </div>\n34484\t\n34485\t    <UForm v-if=\"state.news\" :schema=\"nestedSchema\" nested>\n34486\t      <UFormField label=\"Email\" name=\"email\">\n34487\t        <UInput v-model=\"state.email\" placeholder=\"john@lennon.com\" />\n34488\t      </UFormField>\n34489\t    </UForm>\n34490\t\n34491\t    <div>\n34492\t      <UButton type=\"submit\">\n34493\t        Submit\n34494\t      </UButton>\n34495\t    </div>\n34496\t  </UForm>\n34497\t</template>\n34498\t```\n34499\t\n34500\tOr to validate list inputs:\n34501\t\n34502\t```vue [FormExampleNestedList.vue]\n34503\t<script setup lang=\"ts\">\n34504\timport * as z from 'zod'\n34505\timport type { FormSubmitEvent } from '@nuxt/ui'\n34506\t\n34507\tconst schema = z.object({\n34508\t  customer: z.string().min(2)\n34509\t})\n34510\t\n34511\ttype Schema = z.output<typeof schema>\n34512\t\n34513\tconst itemSchema = z.object({\n34514\t  description: z.string().min(1),\n34515\t  price: z.number().min(0)\n34516\t})\n34517\t\n34518\ttype ItemSchema = z.output<typeof itemSchema>\n34519\t\n34520\tconst state = reactive<Partial<Schema & { items: Partial<ItemSchema>[] }>>({ })\n34521\t\n34522\tfunction addItem() {\n34523\t  if (!state.items) {\n34524\t    state.items = []\n34525\t  }\n34526\t  state.items.push({})\n34527\t}\n34528\t\n34529\tfunction removeItem() {\n34530\t  if (state.items) {\n34531\t    state.items.pop()\n34532\t  }\n34533\t}\n34534\t\n34535\tconst toast = useToast()\n34536\t\n34537\tasync function onSubmit(event: FormSubmitEvent<Schema>) {\n34538\t  toast.add({ title: 'Success', description: 'The form has been submitted.', color: 'success' })\n34539\t  console.log(event.data)\n34540\t}\n34541\t</script>\n34542\t\n34543\t<template>\n34544\t  <UForm\n34545\t    :state=\"state\"\n34546\t    :schema=\"schema\"\n34547\t    class=\"gap-4 flex flex-col w-60\"\n34548\t    @submit=\"onSubmit\"\n34549\t  >\n34550\t    <UFormField label=\"Customer\" name=\"customer\">\n34551\t      <UInput v-model=\"state.customer\" placeholder=\"Wonka Industries\" />\n34552\t    </UFormField>\n34553\t\n34554\t    <UForm\n34555\t      v-for=\"item, count in state.items\"\n34556\t      :key=\"count\"\n34557\t      :name=\"`items.${count}`\"\n34558\t      :schema=\"itemSchema\"\n34559\t      class=\"flex gap-2\"\n34560\t      nested\n34561\t    >\n34562\t      <UFormField :label=\"!count ? 'Description' : undefined\" name=\"description\">\n34563\t        <UInput v-model=\"item.description\" />\n34564\t      </UFormField>\n34565\t      <UFormField :label=\"!count ? 'Price' : undefined\" name=\"price\" class=\"w-20\">\n34566\t        <UInput v-model=\"item.price\" type=\"number\" />\n34567\t      </UFormField>\n34568\t    </UForm>\n34569\t\n34570\t    <div class=\"flex gap-2\">\n34571\t      <UButton color=\"neutral\" variant=\"subtle\" size=\"sm\" @click=\"addItem()\">\n34572\t        Add Item\n34573\t      </UButton>\n34574\t\n34575\t      <UButton color=\"neutral\" variant=\"ghost\" size=\"sm\" @click=\"removeItem()\">\n34576\t        Remove Item\n34577\t      </UButton>\n34578\t    </div>\n34579\t    <div>\n34580\t      <UButton type=\"submit\">\n34581\t        Submit\n34582\t      </UButton>\n34583\t    </div>\n34584\t  </UForm>\n34585\t</template>"
+      }
+    },
+    {
+      "timestamp": "2026-04-07T04:00:16.641Z",
+      "type": "thinking",
+      "content": "Now I have a clear picture of the nested form pattern. Let me look at the existing project structure to know where to create the component.",
+      "raw": {
+        "parentUuid": "dd8ec005-e43a-49ff-84b6-41272e6d6a7c",
+        "isSidechain": false,
+        "message": {
+          "model": "claude-sonnet-4-6",
+          "id": "msg_019FqJPNSSkSLmLAvEEMVu5W",
+          "type": "message",
+          "role": "assistant",
+          "content": [
+            {
+              "type": "thinking",
+              "thinking": "Now I have a clear picture of the nested form pattern. Let me look at the existing project structure to know where to create the component.",
+              "signature": "EskCClsIDBgCKkCFPPSGLPDUijZrbYsZn1FrV2eioETVcRKpq0BLpPoY9SaUpThTRgW6wJ/vgcHtNN1c7/thk5zTRI8WB6DJByXFMhFjbGF1ZGUtc29ubmV0LTQtNjgAEgzd1ZpW46AJvWz52vsaDJujGriN+a5FjGheayIwwPeyrS2zmfknXI6RgdbkPsTFITBJG+DY4NpA1fongC1A1CI63TTtyhjRHQ2LDek+KpsBBgU3B7eN63IJS50nGIzHx3wiPlClIh+QSByQisFRiwYTx0gsbgJNiODB+3XRJgNIw2z9UzY+lgzdWhqHM1UE4djzpS3WNzLYTb+YV8LENdXmnMTGHL+t9OcXek1swiZ9jW7fJP8YrXyJJljVPlHUp8Qt65J4qzI+2u+kDcSLkzvEL60jIxLGbblVHJKW6NkxtRd8/WVx1XmI4NAYAQ=="
+            }
+          ],
+          "stop_reason": null,
+          "stop_sequence": null,
+          "stop_details": null,
+          "usage": {
+            "input_tokens": 1,
+            "cache_creation_input_tokens": 1840,
+            "cache_read_input_tokens": 18845,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 1840
+            },
+            "output_tokens": 10,
+            "service_tier": "standard",
+            "inference_geo": "not_available"
+          }
+        },
+        "requestId": "req_011CZok2WY2EU5TB5KRkqEg6",
+        "type": "assistant",
+        "uuid": "3635219f-55d0-49c9-8be5-4da5bc0d69de",
+        "timestamp": "2026-04-07T04:00:16.641Z",
+        "userType": "external",
+        "entrypoint": "sdk-cli",
+        "cwd": "/vercel/sandbox",
+        "sessionId": "1842f3d4-1e47-4b7b-a91d-34542d71226b",
+        "version": "2.1.92",
+        "gitBranch": "master",
+        "slug": "quizzical-hopping-donut"
+      }
+    },
+    {
+      "timestamp": "2026-04-07T04:00:17.095Z",
+      "type": "message",
+      "role": "assistant",
+      "content": "Now let me look at the project structure.",
+      "raw": {
+        "parentUuid": "3635219f-55d0-49c9-8be5-4da5bc0d69de",
+        "isSidechain": false,
+        "message": {
+          "model": "claude-sonnet-4-6",
+          "id": "msg_019FqJPNSSkSLmLAvEEMVu5W",
+          "type": "message",
+          "role": "assistant",
+          "content": [
+            {
+              "type": "text",
+              "text": "Now let me look at the project structure."
+            }
+          ],
+          "stop_reason": null,
+          "stop_sequence": null,
+          "stop_details": null,
+          "usage": {
+            "input_tokens": 1,
+            "cache_creation_input_tokens": 1840,
+            "cache_read_input_tokens": 18845,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 1840
+            },
+            "output_tokens": 10,
+            "service_tier": "standard",
+            "inference_geo": "not_available"
+          }
+        },
+        "requestId": "req_011CZok2WY2EU5TB5KRkqEg6",
+        "type": "assistant",
+        "uuid": "eb712ab5-91bf-493b-9c08-73732f34f45c",
+        "timestamp": "2026-04-07T04:00:17.095Z",
+        "userType": "external",
+        "entrypoint": "sdk-cli",
+        "cwd": "/vercel/sandbox",
+        "sessionId": "1842f3d4-1e47-4b7b-a91d-34542d71226b",
+        "version": "2.1.92",
+        "gitBranch": "master",
+        "slug": "quizzical-hopping-donut"
+      }
+    },
+    {
+      "timestamp": "2026-04-07T04:00:18.150Z",
+      "type": "tool_call",
+      "tool": {
+        "name": "shell",
+        "originalName": "Bash",
+        "args": {
+          "command": "ls /vercel/sandbox && cat /vercel/sandbox/package.json",
+          "description": "List project files and check dependencies",
+          "_extractedCommand": "ls /vercel/sandbox && cat /vercel/sandbox/package.json"
+        }
+      },
+      "raw": {
+        "name": "Bash",
+        "input": {
+          "command": "ls /vercel/sandbox && cat /vercel/sandbox/package.json",
+          "description": "List project files and check dependencies"
+        }
+      }
+    },
+    {
+      "timestamp": "2026-04-07T04:00:18.294Z",
+      "type": "tool_result",
+      "tool": {
+        "name": "unknown",
+        "originalName": "toolu_01R9f1hJZnaW7SoK7GAp6tj4",
+        "result": "AGENTS.md\nCLAUDE.md\nNUXT_UI_DOCS.md\napp\nnode_modules\nnuxt.config.ts\npackage-lock.json\npackage.json\n{\n  \"private\": true,\n  \"type\": \"module\",\n  \"scripts\": {\n    \"build\": \"nuxt build\"\n  },\n  \"dependencies\": {\n    \"nuxt\": \"^4\",\n    \"@nuxt/ui\": \"^4\",\n    \"tailwindcss\": \"^4\",\n    \"zod\": \"^3\"\n  },\n  \"devDependencies\": {\n    \"vitest\": \"^3.1.3\",\n    \"typescript\": \"^5\"\n  }\n}",
+        "success": true
+      },
+      "raw": {
+        "tool_use_id": "toolu_01R9f1hJZnaW7SoK7GAp6tj4",
+        "type": "tool_result",
+        "content": "AGENTS.md\nCLAUDE.md\nNUXT_UI_DOCS.md\napp\nnode_modules\nnuxt.config.ts\npackage-lock.json\npackage.json\n{\n  \"private\": true,\n  \"type\": \"module\",\n  \"scripts\": {\n    \"build\": \"nuxt build\"\n  },\n  \"dependencies\": {\n    \"nuxt\": \"^4\",\n    \"@nuxt/ui\": \"^4\",\n    \"tailwindcss\": \"^4\",\n    \"zod\": \"^3\"\n  },\n  \"devDependencies\": {\n    \"vitest\": \"^3.1.3\",\n    \"typescript\": \"^5\"\n  }\n}",
+        "is_error": false
+      }
+    },
+    {
+      "timestamp": "2026-04-07T04:00:20.110Z",
+      "type": "tool_call",
+      "tool": {
+        "name": "shell",
+        "originalName": "Bash",
+        "args": {
+          "command": "ls /vercel/sandbox/app && ls /vercel/sandbox/app/pages 2>/dev/null || echo \"no pages dir\"",
+          "description": "Check app directory structure",
+          "_extractedCommand": "ls /vercel/sandbox/app && ls /vercel/sandbox/app/pages 2>/dev/null || echo \"no pages dir\""
+        }
+      },
+      "raw": {
+        "name": "Bash",
+        "input": {
+          "command": "ls /vercel/sandbox/app && ls /vercel/sandbox/app/pages 2>/dev/null || echo \"no pages dir\"",
+          "description": "Check app directory structure"
+        }
+      }
+    },
+    {
+      "timestamp": "2026-04-07T04:00:20.152Z",
+      "type": "tool_result",
+      "tool": {
+        "name": "unknown",
+        "originalName": "toolu_011BpiL1LGGJCEFEfa5KD1BP",
+        "result": "app.vue\nassets\npages\nindex.vue",
+        "success": true
+      },
+      "raw": {
+        "tool_use_id": "toolu_011BpiL1LGGJCEFEfa5KD1BP",
+        "type": "tool_result",
+        "content": "app.vue\nassets\npages\nindex.vue",
+        "is_error": false
+      }
+    },
+    {
+      "timestamp": "2026-04-07T04:00:20.750Z",
+      "type": "message",
+      "role": "assistant",
+      "content": "API Error: Request rejected (429) · Rate limited",
+      "raw": {
+        "parentUuid": "a2b23716-f6b1-4943-8c50-6a9af291c057",
+        "isSidechain": false,
+        "type": "assistant",
+        "uuid": "bfb75431-f9f4-4e52-88f6-19927a15a81c",
+        "timestamp": "2026-04-07T04:00:20.750Z",
+        "message": {
+          "id": "50706647-5f7f-4811-9007-2f446daee2de",
+          "container": null,
+          "model": "<synthetic>",
+          "role": "assistant",
+          "stop_reason": "stop_sequence",
+          "stop_sequence": "",
+          "type": "message",
+          "usage": {
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0,
+            "server_tool_use": {
+              "web_search_requests": 0,
+              "web_fetch_requests": 0
+            },
+            "service_tier": null,
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "inference_geo": null,
+            "iterations": null,
+            "speed": null
+          },
+          "content": [
+            {
+              "type": "text",
+              "text": "API Error: Request rejected (429) · Rate limited"
+            }
+          ],
+          "context_management": null
+        },
+        "error": "rate_limit",
+        "isApiErrorMessage": true,
+        "userType": "external",
+        "entrypoint": "sdk-cli",
+        "cwd": "/vercel/sandbox",
+        "sessionId": "1842f3d4-1e47-4b7b-a91d-34542d71226b",
+        "version": "2.1.92",
+        "gitBranch": "master",
+        "slug": "quizzical-hopping-donut"
+      }
+    }
+  ],
+  "summary": {
+    "totalTurns": 2,
+    "toolCalls": {
+      "file_read": 2,
+      "file_write": 0,
+      "file_edit": 0,
+      "shell": 2,
+      "web_fetch": 0,
+      "web_search": 0,
+      "glob": 0,
+      "grep": 1,
+      "list_dir": 0,
+      "agent_task": 0,
+      "unknown": 0
+    },
+    "totalToolCalls": 5,
+    "webFetches": [],
+    "filesRead": [
+      "/vercel/sandbox/NUXT_UI_DOCS.md"
+    ],
+    "filesModified": [],
+    "shellCommands": [
+      {
+        "command": "ls /vercel/sandbox && cat /vercel/sandbox/package.json",
+        "success": true
+      },
+      {
+        "command": "ls /vercel/sandbox/app && ls /vercel/sandbox/app/pages 2>/dev/null || echo \"no pages dir\"",
+        "success": true
+      }
+    ],
+    "errors": [],
+    "thinkingBlocks": 2
+  },
+  "parseSuccess": true
+}

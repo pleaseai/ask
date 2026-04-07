@@ -1,0 +1,48 @@
+{
+  "status": "passed",
+  "duration": 100.845,
+  "model": "claude-sonnet-4-6",
+  "transcriptPath": "./transcript.json",
+  "transcriptRawPath": "./transcript-raw.jsonl",
+  "o11y": {
+    "totalTurns": 1,
+    "toolCalls": {
+      "file_read": 3,
+      "file_write": 1,
+      "file_edit": 0,
+      "shell": 2,
+      "web_fetch": 0,
+      "web_search": 0,
+      "glob": 0,
+      "grep": 0,
+      "list_dir": 0,
+      "agent_task": 0,
+      "unknown": 0
+    },
+    "totalToolCalls": 6,
+    "webFetches": [],
+    "filesRead": [
+      "/vercel/sandbox/app/pages/index.vue",
+      "/vercel/sandbox/app/app.vue",
+      "/vercel/sandbox/nuxt.config.ts"
+    ],
+    "filesModified": [
+      "/vercel/sandbox/app/pages/index.vue"
+    ],
+    "shellCommands": [
+      {
+        "command": "ls /vercel/sandbox && cat /vercel/sandbox/package.json",
+        "success": true
+      },
+      {
+        "command": "ls /vercel/sandbox/app && find /vercel/sandbox/app -type f | head -30",
+        "success": true
+      }
+    ],
+    "errors": [],
+    "thinkingBlocks": 1
+  },
+  "outputPaths": {
+    "eval": "./outputs/eval.txt"
+  }
+}

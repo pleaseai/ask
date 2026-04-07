@@ -1,0 +1,390 @@
+
+ RUN  v3.2.4 /vercel/sandbox
+
+ ❯ EVAL.ts (7 tests | 3 failed) 8ms
+   × Uses UFieldGroup component 5ms
+     → expected '<template>\n  <UApp>\n    <NuxtPage /…' to match /UFieldGroup|u-field-group|FieldGroup/
+   × Has multiple FieldGroup instances for different button groups 1ms
+     → Expected at least 2 FieldGroup usages: expected null to be truthy
+   ✓ Uses size prop on FieldGroup 0ms
+   ✓ Uses orientation prop for vertical layout 0ms
+   ✓ Uses UButton inside groups 0ms
+   ✓ Buttons have Lucide icons 0ms
+   × Does NOT use deprecated UButtonGroup (v2/v3) — renamed to UFieldGroup in v4 1ms
+     → expected '<template>\n  <UApp>\n    <NuxtPage /…' not to match /UButtonGroup|u-button-group|ButtonGro…/
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 4 passed (7)
+   Start at  04:01:15
+   Duration  226ms (transform 29ms, setup 0ms, collect 31ms, tests 8ms, environment 0ms, prepare 73ms)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  EVAL.ts > Uses UFieldGroup component
+AssertionError: expected '<template>\n  <UApp>\n    <NuxtPage /…' to match /UFieldGroup|u-field-group|FieldGroup/
+
+[32m- Expected:[39m 
+/UFieldGroup|u-field-group|FieldGroup/
+
+[31m+ Received:[39m 
+"<template>
+  <UApp>
+    <NuxtPage />
+  </UApp>
+</template>
+
+<template>
+  <div class=\"p-8 space-y-10\">
+    <div>
+      <h1 class=\"text-2xl font-semibold mb-1\">Button Group Toolbar</h1>
+      <p class=\"text-sm text-muted\">Grouped buttons using Nuxt UI v4 <code class=\"font-mono\">UButtonGroup</code></p>
+    </div>
+
+    <!-- ── Horizontal toolbar ─────────────────────────────── -->
+    <section class=\"space-y-3\">
+      <h2 class=\"text-xs font-semibold uppercase tracking-widest text-muted\">Horizontal toolbar</h2>
+
+      <div class=\"flex flex-wrap items-center gap-3 p-4 border border-default rounded-lg bg-default\">
+
+        <!-- Text formatting — size sm -->
+        <UButtonGroup size=\"sm\">
+          <UButton
+            v-for=\"fmt in formatting\"
+            :key=\"fmt.id\"
+            variant=\"outline\"
+            color=\"neutral\"
+            :icon=\"fmt.icon\"
+            :aria-label=\"fmt.label\"
+            :aria-pressed=\"activeFormats.has(fmt.id)\"
+            :class=\"activeFormats.has(fmt.id) ? 'bg-elevated' : ''\"
+            @click=\"toggleFormat(fmt.id)\"
+          />
+        </UButtonGroup>
+
+        <div class=\"w-px h-6 bg-border\" />
+
+        <!-- Alignment — default size -->
+        <UButtonGroup>
+          <UButton
+            v-for=\"align in alignments\"
+            :key=\"align.id\"
+            variant=\"outline\"
+            color=\"neutral\"
+            :icon=\"align.icon\"
+            :aria-label=\"align.label\"
+            :aria-pressed=\"activeAlign === align.id\"
+            :class=\"activeAlign === align.id ? 'bg-elevated' : ''\"
+            @click=\"activeAlign = align.id\"
+          />
+        </UButtonGroup>
+
+        <div class=\"w-px h-6 bg-border\" />
+
+        <!-- Actions — default size, split Save + chevron -->
+        <UButtonGroup>
+          <UButton
+            variant=\"outline\"
+            color=\"neutral\"
+            icon=\"i-lucide-save\"
+            label=\"Save\"
+            @click=\"onSave\"
+          />
+          <UButton
+            variant=\"outline\"
+            color=\"neutral\"
+            icon=\"i-lucide-chevron-down\"
+            aria-label=\"More save options\"
+          />
+        </UButtonGroup>
+
+      </div>
+
+      <!-- State readout -->
+      <p class=\"text-xs text-muted font-mono pl-1\">
+        formats: {{ [...activeFormats].join(', ') || '—' }} &nbsp;|&nbsp;
+        align: {{ activeAlign }} &nbsp;|&nbsp;
+        saved: {{ saveCount }}×
+      </p>
+    </section>
+
+    <!-- ── Vertical sidebar group ─────────────────────────── -->
+    <section class=\"space-y-3\">
+      <h2 class=\"text-xs font-semibold uppercase tracking-widest text-muted\">Vertical sidebar</h2>
+
+      <div class=\"flex gap-6 items-start\">
+        <UButtonGroup orientation=\"vertical\">
+          <UButton
+            v-for=\"nav in navigation\"
+            :key=\"nav.id\"
+            variant=\"outline\"
+            color=\"neutral\"
+            :icon=\"nav.icon\"
+            :label=\"nav.label\"
+            :aria-pressed=\"activeNav === nav.id\"
+            :class=\"activeNav === nav.id ? 'bg-elevated' : ''\"
+            @click=\"activeNav = nav.id\"
+          />
+        </UButtonGroup>
+
+        <div class=\"text-sm text-muted pt-2\">
+          Active page: <span class=\"font-semibold text-highlighted\">{{ navigation.find(n => n.id === activeNav)?.label }}</span>
+        </div>
+      </div>
+    </section>
+  </div>
+</template>
+
+<script setup lang=\"ts\">
+const formatting = [
+  { id: 'bold',      icon: 'i-lucide-bold',      label: 'Bold' },
+  { id: 'italic',    icon: 'i-lucide-italic',    label: 'Italic' },
+  { id: 'underline', icon: 'i-lucide-underline', label: 'Underline' },
+]
+
+const alignments = [
+  { id: 'left',   icon: 'i-lucide-align-left',   label: 'Align left' },
+  { id: 'center', icon: 'i-lucide-align-center', label: 'Align center' },
+  { id: 'right',  icon: 'i-lucide-align-right',  label: 'Align right' },
+]
+
+const navigation = [
+  { id: 'home',      icon: 'i-lucide-house',      label: 'Home' },
+  { id: 'documents', icon: 'i-lucide-file-text',  label: 'Documents' },
+  { id: 'settings',  icon: 'i-lucide-settings',   label: 'Settings' },
+  { id: 'profile',   icon: 'i-lucide-user',       label: 'Profile' },
+]
+
+const activeFormats = ref<Set<string>>(new Set())
+const activeAlign   = ref('left')
+const activeNav     = ref('home')
+const saveCount     = ref(0)
+
+function toggleFormat(id: string) {
+  const next = new Set(activeFormats.value)
+  next.has(id) ? next.delete(id) : next.add(id)
+  activeFormats.value = next
+}
+
+function onSave() {
+  saveCount.value++
+}
+</script>
+
+export default defineNuxtConfig({
+  modules: ['@nuxt/ui'],
+})
+
+
+import { defineConfig } from 'vitest/config';
+export default defineConfig({
+  test: {
+    include: ['EVAL.ts'],
+    globals: false,
+  },
+});
+"
+
+ ❯ EVAL.ts:42:18
+     40| 
+     41| test('Uses UFieldGroup component', () => {
+     42|   expect(source).toMatch(/UFieldGroup|u-field-group|FieldGroup/)
+       |                  ^
+     43| })
+     44| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  EVAL.ts > Has multiple FieldGroup instances for different button groups
+AssertionError: Expected at least 2 FieldGroup usages: expected null to be truthy
+
+[32m- Expected:[39m 
+true
+
+[31m+ Received:[39m 
+null
+
+ ❯ EVAL.ts:47:60
+     45| test('Has multiple FieldGroup instances for different button groups', …
+     46|   const matches = source.match(/UFieldGroup|u-field-group|<FieldGroup/…
+     47|   expect(matches, 'Expected at least 2 FieldGroup usages').toBeTruthy()
+       |                                                            ^
+     48|   expect(matches!.length).toBeGreaterThanOrEqual(2)
+     49| })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  EVAL.ts > Does NOT use deprecated UButtonGroup (v2/v3) — renamed to UFieldGroup in v4
+AssertionError: expected '<template>\n  <UApp>\n    <NuxtPage /…' not to match /UButtonGroup|u-button-group|ButtonGro…/
+
+[32m- Expected:[39m 
+/UButtonGroup|u-button-group|ButtonGroup/
+
+[31m+ Received:[39m 
+"<template>
+  <UApp>
+    <NuxtPage />
+  </UApp>
+</template>
+
+<template>
+  <div class=\"p-8 space-y-10\">
+    <div>
+      <h1 class=\"text-2xl font-semibold mb-1\">Button Group Toolbar</h1>
+      <p class=\"text-sm text-muted\">Grouped buttons using Nuxt UI v4 <code class=\"font-mono\">UButtonGroup</code></p>
+    </div>
+
+    <!-- ── Horizontal toolbar ─────────────────────────────── -->
+    <section class=\"space-y-3\">
+      <h2 class=\"text-xs font-semibold uppercase tracking-widest text-muted\">Horizontal toolbar</h2>
+
+      <div class=\"flex flex-wrap items-center gap-3 p-4 border border-default rounded-lg bg-default\">
+
+        <!-- Text formatting — size sm -->
+        <UButtonGroup size=\"sm\">
+          <UButton
+            v-for=\"fmt in formatting\"
+            :key=\"fmt.id\"
+            variant=\"outline\"
+            color=\"neutral\"
+            :icon=\"fmt.icon\"
+            :aria-label=\"fmt.label\"
+            :aria-pressed=\"activeFormats.has(fmt.id)\"
+            :class=\"activeFormats.has(fmt.id) ? 'bg-elevated' : ''\"
+            @click=\"toggleFormat(fmt.id)\"
+          />
+        </UButtonGroup>
+
+        <div class=\"w-px h-6 bg-border\" />
+
+        <!-- Alignment — default size -->
+        <UButtonGroup>
+          <UButton
+            v-for=\"align in alignments\"
+            :key=\"align.id\"
+            variant=\"outline\"
+            color=\"neutral\"
+            :icon=\"align.icon\"
+            :aria-label=\"align.label\"
+            :aria-pressed=\"activeAlign === align.id\"
+            :class=\"activeAlign === align.id ? 'bg-elevated' : ''\"
+            @click=\"activeAlign = align.id\"
+          />
+        </UButtonGroup>
+
+        <div class=\"w-px h-6 bg-border\" />
+
+        <!-- Actions — default size, split Save + chevron -->
+        <UButtonGroup>
+          <UButton
+            variant=\"outline\"
+            color=\"neutral\"
+            icon=\"i-lucide-save\"
+            label=\"Save\"
+            @click=\"onSave\"
+          />
+          <UButton
+            variant=\"outline\"
+            color=\"neutral\"
+            icon=\"i-lucide-chevron-down\"
+            aria-label=\"More save options\"
+          />
+        </UButtonGroup>
+
+      </div>
+
+      <!-- State readout -->
+      <p class=\"text-xs text-muted font-mono pl-1\">
+        formats: {{ [...activeFormats].join(', ') || '—' }} &nbsp;|&nbsp;
+        align: {{ activeAlign }} &nbsp;|&nbsp;
+        saved: {{ saveCount }}×
+      </p>
+    </section>
+
+    <!-- ── Vertical sidebar group ─────────────────────────── -->
+    <section class=\"space-y-3\">
+      <h2 class=\"text-xs font-semibold uppercase tracking-widest text-muted\">Vertical sidebar</h2>
+
+      <div class=\"flex gap-6 items-start\">
+        <UButtonGroup orientation=\"vertical\">
+          <UButton
+            v-for=\"nav in navigation\"
+            :key=\"nav.id\"
+            variant=\"outline\"
+            color=\"neutral\"
+            :icon=\"nav.icon\"
+            :label=\"nav.label\"
+            :aria-pressed=\"activeNav === nav.id\"
+            :class=\"activeNav === nav.id ? 'bg-elevated' : ''\"
+            @click=\"activeNav = nav.id\"
+          />
+        </UButtonGroup>
+
+        <div class=\"text-sm text-muted pt-2\">
+          Active page: <span class=\"font-semibold text-highlighted\">{{ navigation.find(n => n.id === activeNav)?.label }}</span>
+        </div>
+      </div>
+    </section>
+  </div>
+</template>
+
+<script setup lang=\"ts\">
+const formatting = [
+  { id: 'bold',      icon: 'i-lucide-bold',      label: 'Bold' },
+  { id: 'italic',    icon: 'i-lucide-italic',    label: 'Italic' },
+  { id: 'underline', icon: 'i-lucide-underline', label: 'Underline' },
+]
+
+const alignments = [
+  { id: 'left',   icon: 'i-lucide-align-left',   label: 'Align left' },
+  { id: 'center', icon: 'i-lucide-align-center', label: 'Align center' },
+  { id: 'right',  icon: 'i-lucide-align-right',  label: 'Align right' },
+]
+
+const navigation = [
+  { id: 'home',      icon: 'i-lucide-house',      label: 'Home' },
+  { id: 'documents', icon: 'i-lucide-file-text',  label: 'Documents' },
+  { id: 'settings',  icon: 'i-lucide-settings',   label: 'Settings' },
+  { id: 'profile',   icon: 'i-lucide-user',       label: 'Profile' },
+]
+
+const activeFormats = ref<Set<string>>(new Set())
+const activeAlign   = ref('left')
+const activeNav     = ref('home')
+const saveCount     = ref(0)
+
+function toggleFormat(id: string) {
+  const next = new Set(activeFormats.value)
+  next.has(id) ? next.delete(id) : next.add(id)
+  activeFormats.value = next
+}
+
+function onSave() {
+  saveCount.value++
+}
+</script>
+
+export default defineNuxtConfig({
+  modules: ['@nuxt/ui'],
+})
+
+
+import { defineConfig } from 'vitest/config';
+export default defineConfig({
+  test: {
+    include: ['EVAL.ts'],
+    globals: false,
+  },
+});
+"
+
+ ❯ EVAL.ts:70:22
+     68| 
+     69| test('Does NOT use deprecated UButtonGroup (v2/v3) — renamed to UField…
+     70|   expect(source).not.toMatch(/UButtonGroup|u-button-group|ButtonGroup/)
+       |                      ^
+     71| })
+     72| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+

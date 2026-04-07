@@ -1,0 +1,62 @@
+{
+  "status": "passed",
+  "duration": 137.877,
+  "model": "claude-sonnet-4-6",
+  "transcriptPath": "./transcript.json",
+  "transcriptRawPath": "./transcript-raw.jsonl",
+  "o11y": {
+    "totalTurns": 3,
+    "toolCalls": {
+      "file_read": 2,
+      "file_write": 1,
+      "file_edit": 0,
+      "shell": 3,
+      "web_fetch": 3,
+      "web_search": 0,
+      "glob": 0,
+      "grep": 0,
+      "list_dir": 0,
+      "agent_task": 0,
+      "unknown": 1
+    },
+    "totalToolCalls": 10,
+    "webFetches": [
+      {
+        "url": "https://ui.nuxt.com/raw/docs/components/chat-message.md"
+      },
+      {
+        "url": "https://ui.nuxt.com/raw/docs/components/chat-messages.md"
+      },
+      {
+        "url": "https://ui.nuxt.com/raw/docs/components/chat-prompt.md",
+        "success": true
+      }
+    ],
+    "filesRead": [
+      "/vercel/sandbox/NUXT_UI_DOCS.md",
+      "/vercel/sandbox/app/pages/index.vue"
+    ],
+    "filesModified": [
+      "/vercel/sandbox/app/pages/index.vue"
+    ],
+    "shellCommands": [
+      {
+        "command": "ls /vercel/sandbox && ls /vercel/sandbox/pages 2>/dev/null || echo \"no pages dir\"",
+        "success": true
+      },
+      {
+        "command": "ls /vercel/sandbox/app",
+        "success": true
+      },
+      {
+        "command": "ls /vercel/sandbox/app/pages",
+        "success": true
+      }
+    ],
+    "errors": [],
+    "thinkingBlocks": 4
+  },
+  "outputPaths": {
+    "eval": "./outputs/eval.txt"
+  }
+}

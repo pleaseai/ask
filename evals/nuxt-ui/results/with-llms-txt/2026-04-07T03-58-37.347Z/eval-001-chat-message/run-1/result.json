@@ -1,0 +1,49 @@
+{
+  "status": "failed",
+  "error": "API Error: Request rejected (429) · Rate limited",
+  "duration": 99.391,
+  "model": "claude-sonnet-4-6",
+  "transcriptPath": "./transcript.json",
+  "transcriptRawPath": "./transcript-raw.jsonl",
+  "o11y": {
+    "totalTurns": 3,
+    "toolCalls": {
+      "file_read": 1,
+      "file_write": 0,
+      "file_edit": 0,
+      "shell": 1,
+      "web_fetch": 3,
+      "web_search": 0,
+      "glob": 0,
+      "grep": 0,
+      "list_dir": 0,
+      "agent_task": 0,
+      "unknown": 1
+    },
+    "totalToolCalls": 6,
+    "webFetches": [
+      {
+        "url": "https://ui.nuxt.com/raw/docs/components/chat-message.md"
+      },
+      {
+        "url": "https://ui.nuxt.com/raw/docs/components/chat-messages.md"
+      },
+      {
+        "url": "https://ui.nuxt.com/raw/docs/components/chat-prompt.md",
+        "success": true
+      }
+    ],
+    "filesRead": [
+      "/vercel/sandbox/NUXT_UI_DOCS.md"
+    ],
+    "filesModified": [],
+    "shellCommands": [
+      {
+        "command": "ls /vercel/sandbox && cat /vercel/sandbox/package.json",
+        "success": true
+      }
+    ],
+    "errors": [],
+    "thinkingBlocks": 4
+  }
+}

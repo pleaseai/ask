@@ -1,0 +1,46 @@
+{
+  "status": "failed",
+  "error": "API Error: Request rejected (429) · Rate limited",
+  "duration": 96.646,
+  "model": "claude-sonnet-4-6",
+  "transcriptPath": "./transcript.json",
+  "transcriptRawPath": "./transcript-raw.jsonl",
+  "o11y": {
+    "totalTurns": 2,
+    "toolCalls": {
+      "file_read": 3,
+      "file_write": 0,
+      "file_edit": 0,
+      "shell": 0,
+      "web_fetch": 3,
+      "web_search": 0,
+      "glob": 1,
+      "grep": 0,
+      "list_dir": 0,
+      "agent_task": 0,
+      "unknown": 1
+    },
+    "totalToolCalls": 8,
+    "webFetches": [
+      {
+        "url": "https://ui.nuxt.com/raw/docs/components/form.md"
+      },
+      {
+        "url": "https://ui.nuxt.com/raw/docs/components/input.md"
+      },
+      {
+        "url": "https://ui.nuxt.com/raw/docs/components/input-number.md",
+        "success": true
+      }
+    ],
+    "filesRead": [
+      "/vercel/sandbox/NUXT_UI_DOCS.md",
+      "/vercel/sandbox/app/pages/index.vue",
+      "/vercel/sandbox/package.json"
+    ],
+    "filesModified": [],
+    "shellCommands": [],
+    "errors": [],
+    "thinkingBlocks": 3
+  }
+}

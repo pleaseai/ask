@@ -1,0 +1,71 @@
+{
+  "status": "passed",
+  "duration": 333.766,
+  "model": "claude-sonnet-4-6",
+  "transcriptPath": "./transcript.json",
+  "transcriptRawPath": "./transcript-raw.jsonl",
+  "o11y": {
+    "totalTurns": 2,
+    "toolCalls": {
+      "file_read": 1,
+      "file_write": 1,
+      "file_edit": 0,
+      "shell": 9,
+      "web_fetch": 0,
+      "web_search": 0,
+      "glob": 0,
+      "grep": 0,
+      "list_dir": 0,
+      "agent_task": 0,
+      "unknown": 1
+    },
+    "totalToolCalls": 12,
+    "webFetches": [],
+    "filesRead": [
+      "/vercel/sandbox/app/pages/index.vue"
+    ],
+    "filesModified": [
+      "/vercel/sandbox/app/pages/index.vue"
+    ],
+    "shellCommands": [
+      {
+        "command": "cat /vercel/sandbox/node_modules/@nuxt/ui/dist/runtime/components/ButtonGroup.vue 2>/dev/null || echo \"NOT FOUND\"",
+        "success": true
+      },
+      {
+        "command": "ls /vercel/sandbox/node_modules/@nuxt/ui/dist/runtime/components/ | grep -i button"
+      },
+      {
+        "command": "grep -r \"fieldGroup\" /vercel/sandbox/node_modules/@nuxt/ui/dist/runtime/theme/button.js 2>/dev/null | head -40 || cat /vercel/sandbox/node_modules/@nuxt/ui/dist/runtime/theme/button.js 2>/dev/null | head -80",
+        "success": true
+      },
+      {
+        "command": "find /vercel/sandbox/node_modules/@nuxt/ui/dist/runtime/theme/ -name \"*.js\" | xargs grep -l \"fieldGroup\\|ButtonGroup\\|button-group\" 2>/dev/null"
+      },
+      {
+        "command": "cat /vercel/sandbox/node_modules/@nuxt/ui/dist/runtime/components/FieldGroup.vue 2>/dev/null | head -60",
+        "success": true
+      },
+      {
+        "command": "find /vercel/sandbox/node_modules/@nuxt/ui/dist -name \"field-group*\" 2>/dev/null | head -10"
+      },
+      {
+        "command": "cat /vercel/sandbox/node_modules/@nuxt/ui/dist/runtime/components/Button.vue | head -120",
+        "success": true
+      },
+      {
+        "command": "ls /vercel/sandbox/node_modules/@nuxt/ui/dist/runtime/components/ | grep -i \"dropdown\\|menu\\|chevron\" | head -10",
+        "success": true
+      },
+      {
+        "command": "npm run build 2>&1 | tail -30",
+        "success": true
+      }
+    ],
+    "errors": [],
+    "thinkingBlocks": 3
+  },
+  "outputPaths": {
+    "eval": "./outputs/eval.txt"
+  }
+}

@@ -1,0 +1,81 @@
+{
+  "status": "passed",
+  "duration": 158.467,
+  "model": "claude-sonnet-4-6",
+  "transcriptPath": "./transcript.json",
+  "transcriptRawPath": "./transcript-raw.jsonl",
+  "o11y": {
+    "totalTurns": 5,
+    "toolCalls": {
+      "file_read": 3,
+      "file_write": 1,
+      "file_edit": 0,
+      "shell": 3,
+      "web_fetch": 8,
+      "web_search": 0,
+      "glob": 0,
+      "grep": 0,
+      "list_dir": 0,
+      "agent_task": 0,
+      "unknown": 2
+    },
+    "totalToolCalls": 17,
+    "webFetches": [
+      {
+        "url": "https://ui.nuxt.com/raw/docs/components/form.md",
+        "success": false
+      },
+      {
+        "url": "https://ui.nuxt.com/raw/docs/components/input.md",
+        "success": true
+      },
+      {
+        "url": "https://ui.nuxt.com/raw/docs/components/form.md"
+      },
+      {
+        "url": "https://ui.nuxt.com/raw/docs/components/input.md"
+      },
+      {
+        "url": "https://ui.nuxt.com/raw/docs/components/input-number.md"
+      },
+      {
+        "url": "https://ui.nuxt.com/raw/docs/components/textarea.md"
+      },
+      {
+        "url": "https://ui.nuxt.com/raw/docs/components/form-field.md",
+        "success": true
+      },
+      {
+        "url": "https://ui.nuxt.com/raw/docs/getting-started/migration/v4.md",
+        "success": true
+      }
+    ],
+    "filesRead": [
+      "/vercel/sandbox/NUXT_UI_DOCS.md",
+      "/vercel/sandbox/CLAUDE.md",
+      "/vercel/sandbox/app/pages/index.vue"
+    ],
+    "filesModified": [
+      "/vercel/sandbox/app/pages/index.vue"
+    ],
+    "shellCommands": [
+      {
+        "command": "ls /vercel/sandbox && echo \"---\" && ls /vercel/sandbox/pages 2>/dev/null || echo \"no pages dir\" && ls /vercel/sandbox/components 2>/dev/null || echo \"no components dir\"",
+        "success": true
+      },
+      {
+        "command": "ls /vercel/sandbox/app && cat /vercel/sandbox/package.json",
+        "success": true
+      },
+      {
+        "command": "ls /vercel/sandbox/app/pages && cat /vercel/sandbox/app/app.vue",
+        "success": true
+      }
+    ],
+    "errors": [],
+    "thinkingBlocks": 5
+  },
+  "outputPaths": {
+    "eval": "./outputs/eval.txt"
+  }
+}
