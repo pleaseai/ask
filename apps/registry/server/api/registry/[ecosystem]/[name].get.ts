@@ -1,5 +1,3 @@
-import { queryCollection } from '#content/server'
-
 interface Strategy {
   source: 'npm' | 'github' | 'web' | 'llms-txt'
   package?: string
