@@ -49,7 +49,7 @@ node packages/cli/dist/index.js docs add <spec> -s <source> [options]
 - In `content.config.ts`, import `z` from `@nuxt/content` — do not install zod separately
 - `getSource(type)` (`packages/cli/src/sources/index.ts:54`) returns a `DocSource`; pass config to `DocSource.fetch(options)`, not to `getSource`. It is a single-arg factory.
 - `packages/cli/src/index.ts:76` defines a private `parseSpec(spec) -> { name, version }`. Any new export named `parseSpec` from `registry.ts` will collide — rename one before introducing.
-- `apps/registry/server/api/` does not exist. Registry API is provided by Nuxt Content collection auto-API; custom response transforms need a Nitro plugin or new server route.
+- In Nuxt Content v3 server routes, `queryCollection` is auto-imported — do NOT use `import { queryCollection } from '#content/server'` (that alias does not exist and breaks Cloudflare Pages build). Use the bare function or `import { queryCollection } from '@nuxt/content/server'`.
 - GitHub repo `pleaseai/ask` has no `type/*` or `status/*` labels created. `gh issue create --label type/feature` fails with "label not found". Create the labels first or omit `--label`.
 - A PreToolUse Bash hook blocks shell commands when the current commit has no recorded review. Run `/review:code-review` (or `/review:run-cubic` / `/review:run-gemini`) and let it call `save-review-state.sh` before further bash.
 - `apps/registry/` uses `vercel.ts` (programmatic config via `@vercel/config` devDep), not `vercel.json`. Use `git.deploymentEnabled` (not deprecated `github.enabled`) to control auto-deploy.
