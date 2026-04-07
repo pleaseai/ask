@@ -76,16 +76,24 @@ describe('parseDocSpec', () => {
       })
     })
 
-    it('handles scoped npm packages with @ in name', () => {
-      // Note: scoped packages aren't expected in ecosystem prefix syntax,
-      // but if someone writes `npm:@scope/pkg`, the slash makes it ambiguous —
-      // we treat anything with a colon prefix as ecosystem mode and use the
-      // last @ as version separator.
+    it('parses simple ecosystem name with version', () => {
       expect(parseDocSpec('npm:zod@3.22.4')).toEqual({
         kind: 'ecosystem',
         ecosystem: 'npm',
         name: 'zod',
         version: '3.22.4',
+      })
+    })
+
+    it('routes scoped npm package to ecosystem (slash + colon)', () => {
+      // `npm:@scope/pkg@1.0` contains both `/` and `:` — the colon-prefix
+      // rule must win so the entry goes through the registry path, not
+      // the github fast-path.
+      expect(parseDocSpec('npm:@scope/pkg@1.0')).toEqual({
+        kind: 'ecosystem',
+        ecosystem: 'npm',
+        name: '@scope/pkg',
+        version: '1.0',
       })
     })
   })

@@ -167,10 +167,15 @@ const addCmd = defineCommand({
       const { owner, repo, ref } = parsed
       const repoSpec = `${owner}/${repo}`
       const version = ref ?? 'latest'
+      // Stored library name includes the owner so two repos that share a
+      // bare name (e.g. `vercel/next.js` and `another/next.js`) don't
+      // collide on disk / config / lock. Slash is replaced with `-`
+      // because the name is used as a directory segment.
+      const libName = `${owner}-${repo}`
       consola.start(`Downloading ${repoSpec}${ref ? `@${ref}` : ''} docs (source: github)...`)
       sourceConfig = {
         source: 'github',
-        name: repo,
+        name: libName,
         version,
         repo: repoSpec,
         // `ref` is opaque — let the github source resolve tag-vs-branch.

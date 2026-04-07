@@ -83,7 +83,11 @@ export function parseDocSpec(input: string): ParsedDocSpec {
   }
 
   // 1. github shape: owner/repo[@ref]
-  if (input.includes('/')) {
+  // Strict: must contain `/` AND no `:`. The `:` exclusion prevents
+  // scoped ecosystem specs (e.g. `npm:@scope/pkg@1.0`) from being
+  // mis-parsed as github — they contain a slash but the colon prefix
+  // means they belong to the ecosystem branch.
+  if (input.includes('/') && !input.includes(':')) {
     const parts = input.split('/')
     if (parts.length !== 2) {
       throw new Error(
