@@ -1,0 +1,43 @@
+packages/cli/src/resolvers/utils.ts
+  8eeb5c27b6616a4c 1-27
+packages/cli/test/resolvers/npm.test.ts
+  8eeb5c27b6616a4c 1-94
+packages/cli/src/resolvers/npm.ts
+  8eeb5c27b6616a4c 1-67
+packages/cli/test/resolvers/pypi.test.ts
+  8eeb5c27b6616a4c 1-115
+packages/cli/src/resolvers/index.ts
+  8eeb5c27b6616a4c 1-42
+packages/cli/src/resolvers/pub.ts
+  8eeb5c27b6616a4c 1-73
+packages/cli/test/resolvers/pub.test.ts
+  8eeb5c27b6616a4c 1-101
+packages/cli/src/index.ts
+  8eeb5c27b6616a4c 27,206-243
+packages/cli/test/resolvers/utils.test.ts
+  8eeb5c27b6616a4c 1-56
+packages/cli/test/resolvers/index.test.ts
+  8eeb5c27b6616a4c 1-26
+packages/cli/src/resolvers/pypi.ts
+  8eeb5c27b6616a4c 1-82
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "2b7f9fd11c1187146b7858fbf4d1c6bb315f44ea",
+  "prompts": {
+    "8eeb5c27b6616a4c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "db32c5de-d9d6-44ae-94e8-042c300fb1c2",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 727,
+      "total_deletions": 18,
+      "accepted_lines": 722,
+      "overriden_lines": 0
+    }
+  }
+}
