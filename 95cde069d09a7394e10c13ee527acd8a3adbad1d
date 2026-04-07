@@ -1,0 +1,27 @@
+skills/sync-docs/SKILL.md
+  76d45c9b1098e15a 1-166
+skills/setup-docs/SKILL.md
+  76d45c9b1098e15a 1-131
+skills/add-docs/SKILL.md
+  76d45c9b1098e15a 1-330
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "95cde069d09a7394e10c13ee527acd8a3adbad1d",
+  "prompts": {
+    "76d45c9b1098e15a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "adb20158-3689-49b4-b5f0-e95b6243a7dd",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 669,
+      "total_deletions": 42,
+      "accepted_lines": 627,
+      "overriden_lines": 0
+    }
+  }
+}
