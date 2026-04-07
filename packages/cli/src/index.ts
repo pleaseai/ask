@@ -11,6 +11,7 @@ import type {
 } from './sources/index.js'
 import path from 'node:path'
 import process from 'node:process'
+import { pathToFileURL } from 'node:url'
 import { defineCommand, runMain } from 'citty'
 import { consola } from 'consola'
 import { generateAgentsMd } from './agents.js'
@@ -437,6 +438,9 @@ const main = defineCommand({
 
 // Only execute the CLI when this module is the program entry point.
 // Tests import `runSync` from this file and must NOT trigger CLI execution.
-if (import.meta.url === `file://${process.argv[1]}`) {
+// Use `pathToFileURL` for a cross-platform comparison: a naive
+// `file://${process.argv[1]}` template breaks on Windows (backslash paths)
+// and on POSIX paths containing spaces or unicode (no URL encoding).
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   runMain(main)
 }
