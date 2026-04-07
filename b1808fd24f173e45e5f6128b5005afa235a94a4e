@@ -1,0 +1,35 @@
+.please/docs/tracks/active/cli-shorthand-20260407/plan.md
+  a0904b75c3b55a8e 5,8-11,14-15,17,20,33-35
+.please/docs/tracks/active/ecosystem-resolvers-20260407/plan.md
+  a0904b75c3b55a8e 15
+.please/docs/tracks/active/registry-meta-20260407/metadata.json
+  a0904b75c3b55a8e 8
+.please/docs/tracks/active/ecosystem-resolvers-20260407/metadata.json
+  a0904b75c3b55a8e 8
+.please/docs/tracks/active/cli-shorthand-20260407/metadata.json
+  a0904b75c3b55a8e 8
+.please/docs/tracks/active/registry-meta-20260407/plan.md
+  a0904b75c3b55a8e 23,36-37
+.please/docs/tracks/active/registry-meta-20260407/spec.md
+  a0904b75c3b55a8e 34
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "b1808fd24f173e45e5f6128b5005afa235a94a4e",
+  "prompts": {
+    "a0904b75c3b55a8e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "5838c2b1-a934-46b5-95b9-cc1831c1679b",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 21,
+      "total_deletions": 17,
+      "accepted_lines": 21,
+      "overriden_lines": 0
+    }
+  }
+}
