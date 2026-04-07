@@ -1,0 +1,29 @@
+packages/cli/src/index.ts
+  76d45c9b1098e15a 21,155,232,299,321
+ARCHITECTURE.md
+  76d45c9b1098e15a 29,57-58,68-69
+packages/cli/src/migrate-legacy.ts
+  76d45c9b1098e15a 1-91
+README.md
+  76d45c9b1098e15a 19,61-62
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "3defc976b45f415bf3148deb0319e4273b46eaee",
+  "prompts": {
+    "76d45c9b1098e15a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "adb20158-3689-49b4-b5f0-e95b6243a7dd",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 104,
+      "total_deletions": 7,
+      "accepted_lines": 106,
+      "overriden_lines": 0
+    }
+  }
+}
