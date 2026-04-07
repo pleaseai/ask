@@ -1,0 +1,23 @@
+packages/cli/test/resolvers/regression.test.ts
+  8eeb5c27b6616a4c 1-30
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "2aa8fd03bbefc6f43ed0e06b74be7ca07657e0a9",
+  "prompts": {
+    "8eeb5c27b6616a4c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "db32c5de-d9d6-44ae-94e8-042c300fb1c2",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 30,
+      "total_deletions": 0,
+      "accepted_lines": 30,
+      "overriden_lines": 0
+    }
+  }
+}
