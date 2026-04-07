@@ -129,6 +129,27 @@ Downloads documentation from a GitHub repository at a specific tag or branch.
 
 Crawls documentation websites and converts HTML to Markdown.
 
+## Eval Results
+
+We run our own eval suite ([`evals/nuxt-ui/`](evals/nuxt-ui/)) comparing 4 documentation strategies on 6 Nuxt UI v4 tasks — including 3 breaking-change evals with negative assertions that catch deprecated v2/v3 API usage.
+
+### Pass Rate (claude-sonnet-4-6, 2026-04-07)
+
+| Doc source | Pass rate | Est. cost | Retries needed |
+|---|---|---|---|
+| **ASK github-docs** | **100%** (6/6) | **$1.67** | 0 |
+| No docs (baseline) | 86% (6/7) | $1.82 | 1 |
+| llms-full.txt (~200KB) | 46% (6/13) | $2.93 | 7 |
+| llms.txt (~5KB) | 40% (6/15) | $4.83 | 9 |
+
+**Key findings:**
+
+- **ASK-style docs outperform all alternatives** — 100% pass rate at the lowest cost. Structured docs with version warnings let the agent find correct v4 APIs without excessive exploration.
+- **llms.txt / llms-full.txt hurt more than they help** — Both scored below baseline. The agent spends tokens searching through unstructured docs but still uses deprecated patterns.
+- **Cost scales inversely with quality** — The worst performer (llms.txt) costs 2.9x more than the best (ASK github-docs), driven by retry loops and exploratory tool calls.
+
+See [`evals/nuxt-ui/README.md`](evals/nuxt-ui/README.md) for full methodology and detailed results.
+
 ## Background
 
 The [Next.js evals](https://nextjs.org/evals) benchmark ([source code](https://github.com/vercel/next-evals-oss)) showed that AI agents perform significantly better when given access to version-specific documentation via `AGENTS.md`:
