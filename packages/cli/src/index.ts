@@ -17,7 +17,7 @@ import {
   loadConfig,
   removeDocEntry,
 } from './config.js'
-import { contentHash, upsertLockEntry } from './io.js'
+import { contentHash, readLock, upsertLockEntry } from './io.js'
 import { parseEcosystem, resolveFromRegistry } from './registry.js'
 import { generateSkill, removeSkill } from './skill.js'
 import { getSource } from './sources/index.js'
@@ -224,41 +224,68 @@ const addCmd = defineCommand({
 })
 
 const syncCmd = defineCommand({
-  meta: { name: 'sync', description: 'Download/update all docs from .please/config.json' },
+  meta: { name: 'sync', description: 'Refresh docs from .ask/config.json, using .ask/ask.lock as the drift baseline' },
   async run() {
     const projectDir = process.cwd()
     const config = loadConfig(projectDir)
+    const lock = readLock(projectDir)
 
     if (config.docs.length === 0) {
-      consola.info('No docs configured in .please/config.json')
+      consola.info('No docs configured in .ask/config.json')
       return
     }
 
     consola.start(`Syncing ${config.docs.length} library docs...`)
 
+    let drifted = 0
+    let unchanged = 0
+    let failed = 0
+
     for (const entry of config.docs) {
       try {
-        consola.info(`  ${entry.name}@${entry.version} (${entry.source})...`)
+        consola.info(`  ${entry.name} (${entry.source})...`)
         const source = getSource(entry.source)
         const result = await source.fetch(entry)
+        const newLockEntry = buildLockEntry(entry, result)
+        const previousLock = lock.entries[entry.name]
+        const changed = !previousLock
+          || previousLock.contentHash !== newLockEntry.contentHash
+          || previousLock.version !== newLockEntry.version
 
+        if (!changed) {
+          unchanged++
+          consola.info(`  -> unchanged (v${result.resolvedVersion})`)
+          continue
+        }
+
+        // Drift confirmed: save new docs, then delete the old version dir
+        // (only after the new fetch succeeded, so we never end up empty)
         saveDocs(projectDir, entry.name, result.resolvedVersion, result.files)
+        if (previousLock && previousLock.version !== result.resolvedVersion) {
+          removeDocs(projectDir, entry.name, previousLock.version)
+        }
+        addDocEntry(projectDir, { ...entry, version: result.resolvedVersion })
+        upsertLockEntry(projectDir, entry.name, newLockEntry)
         generateSkill(
           projectDir,
           entry.name,
           result.resolvedVersion,
           result.files.map(f => f.path),
         )
-
-        consola.success(`  -> ${result.files.length} files (v${result.resolvedVersion})`)
+        drifted++
+        const fromVersion = previousLock?.version ?? '(new)'
+        consola.success(`  ⟳ ${fromVersion} → ${result.resolvedVersion} (${result.files.length} files)`)
       }
       catch (err) {
+        failed++
         consola.error(`  -> Error: ${err instanceof Error ? err.message : err}`)
       }
     }
 
     generateAgentsMd(projectDir)
-    consola.success('Sync complete. AGENTS.md updated.')
+    consola.success(
+      `Sync complete: ${drifted} re-fetched, ${unchanged} unchanged, ${failed} failed. AGENTS.md updated.`,
+    )
   },
 })
 
