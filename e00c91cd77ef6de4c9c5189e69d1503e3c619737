@@ -1,0 +1,31 @@
+packages/cli/src/storage.ts
+  76d45c9b1098e15a 4,7
+packages/cli/src/io.ts
+  76d45c9b1098e15a 33-35,41-43,45-51,57,59,88,126-130,170-173,175-179
+packages/cli/src/migrate-legacy.ts
+  76d45c9b1098e15a 4,32-33,73,100
+packages/cli/src/config.ts
+  76d45c9b1098e15a 3
+packages/cli/src/index.ts
+  76d45c9b1098e15a 5,12,22,29,32,34-36,209,213
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "e00c91cd77ef6de4c9c5189e69d1503e3c619737",
+  "prompts": {
+    "76d45c9b1098e15a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "adb20158-3689-49b4-b5f0-e95b6243a7dd",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 48,
+      "total_deletions": 69,
+      "accepted_lines": 48,
+      "overriden_lines": 0
+    }
+  }
+}
