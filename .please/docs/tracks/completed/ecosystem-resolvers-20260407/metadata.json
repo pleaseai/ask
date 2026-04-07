@@ -1,10 +1,10 @@
 {
   "track_id": "ecosystem-resolvers-20260407",
   "type": "feature",
-  "status": "planned",
+  "status": "review",
   "created_at": "2026-04-07T00:00:00Z",
-  "updated_at": "2026-04-07T00:00:00Z",
+  "updated_at": "2026-04-08T00:00:00Z",
   "issue": "#6",
-  "pr": "https://github.com/pleaseai/ask/pull/7",
+  "pr": "#13",
   "project": ""
 }

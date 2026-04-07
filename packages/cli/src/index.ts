@@ -24,6 +24,7 @@ import {
 import { contentHash, getConfigPath, getLockPath, readLock, upsertLockEntry } from './io.js'
 import { migrateLegacyWorkspace } from './migrate-legacy.js'
 import { parseDocSpec, parseEcosystem, resolveFromRegistry } from './registry.js'
+import { getResolver } from './resolvers/index.js'
 import { generateSkill, removeSkill } from './skill.js'
 import { getSource } from './sources/index.js'
 import { listDocs, removeDocs, saveDocs } from './storage.js'
@@ -202,22 +203,48 @@ const addCmd = defineCommand({
     else {
       // Auto-detect from registry
       const resolved = await resolveFromRegistry(args.spec, projectDir)
-      if (!resolved) {
+      if (resolved) {
+        const { strategy } = resolved
+        consola.start(`Downloading ${resolved.name}@${resolved.version} docs (source: ${strategy.source})...`)
+        sourceConfig = buildSourceConfig(resolved.name, resolved.version, {
+          source: strategy.source,
+          repo: strategy.repo,
+          docsPath: strategy.docsPath,
+          url: strategy.urls ?? (strategy.url ? [strategy.url] : undefined),
+          maxDepth: strategy.maxDepth?.toString(),
+          pathPrefix: strategy.allowedPathPrefix,
+          branch: strategy.branch,
+          tag: strategy.tag,
+        })
+      }
+      else if (parsed.kind === 'ecosystem') {
+        // Registry miss with ecosystem prefix → try ecosystem resolver
+        const resolver = getResolver(parsed.ecosystem)
+        if (!resolver) {
+          consola.error(
+            `'${args.spec}' not found in registry and no resolver for '${parsed.ecosystem}'. `
+            + `Use --source to specify manually.`,
+          )
+          process.exit(1)
+          return // unreachable — hints TS that control flow ends
+        }
+        consola.info(`Registry miss — resolving via ${parsed.ecosystem} package metadata...`)
+        const resolveResult = await resolver.resolve(parsed.name, parsed.version)
+        consola.start(`Downloading ${parsed.name}@${resolveResult.resolvedVersion} docs (source: github via ${parsed.ecosystem} resolver)...`)
+        sourceConfig = {
+          source: 'github',
+          name: parsed.name,
+          version: resolveResult.resolvedVersion,
+          repo: resolveResult.repo,
+          tag: resolveResult.ref,
+          docsPath: args.docsPath,
+        } satisfies GithubSourceOptions
+      }
+      else {
         consola.error(`'${args.spec}' not found in registry. Use --source to specify manually.`)
         process.exit(1)
+        return // unreachable — hints TS that control flow ends
       }
-      const { strategy } = resolved
-      consola.start(`Downloading ${resolved.name}@${resolved.version} docs (source: ${strategy.source})...`)
-      sourceConfig = buildSourceConfig(resolved.name, resolved.version, {
-        source: strategy.source,
-        repo: strategy.repo,
-        docsPath: strategy.docsPath,
-        url: strategy.urls ?? (strategy.url ? [strategy.url] : undefined),
-        maxDepth: strategy.maxDepth?.toString(),
-        pathPrefix: strategy.allowedPathPrefix,
-        branch: strategy.branch,
-        tag: strategy.tag,
-      })
     }
 
     const source = getSource(sourceConfig.source)

@@ -135,6 +135,26 @@ Description and version notes here...
 
 Add a new `.md` file under `apps/registry/content/registry/<ecosystem>/` and submit a PR.
 
+## Ecosystem Resolvers
+
+When a library isn't in the registry, ASK can **automatically resolve** its GitHub repository from ecosystem package metadata. This works for any ecosystem-prefixed spec:
+
+```bash
+ask docs add npm:lodash       # Looks up registry.npmjs.org → lodash/lodash
+ask docs add pypi:fastapi     # Looks up pypi.org → fastapi/fastapi
+ask docs add pub:riverpod     # Looks up pub.dev → rrousselGit/riverpod
+```
+
+**Supported ecosystems:**
+
+| Ecosystem | API | Metadata field |
+|---|---|---|
+| `npm` | `registry.npmjs.org/<name>` | `repository.url` |
+| `pypi` | `pypi.org/pypi/<name>/json` | `info.project_urls.Source` |
+| `pub` | `pub.dev/api/packages/<name>` | `latest.pubspec.repository` |
+
+The resolver extracts the GitHub `owner/repo` from the package metadata and delegates to the GitHub source for download. The registry is always checked first — resolvers only activate on a registry miss.
+
 ## Source Adapters
 
 ### npm

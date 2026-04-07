@@ -32,21 +32,44 @@ ask docs add npm:lodash
 
 ## Tasks
 
-- **T-1** [impl] `EcosystemResolver` interface, `parseRepoUrl` utility, and unit tests
-- **T-2** [impl] npm resolver — registry API + dist-tags + semver resolution
-- **T-3** [impl] pypi resolver — extract `project_urls`, PEP 440 handling
-- **T-4** [impl] pub resolver — extract `pubspec.repository`
-- **T-5** [test] Unit tests for each resolver (mocked fetch)
-- **T-6** [impl] Wire resolvers into the `add` command — registry-miss fallback
-- **T-7** [test] End-to-end smoke — `ask docs add npm:lodash`, `pub:riverpod`
-- **T-8** [docs] Update README
-- **T-9** [chore] Regression — confirm registry-hit `npm:next` still works
+- [x] **T-1** [impl] `EcosystemResolver` interface, `parseRepoUrl` utility, and unit tests
+- [x] **T-2** [impl] npm resolver — registry API + dist-tags + semver resolution
+- [x] **T-3** [impl] pypi resolver — extract `project_urls`, PEP 440 handling
+- [x] **T-4** [impl] pub resolver — extract `pubspec.repository`
+- [x] **T-5** [test] Unit tests for each resolver (mocked fetch)
+- [x] **T-6** [impl] Wire resolvers into the `add` command — registry-miss fallback
+- [x] **T-7** [test] End-to-end smoke — `ask docs add npm:lodash`, `pub:riverpod`
+- [x] **T-8** [docs] Update README
+- [x] **T-9** [chore] Regression — confirm registry-hit `npm:next` still works
 
 ## Risks
 
 - A package's `repository` field may be missing or wrong → emit a clear error and tell the user to fall back to `owner/repo` directly
 - Git tag conventions differ (`v1.0.0` vs `1.0.0`) → try both, fall back on github 404
 - Semver range parsing pulls in a new dependency — consider adding `semver`
+
+## Outcomes & Retrospective
+
+### What Was Shipped
+- EcosystemResolver interface + factory (`getResolver`) for npm, pypi, pub
+- `parseRepoUrl` utility for normalizing GitHub URLs from varied formats
+- Semver range resolution for npm (`^15` → latest 15.x.x) via `semver` package
+- Git ref fallback (`v{version}` → `{version}` or vice versa)
+- Resolver fallback wired into `add` command on registry miss
+- 146 tests passing, lint + tsc clean
+
+### What Went Well
+- Clean TDD cycle — tests defined expected behavior, implementation followed
+- Spec compliance check caught semver range gap early before merge
+- Resolvers are fully decoupled from sources, testable with mock fetch
+
+### What Could Improve
+- FR-5 fallback refs are declared but not yet exercised at download time (github source would need retry logic)
+- Could add integration tests against real APIs (currently all mocked)
+
+### Tech Debt Created
+- `sources/npm.ts` marked deprecated but not removed — needs cleanup in a follow-up release
+- FR-5 fallback ref retry logic not wired into github source fetch path
 
 ## Dependencies
 

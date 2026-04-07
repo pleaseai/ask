@@ -11,6 +11,11 @@ import os from 'node:os'
 import path from 'node:path'
 import { consola } from 'consola'
 
+/**
+ * @deprecated Use the npm ecosystem resolver (`resolvers/npm.ts`) + github source
+ * instead. This direct npm tarball source is kept for one release to avoid
+ * regressions in existing configs that specify `source: 'npm'` explicitly.
+ */
 export class NpmSource implements DocSource {
   async fetch(options: SourceConfig): Promise<FetchResult> {
     const opts = options as NpmSourceOptions

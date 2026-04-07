@@ -54,6 +54,8 @@ node packages/cli/dist/index.js docs add <spec> -s <source> [options]
 - A PreToolUse Bash hook blocks shell commands when the current commit has no recorded review. Run `/review:code-review` (or `/review:run-cubic` / `/review:run-gemini`) and let it call `save-review-state.sh` before further bash.
 - `apps/registry/` uses `vercel.ts` (programmatic config via `@vercel/config` devDep), not `vercel.json`. Use `git.deploymentEnabled` (not deprecated `github.enabled`) to control auto-deploy.
 - Track artifacts live under `.please/docs/tracks/active/{slug}-{YYYYMMDD}/` with `spec.md`, `plan.md`, `metadata.json`. Append a JSON line to `.please/docs/tracks.jsonl` when creating a track.
+- In git worktrees, `bun install` must be run before tests — dependencies are not shared across worktrees.
+- `style/quote-props` ESLint rule: if any property in an interface requires quotes (e.g. `'dist-tags'`), all properties must be quoted for consistency.
 
 ## CLI Architecture (packages/cli/)
 
@@ -65,11 +67,18 @@ node packages/cli/dist/index.js docs add <spec> -s <source> [options]
 
 **Source adapter pattern** (`src/sources/`):
 - `index.ts` — defines `DocSource` interface, `SourceConfig` union type, and `getSource()` factory
-- `npm.ts` — downloads npm tarballs, extracts doc files from package
+- `npm.ts` — downloads npm tarballs, extracts doc files from package (deprecated — use resolver + github source)
 - `github.ts` — downloads GitHub repo archives via tar.gz, extracts docs directory
 - `web.ts` — crawls documentation websites, converts HTML to Markdown via `node-html-markdown`
 
 All three sources implement `DocSource.fetch(options) -> Promise<FetchResult>` returning `{ files: DocFile[], resolvedVersion: string }`.
+
+**Ecosystem resolver pattern** (`src/resolvers/`):
+- `index.ts` — defines `EcosystemResolver` interface, `ResolveResult` type, and `getResolver()` factory
+- `npm.ts` / `pypi.ts` / `pub.ts` — fetch package metadata APIs, extract GitHub `owner/repo`, delegate to github source
+- `utils.ts` — `parseRepoUrl(url)` normalizes varied GitHub URL formats to `owner/repo`
+
+Resolvers are orthogonal to sources — they only perform metadata lookups and hand off `repo` + `ref` to the github source. The `add` command tries the registry first; resolvers activate on registry miss for ecosystem-prefixed specs.
 
 **Output pipeline** (executed in sequence by `add` command):
 1. `storage.ts` — saves doc files to `.ask/docs/<name>@<version>/`, creates `INDEX.md`
