@@ -2,6 +2,9 @@
 name: nuxt-ui
 ecosystem: npm
 description: A comprehensive Vue UI component library with 125+ accessible, production-ready Tailwind CSS components
+repo: nuxt/ui
+homepage: https://ui.nuxt.com
+license: MIT
 strategies:
   - source: github
     repo: nuxt/ui
