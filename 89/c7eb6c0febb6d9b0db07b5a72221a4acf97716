@@ -1,0 +1,36 @@
+CLAUDE.md
+  ccda89fc721d2918 66,92
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "89c7eb6c0febb6d9b0db07b5a72221a4acf97716",
+  "prompts": {
+    "ccda89fc721d2918": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7ed5a97f-cace-4947-81b4-4ca237b525ca",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 2,
+      "total_deletions": 2,
+      "accepted_lines": 130,
+      "overriden_lines": 0
+    },
+    "d2c82e4e7222c393": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "444608fc-6897-4fc4-a95d-20328e694b01",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 56,
+      "overriden_lines": 0
+    }
+  }
+}
