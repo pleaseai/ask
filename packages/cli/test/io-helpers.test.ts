@@ -179,6 +179,36 @@ describe('readLock / writeLock', () => {
     expect(second).toBe(first)
   })
 
+  it('determinism stress: write→read→write is idempotent across many keys', () => {
+    const lock: Lock = {
+      lockfileVersion: 1,
+      generatedAt: '2026-04-07T06:00:00Z',
+      entries: Object.fromEntries(
+        Array.from({ length: 30 }, (_, i) => {
+          const name = `lib-${String(i).padStart(2, '0')}`
+          return [name, {
+            source: 'github' as const,
+            version: `${i}.0.0`,
+            repo: `owner/${name}`,
+            ref: `v${i}.0.0`,
+            commit: i.toString(16).padStart(40, '0'),
+            fetchedAt: '2026-04-07T06:00:00Z',
+            fileCount: i,
+            contentHash: `sha256-${i.toString(16).padStart(64, '0')}`,
+          }]
+        }),
+      ),
+    }
+    writeLock(tmpDir, lock)
+    const a = fs.readFileSync(path.join(tmpDir, '.ask', 'ask.lock'), 'utf-8')
+    writeLock(tmpDir, readLock(tmpDir))
+    const b = fs.readFileSync(path.join(tmpDir, '.ask', 'ask.lock'), 'utf-8')
+    writeLock(tmpDir, readLock(tmpDir))
+    const c = fs.readFileSync(path.join(tmpDir, '.ask', 'ask.lock'), 'utf-8')
+    expect(b).toBe(a)
+    expect(c).toBe(a)
+  })
+
   it('sorts entries map keys on write', () => {
     const lock: Lock = {
       lockfileVersion: 1,
