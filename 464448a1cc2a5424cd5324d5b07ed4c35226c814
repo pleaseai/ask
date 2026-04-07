@@ -1,0 +1,27 @@
+vercel.ts
+  af7a25cead94a521 1-7
+apps/registry/vercel.ts
+  af7a25cead94a521 1-7
+CLAUDE.md
+  af7a25cead94a521 55
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "464448a1cc2a5424cd5324d5b07ed4c35226c814",
+  "prompts": {
+    "af7a25cead94a521": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "092fc426-b81c-4036-8227-a5519e234d78",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 15,
+      "total_deletions": 0,
+      "accepted_lines": 15,
+      "overriden_lines": 0
+    }
+  }
+}
