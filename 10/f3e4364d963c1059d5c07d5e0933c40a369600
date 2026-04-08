@@ -1,0 +1,33 @@
+apps/registry/package.json
+  f56cdf27b0c39d34 14
+packages/cli/test/registry-schema.test.ts
+  f56cdf27b0c39d34 2
+packages/cli/src/registry.ts
+  f56cdf27b0c39d34 5-6,8-9,11
+packages/cli/package.json
+  f56cdf27b0c39d34 26
+apps/registry/content.config.ts
+  f56cdf27b0c39d34 1-2,16
+apps/registry/server/api/registry/[...slug].get.ts
+  f56cdf27b0c39d34 1-2,27,58,67
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "10f3e4364d963c1059d5c07d5e0933c40a369600",
+  "prompts": {
+    "f56cdf27b0c39d34": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "17341893-f241-4d37-905d-dc7f030ade99",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 18,
+      "total_deletions": 107,
+      "accepted_lines": 16,
+      "overriden_lines": 0
+    }
+  }
+}
