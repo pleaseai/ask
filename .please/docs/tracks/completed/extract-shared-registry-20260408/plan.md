@@ -127,3 +127,24 @@ graph LR
 - Decision: Use Zod schemas as single source of truth, derive TypeScript types via `z.infer<>`
   Rationale: Eliminates parallel maintenance of interfaces and schemas; CLI already depends on zod
   Date/Author: 2026-04-08 / Claude
+- Decision: Move zod to peerDependencies instead of dependencies
+  Rationale: Avoids dual Zod instance between shared package and @nuxt/content (review finding)
+  Date/Author: 2026-04-08 / Claude
+
+## Outcomes & Retrospective
+
+### What Was Shipped
+- New `packages/registry-schema` package with Zod schemas, inferred types, and `expandStrategies()`
+- CLI and registry app migrated to import from shared package
+- All duplicated type definitions and functions eliminated
+
+### What Went Well
+- Turbo's `^build` dependency ordering worked out of the box — no config changes needed
+- Workspace `packages/*` glob automatically included the new package
+- All 146 existing CLI tests passed without modification after migration
+
+### What Could Improve
+- The Nitro "can't resolve workspace imports" constraint turned out to be solvable with a built package — could have been resolved earlier
+
+### Tech Debt Created
+- Pre-existing lint errors in `apps/registry/` Vue files remain (not introduced by this PR)
