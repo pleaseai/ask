@@ -95,12 +95,34 @@ export class NpmSource implements DocSource {
     // resolves outside the installed package directory. A malformed entry
     // like `docsPath: '../../../etc/passwd'` would otherwise read arbitrary
     // files on local-first reads.
+    //
+    // Two-stage check:
+    //   1. String-level: reject obvious traversal (`..`, absolute path)
+    //      before touching the filesystem.
+    //   2. Realpath: after confirming `docsDir` exists, resolve symlinks on
+    //      both `pkgDir` and `docsDir` and re-check containment. A symlink
+    //      inside the package dir that points outside (e.g.
+    //      `node_modules/<pkg>/dist/docs -> /etc`) bypasses the string
+    //      check but is caught here.
     const docsDir = path.resolve(pkgDir, docsPath)
     const relativeDocsDir = path.relative(pkgDir, docsDir)
     if (relativeDocsDir.startsWith('..') || path.isAbsolute(relativeDocsDir)) {
       return null
     }
     if (!fs.existsSync(docsDir)) {
+      return null
+    }
+    let realPkgDir: string
+    let realDocsDir: string
+    try {
+      realPkgDir = fs.realpathSync(pkgDir)
+      realDocsDir = fs.realpathSync(docsDir)
+    }
+    catch {
+      return null
+    }
+    const realRelative = path.relative(realPkgDir, realDocsDir)
+    if (realRelative.startsWith('..') || path.isAbsolute(realRelative)) {
       return null
     }
 

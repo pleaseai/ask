@@ -338,6 +338,37 @@ describe('NpmSource.tryLocalRead', () => {
     expect(result).toBeNull()
   })
 
+  it('rejects docsPath that escapes the package directory via symlink', () => {
+    // Even when the string-level check passes (docsPath stays inside
+    // pkgDir lexically), a symlink at the docsPath location can point
+    // outside. The realpath check catches this.
+    projectDir = createFixtureProject({
+      pkg: 'ai',
+      version: '5.1.0',
+    })
+    // Create a target outside the package dir with real docs
+    const outsideDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ask-outside-'))
+    try {
+      fs.writeFileSync(path.join(outsideDir, 'malicious.md'), '# leaked')
+      // Plant a symlink at node_modules/ai/dist/docs that points outside
+      const distDir = path.join(projectDir, 'node_modules', 'ai', 'dist')
+      fs.mkdirSync(distDir, { recursive: true })
+      fs.symlinkSync(outsideDir, path.join(distDir, 'docs'))
+
+      const result = new NpmSource().tryLocalRead({
+        projectDir,
+        pkg: 'ai',
+        requestedVersion: '5.1.0',
+        docsPath: 'dist/docs',
+      })
+
+      expect(result).toBeNull()
+    }
+    finally {
+      fs.rmSync(outsideDir, { recursive: true, force: true })
+    }
+  })
+
   it('rejects absolute docsPath', () => {
     projectDir = createFixtureProject({
       pkg: 'ai',
