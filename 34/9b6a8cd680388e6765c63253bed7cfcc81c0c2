@@ -1,0 +1,23 @@
+.please/docs/tracks/active/npm-publish-release-please-20260408/plan.md
+  261bd76567a726c2 81-84
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "349b6a8cd680388e6765c63253bed7cfcc81c0c2",
+  "prompts": {
+    "261bd76567a726c2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "592c8f41-761d-4156-892a-2fcde7e9b517",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 2,
+      "total_deletions": 2,
+      "accepted_lines": 4,
+      "overriden_lines": 0
+    }
+  }
+}
