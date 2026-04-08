@@ -9,17 +9,168 @@ import { execSync } from 'node:child_process'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
+import process from 'node:process'
 import { consola } from 'consola'
+import { satisfies, validRange } from 'semver'
 
 /**
- * @deprecated Use the npm ecosystem resolver (`resolvers/npm.ts`) + github source
- * instead. This direct npm tarball source is kept for one release to avoid
- * regressions in existing configs that specify `source: 'npm'` explicitly.
+ * npm source — fetches docs from a published tarball OR, when the package is
+ * already installed in the current project, directly from
+ * `node_modules/<pkg>/<docsPath>`.
+ *
+ * Local-first behavior was added in npm-tarball-docs-20260408 to (1) avoid
+ * unnecessary network IO when the docs are already present on disk and
+ * (2) keep AI agents working offline / inside CI sandboxes. The local path
+ * is taken whenever the installed `package.json` version satisfies the
+ * requested version (or the request is `latest`) AND the configured
+ * `<docsPath>` exists. Otherwise the existing tarball download path runs.
  */
 export class NpmSource implements DocSource {
   async fetch(options: SourceConfig): Promise<FetchResult> {
     const opts = options as NpmSourceOptions
     const pkg = opts.package ?? opts.name
+
+    const local = this.tryLocalRead({
+      projectDir: process.cwd(),
+      pkg,
+      requestedVersion: opts.version,
+      docsPath: opts.docsPath,
+    })
+    if (local) {
+      consola.info(`  Using local node_modules for ${pkg}@${local.resolvedVersion}`)
+      return local
+    }
+
+    return this.fetchFromTarball(opts, pkg)
+  }
+
+  /**
+   * Read docs directly from `node_modules/<pkg>` when the installed version
+   * satisfies the request and the configured `docsPath` exists. Returns
+   * `null` to indicate the local path is not viable — the caller falls back
+   * to the tarball download.
+   *
+   * Public-ish (not exported) for unit testing via `(new NpmSource()).tryLocalRead`.
+   */
+  tryLocalRead(args: {
+    projectDir: string
+    pkg: string
+    requestedVersion: string
+    docsPath?: string
+  }): FetchResult | null {
+    const { projectDir, pkg, requestedVersion, docsPath } = args
+
+    if (!docsPath) {
+      // No explicit docsPath: we don't try to auto-detect against
+      // node_modules. The local path exists for the curated case.
+      return null
+    }
+
+    // Resolve the package's installed root. Scoped packages (`@scope/pkg`)
+    // live at `node_modules/@scope/pkg/`.
+    const pkgDir = path.join(projectDir, 'node_modules', pkg)
+    const pkgJsonPath = path.join(pkgDir, 'package.json')
+    if (!fs.existsSync(pkgJsonPath)) {
+      return null
+    }
+
+    let installedVersion: string
+    try {
+      const meta = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf-8')) as { version?: string }
+      if (!meta.version) {
+        return null
+      }
+      installedVersion = meta.version
+    }
+    catch {
+      return null
+    }
+
+    if (!this.versionMatches(requestedVersion, installedVersion)) {
+      return null
+    }
+
+    // Defense-in-depth: even though `docsPath` originates from a trusted
+    // registry strategy, treat it as untrusted and reject anything that
+    // resolves outside the installed package directory. A malformed entry
+    // like `docsPath: '../../../etc/passwd'` would otherwise read arbitrary
+    // files on local-first reads.
+    //
+    // Two-stage check:
+    //   1. String-level: reject obvious traversal (`..`, absolute path)
+    //      before touching the filesystem.
+    //   2. Realpath: after confirming `docsDir` exists, resolve symlinks on
+    //      both `pkgDir` and `docsDir` and re-check containment. A symlink
+    //      inside the package dir that points outside (e.g.
+    //      `node_modules/<pkg>/dist/docs -> /etc`) bypasses the string
+    //      check but is caught here.
+    const docsDir = path.resolve(pkgDir, docsPath)
+    const relativeDocsDir = path.relative(pkgDir, docsDir)
+    if (relativeDocsDir.startsWith('..') || path.isAbsolute(relativeDocsDir)) {
+      return null
+    }
+    if (!fs.existsSync(docsDir)) {
+      return null
+    }
+    let realPkgDir: string
+    let realDocsDir: string
+    try {
+      realPkgDir = fs.realpathSync(pkgDir)
+      realDocsDir = fs.realpathSync(docsDir)
+    }
+    catch {
+      return null
+    }
+    const realRelative = path.relative(realPkgDir, realDocsDir)
+    if (realRelative.startsWith('..') || path.isAbsolute(realRelative)) {
+      return null
+    }
+
+    let files: DocFile[]
+    if (fs.statSync(docsDir).isFile()) {
+      const content = fs.readFileSync(docsDir, 'utf-8')
+      files = [{ path: path.basename(docsDir), content }]
+    }
+    else {
+      files = this.collectMarkdownFiles(docsDir, docsDir)
+    }
+
+    if (files.length === 0) {
+      // The directory exists but holds no readable docs — treat as a miss
+      // so we don't poison the lockfile with an empty entry.
+      return null
+    }
+
+    return {
+      files,
+      resolvedVersion: installedVersion,
+      meta: { installPath: pkgDir },
+    }
+  }
+
+  /**
+   * Match policy for the local-first read:
+   *   - `latest`        → any installed version is acceptable
+   *   - exact version   → must equal installed
+   *   - semver range    → installed must satisfy
+   *   - non-semver tag  → must equal installed (treat as opaque)
+   *
+   * `requestedVersion` is whatever the caller passed in (`SourceConfig.version`).
+   * It originates from the registry resolution + manifest gate, so by the
+   * time we get here it is usually an exact version. The semver-range branch
+   * is defensive cover for callers that haven't run the gate.
+   */
+  private versionMatches(requested: string, installed: string): boolean {
+    if (requested === 'latest') {
+      return true
+    }
+    if (validRange(requested)) {
+      return satisfies(installed, requested)
+    }
+    return requested === installed
+  }
+
+  private async fetchFromTarball(opts: NpmSourceOptions, pkg: string): Promise<FetchResult> {
     const spec = `${pkg}@${opts.version}`
 
     // Get package info to resolve exact version and tarball URL

@@ -50,19 +50,27 @@ function buildLockEntry(config: SourceConfig, result: FetchResult): LockEntry {
         ref: meta.ref ?? config.tag ?? config.branch ?? 'main',
         ...(meta.commit ? { commit: meta.commit } : {}),
       }
-    case 'npm':
-      if (!meta.tarball) {
+    case 'npm': {
+      // Two valid recordings:
+      //   - tarball:    network fetch path; record URL (+ integrity if known)
+      //   - installPath: local-first read from node_modules; record path
+      // The schema requires exactly one of the two; the local-first path was
+      // added for npm-tarball-docs-20260408 to make `ask docs add` work
+      // offline when the package is already installed.
+      if (!meta.tarball && !meta.installPath) {
         throw new Error(
-          `npm source did not return a tarball URL for ${config.name}@${result.resolvedVersion}. `
-          + 'Cannot record lockfile entry without it.',
+          `npm source did not return a tarball URL or installPath for ${config.name}@${result.resolvedVersion}. `
+          + 'Cannot record lockfile entry without one of them.',
         )
       }
       return {
         ...base,
         source: 'npm',
-        tarball: meta.tarball,
+        ...(meta.tarball ? { tarball: meta.tarball } : {}),
         ...(meta.integrity ? { integrity: meta.integrity } : {}),
+        ...(meta.installPath ? { installPath: meta.installPath } : {}),
       }
+    }
     case 'web':
       return {
         ...base,

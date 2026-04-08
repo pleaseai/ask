@@ -24,14 +24,25 @@ const GithubLockEntry = z.object({
   commit: z.string().regex(/^[0-9a-f]{40}$/).optional(),
 })
 
+/**
+ * `tarball` is the canonical recording when ASK fetched the package over the
+ * network. It is optional because the local-first reader (added for
+ * npm-tarball-docs-20260408) can satisfy the request from
+ * `node_modules/<pkg>/<docsPath>` without ever downloading a tarball — in
+ * that case `installPath` is recorded instead so the lock still points at a
+ * real source on disk. Callers MUST supply at least one of the two; this
+ * invariant is enforced in the CLI's lock-entry builder rather than via Zod
+ * `refine` because `discriminatedUnion` does not accept ZodEffects branches.
+ */
 const NpmLockEntry = z.object({
   ...LockEntryBase,
   source: z.literal('npm'),
-  tarball: z.string().url(),
+  tarball: z.string().url().optional(),
   integrity: z.string().regex(
     /^sha(?:256|384|512)-[A-Za-z0-9+/=]+$/,
     'integrity must be a valid Subresource Integrity hash',
   ).optional(),
+  installPath: z.string().optional(),
 })
 
 const WebLockEntry = z.object({

@@ -138,6 +138,21 @@ function detectEcosystem(projectDir: string): string {
 }
 
 /**
+ * Shape of the registry API response — a stored entry plus the
+ * server-side `resolvedName` field that disambiguates monorepo entries.
+ *
+ * The server returns:
+ *   - `resolvedName === entry.name` for non-monorepo entries
+ *   - `resolvedName === slugifyPackageName(requestedAlias)` for monorepo
+ *     entries that hold multiple npm strategies
+ *
+ * It also reorders `strategies` so that the curated npm strategy matching
+ * the requested alias comes first. The CLI trusts both fields and does no
+ * client-side disambiguation. See `apps/registry/server/api/registry/[...slug].get.ts`.
+ */
+export type RegistryApiResponse = RegistryEntry & { resolvedName?: string }
+
+/**
  * Fetch registry entry from the registry API.
  *
  * Accepts either `(owner, repo)` for direct lookup or `(ecosystem, name)`
@@ -146,7 +161,7 @@ function detectEcosystem(projectDir: string): string {
 export async function fetchRegistryEntry(
   first: string,
   second: string,
-): Promise<RegistryEntry | null> {
+): Promise<RegistryApiResponse | null> {
   const url = `${REGISTRY_BASE_URL}/api/registry/${first}/${second}`
 
   try {
@@ -154,7 +169,7 @@ export async function fetchRegistryEntry(
     if (!response.ok) {
       return null
     }
-    const data = await response.json() as RegistryEntry
+    const data = await response.json() as RegistryApiResponse
     return data
   }
   catch (error) {
@@ -169,6 +184,10 @@ export async function fetchRegistryEntry(
  * Lower number = higher priority. Based on Nuxt UI eval results (2026-04-07):
  * GitHub docs achieved 100% pass rate at lowest cost, while llms.txt scored
  * below baseline. See evals/nuxt-ui/README.md for full methodology.
+ *
+ * Note: an explicit `npm` strategy carrying a `docsPath` overrides this table
+ * — see `selectBestStrategy` for the rationale. The base table only matters
+ * for tie-break and for npm strategies *without* an explicit docsPath.
  */
 const SOURCE_PRIORITY: Record<RegistryStrategy['source'], number> = {
   'github': 0,
@@ -178,14 +197,40 @@ const SOURCE_PRIORITY: Record<RegistryStrategy['source'], number> = {
 }
 
 /**
+ * An npm strategy that explicitly declares a `docsPath` is treated as
+ * author-curated (e.g. `vercel/ai`'s `dist/docs`). It outranks every other
+ * strategy in the same entry. Without `docsPath` we fall back to the static
+ * SOURCE_PRIORITY table — npm without curation is no better than github.
+ */
+function isCuratedNpm(strategy: RegistryStrategy): boolean {
+  return strategy.source === 'npm' && Boolean(strategy.docsPath)
+}
+
+/**
  * Pick the highest-priority strategy from a list, preserving the original
  * order for ties (stable sort).
+ *
+ * Selection rules (in order):
+ *   1. If any strategy is a "curated npm" (`source: npm` with `docsPath`),
+ *      pick the first one in declaration order. The registry server is
+ *      responsible for putting the right curated npm strategy first when
+ *      the request was for a specific scoped package in a monorepo entry
+ *      — see `apps/registry/server/api/registry/[...slug].get.ts`. The
+ *      client's job here is just to honor the order.
+ *   2. Otherwise, sort by SOURCE_PRIORITY (github > npm > web > llms-txt)
+ *      preserving original order on ties.
  */
 export function selectBestStrategy(strategies: RegistryStrategy[]): RegistryStrategy {
   if (strategies.length === 0) {
     throw new Error('selectBestStrategy requires at least one strategy')
   }
-  // Stable sort by priority — lower priority value wins
+  // Rule 1: curated npm wins outright (first in declaration order — the
+  // server has already put the right one at the head when applicable)
+  const curated = strategies.find(isCuratedNpm)
+  if (curated) {
+    return curated
+  }
+  // Rule 2: stable sort by static priority
   const indexed = Array.from(strategies, (s, i) => ({ s, i }))
   indexed.sort((a, b) => {
     const pa = SOURCE_PRIORITY[a.s.source] ?? 99
@@ -238,9 +283,15 @@ export async function resolveFromRegistry(
   const strategy = selectBestStrategy(strategies)
   consola.info(`Using source: ${strategy.source}`)
 
+  // The server has already disambiguated and slugified `resolvedName` for
+  // monorepo entries (multiple scoped packages under one repo entry). For
+  // older server versions that don't return `resolvedName`, fall back to
+  // the entry's display name — the same behavior as before.
+  const resolvedName = entry.resolvedName ?? entry.name
+
   return {
     ecosystem,
-    name: entry.name,
+    name: resolvedName,
     version,
     strategy,
   }
