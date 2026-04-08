@@ -1,0 +1,27 @@
+.please/docs/tracks/active/ignore-vendored-docs-20260408/plan.md
+  d2e34b6fc52f41e8 1-188
+.please/docs/tracks/active/ignore-vendored-docs-20260408/spec.md
+  d2e34b6fc52f41e8 1-92
+.please/docs/tracks/active/ignore-vendored-docs-20260408/metadata.json
+  d2e34b6fc52f41e8 1-11
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "962d00516144075fda0c4c476e401d8f58d6abf2",
+  "prompts": {
+    "d2e34b6fc52f41e8": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "faf7414e-7b4c-4989-bf5c-d3b0987c1ed5",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 294,
+      "total_deletions": 3,
+      "accepted_lines": 291,
+      "overriden_lines": 0
+    }
+  }
+}
