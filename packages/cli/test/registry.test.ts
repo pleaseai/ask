@@ -224,14 +224,40 @@ describe('selectBestStrategy', () => {
     expect(selectBestStrategy([githubB, githubA])).toBe(githubB)
   })
 
-  it('among multiple curated npm strategies, declaration order wins', () => {
-    // Mastra case: multiple scoped packages each with their own curated path.
-    // Picking the first declared one is intentional — caller can re-order to
-    // change preference.
+  it('among multiple curated npm strategies WITHOUT context, declaration order wins', () => {
     const core: RegistryStrategy = { source: 'npm', package: '@mastra/core', docsPath: 'dist/docs' }
     const memory: RegistryStrategy = { source: 'npm', package: '@mastra/memory', docsPath: 'dist/docs' }
     expect(selectBestStrategy([core, memory])).toBe(core)
     expect(selectBestStrategy([memory, core])).toBe(memory)
+  })
+
+  it('with requestedPackage context, picks the matching curated npm strategy (monorepo case)', () => {
+    // Real-world Mastra case: one registry entry holds two npm strategies
+    // (@mastra/core and @mastra/memory). The user asks for one of them and
+    // must get the matching strategy regardless of declaration order.
+    const core: RegistryStrategy = { source: 'npm', package: '@mastra/core', docsPath: 'dist/docs' }
+    const memory: RegistryStrategy = { source: 'npm', package: '@mastra/memory', docsPath: 'dist/docs' }
+    const github: RegistryStrategy = { source: 'github', repo: 'mastra-ai/mastra', docsPath: 'docs' }
+
+    // Asking for @mastra/memory must NOT return the core strategy.
+    expect(
+      selectBestStrategy([core, memory, github], { requestedPackage: '@mastra/memory' }),
+    ).toBe(memory)
+    // And asking for @mastra/core must return core even when memory is first.
+    expect(
+      selectBestStrategy([memory, core, github], { requestedPackage: '@mastra/core' }),
+    ).toBe(core)
+  })
+
+  it('with requestedPackage context that matches no strategy, falls back to first curated', () => {
+    const core: RegistryStrategy = { source: 'npm', package: '@mastra/core', docsPath: 'dist/docs' }
+    const memory: RegistryStrategy = { source: 'npm', package: '@mastra/memory', docsPath: 'dist/docs' }
+
+    // requestedPackage is set but no strategy matches it — fall back to
+    // Rule 2 (first curated npm).
+    expect(
+      selectBestStrategy([core, memory], { requestedPackage: '@mastra/nonexistent' }),
+    ).toBe(core)
   })
 
   it('throws on empty list', () => {

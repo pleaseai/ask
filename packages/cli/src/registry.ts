@@ -191,26 +191,54 @@ function isCuratedNpm(strategy: RegistryStrategy): boolean {
   return strategy.source === 'npm' && Boolean(strategy.docsPath)
 }
 
+export interface SelectStrategyContext {
+  /**
+   * The npm package the user actually asked for. Used to disambiguate
+   * registry entries that hold multiple npm strategies (one per scoped
+   * package in a monorepo) — e.g. `mastra-ai/mastra` declares both
+   * `@mastra/core` and `@mastra/memory`. When this is set, the curated
+   * npm strategy whose `package` matches wins; without it, the first
+   * curated npm in declaration order wins.
+   */
+  requestedPackage?: string
+}
+
 /**
  * Pick the highest-priority strategy from a list, preserving the original
  * order for ties (stable sort).
  *
  * Selection rules (in order):
- *   1. If any strategy is a "curated npm" (`source: npm` with `docsPath`),
- *      pick the first one in declaration order — author intent overrides.
- *   2. Otherwise, sort by SOURCE_PRIORITY (github > npm > web > llms-txt)
+ *   1. If `ctx.requestedPackage` is set AND any curated npm strategy has a
+ *      matching `package` field, pick that strategy. This is the monorepo
+ *      disambiguation rule.
+ *   2. Otherwise, if any strategy is a "curated npm" (`source: npm` with
+ *      `docsPath`), pick the first one in declaration order — author
+ *      intent overrides.
+ *   3. Otherwise, sort by SOURCE_PRIORITY (github > npm > web > llms-txt)
  *      preserving original order on ties.
  */
-export function selectBestStrategy(strategies: RegistryStrategy[]): RegistryStrategy {
+export function selectBestStrategy(
+  strategies: RegistryStrategy[],
+  ctx: SelectStrategyContext = {},
+): RegistryStrategy {
   if (strategies.length === 0) {
     throw new Error('selectBestStrategy requires at least one strategy')
   }
-  // Rule 1: curated npm wins outright
+  // Rule 1: monorepo disambiguation — match the requested package name
+  if (ctx.requestedPackage) {
+    const matchingCurated = strategies.find(
+      s => isCuratedNpm(s) && s.package === ctx.requestedPackage,
+    )
+    if (matchingCurated) {
+      return matchingCurated
+    }
+  }
+  // Rule 2: curated npm wins outright (first in declaration order)
   const curated = strategies.find(isCuratedNpm)
   if (curated) {
     return curated
   }
-  // Rule 2: stable sort by static priority
+  // Rule 3: stable sort by static priority
   const indexed = Array.from(strategies, (s, i) => ({ s, i }))
   indexed.sort((a, b) => {
     const pa = SOURCE_PRIORITY[a.s.source] ?? 99
@@ -260,12 +288,19 @@ export async function resolveFromRegistry(
 
   consola.success(`Found ${entry.name} in registry: ${entry.description}`)
 
-  const strategy = selectBestStrategy(strategies)
+  const strategy = selectBestStrategy(strategies, { requestedPackage: name })
   consola.info(`Using source: ${strategy.source}`)
+
+  // For monorepo entries that hold multiple scoped packages, prefer the
+  // requested package name over the entry's display name. Otherwise both
+  // `@mastra/core` and `@mastra/memory` would be saved under the same
+  // `Mastra` slug and overwrite each other on disk.
+  const isMonorepoEntry = (entry.strategies?.filter(s => s.source === 'npm').length ?? 0) > 1
+  const resolvedName = isMonorepoEntry ? name : entry.name
 
   return {
     ecosystem,
-    name: entry.name,
+    name: resolvedName,
     version,
     strategy,
   }
