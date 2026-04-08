@@ -48,7 +48,7 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Build CLI
-        run: bun run --cwd packages/cli build
+        run: bun run build --filter=@pleaseai/ask
 
       - name: Pack with bun (resolve workspace deps)
         working-directory: packages/cli
