@@ -52,10 +52,10 @@ jobs:
 
       - name: Pack with bun (resolve workspace deps)
         working-directory: packages/cli
-        run: bun pm pack --filename pleaseai-ask.tgz
+        run: bun pm pack
 
       - name: Publish to npm with provenance
         working-directory: packages/cli
-        run: npm publish pleaseai-ask.tgz --provenance --access public
+        run: npm publish pleaseai-ask-*.tgz --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
