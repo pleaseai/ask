@@ -128,3 +128,22 @@ bun run --cwd packages/cli lint
 - `parseDocSpec` uses first colon as ecosystem separator, so `maven:com.google.guava:guava` correctly splits into `ecosystem=maven`, `name=com.google.guava:guava`
 - Maven auto-detection already maps `pom.xml`/`build.gradle`/`build.gradle.kts` to `'maven'` ecosystem
 - No changes needed to `registry.ts` or `index.ts` — the resolver system is fully pluggable
+
+## Outcomes & Retrospective
+
+### What Was Shipped
+- `MavenResolver` class with Search API + POM XML dual-source architecture
+- 18 unit tests covering happy paths, fallback scenarios, and edge cases
+- Registered in resolver index — `getResolver('maven')` now works
+
+### What Went Well
+- Existing resolver pattern made implementation straightforward
+- TDD approach caught the scmUrl query core issue during review
+- Spec compliance check identified missing POM fallback path early
+
+### What Could Improve
+- Initial implementation missed the Search API scmUrl priority (FR-5) — should verify API response schema before implementing
+- Maven Central Search API `core=gav` vs default core behavior should be documented in gotchas
+
+### Tech Debt Created
+- None
