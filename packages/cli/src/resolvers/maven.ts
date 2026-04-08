@@ -5,16 +5,24 @@ import { parseRepoUrl } from './utils.js'
 /**
  * Maven Central Search API response (partial — only fields we need).
  */
+interface MavenSearchDoc {
+  g: string
+  a: string
+  v: string
+  repositoryId?: string
+  ec?: string[]
+}
+
 interface MavenSearchResponse {
   response: {
     numFound: number
-    docs: Array<{
-      g: string
-      a: string
-      v: string
-      repositoryId?: string
-    }>
+    docs: MavenSearchDoc[]
   }
+}
+
+interface VersionResult {
+  version: string
+  scmUrl?: string
 }
 
 const RE_SCM_URL = /<scm>[\s\S]*?<url>([^<]+)<\/url>/
@@ -39,6 +47,8 @@ function parseMavenCoordinate(name: string): { groupId: string, artifactId: stri
 }
 
 const RE_DOT = /\./g
+const RE_RELEASE = /<release>([^<]+)<\/release>/
+const RE_LATEST = /<latest>([^<]+)<\/latest>/
 
 /**
  * Build the Maven Central Repository POM URL.
@@ -85,11 +95,23 @@ export class MavenResolver implements EcosystemResolver {
   async resolve(name: string, version: string): Promise<ResolveResult> {
     const { groupId, artifactId } = parseMavenCoordinate(name)
 
-    // Step 1: Resolve version via Search API
-    const resolvedVersion = await this.resolveVersion(groupId, artifactId, version)
+    // Step 1: Resolve version + optional scmUrl via Search API
+    const versionResult = await this.resolveVersion(groupId, artifactId, version)
+    const resolvedVersion = versionResult.version
 
-    // Step 2: Try to find GitHub repo from POM XML
-    const repo = await this.findRepo(groupId, artifactId, resolvedVersion)
+    // Step 2: Find GitHub repo — priority: (1) Search API scmUrl, (2) POM <scm><url>, (3) POM <url>
+    let repo: string | null = null
+
+    // (1) Check Search API scmUrl first
+    if (versionResult.scmUrl) {
+      repo = parseRepoUrl(versionResult.scmUrl)
+    }
+
+    // (2, 3) Fall back to POM XML
+    if (!repo) {
+      repo = await this.findRepoFromPom(groupId, artifactId, resolvedVersion)
+    }
+
     if (!repo) {
       throw new Error(
         `Cannot resolve GitHub repository for Maven package '${groupId}:${artifactId}'. `
@@ -109,9 +131,39 @@ export class MavenResolver implements EcosystemResolver {
   }
 
   /**
-   * Resolve version: 'latest' → fetch from Search API, explicit → passthrough with validation.
+   * Resolve version via Search API. Falls back to POM-based resolution
+   * when the Search API is unavailable.
+   *
+   * For explicit versions, the version is used as-is (no Search API needed
+   * for validation — the POM fetch will fail if it doesn't exist).
    */
-  private async resolveVersion(groupId: string, artifactId: string, version: string): Promise<string> {
+  private async resolveVersion(groupId: string, artifactId: string, version: string): Promise<VersionResult> {
+    // Explicit versions can skip Search API for version resolution
+    if (version !== 'latest') {
+      // Still try Search API for scmUrl, but don't fail if unavailable
+      try {
+        return await this.fetchSearchApi(groupId, artifactId, version)
+      }
+      catch {
+        return { version }
+      }
+    }
+
+    // For 'latest', try Search API first
+    try {
+      return await this.fetchSearchApi(groupId, artifactId, version)
+    }
+    catch {
+      // Search API unavailable — try maven-metadata.xml for latest version
+      consola.debug(`maven: Search API unavailable, trying maven-metadata.xml`)
+      return this.resolveVersionFromMetadata(groupId, artifactId)
+    }
+  }
+
+  /**
+   * Fetch version and optional scmUrl from Maven Central Search API.
+   */
+  private async fetchSearchApi(groupId: string, artifactId: string, version: string): Promise<VersionResult> {
     const isLatest = version === 'latest'
     const query = isLatest
       ? `q=g:${encodeURIComponent(groupId)}+AND+a:${encodeURIComponent(artifactId)}&rows=1&wt=json`
@@ -134,22 +186,64 @@ export class MavenResolver implements EcosystemResolver {
       )
     }
 
-    return data.response.docs[0].v
+    const doc = data.response.docs[0]
+
+    // Try to get scmUrl from extended search (separate request)
+    let scmUrl: string | undefined
+    try {
+      const extUrl = `https://search.maven.org/solrsearch/select?q=g:${encodeURIComponent(groupId)}+AND+a:${encodeURIComponent(artifactId)}+AND+v:${encodeURIComponent(doc.v)}&rows=1&wt=json&core=gav`
+      const extResponse = await fetch(extUrl)
+      if (extResponse.ok) {
+        const extData = await extResponse.json() as { response: { docs: Array<{ 'scm.url'?: string }> } }
+        scmUrl = extData.response.docs[0]?.['scm.url']
+      }
+    }
+    catch {
+      // Non-critical — will fall back to POM
+    }
+
+    return { version: doc.v, scmUrl }
   }
 
   /**
-   * Find GitHub repo URL. Try POM XML download and extract from <scm><url> or <url>.
+   * Resolve latest version from maven-metadata.xml when Search API is unavailable.
    */
-  private async findRepo(groupId: string, artifactId: string, version: string): Promise<string | null> {
+  private async resolveVersionFromMetadata(groupId: string, artifactId: string): Promise<VersionResult> {
+    const groupPath = groupId.replace(RE_DOT, '/')
+    const url = `https://repo1.maven.org/maven2/${groupPath}/${artifactId}/maven-metadata.xml`
+
+    const response = await fetch(url)
+    if (!response.ok) {
+      throw new Error(
+        `Cannot resolve Maven package '${groupId}:${artifactId}': `
+        + `Search API unavailable and maven-metadata.xml returned ${response.status}`,
+      )
+    }
+
+    const xml = await response.text()
+    const versionMatch = RE_RELEASE.exec(xml) ?? RE_LATEST.exec(xml)
+
+    if (!versionMatch) {
+      throw new Error(
+        `Cannot resolve latest version for Maven package '${groupId}:${artifactId}': `
+        + `no <release> or <latest> tag in maven-metadata.xml`,
+      )
+    }
+
+    return { version: versionMatch[1] }
+  }
+
+  /**
+   * Find GitHub repo URL from POM XML. Priority: <scm><url> → <url>
+   */
+  private async findRepoFromPom(groupId: string, artifactId: string, version: string): Promise<string | null> {
     const pomUrl = buildPomUrl(groupId, artifactId, version)
 
     try {
       const response = await fetch(pomUrl)
       if (response.ok) {
         const pomXml = await response.text()
-        const repo = extractRepoFromPom(pomXml)
-        if (repo)
-          return repo
+        return extractRepoFromPom(pomXml)
       }
     }
     catch {
