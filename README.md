@@ -7,12 +7,16 @@ Inspired by [Next.js evals](https://nextjs.org/evals) showing that providing `AG
 ## How It Works
 
 ```bash
-ask docs add next@canary          # Auto-detect from registry
-ask docs add npm:zod@3.22         # Explicit ecosystem
-ask docs add pypi:fastapi@0.115   # Python libraries too
-ask docs add vercel/next.js       # GitHub shorthand (no registry needed)
+ask docs add npm:next                # Auto-detects version from your project lockfile
+ask docs add npm:zod@3.22            # Explicit ecosystem + version
+ask docs add pypi:fastapi@0.115      # Python libraries too
+ask docs add vercel/next.js          # GitHub shorthand (no registry needed)
 ask docs add vercel/next.js@v15.0.0  # …pinned to a tag or branch
 ```
+
+> Bare names (`ask docs add next`) are rejected — use an `<ecosystem>:<name>`
+> prefix or the `<owner>/<repo>` shorthand so the CLI knows how to resolve
+> the library.
 
 This single command:
 
@@ -41,12 +45,21 @@ apps/registry/      ASK Registry browser (Nuxt + Nuxt Content v3, Cloudflare Pag
 ### Add documentation
 
 ```bash
-# Auto-detect from registry (recommended)
-ask docs add next@canary
+# Ecosystem prefix with no version — CLI reads the project lockfile
+# (bun.lock → package-lock.json → pnpm-lock.yaml → yarn.lock → package.json)
+# and uses the installed version automatically.
+ask docs add npm:next
+ask docs add pypi:fastapi
 
-# With explicit ecosystem prefix
+# Ecosystem prefix with an explicit version
 ask docs add npm:next@canary
 ask docs add pypi:fastapi@0.115
+
+# Skip the manifest lookup and fetch the ecosystem `latest` tag instead
+ask docs add --no-manifest npm:next
+
+# Require the manifest — error out if no lockfile entry exists for the name
+ask docs add --from-manifest npm:next
 
 # GitHub shorthand — owner/repo[@ref] skips the registry entirely
 ask docs add vercel/next.js                # latest default branch
@@ -66,8 +79,8 @@ ask docs add mylib@1.0 -s web --url https://mylib.dev/docs
 | Shape | Example | Behavior |
 |---|---|---|
 | `owner/repo[@ref]` | `vercel/next.js@canary` | GitHub fast-path. Skips the registry; passes the ref straight to the github source (tag or branch — opaque). |
-| `ecosystem:name[@version]` | `npm:next@^15` | Registry lookup with an explicit ecosystem prefix. |
-| `name[@version]` | `next@canary` | Registry lookup with the ecosystem auto-detected from project files (`package.json`, `pyproject.toml`, …). |
+| `ecosystem:name[@version]` | `npm:next@^15` | Registry lookup with an explicit ecosystem prefix. When the version is omitted, the CLI auto-resolves it from the project manifest/lockfile. |
+| `name[@version]` | `next` | **Rejected.** Bare names are ambiguous — use `npm:next` or `vercel/next.js` instead. |
 
 The github shorthand is strict — exactly one slash, no colon. `a/b/c` and `org:team/repo` produce a parse error with actionable guidance.
 
