@@ -1,39 +1,13 @@
+import type { RegistryEntry, RegistryStrategy } from '@pleaseai/registry-schema'
 import fs from 'node:fs'
 import path from 'node:path'
+import { expandStrategies } from '@pleaseai/registry-schema'
 import { consola } from 'consola'
-import { expandStrategies } from './registry-schema.js'
+
+export type { ExpandInput, RegistryAlias, RegistryEntry, RegistryStrategy } from '@pleaseai/registry-schema'
+export { expandStrategies } from '@pleaseai/registry-schema'
 
 const REGISTRY_BASE_URL = 'https://ask-registry.pages.dev'
-
-export interface RegistryStrategy {
-  source: 'npm' | 'github' | 'web' | 'llms-txt'
-  package?: string
-  repo?: string
-  branch?: string
-  tag?: string
-  docsPath?: string
-  urls?: string[]
-  url?: string
-  maxDepth?: number
-  allowedPathPrefix?: string
-}
-
-export interface RegistryAlias {
-  ecosystem: string
-  name: string
-}
-
-export interface RegistryEntry {
-  name: string
-  description: string
-  repo: string
-  docsPath?: string
-  homepage?: string
-  license?: string
-  aliases?: RegistryAlias[]
-  strategies: RegistryStrategy[]
-  tags?: string[]
-}
 
 /**
  * Parse ecosystem prefix from spec.
