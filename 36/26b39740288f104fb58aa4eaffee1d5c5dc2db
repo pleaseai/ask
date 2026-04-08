@@ -1,0 +1,44 @@
+ARCHITECTURE.md
+  ccda89fc721d2918 4,85-89,96,98-104,115,126,138-142,197,201
+README.md
+  ccda89fc721d2918 102-106,108,115-123,139
+.claude/skills/ask-registry/SKILL.md
+  ccda89fc721d2918 22,25,33,35-43,49,127,131,133-137,161,165,167-173,185,189,191-195,200,204,206-209,220,224,226-230,241,243-248
+skills/setup-docs/SKILL.md
+  ccda89fc721d2918 56
+skills/add-docs/SKILL.md
+  ccda89fc721d2918 76
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "3626b39740288f104fb58aa4eaffee1d5c5dc2db",
+  "prompts": {
+    "ccda89fc721d2918": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7ed5a97f-cace-4947-81b4-4ca237b525ca",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 138,
+      "total_deletions": 66,
+      "accepted_lines": 266,
+      "overriden_lines": 0
+    },
+    "d2c82e4e7222c393": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "444608fc-6897-4fc4-a95d-20328e694b01",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 56,
+      "overriden_lines": 0
+    }
+  }
+}
