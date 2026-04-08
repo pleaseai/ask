@@ -21,6 +21,7 @@ import {
   loadConfig,
   removeDocEntry,
 } from './config.js'
+import { manageIgnoreFiles } from './ignore-files.js'
 import { contentHash, getConfigPath, getLockPath, readLock, upsertLockEntry } from './io.js'
 import { migrateLegacyWorkspace } from './migrate-legacy.js'
 import { fetchRegistryEntry, parseDocSpec, parseEcosystem, resolveFromRegistry } from './registry.js'
@@ -282,6 +283,8 @@ const addCmd = defineCommand({
     const agentsPath = generateAgentsMd(projectDir)
     consola.info(`AGENTS.md updated: ${agentsPath}`)
 
+    manageIgnoreFiles(projectDir, 'install')
+
     consola.success(`Done! ${libName}@${result.resolvedVersion} docs are ready for AI agents.`)
   },
 })
@@ -418,6 +421,7 @@ export async function runSync(
 
   if (!options.skipAgentsMd) {
     generateAgentsMd(projectDir)
+    manageIgnoreFiles(projectDir, 'install')
   }
   consola.success(
     `Sync complete: ${counts.drifted} re-fetched, ${counts.unchanged} unchanged, ${counts.failed} failed. AGENTS.md updated.`,
@@ -467,6 +471,11 @@ const removeCmd = defineCommand({
     removeSkill(projectDir, name)
     removeDocEntry(projectDir, name, ver)
     generateAgentsMd(projectDir)
+
+    // If no docs remain, strip all ignore-file artifacts. Otherwise keep
+    // them in sync (e.g. a new root .prettierignore added since last add).
+    const remaining = listDocs(projectDir)
+    manageIgnoreFiles(projectDir, remaining.length === 0 ? 'remove' : 'install')
 
     consola.success(`Removed docs for ${name}${ver ? `@${ver}` : ' (all versions)'}`)
   },

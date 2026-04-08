@@ -32,6 +32,16 @@ describe('generateAgentsMd', () => {
     expect(content).toContain('<!-- END:ask-docs-auto-generated -->')
   })
 
+  it('includes the vendored-docs intent notice', () => {
+    saveDocs(tmpDir, 'zod', '3.22.4', [{ path: 'README.md', content: '# zod' }])
+    generateAgentsMd(tmpDir)
+    const content = fs.readFileSync(path.join(tmpDir, 'AGENTS.md'), 'utf-8')
+    expect(content).toContain('Vendored Documentation')
+    expect(content).toContain('read-only')
+    expect(content).toContain('not')
+    expect(content).toContain('ask docs sync')
+  })
+
   it('preserves user content outside the marker block', () => {
     const agentsPath = path.join(tmpDir, 'AGENTS.md')
     fs.writeFileSync(

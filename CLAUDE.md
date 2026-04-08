@@ -59,6 +59,7 @@ node packages/cli/dist/index.js docs add <spec> -s <source> [options]
 - Release is managed by release-please with TWO packages: `packages/cli` (npm `@pleaseai/ask`, independent) and `.` root (`ask-plugin`, `simple` type). Root bumps when non-CLI paths change (`.claude-plugin/`, `skills/`, `commands/`, root docs) and syncs `.claude-plugin/plugin.json` via `extra-files`. See `release-please-config.json`.
 - `.claude/agent-memory/` IS committed to git (not ignored) — it persists agent learnings across sessions.
 - When pinning GitHub Actions by SHA, verify via `gh api repos/<owner>/<action>/git/refs/tags/<tag> -q .object.sha` — bogus SHAs with correct-looking prefixes have slipped in before (e.g. `actions/setup-node@v4.4.0` real SHA is `49933ea5288caeca8642d1e84afbd3f7d6820020`).
+- `ask docs add|sync|remove` auto-manages ignore files to mark `.ask/docs/` as vendored. Writes nested configs inside `.ask/docs/` (`.gitattributes`, `eslint.config.mjs`, `biome.json`, `.markdownlint-cli2.jsonc`) and patches root `.prettierignore`/`sonar-project.properties`/`.markdownlintignore` via a marker block (`# ask:start ... # ask:end`). Disable via `manageIgnores: false` in `.ask/config.json`. Do not hand-edit inside the marker blocks — `sync`/`remove` will overwrite them.
 
 ## CLI Architecture (packages/cli/)
 

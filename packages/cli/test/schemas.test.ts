@@ -96,6 +96,20 @@ describe('ConfigSchema', () => {
     const result = ConfigSchema.safeParse({ schemaVersion: 2, docs: [] })
     expect(result.success).toBe(false)
   })
+
+  it('accepts a config with manageIgnores flag', () => {
+    const result = ConfigSchema.safeParse({
+      schemaVersion: 1,
+      docs: [],
+      manageIgnores: false,
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it('treats manageIgnores as optional', () => {
+    const result = ConfigSchema.safeParse({ schemaVersion: 1, docs: [] })
+    expect(result.success).toBe(true)
+  })
 })
 
 describe('LockEntrySchema', () => {

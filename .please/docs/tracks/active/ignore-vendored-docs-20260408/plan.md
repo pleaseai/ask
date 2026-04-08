@@ -69,68 +69,15 @@ manageIgnoreFiles (new)
 
 ## Tasks
 
-(Filled by /please:tasks — see Phase 4 task generation.)
-
-### T-1 — Add `manageIgnores` to ConfigSchema
-
-- Extend `ConfigSchema` in `packages/cli/src/schemas.ts` with `manageIgnores: z.boolean().optional().default(true)`
-- Update tests in `packages/cli/test/schemas.test.ts`
-- **Files**: `schemas.ts`, `schemas.test.ts`
-
-### T-2 — Create `markers.ts` helper
-
-- New module providing `inject`, `remove`, `wrap` for marker blocks
-- Two comment syntaxes: `html` (`<!-- ask:start -->`) and `hash` (`# <!-- ask:start -->`)
-- Pure functions, no I/O
-- **Files**: `packages/cli/src/markers.ts`, `packages/cli/test/markers.test.ts`
-
-### T-3 — Create `ignore-files.ts` module (Category A)
-
-- Function `writeNestedConfigs(projectDir)` that creates 4 files inside `.ask/docs/`:
-  - `.gitattributes`, `eslint.config.mjs`, `biome.json`, `.markdownlint-cli2.jsonc`
-- Function `removeNestedConfigs(projectDir)` deletes them
-- **Files**: `packages/cli/src/ignore-files.ts`, `packages/cli/test/ignore-files.test.ts`
-
-### T-4 — Extend `generateAgentsMd` with vendored notice (Category B)
-
-- Modify `packages/cli/src/agents.ts` to prepend a "Vendored Documentation" sub-section inside the existing auto-generated block
-- Notice text per spec FR-B1
-- Update `packages/cli/test/agents.test.ts`
-- **Files**: `agents.ts`, `agents.test.ts`
-
-### T-5 — Add root patching for Prettier and Sonar (Category C)
-
-- New functions `patchRootIgnores(projectDir)` and `unpatchRootIgnores(projectDir)` in `ignore-files.ts`
-- Detect `.prettierignore`, `sonar-project.properties`, legacy `.markdownlintignore` and patch in place using `MarkerBlock`
-- Skip silently if file absent
-- For legacy `.markdownlintignore`, also `consola.warn` recommending markdownlint-cli2
-- **Files**: `ignore-files.ts`, `ignore-files.test.ts`
-
-### T-6 — Top-level `manageIgnoreFiles` orchestrator
-
-- Single entry point in `ignore-files.ts` exporting `manageIgnoreFiles(projectDir, mode: 'install' | 'remove')`
-- Reads `manageIgnores` from config; short-circuits if `false`
-- Calls `writeNestedConfigs` + `patchRootIgnores` (install) or `removeNestedConfigs` + `unpatchRootIgnores` (remove)
-- Logs created/updated/removed files via consola (FR-E2)
-- **Files**: `ignore-files.ts`, `ignore-files.test.ts`
-
-### T-7 — Wire into add/sync/remove commands
-
-- `addCmd.run`: call `manageIgnoreFiles(projectDir, 'install')` after `generateAgentsMd`
-- `runSync`: same call after `generateAgentsMd` block
-- `removeCmd.run`: if `listDocs(projectDir).length === 0` after removal, call `manageIgnoreFiles(projectDir, 'remove')`; otherwise `'install'` to keep things in sync
-- **Files**: `index.ts`
-
-### T-8 — Integration test for add/remove lifecycle
-
-- E2E test: add a doc → assert all 4 nested files + agents notice + root patches present (when those root files exist) → remove doc → assert all artifacts cleaned up
-- **Files**: `packages/cli/test/ignore-lifecycle.test.ts`
-
-### T-9 — Documentation
-
-- Update `packages/cli/README.md` (if it documents config) with `manageIgnores`
-- Update root `CLAUDE.md` Gotchas section if relevant
-- **Files**: `README.md`, root `CLAUDE.md`
+- [x] **T-1** — Add `manageIgnores` to `ConfigSchema` (`packages/cli/src/schemas.ts`), update `packages/cli/test/schemas.test.ts`
+- [x] **T-2** — Create `packages/cli/src/markers.ts` (pure helpers: `inject`, `remove`, `wrap`) + `packages/cli/test/markers.test.ts`
+- [x] **T-3** — Create `packages/cli/src/ignore-files.ts` with `writeNestedConfigs` / `removeNestedConfigs` for `.ask/docs/.gitattributes`, `eslint.config.mjs`, `biome.json`, `.markdownlint-cli2.jsonc` + tests
+- [x] **T-4** — Extend `packages/cli/src/agents.ts` to prepend vendored-docs notice inside the existing auto-generated block + update `packages/cli/test/agents.test.ts`
+- [x] **T-5** — Add `patchRootIgnores` / `unpatchRootIgnores` in `ignore-files.ts` for `.prettierignore`, `sonar-project.properties`, legacy `.markdownlintignore` (detection-only, marker-block based) + tests
+- [x] **T-6** — Orchestrator `manageIgnoreFiles(projectDir, mode)` in `ignore-files.ts`; respects `manageIgnores` config; consola logging
+- [x] **T-7** — Wire `manageIgnoreFiles` into `addCmd`, `runSync`, `removeCmd` in `packages/cli/src/index.ts`
+- [x] **T-8** — Integration test covering full add → remove lifecycle (`packages/cli/test/ignore-lifecycle.test.ts`)
+- [x] **T-9** — Documentation: update root `CLAUDE.md` Gotchas and, if applicable, `packages/cli/README.md`
 
 ## Dependencies
 
@@ -175,7 +122,7 @@ T-1, T-2, T-3, T-4, T-5 are independent and can land in any order. T-6 needs T-1
 
 ## Progress
 
-(Filled during implementation.)
+- 2026-04-08: All 9 tasks complete. Test suite: 199 pass, 0 fail across 21 files. Lint clean for all new files (only pre-existing `package.json` sort-keys errors remain).
 
 ## Decision Log
 
@@ -185,4 +132,5 @@ T-1, T-2, T-3, T-4, T-5 are independent and can land in any order. T-6 needs T-1
 
 ## Surprises & Discoveries
 
-(Filled during implementation.)
+- **registry-schema not pre-built in worktree**: Full test suite failed with `Cannot find module '@pleaseai/registry-schema'` until `bun run --cwd packages/registry-schema build` was run. The CLI package imports compiled output from `dist/`, so worktrees need an initial build of the shared package. Candidate for a `postinstall` hook or test-time `prepare` step.
+- **Marker `remove()` trailing-newline edge case**: First implementation left a stray `\n` after stripping a block in the middle of a file. Fixed by normalising the "after" segment's leading whitespace and only adding a trailing newline if the preserved tail doesn't already have one.
