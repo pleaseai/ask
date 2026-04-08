@@ -149,4 +149,71 @@ packages:
     }))
     expect(reader.readInstalledVersion('next', tmpDir)).toBeNull()
   })
+
+  it('reads scoped package version from bun.lock', () => {
+    write('bun.lock', `{
+  "lockfileVersion": 1,
+  "packages": {
+    "@nuxt/ui": ["@nuxt/ui@3.1.0", "https://...", {}, "sha512-..."],
+  },
+}
+`)
+    expect(reader.readInstalledVersion('@nuxt/ui', tmpDir)).toEqual({
+      version: '3.1.0',
+      source: 'bun.lock',
+      exact: true,
+    })
+  })
+
+  it('reads scoped package version from package-lock.json', () => {
+    write('package-lock.json', JSON.stringify({
+      name: 'demo',
+      lockfileVersion: 3,
+      packages: {
+        '': { dependencies: { '@nuxt/ui': '^3.0.0' } },
+        'node_modules/@nuxt/ui': { version: '3.1.0' },
+      },
+    }))
+    expect(reader.readInstalledVersion('@nuxt/ui', tmpDir)).toEqual({
+      version: '3.1.0',
+      source: 'package-lock.json',
+      exact: true,
+    })
+  })
+
+  it('reads scoped package version from pnpm-lock.yaml', () => {
+    write('pnpm-lock.yaml', `lockfileVersion: '6.0'
+importers:
+  .:
+    dependencies:
+      '@nuxt/ui':
+        specifier: ^3.0.0
+        version: 3.1.0
+packages:
+
+  /@nuxt/ui@3.1.0:
+    resolution: {integrity: sha512-aaa}
+    dev: false
+`)
+    expect(reader.readInstalledVersion('@nuxt/ui', tmpDir)).toEqual({
+      version: '3.1.0',
+      source: 'pnpm-lock.yaml',
+      exact: true,
+    })
+  })
+
+  it('reads scoped package version from yarn.lock', () => {
+    write('yarn.lock', `# yarn lockfile v1
+
+
+"@nuxt/ui@^3.0.0":
+  version "3.1.0"
+  resolved "https://registry.yarnpkg.com/@nuxt/ui/-/ui-3.1.0.tgz"
+`)
+    expect(reader.readInstalledVersion('@nuxt/ui', tmpDir)).toEqual({
+      version: '3.1.0',
+      source: 'yarn.lock',
+      exact: true,
+    })
+  })
 })
