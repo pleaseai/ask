@@ -1,0 +1,49 @@
+apps/registry/server/api/registry/[...slug].get.ts
+  06a3dcc9960ac36b 1-2
+apps/registry/content.config.ts
+  06a3dcc9960ac36b 2
+packages/cli/package.json
+  06a3dcc9960ac36b 37
+packages/schema/src/config.ts
+  06a3dcc9960ac36b 1-63
+.release-please-manifest.json
+  06a3dcc9960ac36b 2
+packages/schema/src/registry.ts
+  06a3dcc9960ac36b 1-68
+packages/schema/src/lock.ts
+  06a3dcc9960ac36b 1-64
+packages/schema/src/index.ts
+  06a3dcc9960ac36b 1-3
+packages/cli/src/registry.ts
+  06a3dcc9960ac36b 1,4,7-8
+packages/cli/src/schemas.ts
+  06a3dcc9960ac36b 1
+packages/schema/package.json
+  06a3dcc9960ac36b 10
+apps/registry/package.json
+  06a3dcc9960ac36b 15
+release-please-config.json
+  06a3dcc9960ac36b 3-5,7-13
+.github/workflows/release.yml
+  06a3dcc9960ac36b 24-27,42-44,66-67,69-78,80-83,85-87
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "0eff52603461914019c9cf4fe675a586a9b634a8",
+  "prompts": {
+    "06a3dcc9960ac36b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "5c3979ec-5f7d-4f4c-a392-4d98d5665315",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 407,
+      "total_deletions": 289,
+      "accepted_lines": 246,
+      "overriden_lines": 0
+    }
+  }
+}
