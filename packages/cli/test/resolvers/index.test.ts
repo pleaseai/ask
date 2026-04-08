@@ -2,6 +2,12 @@ import { describe, expect, it } from 'bun:test'
 import { getResolver } from '../../src/resolvers/index.js'
 
 describe('getResolver', () => {
+  it('returns a resolver for maven', () => {
+    const resolver = getResolver('maven')
+    expect(resolver).toBeDefined()
+    expect(typeof resolver.resolve).toBe('function')
+  })
+
   it('returns a resolver for npm', () => {
     const resolver = getResolver('npm')
     expect(resolver).toBeDefined()

@@ -1,3 +1,4 @@
+import { MavenResolver } from './maven.js'
 import { NpmResolver } from './npm.js'
 import { PubResolver } from './pub.js'
 import { PypiResolver } from './pypi.js'
@@ -31,9 +32,10 @@ export interface EcosystemResolver {
   resolve: (name: string, version: string) => Promise<ResolveResult>
 }
 
-type SupportedEcosystem = 'npm' | 'pypi' | 'pub'
+type SupportedEcosystem = 'maven' | 'npm' | 'pypi' | 'pub'
 
 const resolvers: Record<SupportedEcosystem, EcosystemResolver> = {
+  maven: new MavenResolver(),
   npm: new NpmResolver(),
   pypi: new PypiResolver(),
   pub: new PubResolver(),

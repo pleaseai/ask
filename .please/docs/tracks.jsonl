@@ -4,4 +4,5 @@
 {"id":"registry-meta-20260407","type":"feature","status":"completed","phase":"implement","issue":"#5","created":"2026-04-07","section":"completed"}
 {"id":"ecosystem-resolvers-20260407","type":"feature","status":"completed","phase":"implement","issue":"#6","created":"2026-04-07","section":"completed"}
 {"id":"npm-publish-release-please-20260408","type":"chore","status":"planned","phase":"spec","issue":"#16","created":"2026-04-08","section":"active"}
+{"id":"maven-resolver-20260408","type":"feature","status":"in_progress","phase":"implement","issue":"#15","created":"2026-04-08","section":"active"}
 {"id":"extract-shared-registry-20260408","type":"refactor","status":"in_progress","phase":"implement","issue":"#14","created":"2026-04-08","section":"active"}
