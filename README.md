@@ -99,25 +99,28 @@ The ASK Registry (`apps/registry/`) is a community-maintained catalog of library
 
 ```
 apps/registry/content/registry/
-├── npm/
-│   ├── next.md
-│   ├── zod.md
+├── vercel/           # github owner
+│   └── next.js.md
+├── colinhacks/       # github owner
+│   └── zod.md
+├── tailwindlabs/     # github owner
 │   └── tailwindcss.md
-├── pypi/
-│   └── fastapi.md
-├── pub/         # Dart
-├── go/          # Go
-├── crates/      # Rust
-└── ...
+└── ...               # one directory per github owner
 ```
 
 ### Registry entry format
 
 ```markdown
 ---
-name: next
-ecosystem: npm
-description: Vercel's React framework
+name: Next.js
+description: The React framework by Vercel
+repo: vercel/next.js
+docsPath: docs
+homepage: https://nextjs.org
+license: MIT
+aliases:
+  - ecosystem: npm
+    name: next
 strategies:
   - source: npm
     package: next
@@ -133,7 +136,7 @@ Description and version notes here...
 
 ### Contributing
 
-Add a new `.md` file under `apps/registry/content/registry/<ecosystem>/` and submit a PR.
+Add a new `.md` file under `apps/registry/content/registry/<github-owner>/` and submit a PR.
 
 ## Ecosystem Resolvers
 

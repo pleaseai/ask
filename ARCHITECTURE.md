@@ -1,7 +1,7 @@
 # ARCHITECTURE.md
 
 > Bird's-eye view of the ASK (Agent Skills Kit) monorepo.
-> Last updated: 2026-04-03
+> Last updated: 2026-04-08
 
 ## Overview
 
@@ -82,20 +82,26 @@ app/
 └── assets/css/main.css
 
 content/registry/                    # Community-curated library configs
-├── npm/                             # npm ecosystem
-│   ├── next.md
-│   ├── zod.md
-│   └── tailwindcss.md
-└── pypi/                            # Python ecosystem
+├── vercel/                          # github owner
+│   └── next.js.md
+├── colinhacks/                      # github owner
+│   └── zod.md
+└── fastapi/                         # github owner
     └── fastapi.md
 ```
 
 **Registry entry format** (YAML frontmatter in `.md` files):
 
 ```yaml
-name: next
-ecosystem: npm
+name: Next.js
 description: The React framework by Vercel
+repo: vercel/next.js
+docsPath: docs
+homepage: https://nextjs.org
+license: MIT
+aliases:
+  - ecosystem: npm
+    name: next
 strategies:
   - source: npm
     package: next
@@ -106,7 +112,7 @@ strategies:
 tags: [react, framework, ssr]
 ```
 
-**Content API**: Nuxt Content v3 exposes registry entries as JSON via `/api/registry/{ecosystem}/{name}`. The CLI fetches this during `ask docs add` when `--source` is omitted.
+**Content API**: Nuxt Content v3 exposes registry entries as JSON via `/api/registry/{owner}/{name}`. The CLI fetches this during `ask docs add` when `--source` is omitted, passing either `{ecosystem}/{name}` (for ecosystem-prefixed specs) or `{owner}/{repo}` (for github shorthand specs).
 
 ## Key Types
 
@@ -117,7 +123,7 @@ interface DocSource {
 }
 
 // Union of all source configurations
-type SourceConfig = NpmSourceOptions | GithubSourceOptions | WebSourceOptions
+type SourceConfig = NpmSourceOptions | GithubSourceOptions | WebSourceOptions | LlmsTxtSourceOptions
 
 // Common result from any source
 interface FetchResult {
@@ -128,8 +134,12 @@ interface FetchResult {
 // Registry entry from the API
 interface RegistryEntry {
   name: string
-  ecosystem: string
   description: string
+  repo: string             // GitHub owner/repo (e.g. "colinhacks/zod")
+  docsPath?: string
+  homepage?: string
+  license?: string
+  aliases?: { ecosystem: string, name: string }[]
   strategies: RegistryStrategy[]
   tags?: string[]
 }
@@ -183,11 +193,12 @@ The CLI auto-detects the project ecosystem from marker files:
 | File | Ecosystem |
 |---|---|
 | `package.json` | npm |
-| `pyproject.toml` / `requirements.txt` | pypi |
 | `pubspec.yaml` | pub |
+| `pyproject.toml` / `requirements.txt` | pypi |
 | `go.mod` | go |
 | `Cargo.toml` | crates |
 | `mix.exs` | hex |
+| `pom.xml` / `build.gradle` / `build.gradle.kts` | maven |
 | (default) | npm |
 
 ### Build & Development

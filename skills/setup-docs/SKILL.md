@@ -53,6 +53,7 @@ declared range only when no lockfile exists.
 | crates | `Cargo.toml` (`[dependencies]`) | `Cargo.lock` |
 | pub | `pubspec.yaml` (`dependencies`) | `pubspec.lock` |
 | hex | `mix.exs` (`deps/0`) | `mix.lock` |
+| maven | `pom.xml` or `build.gradle` / `build.gradle.kts` (`dependencies` block) | Maven resolves at build time; no separate lockfile |
 
 For each dependency, produce a `(ecosystem, name, version)` triple. If the lockfile gives
 a precise version (e.g. `3.22.4`), use that. If only a range is available (e.g. `^3.22`),

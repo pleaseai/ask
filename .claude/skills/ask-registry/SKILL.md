@@ -19,10 +19,10 @@ Create registry entries for the ASK Registry — the source of truth that tells 
 ## Registry Entry Location
 
 ```
-apps/registry/content/registry/<ecosystem>/<name>.md
+apps/registry/content/registry/<github-owner>/<repo-name>.md
 ```
 
-Ecosystem directories: `npm/`, `pypi/`, `pub/`, `go/`, `crates/`, `hex/`, `nuget/`
+Directories are named after the GitHub owner (e.g. `vercel/`, `facebook/`, `colinhacks/`).
 
 ## Entry Format
 
@@ -30,15 +30,23 @@ Every entry is a Markdown file with YAML frontmatter validated by `apps/registry
 
 ```yaml
 ---
-name: <package-name>
-ecosystem: <npm|pypi|pub|go|crates|hex|nuget>
+name: <display-name>
 description: <one-line description>
-strategies:
-  - source: <npm|github|web>
+repo: <owner>/<repo>           # required — GitHub repo in "owner/name" form
+docsPath: <path>               # optional — docs directory inside repo
+homepage: <url>                # optional
+license: <spdx-id>             # optional
+aliases:                       # optional — ecosystem lookup aliases
+  - ecosystem: <npm|pypi|pub|go|crates|hex|nuget|maven>
+    name: <package-name>
+strategies:                    # optional — explicit fetch strategies
+  - source: <npm|github|web|llms-txt>
     # source-specific fields (see below)
 tags: [tag1, tag2]
 ---
 ```
+
+When `strategies` is omitted, the CLI auto-generates a `github` strategy from `repo` + `docsPath`.
 
 The Markdown body below the frontmatter provides human-readable context: what the library is, version notes, and any special instructions for the CLI.
 
@@ -116,17 +124,17 @@ List strategies in preferred order. The CLI uses the first strategy by default. 
 
 ### 3. Write the entry file
 
-Create `apps/registry/content/registry/<ecosystem>/<name>.md`:
+Create `apps/registry/content/registry/<github-owner>/<repo-name>.md`:
 
 ```markdown
 ---
-name: <name>
-ecosystem: <ecosystem>
+name: <Display Name>
 description: <one-line description from the official source>
-strategies:
-  - source: github
-    repo: owner/repo
-    docsPath: docs
+repo: <owner>/<repo>
+docsPath: docs
+aliases:
+  - ecosystem: <npm|pypi|pub|go|crates|hex|nuget|maven>
+    name: <package-name>
 tags: [relevant, tags, here]
 ---
 
@@ -150,13 +158,19 @@ Nuxt Content validates frontmatter against `content.config.ts` at build time —
 
 ## Examples
 
-### npm package with bundled docs
+### npm package with bundled docs (file: `vercel/next.js.md`)
 
 ```yaml
 ---
-name: next
-ecosystem: npm
+name: Next.js
 description: The React framework by Vercel
+repo: vercel/next.js
+docsPath: docs
+homepage: https://nextjs.org
+license: MIT
+aliases:
+  - ecosystem: npm
+    name: next
 strategies:
   - source: npm
     package: next
@@ -168,28 +182,31 @@ tags: [react, framework, ssr, vercel]
 ---
 ```
 
-### GitHub-only docs
+### GitHub-only docs (file: `colinhacks/zod.md`)
 
 ```yaml
 ---
-name: zod
-ecosystem: npm
+name: Zod
 description: TypeScript-first schema validation library
-strategies:
-  - source: github
-    repo: colinhacks/zod
-    docsPath: docs
+repo: colinhacks/zod
+docsPath: docs
+aliases:
+  - ecosystem: npm
+    name: zod
 tags: [typescript, validation, schema]
 ---
 ```
 
-### Web crawl
+### Web crawl (file: `tailwindlabs/tailwindcss.md`)
 
 ```yaml
 ---
-name: tailwindcss
-ecosystem: npm
+name: Tailwind CSS
 description: Utility-first CSS framework
+repo: tailwindlabs/tailwindcss
+aliases:
+  - ecosystem: npm
+    name: tailwindcss
 strategies:
   - source: web
     urls:
@@ -200,22 +217,17 @@ tags: [css, framework, utility]
 ---
 ```
 
-### Python package via GitHub + web
+### Python package via GitHub (file: `fastapi/fastapi.md`)
 
 ```yaml
 ---
-name: fastapi
-ecosystem: pypi
+name: FastAPI
 description: High-performance Python web framework
-strategies:
-  - source: github
-    repo: fastapi/fastapi
-    docsPath: docs
-  - source: web
-    urls:
-      - https://fastapi.tiangolo.com
-    maxDepth: 2
-    allowedPathPrefix: /tutorial
+repo: fastapi/fastapi
+docsPath: docs
+aliases:
+  - ecosystem: pypi
+    name: fastapi
 tags: [python, api, async, web]
 ---
 ```
@@ -226,10 +238,14 @@ Validated by `apps/registry/content.config.ts`:
 
 | Field | Type | Required | Notes |
 |---|---|---|---|
-| `name` | string | yes | Package name (lowercase, hyphenated) |
-| `ecosystem` | enum | yes | `npm`, `pypi`, `pub`, `go`, `crates`, `hex`, `nuget` |
+| `name` | string | yes | Display name (e.g. "Next.js") |
 | `description` | string | yes | One-line description |
-| `strategies` | array | yes | At least one strategy |
+| `repo` | string | yes | GitHub `owner/name` form (e.g. `vercel/next.js`) |
+| `docsPath` | string | no | Docs directory inside the repo |
+| `homepage` | string | no | Project homepage URL |
+| `license` | string | no | SPDX license identifier |
+| `aliases` | array | no | Ecosystem lookup aliases (`{ ecosystem, name }` objects) |
+| `strategies` | array | no | Explicit fetch strategies; auto-derived from `repo` if omitted |
 | `tags` | string[] | no | Descriptive tags |
 
 ### Strategy fields by source

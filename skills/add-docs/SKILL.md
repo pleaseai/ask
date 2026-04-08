@@ -73,6 +73,7 @@ Look in the project root for the first marker file that exists, in this order:
 | `go.mod` | `go` |
 | `Cargo.toml` | `crates` |
 | `mix.exs` | `hex` |
+| `pom.xml`, `build.gradle`, or `build.gradle.kts` | `maven` |
 
 If none match, default to `npm`. The user can always override by using an explicit prefix.
 
