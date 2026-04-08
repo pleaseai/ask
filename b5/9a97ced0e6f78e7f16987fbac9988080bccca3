@@ -1,0 +1,25 @@
+packages/cli/test/resolvers/maven.test.ts
+  65d5f2facc5ddb3e 1-155
+packages/cli/src/resolvers/maven.ts
+  65d5f2facc5ddb3e 1-159
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "b59a97ced0e6f78e7f16987fbac9988080bccca3",
+  "prompts": {
+    "65d5f2facc5ddb3e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c54e2933-abd9-4a85-9e62-a18342a2d821",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 389,
+      "total_deletions": 75,
+      "accepted_lines": 314,
+      "overriden_lines": 0
+    }
+  }
+}
