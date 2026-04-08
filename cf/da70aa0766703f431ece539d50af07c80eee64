@@ -1,0 +1,23 @@
+packages/cli/package.json
+  261bd76567a726c2 15-22,26-27
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "cfda70aa0766703f431ece539d50af07c80eee64",
+  "prompts": {
+    "261bd76567a726c2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "592c8f41-761d-4156-892a-2fcde7e9b517",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 12,
+      "total_deletions": 1,
+      "accepted_lines": 12,
+      "overriden_lines": 0
+    }
+  }
+}
