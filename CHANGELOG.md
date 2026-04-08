@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2](https://github.com/pleaseai/ask/compare/ask-plugin-v0.2.1...ask-plugin-v0.2.2) (2026-04-08)
+
+
+### Features
+
+* **registry:** edge cache /api/registry/** via Nitro routeRules ([#36](https://github.com/pleaseai/ask/issues/36)) ([1c9b7db](https://github.com/pleaseai/ask/commit/1c9b7dba637eef003c71792915752164655a345e)), closes [#34](https://github.com/pleaseai/ask/issues/34)
+
 ## [0.2.1](https://github.com/pleaseai/ask/compare/ask-plugin-v0.2.0...ask-plugin-v0.2.1) (2026-04-08)
 
 
