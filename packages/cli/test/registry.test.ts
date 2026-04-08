@@ -1,7 +1,7 @@
 import type { RegistryStrategy } from '@pleaseai/ask-schema'
 import type { ParsedDocSpec } from '../src/registry.js'
 import { describe, expect, it } from 'bun:test'
-import { parseDocSpec, selectBestStrategy, slugifyPackageName } from '../src/registry.js'
+import { parseDocSpec, selectBestStrategy } from '../src/registry.js'
 
 describe('parseDocSpec', () => {
   describe('github kind (owner/repo)', () => {
@@ -231,53 +231,23 @@ describe('selectBestStrategy', () => {
     expect(selectBestStrategy([memory, core])).toBe(memory)
   })
 
-  it('with requestedPackage context, picks the matching curated npm strategy (monorepo case)', () => {
-    // Real-world Mastra case: one registry entry holds two npm strategies
-    // (@mastra/core and @mastra/memory). The user asks for one of them and
-    // must get the matching strategy regardless of declaration order.
-    const core: RegistryStrategy = { source: 'npm', package: '@mastra/core', docsPath: 'dist/docs' }
-    const memory: RegistryStrategy = { source: 'npm', package: '@mastra/memory', docsPath: 'dist/docs' }
-    const github: RegistryStrategy = { source: 'github', repo: 'mastra-ai/mastra', docsPath: 'docs' }
-
-    // Asking for @mastra/memory must NOT return the core strategy.
-    expect(
-      selectBestStrategy([core, memory, github], { requestedPackage: '@mastra/memory' }),
-    ).toBe(memory)
-    // And asking for @mastra/core must return core even when memory is first.
-    expect(
-      selectBestStrategy([memory, core, github], { requestedPackage: '@mastra/core' }),
-    ).toBe(core)
-  })
-
-  it('with requestedPackage context that matches no strategy, falls back to first curated', () => {
-    const core: RegistryStrategy = { source: 'npm', package: '@mastra/core', docsPath: 'dist/docs' }
-    const memory: RegistryStrategy = { source: 'npm', package: '@mastra/memory', docsPath: 'dist/docs' }
-
-    // requestedPackage is set but no strategy matches it — fall back to
-    // Rule 2 (first curated npm).
-    expect(
-      selectBestStrategy([core, memory], { requestedPackage: '@mastra/nonexistent' }),
-    ).toBe(core)
-  })
-
   it('throws on empty list', () => {
     expect(() => selectBestStrategy([])).toThrow(/at least one/i)
   })
 
-  describe('slugifyPackageName', () => {
-    // Used by resolveFromRegistry to normalize scoped package names into
-    // filesystem- and skill-name-safe slugs when a monorepo registry entry
-    // is being disambiguated by the requested package.
-    it('drops the leading @ and replaces / with -', () => {
-      expect(slugifyPackageName('@mastra/core')).toBe('mastra-core')
-      expect(slugifyPackageName('@mastra/memory')).toBe('mastra-memory')
-      expect(slugifyPackageName('@scope/pkg-name')).toBe('scope-pkg-name')
-    })
-
-    it('passes through unscoped names unchanged', () => {
-      expect(slugifyPackageName('lodash')).toBe('lodash')
-      expect(slugifyPackageName('next')).toBe('next')
-    })
+  // The registry server handles monorepo disambiguation and reorders the
+  // strategies array so the matching curated npm strategy is at the head.
+  // From the client's POV, that means it always sees the right strategy
+  // first — no client-side context is needed. This test documents the
+  // contract: when the server has put the matching strategy first, the
+  // client must honor it.
+  it('honors server-side ordering for monorepo entries', () => {
+    // Server-shaped response for `npm:@mastra/memory` against the
+    // mastra-ai/mastra entry: matching npm strategy is at index 0,
+    // followed by the github fallback.
+    const memory: RegistryStrategy = { source: 'npm', package: '@mastra/memory', docsPath: 'dist/docs' }
+    const github: RegistryStrategy = { source: 'github', repo: 'mastra-ai/mastra', docsPath: 'docs' }
+    expect(selectBestStrategy([memory, github])).toBe(memory)
   })
 
   // T-14 regression: ensure that registry entries WITHOUT explicit

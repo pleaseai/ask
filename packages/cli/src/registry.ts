@@ -138,6 +138,21 @@ function detectEcosystem(projectDir: string): string {
 }
 
 /**
+ * Shape of the registry API response — a stored entry plus the
+ * server-side `resolvedName` field that disambiguates monorepo entries.
+ *
+ * The server returns:
+ *   - `resolvedName === entry.name` for non-monorepo entries
+ *   - `resolvedName === slugifyPackageName(requestedAlias)` for monorepo
+ *     entries that hold multiple npm strategies
+ *
+ * It also reorders `strategies` so that the curated npm strategy matching
+ * the requested alias comes first. The CLI trusts both fields and does no
+ * client-side disambiguation. See `apps/registry/server/api/registry/[...slug].get.ts`.
+ */
+export type RegistryApiResponse = RegistryEntry & { resolvedName?: string }
+
+/**
  * Fetch registry entry from the registry API.
  *
  * Accepts either `(owner, repo)` for direct lookup or `(ecosystem, name)`
@@ -146,7 +161,7 @@ function detectEcosystem(projectDir: string): string {
 export async function fetchRegistryEntry(
   first: string,
   second: string,
-): Promise<RegistryEntry | null> {
+): Promise<RegistryApiResponse | null> {
   const url = `${REGISTRY_BASE_URL}/api/registry/${first}/${second}`
 
   try {
@@ -154,7 +169,7 @@ export async function fetchRegistryEntry(
     if (!response.ok) {
       return null
     }
-    const data = await response.json() as RegistryEntry
+    const data = await response.json() as RegistryApiResponse
     return data
   }
   catch (error) {
@@ -191,54 +206,31 @@ function isCuratedNpm(strategy: RegistryStrategy): boolean {
   return strategy.source === 'npm' && Boolean(strategy.docsPath)
 }
 
-export interface SelectStrategyContext {
-  /**
-   * The npm package the user actually asked for. Used to disambiguate
-   * registry entries that hold multiple npm strategies (one per scoped
-   * package in a monorepo) — e.g. `mastra-ai/mastra` declares both
-   * `@mastra/core` and `@mastra/memory`. When this is set, the curated
-   * npm strategy whose `package` matches wins; without it, the first
-   * curated npm in declaration order wins.
-   */
-  requestedPackage?: string
-}
-
 /**
  * Pick the highest-priority strategy from a list, preserving the original
  * order for ties (stable sort).
  *
  * Selection rules (in order):
- *   1. If `ctx.requestedPackage` is set AND any curated npm strategy has a
- *      matching `package` field, pick that strategy. This is the monorepo
- *      disambiguation rule.
- *   2. Otherwise, if any strategy is a "curated npm" (`source: npm` with
- *      `docsPath`), pick the first one in declaration order — author
- *      intent overrides.
- *   3. Otherwise, sort by SOURCE_PRIORITY (github > npm > web > llms-txt)
+ *   1. If any strategy is a "curated npm" (`source: npm` with `docsPath`),
+ *      pick the first one in declaration order. The registry server is
+ *      responsible for putting the right curated npm strategy first when
+ *      the request was for a specific scoped package in a monorepo entry
+ *      — see `apps/registry/server/api/registry/[...slug].get.ts`. The
+ *      client's job here is just to honor the order.
+ *   2. Otherwise, sort by SOURCE_PRIORITY (github > npm > web > llms-txt)
  *      preserving original order on ties.
  */
-export function selectBestStrategy(
-  strategies: RegistryStrategy[],
-  ctx: SelectStrategyContext = {},
-): RegistryStrategy {
+export function selectBestStrategy(strategies: RegistryStrategy[]): RegistryStrategy {
   if (strategies.length === 0) {
     throw new Error('selectBestStrategy requires at least one strategy')
   }
-  // Rule 1: monorepo disambiguation — match the requested package name
-  if (ctx.requestedPackage) {
-    const matchingCurated = strategies.find(
-      s => isCuratedNpm(s) && s.package === ctx.requestedPackage,
-    )
-    if (matchingCurated) {
-      return matchingCurated
-    }
-  }
-  // Rule 2: curated npm wins outright (first in declaration order)
+  // Rule 1: curated npm wins outright (first in declaration order — the
+  // server has already put the right one at the head when applicable)
   const curated = strategies.find(isCuratedNpm)
   if (curated) {
     return curated
   }
-  // Rule 3: stable sort by static priority
+  // Rule 2: stable sort by static priority
   const indexed = Array.from(strategies, (s, i) => ({ s, i }))
   indexed.sort((a, b) => {
     const pa = SOURCE_PRIORITY[a.s.source] ?? 99
@@ -288,18 +280,14 @@ export async function resolveFromRegistry(
 
   consola.success(`Found ${entry.name} in registry: ${entry.description}`)
 
-  const strategy = selectBestStrategy(strategies, { requestedPackage: name })
+  const strategy = selectBestStrategy(strategies)
   consola.info(`Using source: ${strategy.source}`)
 
-  // For monorepo entries that hold multiple scoped packages, prefer the
-  // requested package name over the entry's display name. Otherwise both
-  // `@mastra/core` and `@mastra/memory` would be saved under the same
-  // `Mastra` slug and overwrite each other on disk. Scoped names are
-  // normalized to a filesystem-safe slug because they end up as both
-  // a directory name (`.ask/docs/<slug>@<ver>/`) and a Claude Code skill
-  // name (which forbids `/` and `@`).
-  const isMonorepoEntry = (entry.strategies?.filter(s => s.source === 'npm').length ?? 0) > 1
-  const resolvedName = isMonorepoEntry ? slugifyPackageName(name) : entry.name
+  // The server has already disambiguated and slugified `resolvedName` for
+  // monorepo entries (multiple scoped packages under one repo entry). For
+  // older server versions that don't return `resolvedName`, fall back to
+  // the entry's display name — the same behavior as before.
+  const resolvedName = entry.resolvedName ?? entry.name
 
   return {
     ecosystem,
@@ -307,26 +295,4 @@ export async function resolveFromRegistry(
     version,
     strategy,
   }
-}
-
-/**
- * Convert an npm package name into a filesystem- and skill-name-safe slug.
- *
- * Examples:
- *   - `@mastra/core`     → `mastra-core`
- *   - `@scope/pkg-name`  → `scope-pkg-name`
- *   - `lodash`           → `lodash`
- *   - `next`             → `next`
- *
- * The Claude Code skill `name:` field allows `[a-z0-9-]+` only — `@` and
- * `/` are both invalid. Storage paths also become awkward when nested
- * (`.ask/docs/@scope/pkg@version/` would create a stray `.ask/docs/@scope/`
- * directory). One slug normalization handles both surfaces.
- */
-export function slugifyPackageName(pkg: string): string {
-  if (pkg.startsWith('@')) {
-    // `@scope/pkg` → `scope-pkg`
-    return pkg.slice(1).replace('/', '-')
-  }
-  return pkg
 }
