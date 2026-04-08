@@ -1,0 +1,27 @@
+packages/cli/src/manifest/index.ts
+  a85ee3609343e44f 1-44
+packages/cli/src/manifest/npm.ts
+  a85ee3609343e44f 1-183
+packages/cli/test/manifest/npm.test.ts
+  a85ee3609343e44f 1-152
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "c23a03b0533ea07206f74c51c2cd4fc41451de89",
+  "prompts": {
+    "a85ee3609343e44f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "42b652c5-5528-46db-a85a-f2369397fa54",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 1051,
+      "total_deletions": 331,
+      "accepted_lines": 1038,
+      "overriden_lines": 0
+    }
+  }
+}
