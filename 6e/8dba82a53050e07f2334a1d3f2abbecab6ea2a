@@ -1,0 +1,27 @@
+.please/docs/tracks/active/add-docs-cli-split-20260408/metadata.json
+  a85ee3609343e44f 1-11
+.please/docs/tracks/active/add-docs-cli-split-20260408/spec.md
+  a85ee3609343e44f 1-55
+.please/docs/tracks/active/add-docs-cli-split-20260408/plan.md
+  a85ee3609343e44f 1-214
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "6e8dba82a53050e07f2334a1d3f2abbecab6ea2a",
+  "prompts": {
+    "a85ee3609343e44f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "42b652c5-5528-46db-a85a-f2369397fa54",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 283,
+      "total_deletions": 3,
+      "accepted_lines": 280,
+      "overriden_lines": 0
+    }
+  }
+}
