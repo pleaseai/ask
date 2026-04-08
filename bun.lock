@@ -54,15 +54,15 @@
     "packages/registry-schema": {
       "name": "@pleaseai/registry-schema",
       "version": "0.1.0",
-      "dependencies": {
-        "zod": "^3.23.0",
-      },
       "devDependencies": {
         "@pleaseai/eslint-config": "^0.0.1",
         "@types/node": "^22.0.0",
         "eslint": "^10.1.0",
         "jiti": "^2.6.1",
         "typescript": "^5.7.0",
+      },
+      "peerDependencies": {
+        "zod": "^3.23.0",
       },
     },
   },

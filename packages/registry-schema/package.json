@@ -17,7 +17,7 @@
     "lint:fix": "eslint --fix",
     "test": "bun test"
   },
-  "dependencies": {
+  "peerDependencies": {
     "zod": "^3.23.0"
   },
   "devDependencies": {
