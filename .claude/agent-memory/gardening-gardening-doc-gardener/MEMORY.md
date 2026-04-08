@@ -1,0 +1,2 @@
+- [Project structure conventions](project-structure.md) — .ask/ vs .please/ distinction; marker comments format
+- [Recurring issues](recurring-issues.md) — Patterns of drift found in this repo
