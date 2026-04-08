@@ -1,0 +1,40 @@
+.please/docs/tracks/active/npm-tarball-docs-20260408/spec.md
+  614e81b0bd6ab6d6 1-61
+.please/docs/tracks/active/npm-tarball-docs-20260408/plan.md
+  614e81b0bd6ab6d6 1-160
+.please/docs/tracks/active/npm-tarball-docs-20260408/metadata.json
+  614e81b0bd6ab6d6 1-11
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "3b80550517c6faa55b30febaae2720eca6a57183",
+  "prompts": {
+    "06a3dcc9960ac36b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "5c3979ec-5f7d-4f4c-a392-4d98d5665315",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 69,
+      "overriden_lines": 0
+    },
+    "614e81b0bd6ab6d6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ee7dc120-37f2-48da-8f19-9c657aad0d59",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 235,
+      "total_deletions": 3,
+      "accepted_lines": 232,
+      "overriden_lines": 0
+    }
+  }
+}
