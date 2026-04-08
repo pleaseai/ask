@@ -62,4 +62,29 @@ _Populated by /please:implement._
 
 ## Surprises & Discoveries
 
-_Populated during implementation._
+- `defineNuxtConfig` auto-imported by Nuxt cannot be used from a standalone `bun test` context. Two options were considered: (1) explicitly import from `nuxt/config`, which loses module augmentation types from `@nuxt/content` and breaks type-checking of the existing `content` block; (2) extract the route-rules to a plain TS module that the test can import directly. Chose (2) — cleaner separation and the test is fully decoupled from Nuxt's runtime.
+- `apps/registry` had no test runner at all. Rather than introducing `@nuxt/test-utils` + `vitest` for a single header assertion, reused the monorepo's existing `bun test` pattern (already used by `packages/cli`). Added a `test` script to `apps/registry/package.json`.
+- Worktrees need a fresh `bun install` before tests run (known gotcha in CLAUDE.md).
+
+## Outcomes & Retrospective
+
+### What Was Shipped
+
+- Nitro `routeRules` for `/api/registry/**` with `cache.swr` + explicit `cache-control` header — delivers AC-1 through AC-4.
+- `apps/registry/app/route-rules.ts` as a small, isolated constants module (testable without Nuxt runtime).
+- First test file for `apps/registry/` + `bun test` script.
+
+### What Went Well
+
+- TDD cycle stayed tight: RED (test imports `defineNuxtConfig` → fails) → pivot (extract constants) → GREEN in a single short iteration.
+- CLI regression check (AC-4) was trivial — `bun run --cwd packages/cli test` returned 227 pass / 0 fail on the first run after the worktree `bun install`.
+- Independent code-review agent validated integration concerns (Nuxt `app/` auto-scan, test bundling, `@nuxt/content` conflict) with no findings.
+
+### What Could Improve
+
+- The initial plan assumed an integration test against the running server. Reality check during implementation (no existing registry test infra) forced a pragmatic pivot to a static config assertion. Next time, scan the target package's test setup before drafting tasks.
+
+### Tech Debt Created
+
+- AC-5 (ETag) and AC-6 (deploy-hook purge) intentionally deferred per the issue's recommendation — track them as potential follow-ups if staleness becomes painful.
+- `apps/registry` test coverage is still just one file. A real integration harness (`@nuxt/test-utils`) would be valuable once more server routes land (e.g., upcoming raw-docs API track).

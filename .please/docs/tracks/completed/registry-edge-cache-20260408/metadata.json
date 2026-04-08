@@ -1,11 +1,11 @@
 {
   "track_id": "registry-edge-cache-20260408",
   "type": "feature",
-  "status": "in_progress",
+  "status": "review",
   "created_at": "2026-04-08T00:00:00Z",
   "updated_at": "2026-04-08T00:00:00Z",
   "issue": "#34",
-  "pr": "",
+  "pr": "#36",
   "project": "",
   "project_item_id": ""
 }
