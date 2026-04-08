@@ -1,0 +1,25 @@
+packages/cli/src/registry.ts
+  614e81b0bd6ab6d6 172-175,185-193,197-202,208-211,213
+packages/cli/test/registry.test.ts
+  614e81b0bd6ab6d6 1,4,183-253
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "c8a29bff52eb7764927d663772c93f1aad5c0528",
+  "prompts": {
+    "614e81b0bd6ab6d6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ee7dc120-37f2-48da-8f19-9c657aad0d59",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 881,
+      "overriden_lines": 0
+    }
+  }
+}
