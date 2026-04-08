@@ -4,6 +4,11 @@
   "version": "0.1.1",
   "description": "Agent Skills Kit - Download version-specific library docs for AI coding agents",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pleaseai/ask.git",
+    "directory": "packages/cli"
+  },
   "keywords": [
     "ai",
     "agent",
@@ -12,17 +17,12 @@
     "claude",
     "agents-md"
   ],
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/pleaseai/ask.git",
-    "directory": "packages/cli"
+  "bin": {
+    "ask": "./dist/index.js"
   },
   "files": [
     "dist"
   ],
-  "bin": {
-    "ask": "./dist/index.js"
-  },
   "publishConfig": {
     "access": "public"
   },
