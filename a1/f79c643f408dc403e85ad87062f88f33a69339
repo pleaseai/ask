@@ -1,0 +1,25 @@
+packages/registry-schema/test/index.test.ts
+  f56cdf27b0c39d34 2,73-84,96-109
+packages/registry-schema/package.json
+  f56cdf27b0c39d34 20
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "a1f79c643f408dc403e85ad87062f88f33a69339",
+  "prompts": {
+    "f56cdf27b0c39d34": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "17341893-f241-4d37-905d-dc7f030ade99",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 30,
+      "total_deletions": 2,
+      "accepted_lines": 30,
+      "overriden_lines": 0
+    }
+  }
+}
