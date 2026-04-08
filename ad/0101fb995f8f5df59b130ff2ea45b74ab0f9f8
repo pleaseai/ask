@@ -1,0 +1,55 @@
+.please/docs/tracks/active/maven-resolver-20260408/spec.md
+  65d5f2facc5ddb3e 1-49
+.please/docs/tracks/active/maven-resolver-20260408/plan.md
+  65d5f2facc5ddb3e 1-130
+.please/docs/tracks/active/maven-resolver-20260408/metadata.json
+  65d5f2facc5ddb3e 1-10
+.please/docs/tracks.jsonl
+  65d5f2facc5ddb3e 6
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "ad0101fb995f8f5df59b130ff2ea45b74ab0f9f8",
+  "prompts": {
+    "65d5f2facc5ddb3e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c54e2933-abd9-4a85-9e62-a18342a2d821",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 196,
+      "total_deletions": 6,
+      "accepted_lines": 194,
+      "overriden_lines": 0
+    },
+    "ccda89fc721d2918": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7ed5a97f-cace-4947-81b4-4ca237b525ca",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 168,
+      "overriden_lines": 0
+    },
+    "d2c82e4e7222c393": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "444608fc-6897-4fc4-a95d-20328e694b01",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 56,
+      "overriden_lines": 0
+    }
+  }
+}
