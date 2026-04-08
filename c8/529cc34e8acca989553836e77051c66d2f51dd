@@ -1,0 +1,25 @@
+.claude/agent-memory/review-review-issue-fixer/MEMORY.md
+  a85ee3609343e44f 1-3
+.claude/agent-memory/review-review-issue-fixer/project_patterns.md
+  a85ee3609343e44f 1-30
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "c8529cc34e8acca989553836e77051c66d2f51dd",
+  "prompts": {
+    "a85ee3609343e44f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "42b652c5-5528-46db-a85a-f2369397fa54",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 33,
+      "total_deletions": 0,
+      "accepted_lines": 33,
+      "overriden_lines": 0
+    }
+  }
+}
