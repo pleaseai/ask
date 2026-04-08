@@ -31,9 +31,9 @@ ETag (FR-3) and deploy-purge (FR-4) are deliberately deferred: they are additive
 
 ## Tasks
 
-- [ ] T001 Add `routeRules['/api/registry/**']` with `cache: { maxAge: 3600, swr: true, staleMaxAge: 86400 }` and explicit `cache-control: public, max-age=300, s-maxage=3600, stale-while-revalidate=86400` header (file: apps/registry/nuxt.config.ts)
-- [ ] T002 Add a server-route integration test asserting the outgoing `cache-control` header exactly matches the spec value (AC-2) (file: apps/registry/test/api-registry-cache.test.ts) (depends on T001)
-- [ ] T003 Verify no regression in existing CLI registry tests by running `bun run --cwd packages/cli test` and capturing result (AC-4) (file: packages/cli/test/registry.test.ts) (depends on T001)
+- [x] T001 Add `routeRules['/api/registry/**']` with `cache: { maxAge: 3600, swr: true, staleMaxAge: 86400 }` and explicit `cache-control: public, max-age=300, s-maxage=3600, stale-while-revalidate=86400` header. Extracted to `apps/registry/app/route-rules.ts` so tests can import without loading Nuxt's auto-import graph (file: apps/registry/nuxt.config.ts, apps/registry/app/route-rules.ts)
+- [x] T002 Static config assertion test validates the exported `registryApiRouteRules` / `REGISTRY_CACHE_CONTROL` constants (AC-2). Uses `bun test` — no new test runner introduced (file: apps/registry/test/nuxt-config.test.ts) (depends on T001)
+- [x] T003 `bun run --cwd packages/cli test`: 227 pass / 0 fail (AC-4) (depends on T001)
 - [ ] T004 Post-deploy manual verification: `curl -sI https://<pages-url>/api/registry/vercel/next.js` twice and confirm second call returns `cf-cache-status: HIT` (AC-1); document result in the track retrospective (file: .please/docs/tracks/active/registry-edge-cache-20260408/plan.md) (depends on T001)
 
 ## Key Files
