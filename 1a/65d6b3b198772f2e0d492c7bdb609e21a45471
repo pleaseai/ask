@@ -1,0 +1,25 @@
+.please/docs/tracks/active/npm-tarball-docs-20260408/metadata.json
+  614e81b0bd6ab6d6 4,6
+.please/docs/tracks.jsonl
+  614e81b0bd6ab6d6 10
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "1a65d6b3b198772f2e0d492c7bdb609e21a45471",
+  "prompts": {
+    "614e81b0bd6ab6d6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ee7dc120-37f2-48da-8f19-9c657aad0d59",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 3,
+      "total_deletions": 3,
+      "accepted_lines": 3,
+      "overriden_lines": 0
+    }
+  }
+}
