@@ -56,6 +56,9 @@ node packages/cli/dist/index.js docs add <spec> -s <source> [options]
 - Track artifacts live under `.please/docs/tracks/active/{slug}-{YYYYMMDD}/` with `spec.md`, `plan.md`, `metadata.json`. Append a JSON line to `.please/docs/tracks.jsonl` when creating a track.
 - In git worktrees, `bun install` must be run before tests — dependencies are not shared across worktrees.
 - `style/quote-props` ESLint rule: if any property in an interface requires quotes (e.g. `'dist-tags'`), all properties must be quoted for consistency.
+- Release is managed by release-please with TWO packages: `packages/cli` (npm `@pleaseai/ask`, independent) and `.` root (`ask-plugin`, `simple` type). Root bumps when non-CLI paths change (`.claude-plugin/`, `skills/`, `commands/`, root docs) and syncs `.claude-plugin/plugin.json` via `extra-files`. See `release-please-config.json`.
+- `.claude/agent-memory/` IS committed to git (not ignored) — it persists agent learnings across sessions.
+- When pinning GitHub Actions by SHA, verify via `gh api repos/<owner>/<action>/git/refs/tags/<tag> -q .object.sha` — bogus SHAs with correct-looking prefixes have slipped in before (e.g. `actions/setup-node@v4.4.0` real SHA is `49933ea5288caeca8642d1e84afbd3f7d6820020`).
 
 ## CLI Architecture (packages/cli/)
 
