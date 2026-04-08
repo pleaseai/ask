@@ -34,6 +34,7 @@
     "test": "bun test"
   },
   "dependencies": {
+    "@pleaseai/registry-schema": "workspace:*",
     "citty": "^0.2.2",
     "consola": "^3.4.2",
     "node-html-markdown": "^1.3.0",

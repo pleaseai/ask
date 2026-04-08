@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { expandStrategies } from '../src/registry-schema.js'
+import { expandStrategies } from '../src/registry.js'
 
 describe('expandStrategies', () => {
   it('generates github strategy from repo + docsPath', () => {
