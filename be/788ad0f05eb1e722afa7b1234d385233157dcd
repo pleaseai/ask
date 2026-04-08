@@ -1,0 +1,27 @@
+.claude-plugin/plugin.json
+  0a4381a53da2cc67 3
+release-please-config.json
+  0a4381a53da2cc67 10-23
+.release-please-manifest.json
+  0a4381a53da2cc67 2-3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "be788ad0f05eb1e722afa7b1234d385233157dcd",
+  "prompts": {
+    "0a4381a53da2cc67": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "eb8b70af-f7b1-4618-9bdc-66b06b5fe43f",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 19,
+      "total_deletions": 4,
+      "accepted_lines": 18,
+      "overriden_lines": 0
+    }
+  }
+}
