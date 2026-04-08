@@ -78,10 +78,10 @@ T-4 is independent
 
 | Task | Status |
 |---|---|
-| T-1 | ⬜ |
-| T-2 | ⬜ |
-| T-3 | ⬜ |
-| T-4 | ⬜ |
+| T-1 | ✅ |
+| T-2 | ✅ |
+| T-3 | ✅ |
+| T-4 | ⏭️ skipped (OIDC handles auth, no .npmrc needed) |
 
 ## Decision Log
 
