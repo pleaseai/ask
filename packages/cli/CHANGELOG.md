@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.2.1](https://github.com/pleaseai/ask/compare/ask-v0.2.0...ask-v0.2.1) (2026-04-08)
+
+
+### Features
+
+* **cli:** npm tarball dist/docs support with monorepo disambiguation ([#35](https://github.com/pleaseai/ask/issues/35)) ([4fd822b](https://github.com/pleaseai/ask/commit/4fd822b03d4e4ed5a1fd4ada8e3bae65ca71c41a)), closes [#33](https://github.com/pleaseai/ask/issues/33)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @pleaseai/ask-schema bumped to 0.2.1
+
 ## [0.2.0](https://github.com/pleaseai/ask/compare/ask-v0.1.3...ask-v0.2.0) (2026-04-08)
 
 
