@@ -1,6 +1,6 @@
 {
   "name": "ask",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "ASK (Agent Skills Kit) — AI agent skills for managing library documentation registry entries",
   "author": {
     "name": "Minsu Lee",
@@ -9,5 +9,11 @@
   "homepage": "https://github.com/pleaseai/ask",
   "repository": "https://github.com/pleaseai/ask",
   "license": "MIT",
-  "keywords": ["documentation", "registry", "library", "agent-skills", "ask"]
+  "keywords": [
+    "documentation",
+    "registry",
+    "library",
+    "agent-skills",
+    "ask"
+  ]
 }
