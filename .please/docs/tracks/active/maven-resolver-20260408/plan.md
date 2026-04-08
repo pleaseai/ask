@@ -110,10 +110,10 @@ bun run --cwd packages/cli lint
 
 ## Progress
 
-- [ ] T-1: MavenResolver + Search API
-- [ ] T-2: POM XML fallback
-- [ ] T-3: Register in index
-- [ ] T-4: Integration tests + edge cases
+- [x] T-1: MavenResolver + Search API
+- [x] T-2: POM XML fallback
+- [x] T-3: Register in index
+- [x] T-4: Integration tests + edge cases
 
 ## Decision Log
 

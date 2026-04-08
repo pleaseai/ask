@@ -17,8 +17,8 @@ interface MavenSearchResponse {
   }
 }
 
-const RE_SCM_URL = /<scm>\s*[\s\S]*?<url>\s*([^<]+)\s*<\/url>/
-const RE_PROJECT_URL = /<project[^>]*>[\s\S]*?<url>\s*([^<]+)\s*<\/url>/
+const RE_SCM_URL = /<scm>[\s\S]*?<url>([^<]+)<\/url>/
+const RE_PROJECT_URL = /<project[^>]*>[\s\S]*?<url>([^<]+)<\/url>/
 
 /**
  * Parse `groupId:artifactId` from the combined name string.
@@ -38,12 +38,14 @@ function parseMavenCoordinate(name: string): { groupId: string, artifactId: stri
   }
 }
 
+const RE_DOT = /\./g
+
 /**
  * Build the Maven Central Repository POM URL.
  * Converts groupId dots to path separators.
  */
 function buildPomUrl(groupId: string, artifactId: string, version: string): string {
-  const groupPath = groupId.replace(/\./g, '/')
+  const groupPath = groupId.replace(RE_DOT, '/')
   return `https://repo1.maven.org/maven2/${groupPath}/${artifactId}/${version}/${artifactId}-${version}.pom`
 }
 
