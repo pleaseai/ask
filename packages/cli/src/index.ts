@@ -22,6 +22,7 @@ import {
   removeDocEntry,
 } from './config.js'
 import { contentHash, getConfigPath, getLockPath, readLock, upsertLockEntry } from './io.js'
+import { getReader } from './manifest/index.js'
 import { migrateLegacyWorkspace } from './migrate-legacy.js'
 import { fetchRegistryEntry, parseDocSpec, parseEcosystem, resolveFromRegistry } from './registry.js'
 import { getResolver } from './resolvers/index.js'
@@ -74,6 +75,92 @@ function buildLockEntry(config: SourceConfig, result: FetchResult): LockEntry {
         url: (meta.urls ?? [])[0] ?? config.url,
       }
   }
+}
+
+/**
+ * Gate A: reject bare-name specs (`ask docs add next`).
+ *
+ * Bare names are ambiguous — they give the CLI no ecosystem hint and no
+ * explicit source, and silently auto-resolving them (which the old code did)
+ * can hand back wrong-looking docs. Instead we force the caller to either use
+ * an ecosystem prefix (`npm:next`) or the github shorthand (`owner/repo`).
+ *
+ * Returns an error message when the spec is ambiguous, or `null` when it is
+ * OK to proceed. `hasExplicitSource` lets the caller opt out of the check
+ * when `--source` is passed explicitly — an explicit source disambiguates.
+ */
+export function checkBareNameGate(
+  input: string,
+  parsedKind: 'github' | 'ecosystem' | 'name',
+  hasExplicitSource: boolean,
+): string | null {
+  if (hasExplicitSource)
+    return null
+  if (parsedKind !== 'name')
+    return null
+  return (
+    `Ambiguous spec '${input}'. Use one of:\n`
+    + `  • npm:<name>[@version]    (or pypi:, pub:, crates:, hex:, go:, maven:)\n`
+    + `  • <owner>/<repo>[@ref]    (direct GitHub)\n`
+    + `Tip: the add-docs skill auto-resolves bare names from your project manifest.`
+  )
+}
+
+/**
+ * Gate B: manifest-based version resolution.
+ *
+ * When the user writes `npm:next` with no version, consult the project
+ * lockfile/manifest and try to use the installed version — this guarantees
+ * the downloaded docs match what's actually in the project.
+ *
+ * Resolution policy:
+ *   - lockfile exact hit → override version, log provenance
+ *   - manifest range hit → override version, log provenance (resolver will
+ *     later normalize the range)
+ *   - no hit + `--from-manifest` → error (user explicitly required manifest)
+ *   - no hit otherwise       → leave version as `'latest'` and fall through
+ *     to the existing resolver pipeline
+ *
+ * Returns `{ kind: 'ok', version? }` with the override version (or undefined
+ * if no override applied) or `{ kind: 'error', message }` when `--from-manifest`
+ * required a hit but we got none.
+ *
+ * The `readerFactory` argument is injectable so tests can supply mock readers
+ * without creating real lockfiles on disk.
+ */
+export type ManifestGateResult
+  = | { kind: 'ok', version?: string, source?: string }
+    | { kind: 'error', message: string }
+
+export function runManifestGate(
+  ecosystem: string,
+  name: string,
+  version: string,
+  projectDir: string,
+  opts: { noManifest: boolean, fromManifest: boolean },
+  readerFactory: (eco: string) => { readInstalledVersion: (n: string, d: string) => { version: string, source: string, exact: boolean } | null } | undefined = getReader,
+): ManifestGateResult {
+  if (opts.noManifest)
+    return { kind: 'ok' }
+  if (version !== 'latest')
+    return { kind: 'ok' }
+
+  const reader = readerFactory(ecosystem)
+  const hit = reader?.readInstalledVersion(name, projectDir) ?? null
+
+  if (!hit) {
+    if (opts.fromManifest) {
+      return {
+        kind: 'error',
+        message:
+          `--from-manifest was set but no ${ecosystem} manifest entry found for '${name}'. `
+          + `Ensure the package is listed in your lockfile or package.json.`,
+      }
+    }
+    return { kind: 'ok' }
+  }
+
+  return { kind: 'ok', version: hit.version, source: hit.source }
 }
 
 function parseSpec(spec: string): { name: string, version: string } {
@@ -145,22 +232,63 @@ function buildSourceConfig(
 const addCmd = defineCommand({
   meta: { name: 'add', description: 'Download documentation for a library' },
   args: {
-    spec: { type: 'positional', description: 'Library spec (e.g. zod@3.22 or npm:next@canary)', required: true },
-    source: { type: 'string', description: 'Source type: npm, github, web, llms-txt (auto-detected if omitted)', alias: ['s'] },
-    repo: { type: 'string', description: 'GitHub repository (for github source)' },
-    branch: { type: 'string', description: 'Git branch (for github source)' },
-    tag: { type: 'string', description: 'Git tag (for github source)' },
-    docsPath: { type: 'string', description: 'Path to docs within the package/repo' },
-    url: { type: 'string', description: 'Documentation URL (for web source)' },
-    maxDepth: { type: 'string', description: 'Max crawl depth for web source', default: '1' },
-    pathPrefix: { type: 'string', description: 'URL path prefix filter for web source' },
+    'spec': { type: 'positional', description: 'Library spec (e.g. zod@3.22 or npm:next@canary)', required: true },
+    'source': { type: 'string', description: 'Source type: npm, github, web, llms-txt (auto-detected if omitted)', alias: ['s'] },
+    'repo': { type: 'string', description: 'GitHub repository (for github source)' },
+    'branch': { type: 'string', description: 'Git branch (for github source)' },
+    'tag': { type: 'string', description: 'Git tag (for github source)' },
+    'docsPath': { type: 'string', description: 'Path to docs within the package/repo' },
+    'url': { type: 'string', description: 'Documentation URL (for web source)' },
+    'maxDepth': { type: 'string', description: 'Max crawl depth for web source', default: '1' },
+    'pathPrefix': { type: 'string', description: 'URL path prefix filter for web source' },
+    'no-manifest': { type: 'boolean', description: 'Do not consult project manifest/lockfile for version resolution' },
+    'from-manifest': { type: 'boolean', description: 'Require manifest/lockfile to supply the version; error if absent' },
   },
   async run({ args }) {
     const projectDir = process.cwd()
     migrateLegacyWorkspace(projectDir)
-    const parsed = parseDocSpec(args.spec)
-    const { spec: cleanSpec } = parseEcosystem(args.spec)
+    let effectiveSpec = args.spec
+    const parsed = parseDocSpec(effectiveSpec)
+    const { spec: cleanSpec } = parseEcosystem(effectiveSpec)
     let sourceConfig: SourceConfig
+
+    // Gate A — reject bare-name specs (ambiguous, no ecosystem hint).
+    const gateAError = checkBareNameGate(effectiveSpec, parsed.kind, Boolean(args.source))
+    if (gateAError) {
+      consola.error(gateAError)
+      process.exit(1)
+      return // unreachable
+    }
+
+    // Gate B — manifest-based version resolution. Only applies to ecosystem
+    // specs with no explicit version (`npm:next` / `pypi:fastapi`).
+    if (parsed.kind === 'ecosystem') {
+      const gateB = runManifestGate(
+        parsed.ecosystem,
+        parsed.name,
+        parsed.version,
+        projectDir,
+        {
+          // citty exposes kebab-case flags under both the original key and
+          // the camelCase alias. `--no-foo` is also treated as `foo=false`,
+          // so we check both `noManifest` and `manifest === false` for safety.
+          noManifest: Boolean(args['no-manifest']) || args.manifest === false || Boolean((args as Record<string, unknown>).noManifest),
+          fromManifest: Boolean(args['from-manifest']) || Boolean((args as Record<string, unknown>).fromManifest),
+        },
+      )
+      if (gateB.kind === 'error') {
+        consola.error(gateB.message)
+        process.exit(1)
+        return // unreachable
+      }
+      if (gateB.version) {
+        consola.info(`Using version ${gateB.version} from ${gateB.source}`)
+        parsed.version = gateB.version
+        // Rebuild the spec so downstream resolveFromRegistry / resolver.resolve
+        // (which re-parse from the raw spec string) pick up the override.
+        effectiveSpec = `${parsed.ecosystem}:${parsed.name}@${gateB.version}`
+      }
+    }
 
     // github fast-path: `owner/repo[@ref]` — try registry for docsPath,
     // then fall back to bare repo download.
@@ -209,7 +337,7 @@ const addCmd = defineCommand({
     }
     else {
       // Auto-detect from registry
-      const resolved = await resolveFromRegistry(args.spec, projectDir)
+      const resolved = await resolveFromRegistry(effectiveSpec, projectDir)
       if (resolved) {
         const { strategy } = resolved
         consola.start(`Downloading ${resolved.name}@${resolved.version} docs (source: ${strategy.source})...`)

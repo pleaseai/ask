@@ -156,4 +156,26 @@ describe('parseDocSpec', () => {
       expect(() => parseDocSpec('')).toThrow()
     })
   })
+
+  // Regression guard for add-docs-cli-split-20260408: Gate A in `addCmd.run()`
+  // rejects bare-name specs at the command layer, but the parser itself must
+  // still return `kind: 'name'` so the gate can classify the input. Changing
+  // the parser to throw on bare names would break `detectEcosystem` flows and
+  // other callers. This test documents that invariant.
+  describe('bare name regression (Gate A lives in command layer)', () => {
+    it('parseDocSpec(\'next\') still returns kind: name', () => {
+      const parsed = parseDocSpec('next')
+      expect(parsed.kind).toBe('name')
+      expect(parsed).toEqual({ kind: 'name', name: 'next', version: 'latest' })
+    })
+
+    it('parseDocSpec(\'next@15\') still returns kind: name with version', () => {
+      const parsed = parseDocSpec('next@15')
+      expect(parsed.kind).toBe('name')
+      if (parsed.kind === 'name') {
+        expect(parsed.name).toBe('next')
+        expect(parsed.version).toBe('15')
+      }
+    })
+  })
 })
