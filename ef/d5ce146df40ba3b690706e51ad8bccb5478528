@@ -1,0 +1,25 @@
+skills/add-docs/references/inline-pipeline.md
+  a85ee3609343e44f 1-255
+skills/add-docs/SKILL.md
+  a85ee3609343e44f 4-16,19,21-24,35,37,39-41,43,45,47,51,55,57-58,60-62,64,66-70,72-76,78,80-81,84-137
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "efd5ce146df40ba3b690706e51ad8bccb5478528",
+  "prompts": {
+    "a85ee3609343e44f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "42b652c5-5528-46db-a85a-f2369397fa54",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 380,
+      "overriden_lines": 0
+    }
+  }
+}
