@@ -61,19 +61,56 @@ explicit prefix in their request.
 > MUST always build an `<ecosystem>:<name>` or `<owner>/<repo>` spec before
 > invoking it.
 
-### Step 3 — Assemble the CLI spec
+### Step 3 — Pick npm vs GitHub (decision tree)
 
-- Ecosystem + version known → `<ecosystem>:<name>@<version>`
-- Ecosystem only (no version) → `<ecosystem>:<name>` — the CLI will consult
-  the project lockfile (bun.lock → package-lock.json → pnpm-lock.yaml →
-  yarn.lock → package.json) and use the installed version automatically.
-- User gave `owner/repo[@ref]` directly → pass as-is (github shorthand).
+**Default to npm whenever there is evidence the package is actually
+installed in the project.** The CLI's npm source short-circuits to
+`node_modules/<name>/<docsPath>` when the local install matches the
+requested version, so this is faster, offline-friendly, and version-pinned.
+Only fall back to GitHub when there is no manifest evidence.
+
+Decision order:
+
+1. **Manifest hit → use the ecosystem prefix.**
+   The package appears in the project's manifest or lockfile (any of:
+   `bun.lock`, `package-lock.json`, `pnpm-lock.yaml`, `yarn.lock`,
+   `package.json` `dependencies` / `devDependencies`, or the equivalent
+   for the detected ecosystem). Build the spec as
+   `<ecosystem>:<name>[@<version>]`. Without an explicit version, the CLI
+   will read the installed version from the lockfile and then NpmSource
+   will satisfy the fetch from `node_modules` with no network call when
+   possible.
+
+2. **No manifest hit, user named a known repo → use GitHub shorthand.**
+   The package is not installed (e.g. the user is exploring a library
+   they have not yet added) but the user mentioned an `owner/repo` form
+   or you can resolve it confidently from prior knowledge. Build the
+   spec as `<owner>/<repo>[@<ref>]`.
+
+3. **No manifest hit and no known repo → ask.**
+   Do not guess. Ask the user whether they want to install the package
+   first (so the npm path opens up) or whether they have an
+   `owner/repo` to use directly.
+
+> Why npm-first when installed? The CLI's NpmSource reads
+> `node_modules/<pkg>/dist/docs` (or whichever `docsPath` the registry
+> entry declares) directly when the installed version matches. Curated
+> libraries like `ai`, `@mastra/core`, `@mastra/memory`, and `next`
+> (canary) ship author-curated agent docs there, and the local read
+> avoids both an HTTP call and a tarball extraction.
 
 Examples:
-- `npm:next` — auto-detects version from lockfile
-- `npm:next@15.0.3` — pinned version
-- `pypi:fastapi` — auto-detects
-- `vercel/next.js@canary` — direct GitHub
+
+- `package.json` lists `next` → `npm:next` (CLI auto-detects version from
+  lockfile, and short-circuits to `node_modules/next/dist/docs` when
+  installed).
+- `package.json` lists `@mastra/core` at `0.5.2` → `npm:@mastra/core` (same).
+- `pyproject.toml` lists `fastapi` → `pypi:fastapi`.
+- User says "add docs for vercel/next.js@canary" and the project is not a
+  Node project at all → `vercel/next.js@canary` (GitHub shorthand).
+- User says "add docs for next" but `next` is not in `package.json` and the
+  project has no `node_modules/next` → ask whether they want to add the
+  package first or whether they meant `vercel/next.js`.
 
 ### Step 4 — Run the CLI
 
@@ -111,6 +148,16 @@ After the command exits 0, confirm on disk:
 - [ ] `CLAUDE.md` has a `@AGENTS.md` line (append one if missing)
 
 If any check fails, stop and report — do not paper over partial state.
+
+## Recovery — when the CLI command fails
+
+The CLI is deterministic: it executes one spec and either succeeds or
+exits non-zero. It does not auto-fallback between sources. With proper
+upfront planning in Step 3, recovery is rare — when it does happen, see
+[`references/recovery.md`](./references/recovery.md) for the error
+classification table, the resource ladder for finding `<owner>/<repo>`,
+and the retry rules (at most 1 retry, preserve user intent, report path
+taken).
 
 ## Guardrails
 

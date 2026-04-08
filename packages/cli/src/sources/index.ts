@@ -31,8 +31,10 @@ export interface FetchResult {
     ref?: string
     /** npm Subresource Integrity hash from dist.integrity */
     integrity?: string
-    /** npm tarball URL */
+    /** npm tarball URL (omitted for local-`node_modules` reads) */
     tarball?: string
+    /** Absolute path to the local `node_modules/<pkg>` dir when read locally */
+    installPath?: string
     /** web/llms-txt source URL(s) */
     urls?: string[]
   }
