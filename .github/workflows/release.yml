@@ -52,7 +52,7 @@ jobs:
 
       - name: Pack with bun (resolve workspace deps)
         working-directory: packages/cli
-        run: bun pack --filename pleaseai-ask.tgz
+        run: bun pm pack --filename pleaseai-ask.tgz
 
       - name: Publish to npm with provenance
         working-directory: packages/cli
