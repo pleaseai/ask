@@ -78,21 +78,21 @@ NpmSource  Github   Web/...
 
 ## Tasks
 
-- [ ] T001 [P] Add seed registry entry for `vercel/ai` with npm strategy `docsPath: dist/docs` and `npm:ai` alias (file: apps/registry/content/registry/vercel/ai.md)
-- [ ] T002 [P] Add seed registry entry for `mastra-ai/mastra` with npm strategies for `@mastra/core` and `@mastra/memory` plus aliases (file: apps/registry/content/registry/mastra-ai/mastra.md)
-- [ ] T003 Replace static SOURCE_PRIORITY with context-aware `selectBestStrategy` so an npm strategy carrying `docsPath` outranks a github strategy in the same entry; keep ties stable (file: packages/cli/src/registry.ts)
-- [ ] T004 [P] Unit tests for the new `selectBestStrategy` covering: (a) github-only, (b) npm-with-docsPath beats github, (c) npm-without-docsPath does NOT beat github, (d) tie-break stability (file: packages/cli/test/registry.test.ts)
-- [ ] T005 Un-deprecate `NpmSource` and add a private `tryLocalRead({ projectDir, pkg, version, docsPath })` returning `FetchResult | null`; honor semver satisfies and skip on missing `docsPath` (file: packages/cli/src/sources/npm.ts) (depends on T003)
-- [ ] T006 Wire `tryLocalRead` into `NpmSource.fetch` as the first step before tarball download; bubble `meta.source = 'node_modules'` and skip tarball entirely on hit (file: packages/cli/src/sources/npm.ts) (depends on T005)
-- [ ] T007 Add `executeStrategy(strategy, ctx)` dispatcher that routes registry strategies to the matching source; remove the implicit github-only assumption from the `add` command flow (file: packages/cli/src/index.ts) (depends on T003)
-- [ ] T008 [P] Unit tests for `tryLocalRead`: hit on exact match, hit on semver satisfies, miss on version mismatch, miss on absent `docsPath`, miss on absent `node_modules` (file: packages/cli/test/sources/npm.test.ts) (depends on T006)
-- [ ] T009 [P] Integration test: with `ai` installed under a fixture project and `vercel/ai` registry entry mocked, `ask docs add npm:ai` produces files from `node_modules/ai/dist/docs` and makes zero outbound HTTP calls (file: packages/cli/test/integration/npm-local-first.test.ts) (depends on T007)
-- [ ] T010 [P] Integration test for scoped + monorepo packages: same flow for `npm:@mastra/core` and `npm:@mastra/memory` (file: packages/cli/test/integration/npm-scoped.test.ts) (depends on T007)
-- [ ] T011 Extend `generateSkill` SKILL.md template with a "When the docs cannot be found" fallback section that walks `node_modules/<pkg>/{dist/docs,docs,*.md}` and suggests `ask docs add npm:<pkg>` for promotion (file: packages/cli/src/skill.ts)
-- [ ] T012 [P] Snapshot/text test for the new fallback section in generated SKILL.md (file: packages/cli/test/skill.test.ts) (depends on T011)
-- [ ] T013 [P] Write `design/telemetry.md` covering opt-in activation, collected fields (`pkg`, `version`, `docsPath`, `success`), aggregation flow, promotion threshold, privacy/rate-limit considerations, and an analysis of vercel-labs/skills `src/telemetry.ts` (file: .please/docs/tracks/active/npm-tarball-docs-20260408/design/telemetry.md)
-- [ ] T014 Regression sweep: confirm existing github-only registry entries (lodash, axios, jquery, etc.) still resolve to github source and produce identical `FetchResult.files` count; document the check in the verification log (file: packages/cli/test/integration/regression.test.ts)
-- [ ] T015 Update CLAUDE.md gotchas with the new "registry npm strategy with docsPath wins over github" rule and the `node_modules`-first behavior (file: CLAUDE.md) (depends on T007)
+- [x] T001 [P] Add seed registry entry for `vercel/ai` with npm strategy `docsPath: dist/docs` and `npm:ai` alias (file: apps/registry/content/registry/vercel/ai.md)
+- [x] T002 [P] Add seed registry entry for `mastra-ai/mastra` with npm strategies for `@mastra/core` and `@mastra/memory` plus aliases (file: apps/registry/content/registry/mastra-ai/mastra.md)
+- [x] T003 Replace static SOURCE_PRIORITY with context-aware `selectBestStrategy` so an npm strategy carrying `docsPath` outranks a github strategy in the same entry; keep ties stable (file: packages/cli/src/registry.ts)
+- [x] T004 [P] Unit tests for the new `selectBestStrategy` covering: (a) github-only, (b) npm-with-docsPath beats github, (c) npm-without-docsPath does NOT beat github, (d) tie-break stability (file: packages/cli/test/registry.test.ts)
+- [x] T005 Un-deprecate `NpmSource` and add a private `tryLocalRead({ projectDir, pkg, version, docsPath })` returning `FetchResult | null`; honor semver satisfies and skip on missing `docsPath` (file: packages/cli/src/sources/npm.ts) (depends on T003)
+- [x] T006 Wire `tryLocalRead` into `NpmSource.fetch` as the first step before tarball download; bubble `meta.source = 'node_modules'` and skip tarball entirely on hit (file: packages/cli/src/sources/npm.ts) (depends on T005)
+- [x] T007 Add `executeStrategy(strategy, ctx)` dispatcher that routes registry strategies to the matching source; remove the implicit github-only assumption from the `add` command flow (file: packages/cli/src/index.ts) (depends on T003)
+- [x] T008 [P] Unit tests for `tryLocalRead`: hit on exact match, hit on semver satisfies, miss on version mismatch, miss on absent `docsPath`, miss on absent `node_modules` (file: packages/cli/test/sources/npm.test.ts) (depends on T006)
+- [x] T009 [P] Integration test: with `ai` installed under a fixture project and `vercel/ai` registry entry mocked, `ask docs add npm:ai` produces files from `node_modules/ai/dist/docs` and makes zero outbound HTTP calls (file: packages/cli/test/integration/npm-local-first.test.ts) (depends on T007)
+- [x] T010 [P] Integration test for scoped + monorepo packages: same flow for `npm:@mastra/core` and `npm:@mastra/memory` (file: packages/cli/test/integration/npm-scoped.test.ts) (depends on T007)
+- [x] T011 Extend `generateSkill` SKILL.md template with a "When the docs cannot be found" fallback section that walks `node_modules/<pkg>/{dist/docs,docs,*.md}` and suggests `ask docs add npm:<pkg>` for promotion (file: packages/cli/src/skill.ts)
+- [x] T012 [P] Snapshot/text test for the new fallback section in generated SKILL.md (file: packages/cli/test/skill.test.ts) (depends on T011)
+- [x] T013 [P] Write `design/telemetry.md` covering opt-in activation, collected fields (`pkg`, `version`, `docsPath`, `success`), aggregation flow, promotion threshold, privacy/rate-limit considerations, and an analysis of vercel-labs/skills `src/telemetry.ts` (file: .please/docs/tracks/active/npm-tarball-docs-20260408/design/telemetry.md)
+- [x] T014 Regression sweep: confirm existing github-only registry entries (lodash, axios, jquery, etc.) still resolve to github source and produce identical `FetchResult.files` count; document the check in the verification log (file: packages/cli/test/integration/regression.test.ts)
+- [x] T015 Update CLAUDE.md gotchas with the new "registry npm strategy with docsPath wins over github" rule and the `node_modules`-first behavior (file: CLAUDE.md) (depends on T007)
 
 ## Dependencies
 
@@ -139,13 +139,13 @@ Parallel groups:
 
 ## Progress
 
-- [ ] Phase 1: Seed registry entries (T001, T002)
-- [ ] Phase 2: Source selection fix + tests (T003, T004)
-- [ ] Phase 3: NpmSource local-first + tests (T005, T006, T008)
-- [ ] Phase 4: Strategy dispatcher + integration tests (T007, T009, T010)
-- [ ] Phase 5: Skill fallback template + test (T011, T012)
-- [ ] Phase 6: Telemetry design doc (T013)
-- [ ] Phase 7: Regression + docs (T014, T015)
+- [x] Phase 1: Seed registry entries (T001, T002)
+- [x] Phase 2: Source selection fix + tests (T003, T004)
+- [x] Phase 3: NpmSource local-first + tests (T005, T006, T008)
+- [x] Phase 4: Strategy dispatcher + integration tests (T007, T009, T010)
+- [x] Phase 5: Skill fallback template + test (T011, T012)
+- [x] Phase 6: Telemetry design doc (T013)
+- [x] Phase 7: Regression + docs (T014, T015)
 
 ## Decision Log
 
