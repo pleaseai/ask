@@ -130,6 +130,34 @@ T-1, T-2, T-3, T-4, T-5 are independent and can land in any order. T-6 needs T-1
 - **2026-04-08**: Skip auto-patching root ESLint flat config / Biome / `.cursorignore`. ESLint and Biome are covered by nested configs inside `.ask/docs/`; `.cursorignore` would block AI context access (anti-goal). Documented in spec Out of Scope.
 - **2026-04-08**: cubic and CodeRabbit need no dedicated configuration file patching — both auto-consume AGENTS.md/CLAUDE.md as context (verified via vendor docs). The single AGENTS.md notice transitively covers them.
 
+## Outcomes & Retrospective
+
+### What Was Shipped
+
+- `markers.ts` (pure inject/remove/wrap helpers, two comment syntaxes)
+- `ignore-files.ts` (nested-config writer, root-file patcher, top-level orchestrator with `manageIgnores` opt-out)
+- Extended `agents.ts` auto-generated block with vendored-docs notice
+- Schema field `ConfigSchema.manageIgnores` (optional, default `true`)
+- Wired `manageIgnoreFiles(projectDir, mode)` into `addCmd`/`runSync`/`removeCmd`
+- 43 new tests across markers, ignore-files, and a full add → remove lifecycle
+
+### What Went Well
+
+- Existing `agents.ts` marker block was reusable — no second marker convention needed
+- Bun's nested workspaces let the existing test runner pick up new test files with zero config
+- Spec carefully separated nested-capable tools (Cat A) from root-only tools (Cat C), so the implementation matched the design 1:1
+
+### What Could Improve
+
+- WebSearch verification of "tool X supports nested config" went through several wrong answers before landing on accurate sources. A canonical compatibility table inside the spec would have saved iterations.
+- Worktrees require a manual `bun run --cwd packages/registry-schema build` before tests pass — surprising and easy to miss. Worth a `prepare` script.
+- The PR creation hit a `PreToolUse` review-state hook mid-finalize. Documented in CLAUDE.md gotchas but easy to forget when chaining `/please:*` commands.
+
+### Tech Debt Created
+
+- Sub-threshold review note: ESLint flat config nested resolution should be empirically verified inside `.ask/docs/` (run `eslint .` from project root and confirm files inside `.ask/docs/` are skipped). My research supported it but I did not run an end-to-end check.
+- Root `eslint.config.{js,mjs,ts}` and `biome.json` automatic patching is intentionally out of scope; if user feedback shows the nested-config approach is insufficient, revisit.
+
 ## Surprises & Discoveries
 
 - **registry-schema not pre-built in worktree**: Full test suite failed with `Cannot find module '@pleaseai/registry-schema'` until `bun run --cwd packages/registry-schema build` was run. The CLI package imports compiled output from `dist/`, so worktrees need an initial build of the shared package. Candidate for a `postinstall` hook or test-time `prepare` step.
