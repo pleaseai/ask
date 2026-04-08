@@ -1,0 +1,25 @@
+packages/cli/src/resolvers/maven.ts
+  65d5f2facc5ddb3e 8-15,19,23-25,50-51,98-110,112-113,134-138,140-154,156-160,164,166,189-229,233,237,239,246
+packages/cli/test/resolvers/maven.test.ts
+  65d5f2facc5ddb3e 16-18,21-25,28,31,35-38,53-108,112,124,136,142,148,153,155-163,165-167,170-175,177-179,196-201,205-216,219-220,224
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "72660cb0f94cf5b449670aa4817b668d27d51afc",
+  "prompts": {
+    "65d5f2facc5ddb3e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c54e2933-abd9-4a85-9e62-a18342a2d821",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 237,
+      "total_deletions": 71,
+      "accepted_lines": 235,
+      "overriden_lines": 0
+    }
+  }
+}
