@@ -188,10 +188,10 @@ export class MavenResolver implements EcosystemResolver {
 
     const doc = data.response.docs[0]
 
-    // Try to get scmUrl from extended search (separate request)
+    // Try to get scmUrl from artifact-level search (default core, not GAV)
     let scmUrl: string | undefined
     try {
-      const extUrl = `https://search.maven.org/solrsearch/select?q=g:${encodeURIComponent(groupId)}+AND+a:${encodeURIComponent(artifactId)}+AND+v:${encodeURIComponent(doc.v)}&rows=1&wt=json&core=gav`
+      const extUrl = `https://search.maven.org/solrsearch/select?q=g:${encodeURIComponent(groupId)}+AND+a:${encodeURIComponent(artifactId)}&rows=1&wt=json`
       const extResponse = await fetch(extUrl)
       if (extResponse.ok) {
         const extData = await extResponse.json() as { response: { docs: Array<{ 'scm.url'?: string }> } }

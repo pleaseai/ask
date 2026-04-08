@@ -99,6 +99,16 @@ describe('MavenResolver', () => {
       expect(f).toHaveBeenCalledTimes(2)
     })
 
+    it('uses scmUrl from Search API for explicit version, skips POM', async () => {
+      const f = globalThis.fetch as ReturnType<typeof mock>
+      f.mockResolvedValueOnce(mockResponse(SEARCH_GUAVA))
+      f.mockResolvedValueOnce(mockResponse(SEARCH_GAV_WITH_SCM))
+
+      const result = await resolver.resolve('com.google.guava:guava', '33.4.0-jre')
+      expect(result.repo).toBe('google/guava')
+      expect(f).toHaveBeenCalledTimes(2)
+    })
+
     it('falls back to POM when scmUrl is absent', async () => {
       mockStandardFlow({ pomResponse: POM_WITH_SCM })
 
@@ -134,6 +144,19 @@ describe('MavenResolver', () => {
 
     it('falls back to <url> when <scm> has no GitHub URL', async () => {
       mockStandardFlow({ pomResponse: POM_WITH_URL_ONLY })
+
+      const result = await resolver.resolve('com.google.guava:guava', 'latest')
+      expect(result.repo).toBe('google/guava')
+    })
+
+    it('falls back to <url> when <scm><url> is non-GitHub', async () => {
+      const pomWithNonGithubScm = `<project>
+        <url>https://github.com/google/guava</url>
+        <scm>
+          <url>https://gitbox.apache.org/repos/asf?p=guava.git</url>
+        </scm>
+      </project>`
+      mockStandardFlow({ pomResponse: pomWithNonGithubScm })
 
       const result = await resolver.resolve('com.google.guava:guava', 'latest')
       expect(result.repo).toBe('google/guava')
@@ -178,6 +201,35 @@ describe('MavenResolver', () => {
       expect(result.repo).toBe('google/guava')
       expect(result.resolvedVersion).toBe('33.4.0-jre')
     })
+
+    it('resolves from <latest> tag when <release> is absent', async () => {
+      const metadataLatestOnly = `<?xml version="1.0"?>
+        <metadata>
+          <versioning>
+            <latest>33.4.0-jre</latest>
+          </versioning>
+        </metadata>`
+
+      const f = globalThis.fetch as ReturnType<typeof mock>
+      f.mockResolvedValueOnce(mockResponse({}, 503))
+      f.mockResolvedValueOnce(mockResponse(metadataLatestOnly))
+      f.mockResolvedValueOnce(mockResponse(POM_WITH_SCM))
+
+      const result = await resolver.resolve('com.example:artifact', 'latest')
+      expect(result.resolvedVersion).toBe('33.4.0-jre')
+    })
+
+    it('throws when metadata has no release or latest tag', async () => {
+      const malformedMetadata = `<?xml version="1.0"?><metadata><versioning></versioning></metadata>`
+
+      const f = globalThis.fetch as ReturnType<typeof mock>
+      f.mockResolvedValueOnce(mockResponse({}, 503))
+      f.mockResolvedValueOnce(mockResponse(malformedMetadata))
+
+      await expect(
+        resolver.resolve('com.example:artifact', 'latest'),
+      ).rejects.toThrow('no <release> or <latest> tag')
+    })
   })
 
   describe('error handling', () => {
@@ -190,6 +242,12 @@ describe('MavenResolver', () => {
     it('throws on empty groupId', async () => {
       await expect(
         resolver.resolve(':guava', 'latest'),
+      ).rejects.toThrow('groupId:artifactId')
+    })
+
+    it('throws on empty artifactId (trailing colon)', async () => {
+      await expect(
+        resolver.resolve('com.google.guava:', 'latest'),
       ).rejects.toThrow('groupId:artifactId')
     })
 
