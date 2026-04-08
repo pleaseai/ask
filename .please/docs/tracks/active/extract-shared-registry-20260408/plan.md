@@ -53,13 +53,13 @@ A new `packages/registry-schema` package provides Zod schemas as the single sour
 
 ## Tasks
 
-- [ ] T001 Create `packages/registry-schema` package scaffold (file: packages/registry-schema/package.json)
-- [ ] T002 Define Zod schemas and inferred types with `expandStrategies()` (file: packages/registry-schema/src/index.ts, depends on T001)
-- [ ] T003 Add unit tests for shared package (file: packages/registry-schema/test/index.test.ts, depends on T002)
-- [ ] T004 [P] Migrate CLI to import from `@pleaseai/registry-schema` (file: packages/cli/src/registry.ts, depends on T002)
-- [ ] T005 [P] Migrate registry `content.config.ts` to import schemas (file: apps/registry/content.config.ts, depends on T002)
-- [ ] T006 [P] Migrate registry API handler to import from shared package (file: apps/registry/server/api/registry/[...slug].get.ts, depends on T002)
-- [ ] T007 Verify monorepo build, lint, and tests (depends on T004, T005, T006)
+- [x] T001 Create `packages/registry-schema` package scaffold (file: packages/registry-schema/package.json)
+- [x] T002 Define Zod schemas and inferred types with `expandStrategies()` (file: packages/registry-schema/src/index.ts, depends on T001)
+- [x] T003 Add unit tests for shared package (file: packages/registry-schema/test/index.test.ts, depends on T002)
+- [x] T004 [P] Migrate CLI to import from `@pleaseai/registry-schema` (file: packages/cli/src/registry.ts, depends on T002)
+- [x] T005 [P] Migrate registry `content.config.ts` to import schemas (file: apps/registry/content.config.ts, depends on T002)
+- [x] T006 [P] Migrate registry API handler to import from shared package (file: apps/registry/server/api/registry/[...slug].get.ts, depends on T002)
+- [x] T007 Verify monorepo build, lint, and tests (depends on T004, T005, T006)
 
 ## Dependencies
 

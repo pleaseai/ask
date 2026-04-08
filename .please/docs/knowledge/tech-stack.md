@@ -6,6 +6,15 @@
 - **Package manager**: bun (workspaces)
 - **Workspaces**: `packages/*`, `apps/*`
 
+## Shared (`packages/registry-schema` — `@pleaseai/registry-schema`)
+
+| Category | Technology |
+|---|---|
+| Runtime | Node.js (Pure ESM) |
+| Language | TypeScript 5.7+ |
+| Validation | Zod 3.x |
+| Linting | ESLint 10 + @pleaseai/eslint-config |
+
 ## CLI (`packages/cli` — `@pleaseai/ask`)
 
 | Category | Technology |
