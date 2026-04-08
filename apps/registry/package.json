@@ -11,8 +11,8 @@
   },
   "dependencies": {
     "@nuxt/content": "^3",
-    "@pleaseai/registry-schema": "workspace:*",
     "@nuxt/ui": "^4",
+    "@pleaseai/registry-schema": "workspace:*",
     "nuxt": "^4",
     "tailwindcss": "^4",
     "vue": "latest",

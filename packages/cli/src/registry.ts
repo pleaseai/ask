@@ -1,12 +1,11 @@
+import type { RegistryEntry, RegistryStrategy } from '@pleaseai/registry-schema'
 import fs from 'node:fs'
 import path from 'node:path'
+import { expandStrategies } from '@pleaseai/registry-schema'
 import { consola } from 'consola'
 
 export type { ExpandInput, RegistryAlias, RegistryEntry, RegistryStrategy } from '@pleaseai/registry-schema'
 export { expandStrategies } from '@pleaseai/registry-schema'
-
-import type { RegistryEntry, RegistryStrategy } from '@pleaseai/registry-schema'
-import { expandStrategies } from '@pleaseai/registry-schema'
 
 const REGISTRY_BASE_URL = 'https://ask-registry.pages.dev'
 
