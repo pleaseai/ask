@@ -1,5 +1,5 @@
 import { defineCollection, defineContentConfig } from '@nuxt/content'
-import { registryEntrySchema } from '@pleaseai/registry-schema'
+import { registryEntrySchema } from '@pleaseai/ask-schema'
 
 export default defineContentConfig({
   collections: {
