@@ -39,7 +39,7 @@ jobs:
         with:
           bun-version: 1.3.11
 
-      - uses: actions/setup-node@49933ea5288caeca8642195f2ed94f21bf2f2e36 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
           registry-url: https://registry.npmjs.org
