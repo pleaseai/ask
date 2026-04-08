@@ -1,0 +1,25 @@
+.please/docs/tracks.jsonl
+  f56cdf27b0c39d34 6
+.please/docs/tracks/active/extract-shared-registry-20260408/metadata.json
+  f56cdf27b0c39d34 4
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "4a22b9691f14f51048c606404cb90609992db2d2",
+  "prompts": {
+    "f56cdf27b0c39d34": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "17341893-f241-4d37-905d-dc7f030ade99",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 2,
+      "total_deletions": 2,
+      "accepted_lines": 2,
+      "overriden_lines": 0
+    }
+  }
+}
