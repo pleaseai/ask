@@ -1,0 +1,23 @@
+CLAUDE.md
+  0a4381a53da2cc67 59-61
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "dcae8d5042eb3599a9dd31cf39be250e2fc65899",
+  "prompts": {
+    "0a4381a53da2cc67": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "eb8b70af-f7b1-4618-9bdc-66b06b5fe43f",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 3,
+      "total_deletions": 0,
+      "accepted_lines": 3,
+      "overriden_lines": 0
+    }
+  }
+}
