@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.5](https://github.com/pleaseai/ask/compare/ask-plugin-v0.1.4...ask-plugin-v0.1.5) (2026-04-08)
+
+
+### Bug Fixes
+
+* **ci:** use default bun pm pack filename for npm publish ([8fc5581](https://github.com/pleaseai/ask/commit/8fc558123118df744ab620ad1e08c417ea2c420c))
+
 ## [0.1.4](https://github.com/pleaseai/ask/compare/ask-plugin-v0.1.3...ask-plugin-v0.1.4) (2026-04-08)
 
 
