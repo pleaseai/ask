@@ -1,0 +1,27 @@
+.please/docs/product-specs/index.md
+  614e81b0bd6ab6d6 5
+packages/cli/test/sources/npm-local.test.ts
+  614e81b0bd6ab6d6 318-358
+packages/cli/src/sources/npm.ts
+  614e81b0bd6ab6d6 93-102
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "e46bdbef4a47cef6f48933a626e18222d30d80d3",
+  "prompts": {
+    "614e81b0bd6ab6d6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ee7dc120-37f2-48da-8f19-9c657aad0d59",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 52,
+      "total_deletions": 4,
+      "accepted_lines": 56,
+      "overriden_lines": 0
+    }
+  }
+}
