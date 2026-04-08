@@ -281,9 +281,12 @@ const addCmd = defineCommand({
       }
       if (gateB.version) {
         consola.info(`Using version ${gateB.version} from ${gateB.source}`)
+        // Mutation is intentional: the ecosystem resolver fallback at line ~365
+        // calls resolver.resolve(parsed.name, parsed.version) directly, so
+        // parsed.version must reflect the manifest override.
         parsed.version = gateB.version
-        // Rebuild the spec so downstream resolveFromRegistry / resolver.resolve
-        // (which re-parse from the raw spec string) pick up the override.
+        // Also rebuild effectiveSpec so resolveFromRegistry (which re-parses
+        // from the raw spec string) picks up the override version.
         effectiveSpec = `${parsed.ecosystem}:${parsed.name}@${gateB.version}`
       }
     }
