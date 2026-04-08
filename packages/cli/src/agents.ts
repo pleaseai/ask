@@ -36,6 +36,13 @@ export function generateAgentsMd(projectDir: string): string {
 The libraries in this project may have APIs and patterns that differ from your training data.
 **Always read the relevant documentation before writing code.**
 
+## .ask/docs/ — Vendored Documentation
+
+\`.ask/docs/\` contains third-party library documentation downloaded by ASK.
+Treat it as **read-only**: AI context should reference these files, but they are
+**not** subject to modification, lint, format, or code review. Updates are
+performed via \`ask docs sync\`.
+
 ${sections.join('\n\n')}
 ${END_MARKER}`
 

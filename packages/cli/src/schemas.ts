@@ -57,6 +57,7 @@ export type SourceConfig = z.infer<typeof SourceConfigSchema>
 export const ConfigSchema = z.object({
   schemaVersion: z.literal(1),
   docs: z.array(SourceConfigSchema),
+  manageIgnores: z.boolean().optional(),
 })
 
 export type Config = z.infer<typeof ConfigSchema>
