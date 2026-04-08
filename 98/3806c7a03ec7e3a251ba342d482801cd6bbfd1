@@ -1,0 +1,47 @@
+packages/cli/test/ignore-lifecycle.test.ts
+  d2e34b6fc52f41e8 1-109
+packages/cli/test/ignore-files.test.ts
+  d2e34b6fc52f41e8 1-175
+packages/cli/test/markers.test.ts
+  d2e34b6fc52f41e8 1-67
+packages/cli/src/ignore-files.ts
+  d2e34b6fc52f41e8 1-243
+packages/cli/test/schemas.test.ts
+  d2e34b6fc52f41e8 99-112
+packages/cli/src/agents.ts
+  d2e34b6fc52f41e8 39-45
+.please/docs/tracks/active/ignore-vendored-docs-20260408/plan.md
+  d2e34b6fc52f41e8 72-80,125,135-136
+.please/docs/tracks/active/ignore-vendored-docs-20260408/metadata.json
+  d2e34b6fc52f41e8 4
+CLAUDE.md
+  d2e34b6fc52f41e8 62
+packages/cli/src/schemas.ts
+  d2e34b6fc52f41e8 60
+packages/cli/test/agents.test.ts
+  d2e34b6fc52f41e8 35-44
+packages/cli/src/markers.ts
+  d2e34b6fc52f41e8 1-100
+packages/cli/src/index.ts
+  d2e34b6fc52f41e8 24,286-287,424,475-479
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "983806c7a03ec7e3a251ba342d482801cd6bbfd1",
+  "prompts": {
+    "d2e34b6fc52f41e8": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "faf7414e-7b4c-4989-bf5c-d3b0987c1ed5",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 762,
+      "total_deletions": 78,
+      "accepted_lines": 749,
+      "overriden_lines": 0
+    }
+  }
+}
