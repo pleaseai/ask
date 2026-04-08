@@ -158,3 +158,32 @@ Parallel groups:
 
 - The vercel/next.js registry entry already ships an npm strategy with `dist/docs` — but the static `SOURCE_PRIORITY` makes it dead code today. Fixing the priority lights up an entry that was waiting for it.
 - `NpmSource` was marked `@deprecated` in favor of "resolver + github source", but the deprecation rationale (single-path simplicity) breaks down precisely for the `dist/docs` case. We are reversing course consciously.
+
+## Outcomes & Retrospective
+
+### What Was Shipped
+
+- Curated npm strategy support end-to-end (selector fix → seed registry entries → local-first NpmSource → SKILL.md fallback section).
+- Server-side monorepo disambiguation in `apps/registry/server/api/registry/[...slug].get.ts` with a new `resolvedName` API field, so multiple scoped packages from one repo (mastra-ai/mastra → @mastra/core, @mastra/memory) land in distinct CLI slugs without client-side logic.
+- `NpmLockEntry` schema relaxation (`tarball` OR `installPath`) so the lock file can record either a network fetch or a local read.
+- Generated SKILL.md "When the docs cannot be found" fallback section guiding agents to walk node_modules.
+- `skills/add-docs/` rewrite: npm-vs-github decision tree in Step 3, recovery logic moved to `references/recovery.md`.
+- `design/telemetry.md` capturing the opt-in registry auto-promotion design with prior-art analysis of vercel-labs/skills.
+
+### What Went Well
+
+- TDD discipline held through 11 commits — every code change landed with tests, no behavior change without a failing test first.
+- The /review:code-review-loop iterations caught real bugs that would have shipped: the mastra entry conflation and the scoped-name slug breakage. Both were fixed before merge.
+- The "discovery → fix → re-review" cycle naturally surfaced the right architecture: client-side fixes were necessary first to validate the requirement, then refactoring to server-side felt obvious once the rule was crystallized.
+
+### What Could Improve
+
+- The first attempt at fixing the mastra conflation (splitting into two registry entries) violated the existing "one entry per github repo" convention. Should have re-read CLAUDE.md / existing entries before drafting fix A.
+- Plan FR-1 ("extend strategy union with npm type") was downgraded mid-implementation because the schema already supported it. Earlier code reading would have caught this — added to the Decision Log but worth a "explore-before-plan" reminder for future tracks.
+
+### Tech Debt Created
+
+- Cache headers on `/api/registry/**` are not yet set — every CLI lookup hits the Cloudflare Worker. Tracked in pleaseai/ask#34.
+- Telemetry endpoint, aggregation, and promotion bot are design-only. Implementation is a future track.
+- The `apps/registry/` package has no tests; the server-side disambiguation logic relies on the CLI integration tests for coverage. Worth a dedicated apps/registry test suite if the surface grows.
+- `versionMatches` in NpmSource treats non-semver tags (e.g. `canary`) as opaque — `requested === installed`. Local read misses for `npm:next@canary` even when next canary is installed. Acceptable today (tarball fallback works) but worth revisiting.

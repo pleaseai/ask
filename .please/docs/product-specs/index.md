@@ -1,6 +1,7 @@
 # Product Specs Index
 
-> Auto-maintained by /please:spec --product.
+> Auto-maintained by /please:sync-specs.
 
-| Spec | Feature | Created | Related Tracks |
-|------|---------|---------|----------------|
+| Spec | Domain | Feature | Created | Related Tracks |
+|------|--------|---------|---------|----------------|
+| SPEC-001 | cli | sources | 2026-04-08 | [npm-tarball-docs-20260408] |
