@@ -1,5 +1,5 @@
-import type { RegistryAlias, RegistryStrategy } from '@pleaseai/registry-schema'
-import { expandStrategies } from '@pleaseai/registry-schema'
+import type { RegistryAlias, RegistryStrategy } from '@pleaseai/ask-schema'
+import { expandStrategies } from '@pleaseai/ask-schema'
 
 export default defineEventHandler(async (event) => {
   const slug = getRouterParam(event, 'slug')
