@@ -1,0 +1,27 @@
+packages/cli/test/registry.test.ts
+  a85ee3609343e44f 159-180
+packages/cli/test/manifest/gates.test.ts
+  a85ee3609343e44f 1-116
+packages/cli/src/index.ts
+  a85ee3609343e44f 25,80-165,235-245,250-252,255-291,340
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "7e12ba1b87ff18b612118e0232f7636c12244a14",
+  "prompts": {
+    "a85ee3609343e44f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "42b652c5-5528-46db-a85a-f2369397fa54",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 659,
+      "overriden_lines": 0
+    }
+  }
+}
