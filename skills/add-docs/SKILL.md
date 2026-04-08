@@ -149,6 +149,102 @@ After the command exits 0, confirm on disk:
 
 If any check fails, stop and report — do not paper over partial state.
 
+## Recovery — when the CLI command fails
+
+The CLI is **deterministic**: it executes one spec and either succeeds or
+exits non-zero with a clear error. It does **not** automatically fall back
+between sources. When `bunx @pleaseai/ask docs add <spec>` fails, the
+recovery decision is **your job** as the LLM driving this skill — read the
+error, decide which alternative is viable, and re-invoke the CLI with a
+different spec.
+
+This recovery loop applies, for example, when the user said "add docs for
+foo", you tried `npm:foo` because `foo` is in `package.json`, and the npm
+tarball did not actually ship a `dist/docs` directory — the CLI errors out
+and you need to retry with the GitHub repo.
+
+### Recovery resources (always available)
+
+You may use only resources that exist in every Claude Code environment.
+Do **not** assume MCP servers (deepwiki, context_grep, context7, etc.) are
+installed.
+
+| Resource | Cost | Use for |
+|---|---|---|
+| **Training knowledge** | free | Well-known repos (`react`→`facebook/react`, `next`→`vercel/next.js`, `zod`→`colinhacks/zod`). |
+| **Read** `node_modules/<pkg>/package.json` | free, disk only | The `repository.url` field — the most authoritative source when the package is installed. |
+| **WebFetch** `https://registry.npmjs.org/<pkg>` | 1 HTTP call | Same `repository.url` field, when the package is not installed locally. |
+| **WebSearch** `<pkg> github repository` | 1 search | Long-tail or newly published libraries. Verify the result before using it. |
+| **AskUserQuestion** | user time | Last resort when everything above is ambiguous or contradictory. |
+
+### Recovery decision tree
+
+When the CLI exits non-zero, classify the error and act accordingly:
+
+1. **Error mentions "No docs found in <spec>" or "Docs path \"<x>\" not
+   found in <spec>"** (npm tarball is missing the curated docs directory):
+   - This is the case where the curated `dist/docs` did not actually ship.
+   - Find the GitHub repo using the resource ladder below, then retry with
+     the GitHub shorthand: `bunx @pleaseai/ask docs add <owner>/<repo>`.
+
+2. **Error mentions "not found in registry" or "no resolver for"**:
+   - The bare ecosystem prefix did not resolve. The user likely needs an
+     `<owner>/<repo>` form. Find the repo and retry as in case 1.
+
+3. **Error mentions network / DNS / fetch failure**:
+   - Do **not** retry blindly — the second attempt will fail the same way.
+     Report the failure to the user verbatim and stop.
+
+4. **Error mentions "Ambiguous spec" (Gate A)**:
+   - You sent a bare name. Add the ecosystem prefix or `owner/repo` form
+     and retry. This is a skill bug, not a CLI bug — fix your spec.
+
+5. **Error mentions "--from-manifest was set but no … manifest entry"**:
+   - The package is genuinely not in the project's lockfile. Ask the user
+     whether they want to install it first or use a different source.
+
+6. **Any other error**:
+   - Report verbatim to the user. Do not invent a fix.
+
+### Resource ladder for finding `<owner>/<repo>` (cheapest first)
+
+Try in this order, stopping as soon as you have a confident answer:
+
+1. **Training knowledge** — If the package is well-known (top-1k npm,
+   widely cited in your training data), you already know the repo. Use it.
+   Skip the rest.
+
+2. **`node_modules/<pkg>/package.json`** — Read the file directly. Look at
+   the `repository` field:
+   - If it is a string like `git+https://github.com/owner/repo.git`,
+     extract `owner/repo`.
+   - If it is an object `{ "type": "git", "url": "..." }`, extract from `url`.
+   - Strip `git+`, `.git`, leading `https://github.com/` / `git@github.com:`.
+   - Only accept GitHub URLs — reject GitLab / Bitbucket / Codeberg for
+     this skill (the CLI's github source only handles GitHub).
+
+3. **WebFetch the npm registry metadata** — `https://registry.npmjs.org/<pkg>`
+   returns JSON with the same `repository` field. Use only when step 2 is
+   not viable (package not installed) and step 1 was not confident.
+
+4. **WebSearch** — Query `<pkg> npm github repository`. Only trust a
+   result that links to a `github.com/<owner>/<repo>` URL on the first
+   page and matches the npm package name.
+
+5. **AskUserQuestion** — Present what you found and ask for confirmation,
+   or ask for the repo directly when nothing above worked.
+
+### Recovery loop limits
+
+- **At most 1 retry per CLI invocation.** If the GitHub retry also fails,
+  report both errors to the user. Do not chain a third attempt.
+- **Never silently change the user's intent.** If the user said
+  `next@14.2.0`, the recovery retry must keep the version constraint
+  (`vercel/next.js@v14.2.0`) — do not drop it.
+- **Always tell the user which path you took.** "npm tarball had no docs,
+  retried via vercel/next.js — succeeded" is the minimum acceptable
+  summary so the user can verify the source.
+
 ## Guardrails
 
 - **Never invent a spec.** If you cannot determine a name + ecosystem with
