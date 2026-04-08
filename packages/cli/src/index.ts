@@ -421,8 +421,11 @@ export async function runSync(
 
   if (!options.skipAgentsMd) {
     generateAgentsMd(projectDir)
-    manageIgnoreFiles(projectDir, 'install')
   }
+  // `skipAgentsMd` is specifically about AGENTS.md regeneration; ignore
+  // file management always runs so that the project's lint/format/review
+  // tooling stays in sync with the current `.ask/docs/` state.
+  manageIgnoreFiles(projectDir, 'install')
   consola.success(
     `Sync complete: ${counts.drifted} re-fetched, ${counts.unchanged} unchanged, ${counts.failed} failed. AGENTS.md updated.`,
   )

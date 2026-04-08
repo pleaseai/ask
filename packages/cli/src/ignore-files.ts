@@ -208,18 +208,12 @@ export function manageIgnoreFiles(
   projectDir: string,
   mode: 'install' | 'remove',
 ): void {
-  let manage = true
-  try {
-    const config = loadConfig(projectDir)
-    if (config.manageIgnores === false)
-      manage = false
-  }
-  catch {
-    // No config yet — default to managing. This matches the behaviour of
-    // a fresh project where `ask docs add` writes the config on the fly.
-  }
-
-  if (!manage) {
+  // `loadConfig` returns a default empty config when `.ask/config.json`
+  // does not exist, and throws for corrupt/invalid files. We deliberately
+  // do NOT wrap this in a try/catch: callers should hear about a broken
+  // config rather than silently proceeding with mutations.
+  const config = loadConfig(projectDir)
+  if (config.manageIgnores === false) {
     consola.info('Skipping ignore-file management (manageIgnores: false).')
     return
   }

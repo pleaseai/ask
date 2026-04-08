@@ -172,4 +172,12 @@ describe('manageIgnoreFiles', () => {
     manageIgnoreFiles(tmpDir, 'install')
     expect(fs.existsSync(docsFile('.gitattributes'))).toBe(false)
   })
+
+  it('surfaces corrupt config errors instead of silently mutating files', () => {
+    const askDir = path.join(tmpDir, '.ask')
+    fs.mkdirSync(askDir, { recursive: true })
+    fs.writeFileSync(path.join(askDir, 'config.json'), '{ not valid json')
+    expect(() => manageIgnoreFiles(tmpDir, 'install')).toThrow()
+    expect(fs.existsSync(docsFile('.gitattributes'))).toBe(false)
+  })
 })
