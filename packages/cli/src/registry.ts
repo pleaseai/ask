@@ -169,6 +169,10 @@ export async function fetchRegistryEntry(
  * Lower number = higher priority. Based on Nuxt UI eval results (2026-04-07):
  * GitHub docs achieved 100% pass rate at lowest cost, while llms.txt scored
  * below baseline. See evals/nuxt-ui/README.md for full methodology.
+ *
+ * Note: an explicit `npm` strategy carrying a `docsPath` overrides this table
+ * — see `selectBestStrategy` for the rationale. The base table only matters
+ * for tie-break and for npm strategies *without* an explicit docsPath.
  */
 const SOURCE_PRIORITY: Record<RegistryStrategy['source'], number> = {
   'github': 0,
@@ -178,14 +182,35 @@ const SOURCE_PRIORITY: Record<RegistryStrategy['source'], number> = {
 }
 
 /**
+ * An npm strategy that explicitly declares a `docsPath` is treated as
+ * author-curated (e.g. `vercel/ai`'s `dist/docs`). It outranks every other
+ * strategy in the same entry. Without `docsPath` we fall back to the static
+ * SOURCE_PRIORITY table — npm without curation is no better than github.
+ */
+function isCuratedNpm(strategy: RegistryStrategy): boolean {
+  return strategy.source === 'npm' && Boolean(strategy.docsPath)
+}
+
+/**
  * Pick the highest-priority strategy from a list, preserving the original
  * order for ties (stable sort).
+ *
+ * Selection rules (in order):
+ *   1. If any strategy is a "curated npm" (`source: npm` with `docsPath`),
+ *      pick the first one in declaration order — author intent overrides.
+ *   2. Otherwise, sort by SOURCE_PRIORITY (github > npm > web > llms-txt)
+ *      preserving original order on ties.
  */
 export function selectBestStrategy(strategies: RegistryStrategy[]): RegistryStrategy {
   if (strategies.length === 0) {
     throw new Error('selectBestStrategy requires at least one strategy')
   }
-  // Stable sort by priority — lower priority value wins
+  // Rule 1: curated npm wins outright
+  const curated = strategies.find(isCuratedNpm)
+  if (curated) {
+    return curated
+  }
+  // Rule 2: stable sort by static priority
   const indexed = Array.from(strategies, (s, i) => ({ s, i }))
   indexed.sort((a, b) => {
     const pa = SOURCE_PRIORITY[a.s.source] ?? 99

@@ -1,6 +1,7 @@
+import type { RegistryStrategy } from '@pleaseai/ask-schema'
 import type { ParsedDocSpec } from '../src/registry.js'
 import { describe, expect, it } from 'bun:test'
-import { parseDocSpec } from '../src/registry.js'
+import { parseDocSpec, selectBestStrategy } from '../src/registry.js'
 
 describe('parseDocSpec', () => {
   describe('github kind (owner/repo)', () => {
@@ -177,5 +178,76 @@ describe('parseDocSpec', () => {
         expect(parsed.version).toBe('15')
       }
     })
+  })
+})
+
+describe('selectBestStrategy', () => {
+  // T-3/T-4 (npm-tarball-docs-20260408): An npm strategy carrying a `docsPath`
+  // is treated as author-curated and outranks github. Without `docsPath` the
+  // static SOURCE_PRIORITY table still wins. These tests are the regression
+  // guard for that selection rule.
+
+  const github: RegistryStrategy = { source: 'github', repo: 'vercel/next.js', docsPath: 'docs' }
+  const npmCurated: RegistryStrategy = { source: 'npm', package: 'next', docsPath: 'dist/docs' }
+  const npmBare: RegistryStrategy = { source: 'npm', package: 'next' }
+  const web: RegistryStrategy = { source: 'web', urls: ['https://example.com/docs'] }
+
+  it('returns the only strategy when list has one entry (github)', () => {
+    expect(selectBestStrategy([github])).toBe(github)
+  })
+
+  it('returns the only strategy when list has one entry (curated npm)', () => {
+    expect(selectBestStrategy([npmCurated])).toBe(npmCurated)
+  })
+
+  it('npm-with-docsPath beats github even when github is listed first', () => {
+    // Real-world case: vercel/ai entry lists npm + github strategies; the
+    // curated npm dist/docs path must win regardless of declaration order.
+    expect(selectBestStrategy([github, npmCurated])).toBe(npmCurated)
+    expect(selectBestStrategy([npmCurated, github])).toBe(npmCurated)
+  })
+
+  it('npm-without-docsPath does NOT beat github (falls back to static priority)', () => {
+    // A bare `source: npm` entry has no proof of curation — github wins.
+    expect(selectBestStrategy([github, npmBare])).toBe(github)
+    expect(selectBestStrategy([npmBare, github])).toBe(github)
+  })
+
+  it('curated npm wins over web too', () => {
+    expect(selectBestStrategy([web, npmCurated])).toBe(npmCurated)
+  })
+
+  it('tie-break is stable (declaration order) for non-curated case', () => {
+    const githubA: RegistryStrategy = { source: 'github', repo: 'a/x' }
+    const githubB: RegistryStrategy = { source: 'github', repo: 'b/y' }
+    expect(selectBestStrategy([githubA, githubB])).toBe(githubA)
+    expect(selectBestStrategy([githubB, githubA])).toBe(githubB)
+  })
+
+  it('among multiple curated npm strategies, declaration order wins', () => {
+    // Mastra case: multiple scoped packages each with their own curated path.
+    // Picking the first declared one is intentional — caller can re-order to
+    // change preference.
+    const core: RegistryStrategy = { source: 'npm', package: '@mastra/core', docsPath: 'dist/docs' }
+    const memory: RegistryStrategy = { source: 'npm', package: '@mastra/memory', docsPath: 'dist/docs' }
+    expect(selectBestStrategy([core, memory])).toBe(core)
+    expect(selectBestStrategy([memory, core])).toBe(memory)
+  })
+
+  it('throws on empty list', () => {
+    expect(() => selectBestStrategy([])).toThrow(/at least one/i)
+  })
+
+  // T-14 regression: ensure that registry entries WITHOUT explicit
+  // strategies (the common case for entries created before this track) keep
+  // resolving to a github strategy via expandStrategies + selectBestStrategy.
+  // The full chain runs in fetchRegistryEntry → resolveFromRegistry. Here we
+  // just exercise selectBestStrategy on the synthetic shape that
+  // expandStrategies emits for those entries.
+  it('regression: bare github entry (no strategies array) still resolves to github', () => {
+    // Mirrors the shape `expandStrategies({ repo, docsPath })` produces for
+    // entries like lodash/lodash, axios/axios, jquery/jquery.
+    const fromBareEntry: RegistryStrategy = { source: 'github', repo: 'lodash/lodash' }
+    expect(selectBestStrategy([fromBareEntry])).toBe(fromBareEntry)
   })
 })
