@@ -1,0 +1,27 @@
+.please/docs/tracks/active/registry-edge-cache-20260408/spec.md
+  3220d60cb45733db 1-54
+.please/docs/tracks/active/registry-edge-cache-20260408/metadata.json
+  3220d60cb45733db 1-11
+.please/docs/tracks/active/registry-edge-cache-20260408/plan.md
+  3220d60cb45733db 1-65
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "c906ba637159781d42eb44fc7dcabd339b8270ea",
+  "prompts": {
+    "3220d60cb45733db": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d7b07273-2559-42f5-8725-440dce2bcc7b",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 132,
+      "total_deletions": 2,
+      "accepted_lines": 130,
+      "overriden_lines": 0
+    }
+  }
+}
