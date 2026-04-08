@@ -1,44 +1,5 @@
-interface Strategy {
-  source: 'npm' | 'github' | 'web' | 'llms-txt'
-  package?: string
-  repo?: string
-  branch?: string
-  tag?: string
-  docsPath?: string
-  url?: string
-  urls?: string[]
-  maxDepth?: number
-  allowedPathPrefix?: string
-}
-
-interface Alias {
-  ecosystem: string
-  name: string
-}
-
-/**
- * Expand a registry entry's strategies from `repo` when strategies is empty.
- *
- * NOTE: This function is intentionally duplicated from
- * `packages/cli/src/registry-schema.ts`. The Nitro build process cannot
- * reliably resolve cross-package workspace imports, so sharing via a
- * workspace package is not feasible here. Keep this implementation in sync
- * with the canonical source in registry-schema.ts.
- */
-function expandStrategies(entry: {
-  repo?: string
-  docsPath?: string
-  strategies?: Strategy[]
-}): Strategy[] {
-  const { repo, docsPath, strategies } = entry
-  if (strategies && strategies.length > 0) return strategies
-  if (repo) {
-    const s: Strategy = { source: 'github', repo }
-    if (docsPath) s.docsPath = docsPath
-    return [s]
-  }
-  throw new Error('Registry entry requires at least one of `repo` or `strategies`')
-}
+import type { RegistryAlias, RegistryStrategy } from '@pleaseai/registry-schema'
+import { expandStrategies } from '@pleaseai/registry-schema'
 
 export default defineEventHandler(async (event) => {
   const slug = getRouterParam(event, 'slug')
@@ -63,7 +24,7 @@ export default defineEventHandler(async (event) => {
   if (directEntries.length > 0) {
     const entry = directEntries[0]
 
-    let strategies: Strategy[]
+    let strategies: RegistryStrategy[]
     try {
       strategies = expandStrategies({
         repo: entry.repo,
@@ -94,7 +55,7 @@ export default defineEventHandler(async (event) => {
   // 2. Fallback: search by alias (ecosystem/name)
   const allEntries = await queryCollection(event, 'registry').all()
   const matched = allEntries.find((entry) => {
-    const aliases = entry.aliases as Alias[] | undefined
+    const aliases = entry.aliases as RegistryAlias[] | undefined
     if (!aliases) return false
     return aliases.some(a => a.ecosystem === first && a.name === second)
   })
@@ -103,7 +64,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: `Entry not found: ${slug}` })
   }
 
-  let strategies: Strategy[]
+  let strategies: RegistryStrategy[]
   try {
     strategies = expandStrategies({
       repo: matched.repo,

@@ -19,6 +19,9 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      - name: Build dependencies
+        run: bun run --cwd packages/registry-schema build
+
       - name: Run tests with coverage and JUnit report
         working-directory: packages/cli
         run: |
