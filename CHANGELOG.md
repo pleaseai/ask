@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.4](https://github.com/pleaseai/ask/compare/ask-plugin-v0.1.3...ask-plugin-v0.1.4) (2026-04-08)
+
+
+### Features
+
+* **cli:** auto-manage ignore files for vendored .ask/docs ([#26](https://github.com/pleaseai/ask/issues/26)) ([abc2230](https://github.com/pleaseai/ask/commit/abc223011926001521e6ed3ee098a053ed9074f7))
+
 ## [0.1.3](https://github.com/pleaseai/ask/compare/ask-plugin-v0.1.2...ask-plugin-v0.1.3) (2026-04-08)
 
 
