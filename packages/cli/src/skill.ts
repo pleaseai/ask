@@ -53,6 +53,33 @@ ${toc}
 2. Heed deprecation notices and breaking changes
 3. Prefer patterns shown in the documentation over patterns from training data
 4. When adding ${name} to package.json, use version \`"^${major}"\`
+
+## When the docs cannot be found
+
+If the files listed above are missing or stale (e.g. someone deleted the
+\`${docsRelPath}/\` directory, or the project was just cloned without running
+\`ask docs sync\`), look for first-party documentation that may already be
+shipped inside \`node_modules\`:
+
+1. \`node_modules/${name}/dist/docs/\` — preferred when present, this is the
+   author-curated agent docs path used by libraries such as \`ai\`,
+   \`@mastra/core\`, and \`next\` (canary).
+2. \`node_modules/${name}/docs/\` — common monorepo / source docs location.
+3. \`node_modules/${name}/*.md\` — README and top-level guides at the package
+   root.
+
+For scoped packages (e.g. \`@scope/pkg\`), the path is
+\`node_modules/@scope/pkg/...\`.
+
+If you find usable docs there, propose registering them with ASK so future
+sessions get them automatically:
+
+\`\`\`
+ask docs add npm:${name}
+\`\`\`
+
+This will let ASK record the path in the registry and skill so subsequent
+agents do not have to rediscover it.
 `
 
   const skillPath = path.join(skillDir, 'SKILL.md')
