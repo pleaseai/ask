@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.2](https://github.com/pleaseai/ask/compare/ask-v0.1.1...ask-v0.1.2) (2026-04-08)
+
+
+### Features
+
+* **cli:** add manifest gate and reject bare-name specs ([#25](https://github.com/pleaseai/ask/issues/25)) ([816352b](https://github.com/pleaseai/ask/commit/816352b5ed1cb1cd19236dda3ae0e62ecbffeb77)), closes [#23](https://github.com/pleaseai/ask/issues/23)
+
 ## [0.1.1](https://github.com/pleaseai/ask/compare/ask-v0.1.0...ask-v0.1.1) (2026-04-08)
 
 
