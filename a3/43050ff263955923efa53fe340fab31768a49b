@@ -1,0 +1,25 @@
+packages/cli/test/skill.test.ts
+  614e81b0bd6ab6d6 1-62
+packages/cli/src/skill.ts
+  614e81b0bd6ab6d6 56-82
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "a343050ff263955923efa53fe340fab31768a49b",
+  "prompts": {
+    "614e81b0bd6ab6d6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ee7dc120-37f2-48da-8f19-9c657aad0d59",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 290,
+      "overriden_lines": 0
+    }
+  }
+}
