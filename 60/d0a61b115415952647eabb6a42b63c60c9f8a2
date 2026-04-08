@@ -1,0 +1,25 @@
+.please/docs/tracks/active/npm-tarball-docs-20260408/design/telemetry.md
+  614e81b0bd6ab6d6 1-199
+CLAUDE.md
+  614e81b0bd6ab6d6 64-65
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "60d0a61b115415952647eabb6a42b63c60c9f8a2",
+  "prompts": {
+    "614e81b0bd6ab6d6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ee7dc120-37f2-48da-8f19-9c657aad0d59",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 201,
+      "overriden_lines": 0
+    }
+  }
+}
