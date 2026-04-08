@@ -1,0 +1,25 @@
+apps/registry/content/registry/mastra-ai/mastra.md
+  614e81b0bd6ab6d6 1-39
+apps/registry/content/registry/vercel/ai.md
+  614e81b0bd6ab6d6 1-34
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "5c783ede0bb4236fe0ae19e5da673a08ddc5eda4",
+  "prompts": {
+    "614e81b0bd6ab6d6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ee7dc120-37f2-48da-8f19-9c657aad0d59",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 968,
+      "total_deletions": 27,
+      "accepted_lines": 954,
+      "overriden_lines": 0
+    }
+  }
+}
