@@ -269,11 +269,9 @@ const addCmd = defineCommand({
         parsed.version,
         projectDir,
         {
-          // citty exposes kebab-case flags under both the original key and
-          // the camelCase alias. `--no-foo` is also treated as `foo=false`,
-          // so we check both `noManifest` and `manifest === false` for safety.
-          noManifest: Boolean(args['no-manifest']) || args.manifest === false || Boolean((args as Record<string, unknown>).noManifest),
-          fromManifest: Boolean(args['from-manifest']) || Boolean((args as Record<string, unknown>).fromManifest),
+          // citty exposes kebab-case flags under the original key as defined in args.
+          noManifest: Boolean(args['no-manifest']),
+          fromManifest: Boolean(args['from-manifest']),
         },
       )
       if (gateB.kind === 'error') {
