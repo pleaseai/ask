@@ -294,9 +294,12 @@ export async function resolveFromRegistry(
   // For monorepo entries that hold multiple scoped packages, prefer the
   // requested package name over the entry's display name. Otherwise both
   // `@mastra/core` and `@mastra/memory` would be saved under the same
-  // `Mastra` slug and overwrite each other on disk.
+  // `Mastra` slug and overwrite each other on disk. Scoped names are
+  // normalized to a filesystem-safe slug because they end up as both
+  // a directory name (`.ask/docs/<slug>@<ver>/`) and a Claude Code skill
+  // name (which forbids `/` and `@`).
   const isMonorepoEntry = (entry.strategies?.filter(s => s.source === 'npm').length ?? 0) > 1
-  const resolvedName = isMonorepoEntry ? name : entry.name
+  const resolvedName = isMonorepoEntry ? slugifyPackageName(name) : entry.name
 
   return {
     ecosystem,
@@ -304,4 +307,26 @@ export async function resolveFromRegistry(
     version,
     strategy,
   }
+}
+
+/**
+ * Convert an npm package name into a filesystem- and skill-name-safe slug.
+ *
+ * Examples:
+ *   - `@mastra/core`     → `mastra-core`
+ *   - `@scope/pkg-name`  → `scope-pkg-name`
+ *   - `lodash`           → `lodash`
+ *   - `next`             → `next`
+ *
+ * The Claude Code skill `name:` field allows `[a-z0-9-]+` only — `@` and
+ * `/` are both invalid. Storage paths also become awkward when nested
+ * (`.ask/docs/@scope/pkg@version/` would create a stray `.ask/docs/@scope/`
+ * directory). One slug normalization handles both surfaces.
+ */
+export function slugifyPackageName(pkg: string): string {
+  if (pkg.startsWith('@')) {
+    // `@scope/pkg` → `scope-pkg`
+    return pkg.slice(1).replace('/', '-')
+  }
+  return pkg
 }

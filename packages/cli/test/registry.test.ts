@@ -1,7 +1,7 @@
 import type { RegistryStrategy } from '@pleaseai/ask-schema'
 import type { ParsedDocSpec } from '../src/registry.js'
 import { describe, expect, it } from 'bun:test'
-import { parseDocSpec, selectBestStrategy } from '../src/registry.js'
+import { parseDocSpec, selectBestStrategy, slugifyPackageName } from '../src/registry.js'
 
 describe('parseDocSpec', () => {
   describe('github kind (owner/repo)', () => {
@@ -262,6 +262,22 @@ describe('selectBestStrategy', () => {
 
   it('throws on empty list', () => {
     expect(() => selectBestStrategy([])).toThrow(/at least one/i)
+  })
+
+  describe('slugifyPackageName', () => {
+    // Used by resolveFromRegistry to normalize scoped package names into
+    // filesystem- and skill-name-safe slugs when a monorepo registry entry
+    // is being disambiguated by the requested package.
+    it('drops the leading @ and replaces / with -', () => {
+      expect(slugifyPackageName('@mastra/core')).toBe('mastra-core')
+      expect(slugifyPackageName('@mastra/memory')).toBe('mastra-memory')
+      expect(slugifyPackageName('@scope/pkg-name')).toBe('scope-pkg-name')
+    })
+
+    it('passes through unscoped names unchanged', () => {
+      expect(slugifyPackageName('lodash')).toBe('lodash')
+      expect(slugifyPackageName('next')).toBe('next')
+    })
   })
 
   // T-14 regression: ensure that registry entries WITHOUT explicit
