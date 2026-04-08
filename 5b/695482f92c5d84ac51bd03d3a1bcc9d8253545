@@ -1,0 +1,23 @@
+skills/add-docs/SKILL.md
+  614e81b0bd6ab6d6 64,66-70,72-100,103-113
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "5b695482f92c5d84ac51bd03d3a1bcc9d8253545",
+  "prompts": {
+    "614e81b0bd6ab6d6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ee7dc120-37f2-48da-8f19-9c657aad0d59",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 47,
+      "total_deletions": 10,
+      "accepted_lines": 47,
+      "overriden_lines": 0
+    }
+  }
+}
