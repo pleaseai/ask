@@ -90,7 +90,16 @@ export class NpmSource implements DocSource {
       return null
     }
 
-    const docsDir = path.join(pkgDir, docsPath)
+    // Defense-in-depth: even though `docsPath` originates from a trusted
+    // registry strategy, treat it as untrusted and reject anything that
+    // resolves outside the installed package directory. A malformed entry
+    // like `docsPath: '../../../etc/passwd'` would otherwise read arbitrary
+    // files on local-first reads.
+    const docsDir = path.resolve(pkgDir, docsPath)
+    const relativeDocsDir = path.relative(pkgDir, docsDir)
+    if (relativeDocsDir.startsWith('..') || path.isAbsolute(relativeDocsDir)) {
+      return null
+    }
     if (!fs.existsSync(docsDir)) {
       return null
     }

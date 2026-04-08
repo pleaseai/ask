@@ -315,6 +315,47 @@ describe('NpmSource.tryLocalRead', () => {
     }
   })
 
+  it('rejects docsPath that escapes the package directory (path traversal)', () => {
+    // Defense-in-depth: a malformed registry entry that puts e.g.
+    // `docsPath: '../../../etc/passwd'` must not be allowed to read
+    // outside `node_modules/<pkg>/`. The local-first read returns null
+    // (which will fall back to the tarball path, where the same input
+    // would also fail because the tarball extracts into a temp dir).
+    projectDir = createFixtureProject({
+      pkg: 'ai',
+      version: '5.1.0',
+      docsPath: 'dist/docs',
+      files: { 'index.md': '# AI SDK' },
+    })
+
+    const result = new NpmSource().tryLocalRead({
+      projectDir,
+      pkg: 'ai',
+      requestedVersion: '5.1.0',
+      docsPath: '../../etc/passwd',
+    })
+
+    expect(result).toBeNull()
+  })
+
+  it('rejects absolute docsPath', () => {
+    projectDir = createFixtureProject({
+      pkg: 'ai',
+      version: '5.1.0',
+      docsPath: 'dist/docs',
+      files: { 'index.md': '# AI SDK' },
+    })
+
+    const result = new NpmSource().tryLocalRead({
+      projectDir,
+      pkg: 'ai',
+      requestedVersion: '5.1.0',
+      docsPath: '/etc/passwd',
+    })
+
+    expect(result).toBeNull()
+  })
+
   it('returns null on broken package.json (no version field)', () => {
     projectDir = createFixtureProject({
       pkg: 'ai',
