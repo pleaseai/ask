@@ -1,0 +1,38 @@
+packages/schema/test/index.test.ts
+  a32b737e9033b302 2-10,12-24,26-27,29,32-37,39,42-47,50-51,54-55,58-59,62-63,66-67,70-71,76,82,87-92,94,97-104,106-114,117-165,170,174-180,182-307
+packages/schema/src/registry.ts
+  a32b737e9033b302 3-34,36,38-48,52-55,57-63,65-74,77-104,107-112,114-115,117,120-124,126-145,147-162,166-168,170-190,194,196-199,201-203,205-207,209
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.6",
+  "base_commit_sha": "f784b9b1771484b8fefe84d1fee0d544ee03618e",
+  "prompts": {
+    "614e81b0bd6ab6d6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ee7dc120-37f2-48da-8f19-9c657aad0d59",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 5,
+      "overriden_lines": 0
+    },
+    "a32b737e9033b302": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "25c9e57a-e829-4940-8e3d-5eb21f375474",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 658,
+      "overriden_lines": 0
+    }
+  }
+}
