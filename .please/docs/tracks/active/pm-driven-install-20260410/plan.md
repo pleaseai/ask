@@ -60,35 +60,35 @@ Existing source adapters (`sources/npm.ts`, `sources/github.ts`, `sources/web.ts
 
 ## Tasks
 
-- [ ] T001 [P] Define `AskJsonSchema` (libraries[]: PM-driven `{spec}` and standalone `{spec, ref, docsPath?}`) (file: packages/schema/src/ask-json.ts)
-- [ ] T002 [P] Define `ResolvedJsonSchema` (per-entry resolved version + content hash + last fetch time) (file: packages/schema/src/resolved.ts)
-- [ ] T003 Export `AskJson`, `ResolvedJson` from schema package; remove `Config`/`Lock` exports (file: packages/schema/src/index.ts) (depends on T001 T002)
-- [ ] T004 Rename `packages/cli/src/manifest/` to `packages/cli/src/lockfiles/`; update all imports (file: packages/cli/src/lockfiles/index.ts)
-- [ ] T005 [P] Implement `pnpm-lock.yaml` reader (file: packages/cli/src/lockfiles/pnpm.ts) (depends on T004)
-- [ ] T006 [P] Implement `yarn.lock` (classic v1) reader (file: packages/cli/src/lockfiles/yarn.ts) (depends on T004)
-- [ ] T007 Combined npm-ecosystem facade probing `bun.lock` → `package-lock.json` → `pnpm-lock.yaml` → `yarn.lock` (file: packages/cli/src/lockfiles/index.ts) (depends on T005 T006)
-- [ ] T008 Add `getAskJsonPath`/`readAskJson`/`writeAskJson`/`getResolvedJsonPath`/`readResolvedJson`/`writeResolvedJson`; remove `getConfigPath`/`getLockPath`/`readLock`/`upsertLockEntry`/`removeLockEntries` (file: packages/cli/src/io.ts) (depends on T003)
-- [ ] T009 Rewrite `listDocs` to source from `ask.json` + `.ask/resolved.json` instead of `ask.lock` (file: packages/cli/src/storage.ts) (depends on T008)
-- [ ] T010 Implement `runInstall(projectDir)` main loop — entry resolution (A/B), source adapter dispatch, `.ask/docs/` write, `AGENTS.md` upsert, skill generation, `.ask/resolved.json` short-circuit, bootstrap empty `ask.json`, warn-and-skip per-entry policy, exit 0 (file: packages/cli/src/install.ts) (depends on T007 T008)
-- [ ] T011 Reattach intent-skills second-pass to install orchestrator for entries flagged `format: 'intent-skills'` via discovery (file: packages/cli/src/install.ts) (depends on T010)
-- [ ] T012 Add `installCmd` (file: packages/cli/src/index.ts) (depends on T010)
-- [ ] T013 Add `addCmd` — parse spec, append to `ask.json`, scoped `runInstall` for new entry (file: packages/cli/src/index.ts) (depends on T010)
-- [ ] T014 Add `removeCmd` — delete entry from `ask.json`, remove `.ask/docs/<name>@*/`, remove `.claude/skills/<name>-docs/`, update `AGENTS.md` (file: packages/cli/src/index.ts) (depends on T010)
-- [ ] T015 Update existing `listCmd` data source to read `ask.json` + `.ask/resolved.json` via `list/aggregate.ts` (file: packages/cli/src/list/aggregate.ts) (depends on T009)
-- [ ] T016 Delete `docsCmd`, legacy `addCmd`, `syncCmd`, legacy `removeCmd`, `deprecatedDocsListCmd`, and `docs` entry in main `subCommands` (file: packages/cli/src/index.ts) (depends on T012 T013 T014 T015)
-- [ ] T017 Update `manageIgnoreFiles` to manage `.ask/resolved.json` ignore entry alongside `.ask/docs/` (file: packages/cli/src/ignore-files.ts) (depends on T010)
-- [ ] T018 [P] Delete legacy schema file (file: packages/schema/src/config.ts) (depends on T008)
-- [ ] T019 [P] Delete legacy schema file (file: packages/schema/src/lock.ts) (depends on T008)
-- [ ] T020 [P] Delete any `.ask/config.json` and `.ask/ask.lock` fixtures and update fixture references to `ask.json` (file: packages/cli/test/fixtures/) (depends on T016)
-- [ ] T021 [P] Schema validation tests for `AskJson` and `ResolvedJson` (file: packages/schema/test/ask-json.test.ts) (depends on T001 T002)
-- [ ] T022 [P] Lockfile reader unit tests for bun/npm/pnpm/yarn (file: packages/cli/test/lockfiles/readers.test.ts) (depends on T007)
-- [ ] T023 Install orchestrator tests — happy path, missing lockfile entry warn-skip, fetch failure warn-skip, bootstrap empty `ask.json`, idempotent short-circuit, mixed A/B entries, intent-skills second-pass (file: packages/cli/test/install/install.test.ts) (depends on T011)
-- [ ] T024 [P] CLI integration test for `ask install` (file: packages/cli/test/cli/install.test.ts) (depends on T012)
-- [ ] T025 [P] CLI integration test for `ask add` (file: packages/cli/test/cli/add.test.ts) (depends on T013)
-- [ ] T026 [P] CLI integration test for `ask remove` (file: packages/cli/test/cli/remove.test.ts) (depends on T014)
-- [ ] T027 Update existing list command test to read from `ask.json` + `.ask/resolved.json` (file: packages/cli/test/list/cli.test.ts) (depends on T015)
-- [ ] T028 [P] Update README with new `ask.json` + `ask install/add/remove/list` usage; remove `ask docs *` references (file: README.md) (depends on T016)
-- [ ] T029 [P] Update CLAUDE.md gotchas: remove `ask docs list` and `ask.lock` notes; add `ask.json`/`install` architecture notes and warn-and-skip semantics (file: CLAUDE.md) (depends on T016)
+- [x] T001 [P] Define `AskJsonSchema` (libraries[]: PM-driven `{spec}` and standalone `{spec, ref, docsPath?}`) (file: packages/schema/src/ask-json.ts)
+- [x] T002 [P] Define `ResolvedJsonSchema` (per-entry resolved version + content hash + last fetch time) (file: packages/schema/src/resolved.ts)
+- [x] T003 Export `AskJson`, `ResolvedJson` from schema package; remove `Config`/`Lock` exports (file: packages/schema/src/index.ts) (depends on T001 T002)
+- [x] T004 Rename `packages/cli/src/manifest/` to `packages/cli/src/lockfiles/`; update all imports (file: packages/cli/src/lockfiles/index.ts)
+- [x] T005 [P] Implement `pnpm-lock.yaml` reader (file: packages/cli/src/lockfiles/pnpm.ts) (depends on T004)
+- [x] T006 [P] Implement `yarn.lock` (classic v1) reader (file: packages/cli/src/lockfiles/yarn.ts) (depends on T004)
+- [x] T007 Combined npm-ecosystem facade probing `bun.lock` → `package-lock.json` → `pnpm-lock.yaml` → `yarn.lock` (file: packages/cli/src/lockfiles/index.ts) (depends on T005 T006)
+- [x] T008 Add `getAskJsonPath`/`readAskJson`/`writeAskJson`/`getResolvedJsonPath`/`readResolvedJson`/`writeResolvedJson`; remove `getConfigPath`/`getLockPath`/`readLock`/`upsertLockEntry`/`removeLockEntries` (file: packages/cli/src/io.ts) (depends on T003)
+- [x] T009 Rewrite `listDocs` to source from `ask.json` + `.ask/resolved.json` instead of `ask.lock` (file: packages/cli/src/storage.ts) (depends on T008)
+- [x] T010 Implement `runInstall(projectDir)` main loop — entry resolution (A/B), source adapter dispatch, `.ask/docs/` write, `AGENTS.md` upsert, skill generation, `.ask/resolved.json` short-circuit, bootstrap empty `ask.json`, warn-and-skip per-entry policy, exit 0 (file: packages/cli/src/install.ts) (depends on T007 T008)
+- [x] T011 Reattach intent-skills second-pass to install orchestrator for entries flagged `format: 'intent-skills'` via discovery (file: packages/cli/src/install.ts) (depends on T010)
+- [x] T012 Add `installCmd` (file: packages/cli/src/index.ts) (depends on T010)
+- [x] T013 Add `addCmd` — parse spec, append to `ask.json`, scoped `runInstall` for new entry (file: packages/cli/src/index.ts) (depends on T010)
+- [x] T014 Add `removeCmd` — delete entry from `ask.json`, remove `.ask/docs/<name>@*/`, remove `.claude/skills/<name>-docs/`, update `AGENTS.md` (file: packages/cli/src/index.ts) (depends on T010)
+- [x] T015 Update existing `listCmd` data source to read `ask.json` + `.ask/resolved.json` via `list/aggregate.ts` (file: packages/cli/src/list/aggregate.ts) (depends on T009)
+- [x] T016 Delete `docsCmd`, legacy `addCmd`, `syncCmd`, legacy `removeCmd`, `deprecatedDocsListCmd`, and `docs` entry in main `subCommands` (file: packages/cli/src/index.ts) (depends on T012 T013 T014 T015)
+- [x] T017 Update `manageIgnoreFiles` to manage `.ask/resolved.json` ignore entry alongside `.ask/docs/` (file: packages/cli/src/ignore-files.ts) (depends on T010)
+- [x] T018 [P] Delete legacy schema file (file: packages/schema/src/config.ts) (depends on T008)
+- [x] T019 [P] Delete legacy schema file (file: packages/schema/src/lock.ts) (depends on T008)
+- [x] T020 [P] Delete any `.ask/config.json` and `.ask/ask.lock` fixtures and update fixture references to `ask.json` (file: packages/cli/test/fixtures/) (depends on T016)
+- [x] T021 [P] Schema validation tests for `AskJson` and `ResolvedJson` (file: packages/schema/test/ask-json.test.ts) (depends on T001 T002)
+- [x] T022 [P] Lockfile reader unit tests for bun/npm/pnpm/yarn (file: packages/cli/test/lockfiles/readers.test.ts) (depends on T007)
+- [x] T023 Install orchestrator tests — happy path, missing lockfile entry warn-skip, fetch failure warn-skip, bootstrap empty `ask.json`, idempotent short-circuit, mixed A/B entries, intent-skills second-pass (file: packages/cli/test/install/install.test.ts) (depends on T011)
+- [x] T024 [P] CLI integration test for `ask install` (file: packages/cli/test/cli/install.test.ts) (depends on T012)
+- [x] T025 [P] CLI integration test for `ask add` (file: packages/cli/test/cli/add.test.ts) (depends on T013)
+- [x] T026 [P] CLI integration test for `ask remove` (file: packages/cli/test/cli/remove.test.ts) (depends on T014)
+- [x] T027 Update existing list command test to read from `ask.json` + `.ask/resolved.json` (file: packages/cli/test/list/cli.test.ts) (depends on T015)
+- [x] T028 [P] Update README with new `ask.json` + `ask install/add/remove/list` usage; remove `ask docs *` references (file: README.md) (depends on T016)
+- [x] T029 [P] Update CLAUDE.md gotchas: remove `ask docs list` and `ask.lock` notes; add `ask.json`/`install` architecture notes and warn-and-skip semantics (file: CLAUDE.md) (depends on T016)
 
 ## Dependencies
 
@@ -148,14 +148,14 @@ T012 → T024;  T013 → T025;  T014 → T026;  T015 → T027
 
 ## Progress
 
-- [ ] Phase A (T001-T003): Schemas
-- [ ] Phase B (T004-T007): Lockfile readers
-- [ ] Phase C (T008-T009): io + storage
-- [ ] Phase D (T010-T011): Install orchestrator
-- [ ] Phase E (T012-T016): CLI surface
-- [ ] Phase F (T017-T020): Cleanup
-- [ ] Phase G (T021-T027): Tests
-- [ ] Phase H (T028-T029): Docs
+- [x] Phase A (T001-T003): Schemas
+- [x] Phase B (T004-T007): Lockfile readers
+- [x] Phase C (T008-T009): io + storage
+- [x] Phase D (T010-T011): Install orchestrator
+- [x] Phase E (T012-T016): CLI surface
+- [x] Phase F (T017-T020): Cleanup
+- [x] Phase G (T021-T027): Tests
+- [x] Phase H (T028-T029): Docs
 
 ## Decision Log
 

@@ -1,9 +1,11 @@
 import type { IntentSkillEntry } from './discovery/types.js'
+import type { LibraryEntry } from './schemas.js'
 import type { DocFile } from './sources/index.js'
 import fs from 'node:fs'
 import path from 'node:path'
 import { readIntentSkillsMap } from './agents-intent.js'
-import { getAskDir, readLock } from './io.js'
+import { getAskDir, readAskJson, readResolvedJson } from './io.js'
+import { libraryNameFromSpec } from './spec.js'
 
 export function getDocsDir(projectDir: string): string {
   return path.join(getAskDir(projectDir), 'docs')
@@ -63,7 +65,6 @@ export function removeDocs(
     }
   }
   else {
-    // Remove all versions for this library
     const baseDir = getDocsDir(projectDir)
     if (!fs.existsSync(baseDir))
       return
@@ -77,37 +78,32 @@ export function removeDocs(
 }
 
 /**
- * Lock-derived view of the entries installed for a project. Unlike the
- * legacy filesystem scan, this reads `.ask/ask.lock` as the source of
- * truth, so:
- *
- *   - `intent-skills`-format entries (no filesystem copy) are surfaced
- *     alongside `docs`-format entries;
- *   - the `source`, `location`, and `format` fields are accurate even
- *     for the local-first npm path that never writes a tarball.
- *
- * `fileCount` is the number of files on disk for docs entries, and the
- * number of skill mappings for intent-skills entries.
+ * View of one library entry, joined from `ask.json` (intent) and
+ * `.ask/resolved.json` (last successful materialization). Entries that
+ * are declared in `ask.json` but never installed surface with
+ * `version: 'unresolved'` and `fileCount: 0` so users can spot them in
+ * `ask list`.
  */
 export interface ListDocsEntry {
+  /** Library slug — directory under `.ask/docs/` and skill dir name. */
   name: string
+  /** Resolved version (or 'unresolved' if not yet installed). */
   version: string
   format: 'docs' | 'intent-skills'
-  source: 'tarball' | 'installPath' | 'github' | 'web' | 'llms-txt'
+  source: 'pm-driven' | 'github' | 'unresolved'
+  /** Spec from `ask.json`. */
+  spec: string
   location: string
   fileCount: number
   skills?: IntentSkillEntry[]
 }
 
 export function listDocs(projectDir: string): ListDocsEntry[] {
-  const lock = readLock(projectDir)
-  const names = Object.keys(lock.entries).sort()
-  if (names.length === 0) {
+  const askJson = readAskJson(projectDir)
+  if (!askJson) {
     return []
   }
-
-  // Lazily load the intent-skills block only when we actually need it,
-  // since readIntentSkillsMap does a file read + parse.
+  const resolved = readResolvedJson(projectDir)
   let intentMap: Map<string, IntentSkillEntry[]> | null = null
   const getIntentMap = (): Map<string, IntentSkillEntry[]> => {
     if (!intentMap) {
@@ -117,56 +113,61 @@ export function listDocs(projectDir: string): ListDocsEntry[] {
   }
 
   const out: ListDocsEntry[] = []
-  for (const name of names) {
-    const entry = lock.entries[name]!
-    if (entry.source === 'npm' && entry.format === 'intent-skills') {
-      const skills = getIntentMap().get(name) ?? []
-      const location = entry.installPath
-        ?? path.join('node_modules', name)
+  for (const lib of askJson.libraries) {
+    const name = libraryNameFromSpec(lib.spec)
+    const cached = resolved.entries[name]
+    const sourceKind: ListDocsEntry['source'] = lib.spec.startsWith('github:')
+      ? 'github'
+      : 'pm-driven'
+
+    if (!cached) {
       out.push({
         name,
-        version: entry.version,
+        version: 'unresolved',
+        format: 'docs',
+        source: 'unresolved',
+        spec: lib.spec,
+        location: '(not installed — run `ask install`)',
+        fileCount: 0,
+      })
+      continue
+    }
+
+    if (cached.format === 'intent-skills') {
+      const skills = getIntentMap().get(name) ?? []
+      out.push({
+        name,
+        version: cached.resolvedVersion,
         format: 'intent-skills',
-        source: 'installPath',
-        location,
+        source: sourceKind,
+        spec: lib.spec,
+        location: `node_modules/${pkgFromSpec(lib)}`,
         fileCount: skills.length,
         skills,
       })
       continue
     }
 
-    // Docs format — files live under .ask/docs/<name>@<version>.
-    const docsDir = getLibraryDocsDir(projectDir, name, entry.version)
-    const fileCount = fs.existsSync(docsDir) ? countFiles(docsDir) : 0
-    const location = path.relative(projectDir, docsDir) || docsDir
-
-    let source: ListDocsEntry['source']
-    switch (entry.source) {
-      case 'github':
-        source = 'github'
-        break
-      case 'web':
-        source = 'web'
-        break
-      case 'llms-txt':
-        source = 'llms-txt'
-        break
-      case 'npm':
-        source = entry.installPath && !entry.tarball ? 'installPath' : 'tarball'
-        break
-    }
-
+    const docsDir = getLibraryDocsDir(projectDir, name, cached.resolvedVersion)
+    const fileCount = fs.existsSync(docsDir) ? countFiles(docsDir) : cached.fileCount
     out.push({
       name,
-      version: entry.version,
+      version: cached.resolvedVersion,
       format: 'docs',
-      source,
-      location,
+      source: sourceKind,
+      spec: lib.spec,
+      location: path.relative(projectDir, docsDir) || docsDir,
       fileCount,
     })
   }
+  return out.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0))
+}
 
-  return out
+function pkgFromSpec(lib: LibraryEntry): string {
+  // For npm: prefix, return the package name (no slug). For github,
+  // return owner/repo for display.
+  const colonIdx = lib.spec.indexOf(':')
+  return colonIdx >= 0 ? lib.spec.slice(colonIdx + 1) : lib.spec
 }
 
 function countFiles(dir: string): number {

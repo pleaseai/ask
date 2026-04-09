@@ -1,19 +1,54 @@
-import type { SourceConfig } from '../schemas.js'
 import { GithubSource } from './github.js'
 import { LlmsTxtSource } from './llms-txt.js'
 import { NpmSource } from './npm.js'
 import { WebSource } from './web.js'
 
-export type { SourceConfig }
+/**
+ * CLI-internal source-adapter input. The pre-refactor codebase derived
+ * this from a Zod schema, but with `.ask/config.json` gone the Zod
+ * surface served only as a shape for the adapters — there is no
+ * persisted JSON to validate. A plain TS union is now sufficient and
+ * keeps the schema package focused on `ask.json` / `resolved.json`.
+ */
+export interface NpmSourceOptions {
+  source: 'npm'
+  name: string
+  version: string
+  package?: string
+  docsPath?: string
+}
 
-// Re-export per-source variants as Extract<> aliases over the Zod-inferred
-// union. This makes the Zod schema in `../schemas.ts` the single source of
-// truth for runtime invariants — the CLI cannot construct a SourceConfig
-// that satisfies the type but fails Zod validation downstream.
-export type NpmSourceOptions = Extract<SourceConfig, { source: 'npm' }>
-export type GithubSourceOptions = Extract<SourceConfig, { source: 'github' }>
-export type WebSourceOptions = Extract<SourceConfig, { source: 'web' }>
-export type LlmsTxtSourceOptions = Extract<SourceConfig, { source: 'llms-txt' }>
+export interface GithubSourceOptions {
+  source: 'github'
+  name: string
+  version: string
+  repo: string
+  branch?: string
+  tag?: string
+  docsPath?: string
+}
+
+export interface WebSourceOptions {
+  source: 'web'
+  name: string
+  version: string
+  urls: string[]
+  maxDepth?: number
+  allowedPathPrefix?: string
+}
+
+export interface LlmsTxtSourceOptions {
+  source: 'llms-txt'
+  name: string
+  version: string
+  url: string
+}
+
+export type SourceConfig
+  = | NpmSourceOptions
+    | GithubSourceOptions
+    | WebSourceOptions
+    | LlmsTxtSourceOptions
 
 export interface DocFile {
   path: string

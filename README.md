@@ -6,25 +6,41 @@ Inspired by [Next.js evals](https://nextjs.org/evals) showing that providing `AG
 
 ## How It Works
 
+ASK is a downstream tool of your project's package manager. You declare
+the libraries you care about in a root-level `ask.json`, and `ask
+install` resolves each entry against the right source of truth — your
+PM lockfile for `npm:` entries, an explicit `ref` for standalone
+GitHub entries.
+
 ```bash
-ask docs add npm:next                # Auto-detects version from your project lockfile
-ask docs add npm:zod@3.22            # Explicit ecosystem + version
-ask docs add pypi:fastapi@0.115      # Python libraries too
-ask docs add vercel/next.js          # GitHub shorthand (no registry needed)
-ask docs add vercel/next.js@v15.0.0  # …pinned to a tag or branch
+ask add npm:next                              # PM-driven (version comes from bun.lock / package-lock / etc.)
+ask add github:vercel/next.js --ref v14.2.3   # Standalone github entry with an explicit ref
+ask install                                   # (Re)materialize everything declared in ask.json
 ```
 
-> Bare names (`ask docs add next`) are rejected — use an `<ecosystem>:<name>`
-> prefix or the `<owner>/<repo>` shorthand so the CLI knows how to resolve
-> the library.
+After `ask add`, your `ask.json` looks like:
 
-This single command:
+```json
+{
+  "libraries": [
+    { "spec": "npm:next" },
+    { "spec": "github:vercel/next.js", "ref": "v14.2.3", "docsPath": "docs" }
+  ]
+}
+```
 
-1. Looks up the library in the [ASK Registry](https://ask-registry.pages.dev) for optimal source config
-2. Downloads the library's documentation from the resolved source
-3. Saves it to `.ask/docs/<library>@<version>/`
-4. Creates a Claude Code skill in `.claude/skills/<library>-docs/SKILL.md`
-5. Generates/updates `AGENTS.md` with instructions for AI agents
+Each successful install:
+
+1. Resolves the version (lockfile for `npm:`, `ref` for `github:`)
+2. Looks up the library in the [ASK Registry](https://ask-registry.pages.dev) when applicable
+3. Downloads the library's documentation from the resolved source
+4. Saves it to `.ask/docs/<library>@<version>/`
+5. Creates a Claude Code skill in `.claude/skills/<library>-docs/SKILL.md`
+6. Generates/updates `AGENTS.md` with instructions for AI agents
+7. Records the resolution in `.ask/resolved.json` (gitignored cache for fast re-runs)
+
+`ask install` is `postinstall`-friendly: failures on individual entries
+emit a warning and the command still exits 0.
 
 ## Installation
 
@@ -42,69 +58,63 @@ apps/registry/      ASK Registry browser (Nuxt + Nuxt Content v3, Cloudflare Pag
 
 ## Usage
 
-### Add documentation
+### Add a library
 
 ```bash
-# Ecosystem prefix with no version — CLI reads the project lockfile
-# (bun.lock → package-lock.json → pnpm-lock.yaml → yarn.lock → package.json)
-# and uses the installed version automatically.
-ask docs add npm:next
-ask docs add pypi:fastapi
+# PM-driven npm entry — version comes from your lockfile at install time
+ask add npm:next
+ask add npm:@mastra/client-js
 
-# Ecosystem prefix with an explicit version
-ask docs add npm:next@canary
-ask docs add pypi:fastapi@0.115
-
-# Skip the manifest lookup and fetch the ecosystem `latest` tag instead
-ask docs add --no-manifest npm:next
-
-# Require the manifest — error out if no lockfile entry exists for the name
-ask docs add --from-manifest npm:next
-
-# GitHub shorthand — owner/repo[@ref] skips the registry entirely
-ask docs add vercel/next.js                # latest default branch
-ask docs add vercel/next.js@v15.0.0        # pinned to a tag
-ask docs add vercel/next.js@canary         # …or a branch (ref is opaque)
-
-# Manual source specification (when not in registry)
-ask docs add mylib@1.0 -s npm --docs-path dist/docs
-ask docs add mylib@1.0 -s github --repo owner/repo --tag v1.0 --docs-path docs
-ask docs add mylib@1.0 -s web --url https://mylib.dev/docs
+# Standalone github entry — version is pinned via --ref
+ask add github:vercel/next.js --ref v14.2.3 --docs-path docs
+ask add vercel/next.js --ref main             # github: prefix is implied for owner/repo
 ```
 
-### Identifier syntax
+`ask add` appends an entry to `ask.json` and immediately runs install
+for that single entry. The flat command surface replaces the old `ask
+docs add | sync | list | remove` namespace — no `ask sync` alias is
+provided; use `ask install`.
 
-`ask docs add <spec>` accepts three identifier shapes, disambiguated by punctuation:
-
-| Shape | Example | Behavior |
-|---|---|---|
-| `owner/repo[@ref]` | `vercel/next.js@canary` | GitHub fast-path. Skips the registry; passes the ref straight to the github source (tag or branch — opaque). |
-| `ecosystem:name[@version]` | `npm:next@^15` | Registry lookup with an explicit ecosystem prefix. When the version is omitted, the CLI auto-resolves it from the project manifest/lockfile. |
-| `name[@version]` | `next` | **Rejected.** Bare names are ambiguous — use `npm:next` or `vercel/next.js` instead. |
-
-The github shorthand is strict — exactly one slash, no colon. `a/b/c` and `org:team/repo` produce a parse error with actionable guidance.
-
-### Sync all configured docs
+### Install all declared libraries
 
 ```bash
-ask docs sync
+ask install            # Materialize every entry in ask.json
+ask install --force    # Re-fetch even when .ask/resolved.json says nothing changed
 ```
 
-Re-downloads all libraries listed in `.ask/config.json` and updates `.ask/ask.lock`.
-Entries whose content has not changed since the last fetch are skipped.
+`ask install` reads `ask.json`, resolves each entry, fetches docs via
+the existing source adapters, and writes `.ask/docs/`, `AGENTS.md`,
+and `.claude/skills/<name>-docs/`. Successful entries are persisted
+even when others fail; the exit code is always 0 so the command is
+safe to wire up as a `postinstall` script:
 
-### List downloaded docs
+```jsonc
+// package.json
+{
+  "scripts": {
+    "postinstall": "ask install"
+  }
+}
+```
+
+### List declared libraries
 
 ```bash
-ask docs list
+ask list           # Tabular view of ask.json + .ask/resolved.json
+ask list --json    # Same data as ListModelSchema-conformant JSON
 ```
 
-### Remove documentation
+### Remove a library
 
 ```bash
-ask docs remove next@canary   # specific version
-ask docs remove next           # all versions
+ask remove next
+ask remove @mastra/client-js
+ask remove github:vercel/next.js
 ```
+
+`ask remove` deletes the matching entry from `ask.json`, removes the
+materialized files under `.ask/docs/<name>@*/`, removes the skill
+file, and updates the `AGENTS.md` block.
 
 ## Registry
 
@@ -156,9 +166,9 @@ Add a new `.md` file under `apps/registry/content/registry/<github-owner>/` and 
 When a library isn't in the registry, ASK can **automatically resolve** its GitHub repository from ecosystem package metadata. This works for any ecosystem-prefixed spec:
 
 ```bash
-ask docs add npm:lodash       # Looks up registry.npmjs.org → lodash/lodash
-ask docs add pypi:fastapi     # Looks up pypi.org → fastapi/fastapi
-ask docs add pub:riverpod     # Looks up pub.dev → rrousselGit/riverpod
+ask add npm:lodash       # Looks up registry.npmjs.org → lodash/lodash
+ask add pypi:fastapi     # Looks up pypi.org → fastapi/fastapi
+ask add pub:riverpod     # Looks up pub.dev → rrousselGit/riverpod
 ```
 
 **Supported ecosystems:**

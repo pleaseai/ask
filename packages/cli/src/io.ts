@@ -1,8 +1,8 @@
-import type { Config, Lock, LockEntry } from './schemas.js'
+import type { AskJson, ResolvedEntry, ResolvedJson } from './schemas.js'
 import { createHash } from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
-import { ConfigSchema, LockSchema } from './schemas.js'
+import { AskJsonSchema, ResolvedJsonSchema } from './schemas.js'
 
 /**
  * Recursively sort object keys for deterministic JSON serialization.
@@ -33,21 +33,18 @@ export function sortedJSON(value: unknown): string {
 const ENCODER = new TextEncoder()
 const NUL = new Uint8Array([0])
 
-/**
- * Compute a deterministic content hash over a list of files.
- * Files are sorted by relative path; each file contributes
- * `<relpath>\0<bytes>\0` to the hash stream. The null separators prevent
- * `path + content` ambiguity (e.g. "ab" + "cd" vs "a" + "bcd").
- *
- * Accepts either pre-encoded bytes or string content (the common case for
- * DocFile records returned by source adapters).
- */
 export interface HashableFile {
   relpath: string
   bytes?: Uint8Array
   content?: string
 }
 
+/**
+ * Compute a deterministic content hash over a list of files. Files are
+ * sorted by relative path; each file contributes `<relpath>\0<bytes>\0`
+ * to the hash stream. Null separators prevent `path + content`
+ * ambiguity (`"ab" + "cd"` vs `"a" + "bcd"`).
+ */
 export function contentHash(files: HashableFile[]): string {
   const sorted = [...files].sort((a, b) =>
     a.relpath < b.relpath ? -1 : a.relpath > b.relpath ? 1 : 0,
@@ -63,29 +60,35 @@ export function contentHash(files: HashableFile[]): string {
 }
 
 const ASK_DIR = '.ask'
-const CONFIG_FILE = 'config.json'
-const LOCK_FILE = 'ask.lock'
+const ASK_JSON_FILE = 'ask.json'
+const RESOLVED_FILE = 'resolved.json'
 
 export function getAskDir(projectDir: string): string {
   return path.join(projectDir, ASK_DIR)
 }
 
-export function getConfigPath(projectDir: string): string {
-  return path.join(getAskDir(projectDir), CONFIG_FILE)
+/**
+ * `ask.json` is a root-level file (sits beside `package.json`), NOT
+ * inside `.ask/`. The `.ask/` directory is reserved for materialized,
+ * gitignored output (docs + resolved cache).
+ */
+export function getAskJsonPath(projectDir: string): string {
+  return path.join(projectDir, ASK_JSON_FILE)
 }
 
-export function getLockPath(projectDir: string): string {
-  return path.join(getAskDir(projectDir), LOCK_FILE)
+export function getResolvedJsonPath(projectDir: string): string {
+  return path.join(getAskDir(projectDir), RESOLVED_FILE)
 }
 
 /**
- * Read and validate `.ask/config.json`. Returns the default empty config when
- * the file does not exist. Throws on invalid contents.
+ * Read and validate `ask.json`. Returns null when the file does not
+ * exist (so the install orchestrator can bootstrap an empty file per
+ * FR-8). Throws on invalid JSON or schema violations.
  */
-export function readConfig(projectDir: string): Config {
-  const file = getConfigPath(projectDir)
+export function readAskJson(projectDir: string): AskJson | null {
+  const file = getAskJsonPath(projectDir)
   if (!fs.existsSync(file)) {
-    return { schemaVersion: 1, docs: [] }
+    return null
   }
   const raw = fs.readFileSync(file, 'utf-8')
   let parsed: unknown
@@ -94,112 +97,110 @@ export function readConfig(projectDir: string): Config {
   }
   catch (err) {
     throw new Error(
-      `Failed to parse ${file}: ${err instanceof Error ? err.message : err}. `
-      + 'The file may be corrupt — delete it and re-run `ask docs sync` to regenerate.',
+      `Failed to parse ${file}: ${err instanceof Error ? err.message : err}.`,
     )
   }
-  return ConfigSchema.parse(parsed)
+  return AskJsonSchema.parse(parsed)
 }
 
 /**
- * Validate, sort, and write `.ask/config.json`. Sorts `docs[]` by name.
- * Throws (without writing) if the input fails Zod validation.
+ * Validate and write `ask.json`. Library entries are NOT reordered —
+ * users may care about declaration order, and `ask add` always
+ * appends.
  */
-export function writeConfig(projectDir: string, config: Config): void {
-  const validated = ConfigSchema.parse(config)
-  const sortedDocs = [...validated.docs].sort((a, b) =>
-    a.name < b.name ? -1 : a.name > b.name ? 1 : 0,
-  )
-  const out: Config = { ...validated, docs: sortedDocs }
-  const file = getConfigPath(projectDir)
-  fs.mkdirSync(path.dirname(file), { recursive: true })
-  fs.writeFileSync(file, sortedJSON(out), 'utf-8')
-}
-
-/**
- * Read and validate `.ask/ask.lock`. Returns the default empty lock when the
- * file does not exist. Throws on invalid contents.
- */
-export function readLock(projectDir: string): Lock {
-  const file = getLockPath(projectDir)
-  if (!fs.existsSync(file)) {
-    return {
-      lockfileVersion: 1,
-      generatedAt: '1970-01-01T00:00:00Z',
-      entries: {},
-    }
-  }
-  const raw = fs.readFileSync(file, 'utf-8')
-  let parsed: unknown
-  try {
-    parsed = JSON.parse(raw)
-  }
-  catch (err) {
-    throw new Error(
-      `Failed to parse ${file}: ${err instanceof Error ? err.message : err}. `
-      + 'The file may be corrupt — delete it and re-run `ask docs sync` to regenerate.',
-    )
-  }
-  return LockSchema.parse(parsed)
-}
-
-/**
- * Validate, sort, and write `.ask/ask.lock`. Throws (without writing) if the
- * input fails Zod validation.
- */
-export function writeLock(projectDir: string, lock: Lock): void {
-  const validated = LockSchema.parse(lock)
-  const file = getLockPath(projectDir)
+export function writeAskJson(projectDir: string, askJson: AskJson): void {
+  const validated = AskJsonSchema.parse(askJson)
+  const file = getAskJsonPath(projectDir)
   fs.mkdirSync(path.dirname(file), { recursive: true })
   fs.writeFileSync(file, sortedJSON(validated), 'utf-8')
 }
 
 /**
- * Upsert a single entry into `.ask/ask.lock`. Updates `generatedAt` only when
- * the entry actually changes (so byte-stable on no-op re-runs).
+ * Read and validate `.ask/resolved.json`. Returns the default empty
+ * cache when the file does not exist or fails validation — the cache
+ * is rebuilt from scratch in that case (FR-11).
  */
-export function upsertLockEntry(
-  projectDir: string,
-  name: string,
-  entry: LockEntry,
-): void {
-  const lock = readLock(projectDir)
-  const previous = lock.entries[name]
-  const changed = !previous
-    || sortedJSON(stripFetchedAt(previous)) !== sortedJSON(stripFetchedAt(entry))
-  // No-op short circuit: if nothing changed (modulo fetchedAt), don't rewrite
-  // the file at all. This preserves mtime for build caches and file watchers.
-  if (!changed) {
-    return
+export function readResolvedJson(projectDir: string): ResolvedJson {
+  const file = getResolvedJsonPath(projectDir)
+  if (!fs.existsSync(file)) {
+    return emptyResolved()
   }
-  writeLock(projectDir, {
-    lockfileVersion: 1,
-    generatedAt: new Date().toISOString(),
-    entries: { ...lock.entries, [name]: entry },
-  })
+  const raw = fs.readFileSync(file, 'utf-8')
+  try {
+    return ResolvedJsonSchema.parse(JSON.parse(raw))
+  }
+  catch {
+    // Treat any read/parse/validation failure as "no cache" — the next
+    // install will rebuild it cleanly. This is the contract that makes
+    // resolved.json safe to delete by hand.
+    return emptyResolved()
+  }
 }
 
-function stripFetchedAt(entry: LockEntry): Omit<LockEntry, 'fetchedAt'> {
-  const { fetchedAt: _, ...rest } = entry
-  return rest as Omit<LockEntry, 'fetchedAt'>
+function emptyResolved(): ResolvedJson {
+  return {
+    schemaVersion: 1,
+    generatedAt: '1970-01-01T00:00:00Z',
+    entries: {},
+  }
 }
 
 /**
- * Remove one or more entries from the lock by name. No-op if absent.
+ * Validate and write `.ask/resolved.json`. Always rewrites the
+ * `generatedAt` timestamp; callers should batch updates rather than
+ * call once per entry.
  */
-export function removeLockEntries(
+export function writeResolvedJson(projectDir: string, resolved: ResolvedJson): void {
+  const validated = ResolvedJsonSchema.parse(resolved)
+  const file = getResolvedJsonPath(projectDir)
+  fs.mkdirSync(path.dirname(file), { recursive: true })
+  fs.writeFileSync(file, sortedJSON(validated), 'utf-8')
+}
+
+/**
+ * Upsert a single entry into `.ask/resolved.json`. Skips the rewrite
+ * when nothing changed (modulo `fetchedAt`) so file watchers and build
+ * caches stay quiet on no-op runs.
+ */
+export function upsertResolvedEntry(
   projectDir: string,
-  names: string[],
+  key: string,
+  entry: ResolvedEntry,
 ): void {
-  if (names.length === 0)
+  const resolved = readResolvedJson(projectDir)
+  const previous = resolved.entries[key]
+  const changed = !previous
+    || sortedJSON(stripFetchedAt(previous)) !== sortedJSON(stripFetchedAt(entry))
+  if (!changed) {
     return
-  const lock = readLock(projectDir)
-  const set = new Set(names)
+  }
+  writeResolvedJson(projectDir, {
+    schemaVersion: 1,
+    generatedAt: new Date().toISOString(),
+    entries: { ...resolved.entries, [key]: entry },
+  })
+}
+
+function stripFetchedAt(entry: ResolvedEntry): Omit<ResolvedEntry, 'fetchedAt'> {
+  const { fetchedAt: _f, ...rest } = entry
+  return rest
+}
+
+/**
+ * Remove one or more entries from `.ask/resolved.json` by key. No-op
+ * if absent.
+ */
+export function removeResolvedEntries(projectDir: string, keys: string[]): void {
+  if (keys.length === 0) {
+    return
+  }
+  const resolved = readResolvedJson(projectDir)
+  const set = new Set(keys)
   const remaining = Object.fromEntries(
-    Object.entries(lock.entries).filter(([k]) => !set.has(k)),
+    Object.entries(resolved.entries).filter(([k]) => !set.has(k)),
   )
-  writeLock(projectDir, {
-    lockfileVersion: 1,
+  writeResolvedJson(projectDir, {
+    schemaVersion: 1,
     generatedAt: new Date().toISOString(),
     entries: remaining,
   })
