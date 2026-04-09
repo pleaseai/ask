@@ -5,7 +5,8 @@
     "build": "turbo build",
     "dev": "turbo dev",
     "lint": "turbo lint",
-    "lint:fix": "turbo lint:fix"
+    "lint:fix": "turbo lint:fix",
+    "postinstall": "rm -rf node_modules/.bun/h3@2.0.1-rc.11*"
   },
   "workspaces": [
     "packages/*",
@@ -18,5 +19,14 @@
   "packageManager": "bun@1.3.11",
   "trustedDependencies": [
     "@parcel/watcher"
-  ]
+  ],
+  "overrides": {
+    "h3": "^1.15.11",
+    "h3-next": "npm:h3@^1.15.5",
+    "ofetch": "^1.4.1",
+    "vite": "~7.3.1"
+  },
+  "patchedDependencies": {
+    "@nuxt/test-utils@4.0.0": "patches/@nuxt%2Ftest-utils@4.0.0.patch"
+  }
 }

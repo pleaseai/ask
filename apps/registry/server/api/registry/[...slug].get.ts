@@ -1,5 +1,7 @@
 import type { RegistryEntry, RegistryPackage, RegistrySource } from '@pleaseai/ask-schema'
-import { findPackageByAlias, isMonorepoEntry, slugifyPackageName } from '@pleaseai/ask-schema'
+import type { H3Event } from 'h3'
+
+import { isMonorepoEntry, slugifyPackageName } from '@pleaseai/ask-schema'
 
 /**
  * Registry lookup endpoint.
@@ -53,6 +55,53 @@ interface RegistryApiResponse {
    * is expected to try them head-first and walk the list on failure.
    */
   sources: RegistrySource[]
+}
+
+/**
+ * Per-isolate alias index cache.
+ *
+ * The alias lookup path previously called `queryCollection(...).all()` on
+ * every request and linearly scanned every entry. Registry grows entry by
+ * entry, and on a Workers isolate each call re-materialised the full
+ * collection into memory — a likely culprit for the production hang we
+ * investigated, where `ask-registry.pages.dev` timed out on every route.
+ *
+ * Instead we build a `${ecosystem}:${name}` → `{ entry, pkg }` map once per
+ * isolate and reuse it across requests. An isolate that has already served
+ * any request pays O(1) for alias resolution; cold isolates pay one O(n)
+ * walk. The cache is invalidated implicitly when the isolate dies — i.e.
+ * on every deploy — which matches how Content v3 ships its SQLite dump.
+ */
+interface AliasHit {
+  entry: RegistryEntry
+  pkg: RegistryPackage
+}
+let aliasIndex: Map<string, AliasHit> | null = null
+
+async function getAliasIndex(event: H3Event): Promise<Map<string, AliasHit>> {
+  if (aliasIndex)
+    return aliasIndex
+
+  // @ts-expect-error — see the queryCollection signature note below.
+  const allEntries = await queryCollection(event, 'registry').all()
+
+  const index = new Map<string, AliasHit>()
+  for (const rawEntry of allEntries) {
+    const entry = rawEntry as unknown as RegistryEntry
+    if (!entry.packages)
+      continue
+    for (const pkg of entry.packages) {
+      for (const alias of pkg.aliases) {
+        const key = `${alias.ecosystem}:${alias.name}`
+        // First-writer-wins matches the previous linear-scan behavior for
+        // hypothetical cross-entry alias collisions.
+        if (!index.has(key))
+          index.set(key, { entry, pkg })
+      }
+    }
+  }
+  aliasIndex = index
+  return index
 }
 
 function buildResponse(
@@ -125,24 +174,16 @@ export default defineEventHandler(async (event): Promise<RegistryApiResponse> =>
     return buildResponse(entry, pkg, entry.name)
   }
 
-  // 2. Alias lookup (ecosystem/name). Intra-entry alias uniqueness is
-  //    enforced by the schema's superRefine; we still scan all entries
-  //    linearly to find the owning one.
-  // @ts-expect-error — see above note on queryCollection signature.
-  const allEntries = await queryCollection(event, 'registry').all()
-
-  for (const rawEntry of allEntries) {
-    const entry = rawEntry as unknown as RegistryEntry
-    if (!entry.packages)
-      continue
-
-    const pkg = findPackageByAlias(entry, first as RegistryPackage['aliases'][number]['ecosystem'], second)
-    if (pkg) {
-      const resolvedName = isMonorepoEntry(entry)
-        ? slugifyPackageName(pkg.name)
-        : entry.name
-      return buildResponse(entry, pkg, resolvedName)
-    }
+  // 2. Alias lookup (ecosystem/name). Served from a per-isolate index so
+  //    warm isolates skip the full-collection scan entirely. Intra-entry
+  //    alias uniqueness is enforced by the schema's superRefine.
+  const index = await getAliasIndex(event)
+  const hit = index.get(`${first}:${second}`)
+  if (hit) {
+    const resolvedName = isMonorepoEntry(hit.entry)
+      ? slugifyPackageName(hit.pkg.name)
+      : hit.entry.name
+    return buildResponse(hit.entry, hit.pkg, resolvedName)
   }
 
   throw createError({ statusCode: 404, statusMessage: `Entry not found: ${slug}` })

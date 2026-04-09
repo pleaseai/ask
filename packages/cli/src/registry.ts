@@ -189,7 +189,11 @@ export async function fetchRegistryEntry(
   const url = `${REGISTRY_BASE_URL}/api/registry/${encodeURIComponent(first)}/${encodeURIComponent(second)}`
 
   try {
-    const response = await fetch(url)
+    // Bound the lookup so a hung or unreachable registry cannot freeze the
+    // CLI. On timeout the AbortError falls through to the catch below and
+    // the caller treats it the same as a miss, letting downstream resolvers
+    // (ecosystem metadata → github fast-path) take over.
+    const response = await fetch(url, { signal: AbortSignal.timeout(10_000) })
     if (response.status === 404) {
       return null
     }

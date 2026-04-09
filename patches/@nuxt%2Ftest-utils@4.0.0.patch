@@ -1,0 +1,12 @@
+diff --git a/package.json b/package.json
+index 2b03c28ff5dea60bebef105c9c4e9771a9dd16fd..608689e5282d56375d9011f6263dc2d595ec0bda 100644
+--- a/package.json
++++ b/package.json
+@@ -79,7 +79,6 @@
+     "fake-indexeddb": "^6.2.5",
+     "get-port-please": "^3.2.0",
+     "h3": "^1.15.5",
+-    "h3-next": "npm:h3@2.0.1-rc.11",
+     "local-pkg": "^1.1.2",
+     "magic-string": "^0.30.21",
+     "node-fetch-native": "^1.6.7",

@@ -32,6 +32,8 @@ bun run --cwd packages/cli lint
 # Registry (apps/registry/)
 bun run --cwd apps/registry dev
 bun run --cwd apps/registry build
+bun run --cwd apps/registry test                                 # unit only (e2e skipped without host)
+REGISTRY_E2E_HOST=http://localhost:3000 bun run --cwd apps/registry test  # e2e against a separately started dev server
 
 # Running CLI directly
 node packages/cli/dist/index.js docs add <spec> -s <source> [options]
@@ -63,6 +65,11 @@ node packages/cli/dist/index.js docs add <spec> -s <source> [options]
 - `ask docs add|sync|remove` auto-manages ignore files to mark `.ask/docs/` as vendored. Writes nested configs inside `.ask/docs/` (`.gitattributes`, `eslint.config.mjs`, `biome.json`, `.markdownlint-cli2.jsonc`) and patches root `.prettierignore`/`sonar-project.properties`/`.markdownlintignore` via a marker block (`# ask:start ... # ask:end`). Disable via `manageIgnores: false` in `.ask/config.json`. Do not hand-edit inside the marker blocks — `sync`/`remove` will overwrite them.
 - Registry strategy selection (`packages/cli/src/registry.ts:selectBestStrategy`) prefers a "curated npm" strategy (`source: 'npm'` with explicit `docsPath`) over github, even when github is listed first. Without `docsPath`, the static priority table (github > npm > web > llms-txt) wins. This is what makes `vercel/ai`'s `dist/docs` actually load from npm.
 - `NpmSource.fetch` (`packages/cli/src/sources/npm.ts`) is local-first: it reads `node_modules/<pkg>/<docsPath>` directly when the installed `package.json` version satisfies the request, and only falls through to a tarball download on miss. The lock entry records `installPath` instead of `tarball` for the local case — `NpmLockEntry` in `packages/schema/src/lock.ts` accepts either, validated in `buildLockEntry`. Do not assume the lock entry always has `tarball`.
+- `@nuxt/test-utils` pulls `h3-next` (npm alias → `h3@2.0.1-rc.*`) which collides with the h3 v1 that nitro/nuxt-content use. Runtime symptom: `event.req.headers.entries is not a function` thrown from `@nuxt/content`'s `fetchContent`, surfacing as Registry API 500/hang. Mitigation: a `bun patch` strips `h3-next` from `@nuxt/test-utils/package.json` (`patches/@nuxt%2Ftest-utils@4.0.0.patch`) AND a root `postinstall` removes `node_modules/.bun/h3@2.0.1-rc.*`. Bun 1.3.11 `overrides` don't reliably apply to transitive deps, so the postinstall is load-bearing. Bump the version glob when @nuxt/test-utils upgrades.
+- `@nuxt/test-utils/e2e` `setup({ rootDir })` self-boot crashes inside this bun-workspace layout with `TypeError: MagicString is not a constructor` (`@vitejs/plugin-vue` follows `.bun/` symlinks into a stale `magic-string`). Use `setup({ host })` against an externally started `bun run dev`, or skip `@nuxt/test-utils` entirely and hit the dev server with native `fetch`. `apps/registry/test/e2e/` takes the native-fetch path — gated on `REGISTRY_E2E_HOST` so `bun run test` stays green without a dev server.
+- `apps/registry/nuxt.config.ts` picks the Content DB backend from build-time signals (`NITRO_PRESET=cloudflare*`, `CF_PAGES=1`, or explicit `NUXT_CONTENT_DATABASE_TYPE=d1`). Do NOT rely on only `NUXT_CONTENT_DATABASE_TYPE` — if that env var is missing in a Cloudflare build, the native sqlite branch will crash the Worker on cold start.
+- Nitro's dev server strips the static `headers['cache-control']` from `routeRules` and only emits the `cache` object's `s-maxage` / `stale-while-revalidate` directives. The full `public, max-age=300, ...` header only appears in production. Assert the production value in a unit test against `app/route-rules.ts`; match only `s-maxage`/`swr` regex in dev-server e2e tests.
+- `packages/cli/src/registry.ts` wraps `fetch(url)` with `AbortSignal.timeout(10_000)` — the previous unbounded fetch hung the CLI indefinitely when `ask-registry.pages.dev` was unresponsive. Never reintroduce a bare `fetch` here.
 
 ## CLI Architecture (packages/cli/)
 
