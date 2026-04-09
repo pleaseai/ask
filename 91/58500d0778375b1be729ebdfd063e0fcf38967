@@ -1,0 +1,25 @@
+packages/cli/src/list/render.ts
+  b29f55a0556fe640 1-129
+packages/cli/test/list/render.test.ts
+  b29f55a0556fe640 1-126
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.6",
+  "base_commit_sha": "9158500d0778375b1be729ebdfd063e0fcf38967",
+  "prompts": {
+    "b29f55a0556fe640": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "07c7f820-9777-4776-b140-1838ff11e32f",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 255,
+      "total_deletions": 0,
+      "accepted_lines": 255,
+      "overriden_lines": 0
+    }
+  }
+}
