@@ -1,0 +1,38 @@
+// Cloudflare Pages / wrangler configuration for the ASK registry.
+//
+// This file serves two purposes:
+//
+//   1. `wrangler pages dev .output/public` (local preview) reads it to
+//      mount the D1 binding `DB` against the real Cloudflare database
+//      used by production. That is the only way to exercise the
+//      `content.database = { type: 'd1', bindingName: 'DB' }` branch of
+//      `nuxt.config.ts` on a developer machine.
+//
+//   2. It keeps the binding name and database id in the repository so a
+//      Cloudflare Pages project that imports this repo inherits the
+//      expected configuration instead of depending on dashboard-only
+//      state. A missing `DB` binding is what caused the production
+//      `ask-registry.pages.dev` hang — the Nuxt Content runtime awaits a
+//      D1 query that never resolves, the Worker eats its 30s budget, and
+//      Cloudflare reports a `canceled` request with zero exceptions and
+//      zero logs. Pinning the binding here makes the failure reproducible
+//      and prevents a silent regression if the dashboard binding is ever
+//      removed.
+//
+// Note: Cloudflare Pages also accepts bindings configured through the
+// dashboard UI. The values here should match what the dashboard sets so
+// both entry points agree.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "ask-registry",
+  "compatibility_date": "2026-04-03",
+  // Nitro's `cloudflare_pages` preset emits to `dist/` (not `.output/public`).
+  "pages_build_output_dir": "dist",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "ask-registry-db",
+      "database_id": "2fc2053b-8dda-49f8-9945-4650a5e5f4a1"
+    }
+  ]
+}

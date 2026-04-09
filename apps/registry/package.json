@@ -3,9 +3,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "nuxt build",
+    "build": "nuxt build --preset=cloudflare_pages",
+    "build:node": "nuxt build",
     "dev": "nuxt dev",
     "preview": "nuxt preview",
+    "preview:cf": "wrangler pages dev",
     "lint": "eslint",
     "lint:fix": "eslint --fix",
     "test": "vitest run",
