@@ -1,0 +1,29 @@
+packages/cli/package.json
+  08b346ec09c39067 38
+.please/docs/tracks/active/convention-based-discovery-20260409/plan.md
+  08b346ec09c39067 171-172
+packages/schema/src/lock.ts
+  08b346ec09c39067 46
+.please/docs/tracks/active/convention-based-discovery-20260409/metadata.json
+  08b346ec09c39067 4,6
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.6",
+  "base_commit_sha": "e798a9375d4fb2ffff0f251c33eaa35aa4903d6a",
+  "prompts": {
+    "08b346ec09c39067": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "fa932e7a-9916-414d-92d2-868dd01a4d78",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 6,
+      "total_deletions": 4,
+      "accepted_lines": 6,
+      "overriden_lines": 0
+    }
+  }
+}
