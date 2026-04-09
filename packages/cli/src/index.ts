@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import type { RegistrySource } from './registry.js'
 import type { Lock, LockEntry } from './schemas.js'
 import type {
   FetchResult,
@@ -9,10 +10,10 @@ import type {
   SourceConfig,
   WebSourceOptions,
 } from './sources/index.js'
+import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
-import { pathToFileURL } from 'node:url'
-import { defineCommand, runMain } from 'citty'
+import { defineCommand } from 'citty'
 import { consola } from 'consola'
 import { generateAgentsMd } from './agents.js'
 import { runWithConcurrency } from './concurrency.js'
@@ -24,7 +25,6 @@ import {
 import { manageIgnoreFiles } from './ignore-files.js'
 import { contentHash, getConfigPath, getLockPath, readLock, upsertLockEntry } from './io.js'
 import { getReader } from './manifest/index.js'
-import type { RegistrySource } from './registry.js'
 import { fetchRegistryEntry, parseDocSpec, parseEcosystem, resolveFromRegistry } from './registry.js'
 import { getResolver } from './resolvers/index.js'
 import { generateSkill, removeSkill } from './skill.js'
@@ -693,10 +693,19 @@ const docsCmd = defineCommand({
   },
 })
 
-const main = defineCommand({
+// Read version from package.json at runtime so release-please bumps
+// automatically propagate to `--version` output. Using `new URL` with
+// `import.meta.url` resolves relative to the compiled file location
+// (`dist/index.js` → `../package.json`), which works for both the published
+// tarball (where `package.json` sits next to `dist/`) and local dev builds.
+const pkg = JSON.parse(
+  readFileSync(new URL('../package.json', import.meta.url), 'utf8'),
+) as { version: string }
+
+export const main = defineCommand({
   meta: {
     name: 'ask',
-    version: '0.1.0',
+    version: pkg.version,
     description: 'Agent Skills Kit - Download version-specific library docs for AI coding agents',
   },
   subCommands: {
@@ -704,11 +713,5 @@ const main = defineCommand({
   },
 })
 
-// Only execute the CLI when this module is the program entry point.
-// Tests import `runSync` from this file and must NOT trigger CLI execution.
-// Use `pathToFileURL` for a cross-platform comparison: a naive
-// `file://${process.argv[1]}` template breaks on Windows (backslash paths)
-// and on POSIX paths containing spaces or unicode (no URL encoding).
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  runMain(main)
-}
+// CLI execution is handled by `./cli.ts` (the `bin` entry). This file is a
+// pure library module: importing it must not trigger `runMain`.
