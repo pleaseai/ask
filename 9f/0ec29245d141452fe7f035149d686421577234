@@ -1,0 +1,27 @@
+packages/cli/package.json
+  680370c87405e98f 21
+packages/cli/src/index.ts
+  680370c87405e98f 13,16,696-705,708,716-717
+packages/cli/src/cli.ts
+  680370c87405e98f 1-6
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.6",
+  "base_commit_sha": "9f0ec29245d141452fe7f035149d686421577234",
+  "prompts": {
+    "680370c87405e98f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ffa663b3-506e-4040-8d78-cd6eb9ee420e",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 38,
+      "total_deletions": 29,
+      "accepted_lines": 22,
+      "overriden_lines": 0
+    }
+  }
+}
