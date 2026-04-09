@@ -28,11 +28,36 @@ For refreshing already-tracked libraries after upgrades, use `sync-docs`.
   dependencies.
 - Major reorganization: the user explicitly wants to rebuild the full doc set.
 
+## Design principle — narrow by default, expand on request
+
+Fetching docs for **every** dependency sounds complete, but in practice it
+pollutes `AGENTS.md` with toolchain packages (ESLint plugins, build tools,
+type-only shims) that an AI agent will never reference when writing
+application code. It also balloons wall-clock time and failure rate, since
+those packages rarely have docs in the places the registry/sources look.
+
+This skill therefore defaults to a **focused set**:
+
+1. **Runtime `dependencies` only** — skip `devDependencies` and `peerDependencies`
+   unless the user asks for them.
+2. **Deny-list filter** — even inside `dependencies`, drop packages that match
+   the patterns in [`references/deny-list.md`](./references/deny-list.md)
+   (linters, bundlers, test runners, git hooks, polyfills, etc.).
+3. **User override is always one step away** — the confirmation prompt shows
+   what was excluded so the user can flip the decision with `include-dev`,
+   `include <name>`, or `all`.
+
+The rationale is: optimize for the signal-to-noise ratio of `AGENTS.md`, not
+for exhaustiveness. A curated list of 8 libraries the AI will actually use
+is more valuable than an exhaustive list of 60 where 50 are build plumbing.
+
 ## Pipeline
 
 ```
-parse manifest + lockfile → derive (name, version) list → confirm with user
-  → for each: run add-docs steps 1–6.5 (writes config + ask.lock per entry)
+parse manifest + lockfile → derive (name, version) list
+  → apply default scope (dependencies only) + deny-list filter
+  → confirm with user (show included / deny-filtered / devDeps buckets)
+  → for each confirmed: run add-docs steps 1–6.5 (writes config + ask.lock per entry)
   → final pass: rebuild AGENTS.md block once → ensure CLAUDE.md @AGENTS.md
 ```
 
@@ -45,42 +70,85 @@ Detect the ecosystem the same way `add-docs` Step 2 does, then parse the relevan
 Always prefer the **lockfile** for the resolved version; fall back to the manifest's
 declared range only when no lockfile exists.
 
-| Ecosystem | Manifest | Lockfile (preferred for version) |
+| Ecosystem | Manifest (default scope: runtime deps only) | Lockfile (preferred for version) |
 |---|---|---|
-| npm | `package.json` (`dependencies` + `devDependencies` + `peerDependencies`) | `bun.lock`, `bun.lockb`, `package-lock.json`, `pnpm-lock.yaml`, `yarn.lock` |
-| pypi | `pyproject.toml` (`[project.dependencies]` or `[tool.poetry.dependencies]`) or `requirements.txt` | `poetry.lock`, `uv.lock`, pinned `requirements.txt` |
-| go | `go.mod` (`require` block) | `go.sum` (versions are already in `go.mod`) |
-| crates | `Cargo.toml` (`[dependencies]`) | `Cargo.lock` |
-| pub | `pubspec.yaml` (`dependencies`) | `pubspec.lock` |
-| hex | `mix.exs` (`deps/0`) | `mix.lock` |
-| maven | `pom.xml` or `build.gradle` / `build.gradle.kts` (`dependencies` block) | Maven resolves at build time; no separate lockfile |
+| npm | `package.json` → `dependencies` only | `bun.lock`, `bun.lockb`, `package-lock.json`, `pnpm-lock.yaml`, `yarn.lock` |
+| pypi | `pyproject.toml` `[project.dependencies]` / `[tool.poetry.dependencies]`, or `requirements.txt` (skip `-dev` / `-test` files) | `poetry.lock`, `uv.lock`, pinned `requirements.txt` |
+| go | `go.mod` `require` block (not `require (... // indirect)`) | `go.sum` (versions are already in `go.mod`) |
+| crates | `Cargo.toml` `[dependencies]` (skip `[dev-dependencies]` / `[build-dependencies]`) | `Cargo.lock` |
+| pub | `pubspec.yaml` `dependencies` (skip `dev_dependencies`) | `pubspec.lock` |
+| hex | `mix.exs` `deps/0` where `:only` is not `:dev` or `:test` | `mix.lock` |
+| maven | `pom.xml` `dependencies` with `scope != test` / `provided`, or `build.gradle(.kts)` `implementation`/`api` (not `testImplementation`) | Maven resolves at build time; no separate lockfile |
 
 For each dependency, produce a `(ecosystem, name, version)` triple. If the lockfile gives
 a precise version (e.g. `3.22.4`), use that. If only a range is available (e.g. `^3.22`),
 pass the range to `add-docs` and let the source resolve it.
 
-**Skip**: workspace-internal packages, `link:`/`file:`/`workspace:` deps, and anything
-that resolves to a path. These don't have docs to download.
+**Always skip**, regardless of user override: workspace-internal packages,
+`link:`/`file:`/`workspace:` deps, and anything that resolves to a path.
+These don't have docs to download.
+
+**Default-skip (user can override)**: dev/test/build scopes in the table
+above. If the user asks for `include-dev`, re-read the manifest and merge
+those scopes into the candidate list before the deny-list filter runs.
+
+## Step 1.5 — Apply the deny-list
+
+Read [`references/deny-list.md`](./references/deny-list.md) and drop any
+candidate whose package name matches a glob pattern listed there. Keep the
+dropped entries in a separate bucket so Step 2 can show them to the user.
+
+Matching rules:
+
+- Glob-style (`*` = any chars, `?` = one char), case-sensitive.
+- Applied to the package name only (no version, no ecosystem prefix).
+- Works across ecosystems — patterns that only make sense for npm
+  (`@types/*`) simply won't match non-npm names.
+
+If the user says `all`, skip this step entirely.
+If the user says `include <name>`, remove `<name>` from the dropped bucket
+and put it back into the keep bucket before Step 2.
 
 ## Step 2 — Show the plan and confirm
 
-Print the derived list to the user as a table or bullet list, grouped by ecosystem if
-mixed. Then **stop and ask for confirmation** before fetching anything. Example:
+Print three buckets so the user can see exactly what's in and what's out:
 
 ```
-About to fetch docs for 14 dependencies:
+ASK setup plan for <project> (default scope: dependencies)
 
-npm:
-  - zod@3.22.4
-  - hono@4.6.2
-  - drizzle-orm@0.36.0
-  ...
+Will fetch (8):
+  npm:
+    - zod@3.22.4
+    - hono@4.6.2
+    - drizzle-orm@0.36.0
+    - @mastra/core@0.5.2
+    ...
 
-Proceed? (yes / select subset / cancel)
+Skipped by deny-list (4):
+  eslint, prettier, typescript, @types/node
+
+Skipped devDependencies (23):
+  husky, lint-staged, turbo, vitest, tsup, ...
+
+Proceed? Options:
+  - yes              fetch the 8 packages above
+  - include-dev      also fetch devDependencies (still subject to deny-list)
+  - include <names>  force-include specific packages (comma-separated)
+  - all              disable deny-list AND include dev/peer deps
+  - select           pick a subset interactively
+  - cancel
 ```
 
-If the list is large (>30 entries), warn the user about wall-clock time and offer to
-filter (e.g. only `dependencies`, skip `devDependencies`).
+**Stop and wait** for the user's answer. Never start fetching silently —
+mass downloads against upstream registries deserve an explicit checkpoint.
+
+If the user says `include-dev` or `all`, recompute the buckets and
+re-display before proceeding. If they say `include foo,bar`, move those
+names from the skipped buckets back into the keep bucket and confirm once
+more with the updated plan.
+
+If the final keep-bucket is still large (>30 entries after overrides),
+warn about wall-clock time before starting.
 
 ## Step 3 — Run `add-docs` Steps 1–6.5 for each entry
 
