@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.3.0](https://github.com/pleaseai/ask/compare/ask-schema-v0.2.1...ask-schema-v0.3.0) (2026-04-09)
+
+
+### ⚠ BREAKING CHANGES
+
+* **registry:** all consumers of RegistryStrategy/expandStrategies must migrate to the new Package/Source types. See ADR-0001.
+
+### Code Refactoring
+
+* **registry:** restructure entries as Entry → Package → Source (ADR-0001) ([#43](https://github.com/pleaseai/ask/issues/43)) ([9da66eb](https://github.com/pleaseai/ask/commit/9da66eb21a0181b600c582af5cb20d4c9e5de299))
+
 ## [0.2.1](https://github.com/pleaseai/ask/compare/ask-schema-v0.2.0...ask-schema-v0.2.1) (2026-04-08)
 
 
