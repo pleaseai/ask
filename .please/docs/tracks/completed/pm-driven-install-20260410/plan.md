@@ -167,4 +167,36 @@ T012 → T024;  T013 → T025;  T014 → T026;  T015 → T027
 
 ## Surprises & Discoveries
 
-_(populated during implementation)_
+- **packages/cli/src/sources/index.ts SourceConfig**: the pre-refactor codebase derived `SourceConfig` from a Zod schema in `packages/schema`, but with `.ask/config.json` gone there was no longer any persisted JSON to validate. Replaced with a plain TypeScript union local to `sources/index.ts`. Schema package is now focused exclusively on `ask.json` / `resolved.json`.
+- **FR-5 deviation**: spec said github specs default to `main` with a warning when `--ref` is omitted. Implementation rejected this — silent defaults make it impossible for users to know which version they ended up pinned to. Changed to a hard schema-level requirement and amended spec.md after the fact.
+- **AC-10 sweep was bigger than expected**: legacy command names were embedded in resolver error messages, comment templates in `skill.ts` / `agents.ts`, the registry UI Vue pages, eval docs, and the entire `skills/add-docs/` reference. Required a follow-up cleanup commit on top of the main refactor.
+- **`getReader` shim retained**: kept `lockfiles/getReader('npm')` as a back-compat shim during Phase B because deleting the legacy `addCmd` (which consumed it) would cascade into a broken intermediate state. The shim was retired in Phase E along with the legacy commands.
+- **Test rewrite ratio**: 13 of the existing 20+ test files were entirely deleted because they tested concepts (`Lock`, `Config`, `runSync`, `manageIgnores: false` opt-out) that no longer exist. Replaced with 2 new focused suites: `test/install/install.test.ts` and `test/cli/commands.test.ts`.
+
+## Outcomes & Retrospective
+
+### What Was Shipped
+- Top-level `ask.json` declarative input + `.ask/resolved.json` cache
+- Flat `ask install | add | remove | list` command surface
+- `runInstall` orchestrator with PM-driven (npm: lockfile chain) and standalone github (`{spec, ref}`) entry shapes
+- `lockfiles/` per-format readers (bun, npm, pnpm, yarn, package-json) under a single `npmEcosystemReader` facade
+- Warn-and-skip + exit 0 semantics (postinstall-friendly per FR-10)
+- Resolved-cache short-circuit (NFR-1, AC-9)
+- Intent-skills format reattached at first-pass via the existing `local-intent` adapter
+- Schema package rotation: `Config` / `Lock` removed, `AskJsonSchema` / `ResolvedJsonSchema` added
+
+### What Went Well
+- Source adapter layer (`sources/{npm,github,web,llms-txt}.ts`) was completely untouched — the orchestration rewrite slotted on top cleanly because the adapter contract was already orthogonal to the persistence layer
+- Lockfile reader split was mechanical (existing parsers extracted into per-file modules) and stayed test-coverable in isolation
+- AC-10 acceptance criterion forced a thorough sweep that caught stale references in places we wouldn't have noticed otherwise (registry UI, eval docs, resolver error messages)
+
+### What Could Improve
+- The intermediate phases (C, D) left the CLI uncompilable until Phase E; a stricter atomic-commit discipline would have required folding C+D+E into a single commit from the start instead of bundling them retroactively
+- spec.md drifted from implementation on FR-5 (default `--ref`) and was only reconciled during the review pass — would have been cleaner to amend the spec the moment the decision was made
+- No manual smoke tests against a real `bun add next` project were run as part of this PR — the test suite is fast and comprehensive, but the postinstall integration story needs at least one end-to-end run before merge
+
+### Tech Debt Created
+- `skills/setup-docs/SKILL.md` and `skills/sync-docs/SKILL.md` had only their command tokens replaced; their structural references to `.ask/config.json` and `.ask/ask.lock` workflows still describe the old data model. These should be rewritten in a follow-up to actually use `ask.json` + `.ask/resolved.json` as their data sources.
+- `skills/add-docs/references/inline-pipeline.md` (the manual fallback when the CLI is unavailable) still describes the legacy config/lock pipeline structurally — it needs a full rewrite or to be removed entirely now that the CLI is the only realistic path.
+- Eval experiment (`evals/next-canary/`) has pre-existing `@vercel/agent-eval` type errors unrelated to this track but flagged by tsc.
+- The git+sparse github fetcher remains deferred to a follow-up track per the original spec.
