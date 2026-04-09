@@ -1,0 +1,29 @@
+packages/cli/src/skill.ts
+  08b346ec09c39067 9-29,35,40-44,53-55,85-110
+packages/cli/src/agents-intent.ts
+  08b346ec09c39067 1-220
+packages/cli/src/index.ts
+  08b346ec09c39067 19,27,30,38-49,305-419,481-507,782-846,860-880,919-945
+.please/docs/tracks/active/convention-based-discovery-20260409/plan.md
+  08b346ec09c39067 181-186,321-346
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.6",
+  "base_commit_sha": "d299919c61c13b32964d09055b30f05153d0574d",
+  "prompts": {
+    "08b346ec09c39067": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "fa932e7a-9916-414d-92d2-868dd01a4d78",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 605,
+      "total_deletions": 59,
+      "accepted_lines": 582,
+      "overriden_lines": 0
+    }
+  }
+}
