@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2](https://github.com/pleaseai/ask/compare/ask-v0.2.1...ask-v0.2.2) (2026-04-09)
+
+
+### Bug Fixes
+
+* **cli:** stop downloading full GitHub monorepo for scoped npm specs ([#39](https://github.com/pleaseai/ask/issues/39)) ([0dc5ce2](https://github.com/pleaseai/ask/commit/0dc5ce2fdfb1ea222a09e76f5ab857186b2f6ff0))
+
 ## [0.2.1](https://github.com/pleaseai/ask/compare/ask-v0.2.0...ask-v0.2.1) (2026-04-08)
 
 
