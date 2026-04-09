@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/pleaseai/ask/compare/ask-plugin-v0.3.0...ask-plugin-v0.3.1) (2026-04-09)
+
+
+### Bug Fixes
+
+* **registry:** unblock lookup API by purging h3 v2 and hardening config ([65e2376](https://github.com/pleaseai/ask/commit/65e2376c6d5673a148c6c8146742c7e48966a139))
+
 ## [0.3.0](https://github.com/pleaseai/ask/compare/ask-plugin-v0.2.3...ask-plugin-v0.3.0) (2026-04-09)
 
 
