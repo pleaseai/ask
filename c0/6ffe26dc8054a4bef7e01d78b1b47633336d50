@@ -1,0 +1,38 @@
+skills/setup-docs/references/deny-list.md
+  15b7ca4f21d5a354 1-123
+skills/setup-docs/SKILL.md
+  15b7ca4f21d5a354 31-53,57-60,73,75-81,87-95,97-99,101-110,114,117-131,133-139,142-143,145-148,150-151
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "c06ffe26dc8054a4bef7e01d78b1b47633336d50",
+  "prompts": {
+    "15b7ca4f21d5a354": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "5aec3d49-6b12-466c-92f2-04584ca9995f",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 216,
+      "total_deletions": 25,
+      "accepted_lines": 215,
+      "overriden_lines": 0
+    },
+    "614e81b0bd6ab6d6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ee7dc120-37f2-48da-8f19-9c657aad0d59",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 5,
+      "overriden_lines": 0
+    }
+  }
+}
