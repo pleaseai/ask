@@ -1,0 +1,33 @@
+packages/cli/src/agents.ts
+  b29f55a0556fe640 9
+packages/cli/test/storage-list.test.ts
+  b29f55a0556fe640 1-153
+packages/cli/test/agents.test.ts
+  b29f55a0556fe640 6,11-30,49,60,76,88,97
+packages/cli/src/storage.ts
+  b29f55a0556fe640 1,5-6,79-105,107-117,119-165,167-169
+packages/cli/src/agents-intent.ts
+  b29f55a0556fe640 207-249
+packages/cli/test/ignore-lifecycle.test.ts
+  b29f55a0556fe640 24,29-46,62,89
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.6",
+  "base_commit_sha": "3ca844ff4717785c9862af40bfc64a67cd807483",
+  "prompts": {
+    "b29f55a0556fe640": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "07c7f820-9777-4776-b140-1838ff11e32f",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 337,
+      "total_deletions": 15,
+      "accepted_lines": 337,
+      "overriden_lines": 0
+    }
+  }
+}
