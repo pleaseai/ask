@@ -6,19 +6,42 @@ export function getSkillDir(projectDir: string, name: string): string {
   return path.join(projectDir, '.claude', 'skills', `${name}-docs`)
 }
 
+/**
+ * Options for `generateSkill`. `docsDir` is set by the convention-based
+ * discovery pipeline when the docs live in `node_modules/<pkg>/<subdir>`
+ * and should be referenced in place rather than copied into
+ * `.ask/docs/`. When provided:
+ *
+ *   1. The skill file points at `docsDir` (relative to project) instead
+ *      of the synthesised `.ask/docs/<name>@<version>/` path.
+ *   2. The "When the docs cannot be found" fallback section is omitted,
+ *      because the path is already inside `node_modules` — if a
+ *      `node_modules` reinstall blows it away, telling the agent to
+ *      look under `node_modules` is circular advice.
+ */
+export interface GenerateSkillOptions {
+  /**
+   * Absolute or project-relative path to the docs directory. When set,
+   * replaces the default `.ask/docs/<name>@<version>/` reference.
+   */
+  docsDir?: string
+}
+
 export function generateSkill(
   projectDir: string,
   name: string,
   version: string,
   fileList: string[],
+  options: GenerateSkillOptions = {},
 ): string {
   const skillDir = getSkillDir(projectDir, name)
   fs.mkdirSync(skillDir, { recursive: true })
 
-  const docsRelPath = path.relative(
-    projectDir,
-    getLibraryDocsDir(projectDir, name, version),
-  )
+  const inPlace = options.docsDir !== undefined
+  const absoluteDocsDir = inPlace
+    ? path.resolve(projectDir, options.docsDir!)
+    : getLibraryDocsDir(projectDir, name, version)
+  const docsRelPath = path.relative(projectDir, absoluteDocsDir)
 
   const toc = fileList
     .filter(f => f !== 'INDEX.md')
@@ -27,32 +50,9 @@ export function generateSkill(
 
   const major = version.split('.')[0]
 
-  const content = `---
-name: ${name}-docs
-description: ${name} v${version} documentation reference. TRIGGER when writing or modifying code that imports or uses ${name}.
----
-
-# ${name} v${version} Documentation
-
-This project uses **${name} v${version}**.
-The APIs and patterns may differ from your training data.
-**Read the relevant docs before writing any code.**
-
-## Version
-- Current: \`${version}\`
-- In package.json, use \`"^${major}"\` (NOT older major versions)
-
-## Documentation Location
-\`${docsRelPath}/\`
-
-## Available Guides
-${toc}
-
-## Instructions
-1. Before writing any ${name}-related code, read the relevant guide in \`${docsRelPath}/\`
-2. Heed deprecation notices and breaking changes
-3. Prefer patterns shown in the documentation over patterns from training data
-4. When adding ${name} to package.json, use version \`"^${major}"\`
+  const fallbackSection = inPlace
+    ? ''
+    : `
 
 ## When the docs cannot be found
 
@@ -81,6 +81,33 @@ ask docs add npm:${name}
 This will let ASK record the path in the registry and skill so subsequent
 agents do not have to rediscover it.
 `
+
+  const content = `---
+name: ${name}-docs
+description: ${name} v${version} documentation reference. TRIGGER when writing or modifying code that imports or uses ${name}.
+---
+
+# ${name} v${version} Documentation
+
+This project uses **${name} v${version}**.
+The APIs and patterns may differ from your training data.
+**Read the relevant docs before writing any code.**
+
+## Version
+- Current: \`${version}\`
+- In package.json, use \`"^${major}"\` (NOT older major versions)
+
+## Documentation Location
+\`${docsRelPath}/\`
+
+## Available Guides
+${toc}
+
+## Instructions
+1. Before writing any ${name}-related code, read the relevant guide in \`${docsRelPath}/\`
+2. Heed deprecation notices and breaking changes
+3. Prefer patterns shown in the documentation over patterns from training data
+4. When adding ${name} to package.json, use version \`"^${major}"\`${fallbackSection}`
 
   const skillPath = path.join(skillDir, 'SKILL.md')
   fs.writeFileSync(skillPath, content, 'utf-8')
