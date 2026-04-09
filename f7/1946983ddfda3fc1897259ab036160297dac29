@@ -1,0 +1,27 @@
+.please/docs/tracks/active/pm-driven-install-20260410/metadata.json
+  d61974db81e6bac3 1-11
+.please/docs/tracks/active/pm-driven-install-20260410/plan.md
+  d61974db81e6bac3 1-170
+.please/docs/tracks/active/pm-driven-install-20260410/spec.md
+  d61974db81e6bac3 1-74
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.6",
+  "base_commit_sha": "f71946983ddfda3fc1897259ab036160297dac29",
+  "prompts": {
+    "d61974db81e6bac3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ee40df43-0afb-4505-80e3-d14fcc857a55",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 258,
+      "total_deletions": 3,
+      "accepted_lines": 255,
+      "overriden_lines": 0
+    }
+  }
+}
