@@ -33,6 +33,9 @@ import { fetchRegistryEntry, parseDocSpec, parseEcosystem, resolveFromRegistry }
 import { getResolver } from './resolvers/index.js'
 import { generateSkill, removeSkill } from './skill.js'
 import { getSource } from './sources/index.js'
+import { buildListModel } from './list/aggregate.js'
+import { ListModelSchema } from './list/model.js'
+import { renderList } from './list/render.js'
 import { listDocs, removeDocs, saveDocs } from './storage.js'
 
 /**
@@ -892,21 +895,56 @@ const syncCmd = defineCommand({
   },
 })
 
+/**
+ * Shared body for both `ask list` (canonical) and the deprecated
+ * `ask docs list` wrapper. Kept as a plain function so the wrapper can
+ * invoke it without trying to forward a citty command context.
+ */
+function runList(args: { json?: boolean }): void {
+  const projectDir = process.cwd()
+  const model = buildListModel(projectDir)
+  if (args.json) {
+    consola.log(JSON.stringify(ListModelSchema.parse(model), null, 2))
+    return
+  }
+  renderList(model)
+}
+
 const listCmd = defineCommand({
-  meta: { name: 'list', description: 'List downloaded documentation' },
-  run() {
-    const projectDir = process.cwd()
-    const entries = listDocs(projectDir)
+  meta: {
+    name: 'list',
+    description: 'List downloaded documentation (table view with --json support)',
+  },
+  args: {
+    json: {
+      type: 'boolean',
+      description: 'Emit the list as JSON matching ListModelSchema',
+    },
+  },
+  run({ args }) {
+    runList(args)
+  },
+})
 
-    if (entries.length === 0) {
-      consola.info('No docs downloaded yet. Use `ask docs add` to get started.')
-      return
-    }
-
-    consola.info('Downloaded documentation:')
-    for (const { name, version, fileCount } of entries) {
-      consola.log(`  ${name}@${version}  (${fileCount} files)`)
-    }
+/**
+ * Thin wrapper that forwards to `runList` after printing a deprecation
+ * warning. Registered at `docs.subCommands.list` so `ask docs list`
+ * keeps working for one release cycle.
+ */
+const deprecatedDocsListCmd = defineCommand({
+  meta: {
+    name: 'list',
+    description: '[DEPRECATED] Use `ask list` instead',
+  },
+  args: {
+    json: {
+      type: 'boolean',
+      description: 'Emit the list as JSON matching ListModelSchema',
+    },
+  },
+  run({ args }) {
+    consola.warn('`ask docs list` is deprecated, use `ask list`')
+    runList(args)
   },
 })
 
@@ -967,7 +1005,7 @@ const docsCmd = defineCommand({
   subCommands: {
     add: addCmd,
     sync: syncCmd,
-    list: listCmd,
+    list: deprecatedDocsListCmd,
     remove: removeCmd,
   },
 })
@@ -989,6 +1027,7 @@ export const main = defineCommand({
   },
   subCommands: {
     docs: docsCmd,
+    list: listCmd,
   },
 })
 

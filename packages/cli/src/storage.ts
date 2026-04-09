@@ -1,7 +1,9 @@
+import type { IntentSkillEntry } from './discovery/types.js'
 import type { DocFile } from './sources/index.js'
 import fs from 'node:fs'
 import path from 'node:path'
-import { getAskDir } from './io.js'
+import { readIntentSkillsMap } from './agents-intent.js'
+import { getAskDir, readLock } from './io.js'
 
 export function getDocsDir(projectDir: string): string {
   return path.join(getAskDir(projectDir), 'docs')
@@ -74,22 +76,97 @@ export function removeDocs(
   }
 }
 
-export function listDocs(
-  projectDir: string,
-): Array<{ name: string, version: string, fileCount: number }> {
-  const baseDir = getDocsDir(projectDir)
-  if (!fs.existsSync(baseDir))
-    return []
+/**
+ * Lock-derived view of the entries installed for a project. Unlike the
+ * legacy filesystem scan, this reads `.ask/ask.lock` as the source of
+ * truth, so:
+ *
+ *   - `intent-skills`-format entries (no filesystem copy) are surfaced
+ *     alongside `docs`-format entries;
+ *   - the `source`, `location`, and `format` fields are accurate even
+ *     for the local-first npm path that never writes a tarball.
+ *
+ * `fileCount` is the number of files on disk for docs entries, and the
+ * number of skill mappings for intent-skills entries.
+ */
+export interface ListDocsEntry {
+  name: string
+  version: string
+  format: 'docs' | 'intent-skills'
+  source: 'tarball' | 'installPath' | 'github' | 'web' | 'llms-txt'
+  location: string
+  fileCount: number
+  skills?: IntentSkillEntry[]
+}
 
-  return fs
-    .readdirSync(baseDir, { withFileTypes: true })
-    .filter(d => d.isDirectory() && d.name.includes('@'))
-    .map((d) => {
-      const [name, version] = d.name.split('@')
-      const dirPath = path.join(baseDir, d.name)
-      const fileCount = countFiles(dirPath)
-      return { name, version, fileCount }
+export function listDocs(projectDir: string): ListDocsEntry[] {
+  const lock = readLock(projectDir)
+  const names = Object.keys(lock.entries).sort()
+  if (names.length === 0) {
+    return []
+  }
+
+  // Lazily load the intent-skills block only when we actually need it,
+  // since readIntentSkillsMap does a file read + parse.
+  let intentMap: Map<string, IntentSkillEntry[]> | null = null
+  const getIntentMap = (): Map<string, IntentSkillEntry[]> => {
+    if (!intentMap) {
+      intentMap = readIntentSkillsMap(projectDir)
+    }
+    return intentMap
+  }
+
+  const out: ListDocsEntry[] = []
+  for (const name of names) {
+    const entry = lock.entries[name]!
+    if (entry.source === 'npm' && entry.format === 'intent-skills') {
+      const skills = getIntentMap().get(name) ?? []
+      const location = entry.installPath
+        ?? path.join('node_modules', name)
+      out.push({
+        name,
+        version: entry.version,
+        format: 'intent-skills',
+        source: 'installPath',
+        location,
+        fileCount: skills.length,
+        skills,
+      })
+      continue
+    }
+
+    // Docs format — files live under .ask/docs/<name>@<version>.
+    const docsDir = getLibraryDocsDir(projectDir, name, entry.version)
+    const fileCount = fs.existsSync(docsDir) ? countFiles(docsDir) : 0
+    const location = path.relative(projectDir, docsDir) || docsDir
+
+    let source: ListDocsEntry['source']
+    switch (entry.source) {
+      case 'github':
+        source = 'github'
+        break
+      case 'web':
+        source = 'web'
+        break
+      case 'llms-txt':
+        source = 'llms-txt'
+        break
+      case 'npm':
+        source = entry.installPath && !entry.tarball ? 'installPath' : 'tarball'
+        break
+    }
+
+    out.push({
+      name,
+      version: entry.version,
+      format: 'docs',
+      source,
+      location,
+      fileCount,
     })
+  }
+
+  return out
 }
 
 function countFiles(dir: string): number {

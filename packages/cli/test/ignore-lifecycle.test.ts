@@ -21,9 +21,28 @@ import path from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
 import { generateAgentsMd } from '../src/agents.js'
 import { manageIgnoreFiles } from '../src/ignore-files.js'
+import { writeLock } from '../src/io.js'
 import { saveDocs } from '../src/storage.js'
 
 let tmpDir: string
+
+function seedZodLock(): void {
+  writeLock(tmpDir, {
+    lockfileVersion: 1,
+    generatedAt: '2026-04-10T00:00:00Z',
+    entries: {
+      zod: {
+        source: 'github',
+        version: '3.22.4',
+        fetchedAt: '2026-04-10T00:00:00Z',
+        fileCount: 1,
+        contentHash: `sha256-${'a'.repeat(64)}`,
+        repo: 'colinhacks/zod',
+        ref: 'v3.22.4',
+      },
+    },
+  })
+}
 
 beforeEach(() => {
   tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ask-lifecycle-test-'))
@@ -40,6 +59,7 @@ describe('ignore-files lifecycle', () => {
 
     // Pretend the user ran `ask docs add zod`:
     saveDocs(tmpDir, 'zod', '3.22.4', [{ path: 'README.md', content: '# zod' }])
+    seedZodLock()
     generateAgentsMd(tmpDir)
     manageIgnoreFiles(tmpDir, 'install')
 
@@ -66,6 +86,7 @@ describe('ignore-files lifecycle', () => {
   it('remove path cleans up all artifacts but preserves user files', () => {
     fs.writeFileSync(path.join(tmpDir, '.prettierignore'), 'node_modules\n')
     saveDocs(tmpDir, 'zod', '3.22.4', [{ path: 'README.md', content: '# zod' }])
+    seedZodLock()
     generateAgentsMd(tmpDir)
     manageIgnoreFiles(tmpDir, 'install')
 
