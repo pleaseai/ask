@@ -9,6 +9,14 @@ import { scoreDirectory } from './quality.js'
 const DOC_EXT_RE = /\.(?:mdx?|txt|rst)$/i
 
 /**
+ * Maximum recursion depth for `collectDocFiles`. Guards against symlink
+ * loops the tarball extractor failed to resolve and pathological monorepo
+ * layouts. Real docs trees rarely exceed ~6 levels deep, so 20 is both
+ * generous and bounded.
+ */
+const MAX_WALK_DEPTH = 20
+
+/**
  * Adapter: `repo-conventions` — scans a downloaded GitHub repo archive
  * for the first conventional docs directory whose quality score passes
  * the threshold.
@@ -41,7 +49,7 @@ export const repoConventionsAdapter: RepoDiscoveryAdapter = async (opts) => {
     if (!score.passes) {
       continue
     }
-    const files = collectDocFiles(candidate, candidate)
+    const files = collectDocFiles(candidate, candidate, 0)
     if (files.length === 0) {
       continue
     }
@@ -67,8 +75,11 @@ export const repoConventionsAdapter: RepoDiscoveryAdapter = async (opts) => {
  * everything under the selected root (including meta files inside
  * `docs/`, which are often legitimate content).
  */
-function collectDocFiles(baseDir: string, currentDir: string): DocFile[] {
+function collectDocFiles(baseDir: string, currentDir: string, depth: number): DocFile[] {
   const files: DocFile[] = []
+  if (depth > MAX_WALK_DEPTH) {
+    return files
+  }
   let entries: fs.Dirent[]
   try {
     entries = fs.readdirSync(currentDir, { withFileTypes: true })
@@ -79,7 +90,7 @@ function collectDocFiles(baseDir: string, currentDir: string): DocFile[] {
   for (const entry of entries) {
     const full = path.join(currentDir, entry.name)
     if (entry.isDirectory()) {
-      files.push(...collectDocFiles(baseDir, full))
+      files.push(...collectDocFiles(baseDir, full, depth + 1))
       continue
     }
     if (!entry.isFile()) {

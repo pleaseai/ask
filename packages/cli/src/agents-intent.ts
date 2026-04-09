@@ -105,8 +105,15 @@ function readExistingBlock(agentsPath: string): { content: string, block: Existi
   }
   const content = fs.readFileSync(agentsPath, 'utf-8')
   const beginIdx = content.indexOf(BEGIN_MARKER)
-  const endIdx = content.indexOf(END_MARKER)
-  if (beginIdx === -1 || endIdx === -1 || endIdx < beginIdx) {
+  if (beginIdx === -1) {
+    return { content, block: null }
+  }
+  // Anchor END_MARKER search after the BEGIN_MARKER we just found.
+  // Without the offset, a malformed AGENTS.md with two intent-skills
+  // blocks (e.g. from a failed partial write) could match an END_MARKER
+  // belonging to a different block and produce a corrupt splice.
+  const endIdx = content.indexOf(END_MARKER, beginIdx + BEGIN_MARKER.length)
+  if (endIdx === -1) {
     return { content, block: null }
   }
   const bodyStart = beginIdx + BEGIN_MARKER.length
