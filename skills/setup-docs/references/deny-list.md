@@ -12,9 +12,15 @@ match non-npm names.
 
 Users can always override:
 
-- `include-dev` — also pulls in `devDependencies`, still subject to the deny-list.
-- `include <name>` — force-include a specific package even if it matches.
-- `all` — disable the deny-list entirely.
+- `include-dev` — also pulls in `devDependencies` / dev-scope equivalents
+  (still subject to the deny-list below).
+- `include <name>` — force-include a specific package from any skipped
+  bucket. Works whether the package was dropped by the deny-list, by the
+  default dev/peer-deps exclusion, or both. Comma-separated names are
+  allowed: `include foo,bar`.
+- `all` — disable the deny-list **and** include `devDependencies` /
+  `peerDependencies` in a single shot. Use when you explicitly want the
+  previous exhaustive behavior.
 
 ## Categories
 

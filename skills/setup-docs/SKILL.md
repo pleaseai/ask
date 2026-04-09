@@ -70,11 +70,11 @@ Detect the ecosystem the same way `add-docs` Step 2 does, then parse the relevan
 Always prefer the **lockfile** for the resolved version; fall back to the manifest's
 declared range only when no lockfile exists.
 
-| Ecosystem | Manifest (default scope: runtime deps only) | Lockfile (preferred for version) |
+| Ecosystem | Manifest (default scope: direct runtime deps the project itself declares) | Lockfile (preferred for version) |
 |---|---|---|
 | npm | `package.json` → `dependencies` only | `bun.lock`, `bun.lockb`, `package-lock.json`, `pnpm-lock.yaml`, `yarn.lock` |
 | pypi | `pyproject.toml` `[project.dependencies]` / `[tool.poetry.dependencies]`, or `requirements.txt` (skip `-dev` / `-test` files) | `poetry.lock`, `uv.lock`, pinned `requirements.txt` |
-| go | `go.mod` `require` block (not `require (... // indirect)`) | `go.sum` (versions are already in `go.mod`) |
+| go | `go.mod` `require` block, direct deps only (skip entries marked `// indirect`) | `go.sum` (versions are already in `go.mod`) |
 | crates | `Cargo.toml` `[dependencies]` (skip `[dev-dependencies]` / `[build-dependencies]`) | `Cargo.lock` |
 | pub | `pubspec.yaml` `dependencies` (skip `dev_dependencies`) | `pubspec.lock` |
 | hex | `mix.exs` `deps/0` where `:only` is not `:dev` or `:test` | `mix.lock` |
@@ -106,8 +106,11 @@ Matching rules:
   (`@types/*`) simply won't match non-npm names.
 
 If the user says `all`, skip this step entirely.
-If the user says `include <name>`, remove `<name>` from the dropped bucket
-and put it back into the keep bucket before Step 2.
+If the user says `include <name>` (or a comma-separated list), move each
+name out of **whichever** skipped bucket it currently lives in — the
+deny-list bucket, the devDependencies bucket, or both — and put it back
+into the keep bucket before Step 2. `include <name>` is the single-package
+escape hatch; it works regardless of why the package was dropped.
 
 ## Step 2 — Show the plan and confirm
 
@@ -144,8 +147,9 @@ mass downloads against upstream registries deserve an explicit checkpoint.
 
 If the user says `include-dev` or `all`, recompute the buckets and
 re-display before proceeding. If they say `include foo,bar`, move those
-names from the skipped buckets back into the keep bucket and confirm once
-more with the updated plan.
+names from whichever skipped bucket they live in (deny-list or
+devDependencies) back into the keep bucket and confirm once more with
+the updated plan.
 
 If the final keep-bucket is still large (>30 entries after overrides),
 warn about wall-clock time before starting.
