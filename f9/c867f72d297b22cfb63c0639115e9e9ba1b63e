@@ -1,0 +1,23 @@
+packages/cli/src/registry.ts
+  a32b737e9033b302 193-195,197-206
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.6",
+  "base_commit_sha": "f9c867f72d297b22cfb63c0639115e9e9ba1b63e",
+  "prompts": {
+    "a32b737e9033b302": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "25c9e57a-e829-4940-8e3d-5eb21f375474",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 88,
+      "total_deletions": 6,
+      "accepted_lines": 84,
+      "overriden_lines": 0
+    }
+  }
+}
