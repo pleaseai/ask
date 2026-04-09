@@ -1,11 +1,13 @@
 {
   "track_id": "rich-list-command-20260409",
   "type": "feature",
-  "status": "planned",
+  "status": "in_progress",
   "created_at": "2026-04-09T14:57:11Z",
-  "updated_at": "2026-04-09T14:57:11Z",
+  "updated_at": "2026-04-10T00:00:00Z",
   "issue": "#47",
   "pr": "",
   "project": "",
-  "depends_on": ["convention-based-discovery-20260409"]
+  "depends_on": [
+    "convention-based-discovery-20260409"
+  ]
 }
