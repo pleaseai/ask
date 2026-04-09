@@ -190,7 +190,20 @@ export async function fetchRegistryEntry(
 
   try {
     const response = await fetch(url)
+    if (response.status === 404) {
+      return null
+    }
     if (!response.ok) {
+      // Non-404 errors carry actionable information we must not swallow.
+      // The registry server returns 409 Conflict with a `statusMessage`
+      // telling the caller to disambiguate a monorepo entry via an
+      // ecosystem alias (e.g. `npm:@mastra/core` instead of
+      // `mastra-ai/mastra`). Surface it via `consola.warn` so the user
+      // sees the guidance; 5xx/other errors get the same treatment so
+      // they don't silently degrade to "entry not found".
+      const body = await response.json().catch(() => ({})) as { statusMessage?: string }
+      const message = body.statusMessage ?? response.statusText
+      consola.warn(`Registry lookup for ${first}/${second} returned ${response.status}: ${message}`)
       return null
     }
     const data = await response.json() as RegistryApiResponse
