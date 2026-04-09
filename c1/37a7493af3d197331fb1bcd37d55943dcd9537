@@ -1,0 +1,39 @@
+apps/registry/vitest.config.ts
+  71d94f2e4da1ad70 1-13
+packages/cli/src/registry.ts
+  71d94f2e4da1ad70 192-196
+apps/registry/test/nuxt-config.test.ts
+  71d94f2e4da1ad70 1,5
+apps/registry/server/api/registry/[...slug].get.ts
+  71d94f2e4da1ad70 2-4,60-106,177-186
+CLAUDE.md
+  71d94f2e4da1ad70 35-36,68-72
+apps/registry/nuxt.config.ts
+  71d94f2e4da1ad70 1-2,5-19,35,37
+apps/registry/package.json
+  71d94f2e4da1ad70 11-12
+package.json
+  71d94f2e4da1ad70 8-9,22-27,31
+apps/registry/test/e2e/registry-api.test.ts
+  71d94f2e4da1ad70 1-109
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.6",
+  "base_commit_sha": "c137a7493af3d197331fb1bcd37d55943dcd9537",
+  "prompts": {
+    "71d94f2e4da1ad70": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "5bed4e58-3854-49c9-8a6a-78a7c2518d29",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 284,
+      "total_deletions": 84,
+      "accepted_lines": 228,
+      "overriden_lines": 1
+    }
+  }
+}
