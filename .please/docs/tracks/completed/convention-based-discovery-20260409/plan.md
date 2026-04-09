@@ -294,6 +294,40 @@ add/sync/remove` tests continue to pass unchanged.
 - [x] Phase 4: Tests + fixtures (T017-T025) — T025 e2e deferred
 - [x] Phase 5: Audit + verification + docs (T026-T030) — T027/T028 live runs deferred
 
+## Outcomes & Retrospective
+
+### What Was Shipped
+
+- Full convention-based discovery adapter pipeline in `packages/cli/src/discovery/` (8 files)
+- Intent-format AGENTS.md block writer in `packages/cli/src/agents-intent.ts` with byte-disjoint marker handling relative to the existing ask-docs block
+- `NpmLockEntry.format` schema extension with optional `'docs' | 'intent-skills'` field (backwards compatible, defaults to `'docs'`)
+- CLI dispatcher wired: `add` runs `runLocalDiscovery` before the registry; `sync` re-discovers intent-skills lock entries; `remove` branches on format
+- 31 new unit tests (discovery adapters, quality scorer, agents-intent writer, marker isolation)
+- Coverage audit script scaffold at `packages/cli/scripts/audit-coverage.ts`
+- CLAUDE.md gotchas documenting the new pipeline, dual markers, and lock schema
+- Two Important findings from Gemini review applied: END_MARKER anchor fix + walker depth guard
+
+### What Went Well
+
+- Adapter discriminated union (`DiscoveryResult`) kept the dispatcher cleanly branched and eliminated optional-everything shapes
+- Reusing `NpmSource.tryLocalRead` as the underlying file collector meant the traversal / symlink guards did not need to be re-implemented in every local adapter
+- Inline fixtures inside `test/discovery/adapters.test.ts` matched the existing bun:test pattern and avoided a separate fixtures directory
+- Marker isolation between the two AGENTS.md blocks held without any shared code — module-scoped constants plus `indexOf` from the correct offset are sufficient
+- Pre-existing 237 tests passed without modification, giving high confidence in SC-4
+
+### What Could Improve
+
+- Phase 3 dispatcher integration required reading `index.ts`, `skill.ts`, `agents.ts`, `io.ts`, and `storage.ts` end-to-end before the first edit. A pre-phase "integration surface map" document would have made the edit sites obvious earlier
+- The "reference-in-place" aspiration for `docs` kind did not land cleanly because `listDocs` / `generateAgentsMd` read from the filesystem, not from config+lock state. Rewriting those readers to be state-backed should be its own tidying track before the copy-avoidance work restarts
+
+### Tech Debt Created
+
+- **T014** — `runRepoDiscovery` is not yet wired through `GithubSource`. Requires exposing the extracted tarball dir as a post-fetch hook
+- **T025** — No end-to-end `ask docs add npm:<pkg>` integration test exists; coverage is adapter-level only
+- **T027** — Live SC-1 coverage audit has not been run; the script scaffold is in place but needs a CI job that installs all 37 registry packages first
+- **T028** — Live SC-2 `@tanstack/intent` parity diff has not been run; manual verification step
+- **Reference-in-place for `docs` kind** — currently still calls `saveDocs` to materialize copies into `.ask/docs/`. The spec's ideal "no copies" model is deferred until `listDocs` / `generateAgentsMd` are rewritten to be state-backed
+
 ## Decision Log
 
 - **2026-04-09** — Chose adapter-with-discriminated-union over a single
