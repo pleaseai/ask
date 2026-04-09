@@ -85,6 +85,28 @@ describe('upsertIntentSkillsBlock', () => {
     expect(content.startsWith(preexisting.trimEnd())).toBe(true)
   })
 
+  it('leaves the existing ask-docs-auto-generated block fully intact (marker isolation)', () => {
+    const askBlock
+      = '<!-- BEGIN:ask-docs-auto-generated -->\n# Documentation References\n\n## zod v3.22.4\n\n- Version: `3.22.4`\n<!-- END:ask-docs-auto-generated -->'
+    const preexisting = `# Project\n\n${askBlock}\n`
+    fs.writeFileSync(path.join(tmpDir, 'AGENTS.md'), preexisting, 'utf-8')
+    upsertIntentSkillsBlock(tmpDir, 'pkg-intent', [
+      { task: 'use pkg-intent', load: 'node_modules/pkg-intent/skills/s/SKILL.md' },
+    ])
+    const after = readAgents()
+    // Ask block is preserved byte-for-byte.
+    expect(after).toContain(askBlock)
+    // Intent block is present.
+    expect(after).toContain('<!-- intent-skills:start -->')
+    expect(after).toContain('<!-- intent-skills:end -->')
+    // Now remove the intent block and verify the ask block is still
+    // untouched — neither writer reads past the other's markers.
+    removeFromIntentSkillsBlock(tmpDir, 'pkg-intent')
+    const afterRemove = readAgents()
+    expect(afterRemove).toContain(askBlock)
+    expect(afterRemove).not.toContain('<!-- intent-skills:start -->')
+  })
+
   it('handles scoped package names via load-path prefix matching', () => {
     upsertIntentSkillsBlock(tmpDir, '@scope/pkg', [
       { task: 't', load: 'node_modules/@scope/pkg/skills/s/SKILL.md' },
