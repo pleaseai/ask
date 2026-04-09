@@ -168,8 +168,8 @@ ask docs add npm:<pkg>
 
 ## Tasks
 
-- [ ] T001 [P] Add `format?: 'docs' | 'intent-skills'` to `NpmLockEntry` (file: packages/schema/src/lock.ts)
-- [ ] T002 [P] Add `@tanstack/intent` as an exact-pinned runtime dep of `packages/cli` (file: packages/cli/package.json)
+- [x] T001 [P] Add `format?: 'docs' | 'intent-skills'` to `NpmLockEntry` (file: packages/schema/src/lock.ts)
+- [x] T002 [P] Add `@tanstack/intent` as an exact-pinned runtime dep of `packages/cli` (file: packages/cli/package.json)
 - [ ] T003 [P] Define discovery types: `DiscoveryResult` discriminated union, `IntentSkillEntry`, `QualityScore`, adapter interface (file: packages/cli/src/discovery/types.ts)
 - [ ] T004 [P] Define convention path tables for local tarball and GitHub repo scans (file: packages/cli/src/discovery/conventions.ts)
 - [ ] T005 Implement quality scoring + exclude filter with ≥3 md or ≥4KB threshold (file: packages/cli/src/discovery/quality.ts) (depends on T003, T004)

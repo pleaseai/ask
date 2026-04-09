@@ -43,6 +43,7 @@ const NpmLockEntry = z.object({
     'integrity must be a valid Subresource Integrity hash',
   ).optional(),
   installPath: z.string().optional(),
+  format: z.enum(['docs', 'intent-skills']).optional(),
 })
 
 const WebLockEntry = z.object({
