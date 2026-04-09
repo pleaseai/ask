@@ -1,0 +1,25 @@
+packages/cli/src/agents-intent.ts
+  08b346ec09c39067 108-116
+packages/cli/src/discovery/repo-conventions.ts
+  08b346ec09c39067 12-18,52,78,80-82,93
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.6",
+  "base_commit_sha": "aa8c2b98710dda8fca6fa184098c260bf68499c2",
+  "prompts": {
+    "08b346ec09c39067": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "fa932e7a-9916-414d-92d2-868dd01a4d78",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 23,
+      "total_deletions": 5,
+      "accepted_lines": 23,
+      "overriden_lines": 0
+    }
+  }
+}
