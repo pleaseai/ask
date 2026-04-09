@@ -1,0 +1,23 @@
+.please/docs/tracks/completed/convention-based-discovery-20260409/metadata.json
+  08b346ec09c39067 4,6,8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.6",
+  "base_commit_sha": "da454f649ae8a4833dfc01d32ed9e70ad48cba8c",
+  "prompts": {
+    "08b346ec09c39067": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "fa932e7a-9916-414d-92d2-868dd01a4d78",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 37,
+      "total_deletions": 3,
+      "accepted_lines": 3,
+      "overriden_lines": 0
+    }
+  }
+}
