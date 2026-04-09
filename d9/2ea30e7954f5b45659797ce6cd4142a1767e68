@@ -1,0 +1,39 @@
+packages/cli/src/discovery/quality.ts
+  08b346ec09c39067 4,29-32,43,77
+packages/cli/src/discovery/local-conventions.ts
+  08b346ec09c39067 32-44,51-74
+packages/cli/src/discovery/repo-conventions.ts
+  08b346ec09c39067 5
+packages/cli/scripts/audit-coverage.ts
+  08b346ec09c39067 42-57
+packages/cli/src/index.ts
+  08b346ec09c39067 746-756,799
+packages/cli/test/agents-intent.test.ts
+  08b346ec09c39067 133-153
+packages/cli/test/discovery/adapters.test.ts
+  08b346ec09c39067 118-120,122-124,143-145,147-165
+packages/cli/src/discovery/conventions.ts
+  08b346ec09c39067 39-45,47-51,62,67-78
+packages/cli/src/agents-intent.ts
+  08b346ec09c39067 49-57,59-74
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.6",
+  "base_commit_sha": "d92ea30e7954f5b45659797ce6cd4142a1767e68",
+  "prompts": {
+    "08b346ec09c39067": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "fa932e7a-9916-414d-92d2-868dd01a4d78",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 173,
+      "total_deletions": 43,
+      "accepted_lines": 175,
+      "overriden_lines": 0
+    }
+  }
+}
