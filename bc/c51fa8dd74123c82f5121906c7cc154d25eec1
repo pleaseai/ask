@@ -1,0 +1,23 @@
+CLAUDE.md
+  2112fbc60635e326 18
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.6",
+  "base_commit_sha": "bcc51fa8dd74123c82f5121906c7cc154d25eec1",
+  "prompts": {
+    "2112fbc60635e326": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2c2629f6-38f1-4622-ad66-cd35ed74969d",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 1,
+      "total_deletions": 0,
+      "accepted_lines": 1,
+      "overriden_lines": 0
+    }
+  }
+}
