@@ -12,12 +12,14 @@ match non-npm names.
 
 Users can always override:
 
-- `include-dev` — also pulls in `devDependencies` / dev-scope equivalents
-  (still subject to the deny-list below).
-- `include <name>` — force-include a specific package from any skipped
-  bucket. Works whether the package was dropped by the deny-list, by the
-  default dev/peer-deps exclusion, or both. Comma-separated names are
-  allowed: `include foo,bar`.
+- `include-dev` — also pulls in `devDependencies` and `peerDependencies`
+  (plus dev-scope equivalents for non-npm ecosystems). Both are still
+  subject to the deny-list below.
+- `include <name>` — force-include a specific package from any
+  *soft-skip* bucket (deny-list, devDependencies, or peerDependencies).
+  Comma-separated names are allowed: `include foo,bar`. This does not
+  override the always-skip rules in SKILL.md Step 1 (workspace / `link:`
+  / `file:` / path deps) — those produce no downloadable docs.
 - `all` — disable the deny-list **and** include `devDependencies` /
   `peerDependencies` in a single shot. Use when you explicitly want the
   previous exhaustive behavior.

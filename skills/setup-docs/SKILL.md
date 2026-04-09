@@ -89,8 +89,12 @@ pass the range to `add-docs` and let the source resolve it.
 These don't have docs to download.
 
 **Default-skip (user can override)**: dev/test/build scopes in the table
-above. If the user asks for `include-dev`, re-read the manifest and merge
-those scopes into the candidate list before the deny-list filter runs.
+above **and** npm `peerDependencies` (which are expected to be provided
+by the host project, not owned by it). If the user asks for `include-dev`,
+re-read the manifest and merge both the dev/test/build scopes **and**
+`peerDependencies` into the candidate list before the deny-list filter
+runs. Track dev/test/build and peer scopes as separate buckets so Step 2
+can list them independently in the confirmation output.
 
 ## Step 1.5 — Apply the deny-list
 
@@ -107,17 +111,23 @@ Matching rules:
 
 If the user says `all`, skip this step entirely.
 If the user says `include <name>` (or a comma-separated list), move each
-name out of **whichever** skipped bucket it currently lives in — the
-deny-list bucket, the devDependencies bucket, or both — and put it back
-into the keep bucket before Step 2. `include <name>` is the single-package
-escape hatch; it works regardless of why the package was dropped.
+name out of whichever **soft-skip** bucket it currently lives in — the
+deny-list bucket, the devDependencies bucket, or the peerDependencies
+bucket — and put it back into the keep bucket before Step 2.
+`include <name>` is the single-package escape hatch for *soft* skips only;
+it does **not** override the always-skip rules in Step 1 (workspace /
+`link:` / `file:` / path deps). Those have no downloadable docs, so
+forcing them in would just produce errors.
 
 ## Step 2 — Show the plan and confirm
 
-Print three buckets so the user can see exactly what's in and what's out:
+Print the derived buckets so the user can see exactly what's in and
+what's out. Show every soft-skip bucket that has at least one entry —
+deny-list, devDependencies, and peerDependencies each get their own
+line so nothing is silently dropped:
 
 ```
-ASK setup plan for <project> (default scope: dependencies)
+ASK setup plan for <project> (default scope: direct runtime dependencies)
 
 Will fetch (8):
   npm:
@@ -133,23 +143,33 @@ Skipped by deny-list (4):
 Skipped devDependencies (23):
   husky, lint-staged, turbo, vitest, tsup, ...
 
+Skipped peerDependencies (2):
+  react, react-dom
+
 Proceed? Options:
   - yes              fetch the 8 packages above
-  - include-dev      also fetch devDependencies (still subject to deny-list)
-  - include <names>  force-include specific packages (comma-separated)
-  - all              disable deny-list AND include dev/peer deps
+  - include-dev      also fetch devDependencies AND peerDependencies
+                     (both still subject to deny-list)
+  - include <names>  force-include specific packages from any soft-skip
+                     bucket (comma-separated)
+  - all              disable deny-list AND include dev + peer deps
   - select           pick a subset interactively
   - cancel
 ```
+
+Omit any bucket whose count is zero — e.g. a Go project won't have a
+`peerDependencies` bucket at all. Always-skip entries from Step 1
+(workspace / path deps) are never shown as a bucket because they are
+not recoverable through any user override.
 
 **Stop and wait** for the user's answer. Never start fetching silently —
 mass downloads against upstream registries deserve an explicit checkpoint.
 
 If the user says `include-dev` or `all`, recompute the buckets and
 re-display before proceeding. If they say `include foo,bar`, move those
-names from whichever skipped bucket they live in (deny-list or
-devDependencies) back into the keep bucket and confirm once more with
-the updated plan.
+names from whichever soft-skip bucket they live in (deny-list,
+devDependencies, or peerDependencies) back into the keep bucket and
+confirm once more with the updated plan.
 
 If the final keep-bucket is still large (>30 entries after overrides),
 warn about wall-clock time before starting.
