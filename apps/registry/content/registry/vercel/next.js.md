@@ -2,20 +2,25 @@
 name: Next.js
 description: The React framework by Vercel
 repo: vercel/next.js
-docsPath: docs
 homepage: https://nextjs.org
 license: MIT
-aliases:
-  - ecosystem: npm
-    name: next
-strategies:
-  - source: npm
-    package: next
-    docsPath: dist/docs
-  - source: github
-    repo: vercel/next.js
-    docsPath: docs
-tags: [react, framework, ssr, vercel]
+tags:
+  - react
+  - framework
+  - ssr
+  - vercel
+packages:
+  - name: next
+    aliases:
+      - ecosystem: npm
+        name: next
+    sources:
+      - type: npm
+        package: next
+        path: dist/docs
+      - type: github
+        repo: vercel/next.js
+        path: docs
 ---
 
 # Next.js

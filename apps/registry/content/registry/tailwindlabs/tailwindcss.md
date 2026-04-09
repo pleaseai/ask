@@ -4,18 +4,23 @@ description: Utility-first CSS framework
 repo: tailwindlabs/tailwindcss
 homepage: https://tailwindcss.com
 license: MIT
-aliases:
-  - ecosystem: npm
-    name: tailwindcss
-strategies:
-  - source: github
-    repo: tailwindlabs/tailwindcss
-  - source: web
-    urls:
-      - https://tailwindcss.com/docs
-    maxDepth: 2
-    allowedPathPrefix: /docs
-tags: [css, framework, utility]
+tags:
+  - css
+  - framework
+  - utility
+packages:
+  - name: tailwindcss
+    aliases:
+      - ecosystem: npm
+        name: tailwindcss
+    sources:
+      - type: github
+        repo: tailwindlabs/tailwindcss
+      - type: web
+        urls:
+          - https://tailwindcss.com/docs
+        maxDepth: 2
+        allowedPathPrefix: /docs
 ---
 
 # Tailwind CSS

@@ -2,13 +2,22 @@
 name: Kubernetes
 description: Production-grade container orchestration
 repo: kubernetes/kubernetes
-docsPath: docs
 homepage: https://kubernetes.io
 license: Apache-2.0
-aliases:
-  - ecosystem: go
-    name: kubernetes
-tags: [containers, orchestration, cloud-native, go]
+tags:
+  - containers
+  - orchestration
+  - cloud-native
+  - go
+packages:
+  - name: kubernetes
+    aliases:
+      - ecosystem: go
+        name: kubernetes
+    sources:
+      - type: github
+        repo: kubernetes/kubernetes
+        path: docs
 ---
 
 # Kubernetes

@@ -2,21 +2,30 @@
 name: Angular
 description: Platform for building mobile and desktop web applications
 repo: angular/angular
-docsPath: adev/src/content
 homepage: https://angular.dev
 license: MIT
-aliases:
-  - ecosystem: npm
-    name: '@angular/core'
-  - ecosystem: npm
-    name: '@angular/common'
-  - ecosystem: npm
-    name: '@angular/router'
-  - ecosystem: npm
-    name: '@angular/forms'
-  - ecosystem: npm
-    name: '@angular/platform-browser'
-tags: [typescript, framework, spa, google]
+tags:
+  - typescript
+  - framework
+  - spa
+  - google
+packages:
+  - name: "@angular/core"
+    aliases:
+      - ecosystem: npm
+        name: "@angular/core"
+      - ecosystem: npm
+        name: "@angular/common"
+      - ecosystem: npm
+        name: "@angular/router"
+      - ecosystem: npm
+        name: "@angular/forms"
+      - ecosystem: npm
+        name: "@angular/platform-browser"
+    sources:
+      - type: github
+        repo: angular/angular
+        path: adev/src/content
 ---
 
 # Angular

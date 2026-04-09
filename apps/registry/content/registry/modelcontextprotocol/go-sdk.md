@@ -4,10 +4,20 @@ description: Official Go SDK for the Model Context Protocol
 repo: modelcontextprotocol/go-sdk
 homepage: https://modelcontextprotocol.io
 license: MIT
-aliases:
-  - ecosystem: go
-    name: mcp-go-sdk
-tags: [mcp, ai, agents, go, sdk]
+tags:
+  - mcp
+  - ai
+  - agents
+  - go
+  - sdk
+packages:
+  - name: mcp-go-sdk
+    aliases:
+      - ecosystem: go
+        name: mcp-go-sdk
+    sources:
+      - type: github
+        repo: modelcontextprotocol/go-sdk
 ---
 
 # MCP Go SDK

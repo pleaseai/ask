@@ -2,13 +2,23 @@
 name: LlamaIndex
 description: Data framework for LLM applications
 repo: jerryjliu/llama_index
-docsPath: docs/docs
 homepage: https://docs.llamaindex.ai
 license: MIT
-aliases:
-  - ecosystem: pypi
-    name: llama-index
-tags: [ai, rag, llm, data, python]
+tags:
+  - ai
+  - rag
+  - llm
+  - data
+  - python
+packages:
+  - name: llama-index
+    aliases:
+      - ecosystem: pypi
+        name: llama-index
+    sources:
+      - type: github
+        repo: jerryjliu/llama_index
+        path: docs/docs
 ---
 
 # LlamaIndex

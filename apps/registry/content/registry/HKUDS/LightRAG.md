@@ -4,10 +4,20 @@ description: Simple and fast Retrieval-Augmented Generation
 repo: HKUDS/LightRAG
 homepage: https://github.com/HKUDS/LightRAG
 license: MIT
-aliases:
-  - ecosystem: pypi
-    name: lightrag-hku
-tags: [ai, rag, llm, graph, python]
+tags:
+  - ai
+  - rag
+  - llm
+  - graph
+  - python
+packages:
+  - name: lightrag-hku
+    aliases:
+      - ecosystem: pypi
+        name: lightrag-hku
+    sources:
+      - type: github
+        repo: HKUDS/LightRAG
 ---
 
 # LightRAG

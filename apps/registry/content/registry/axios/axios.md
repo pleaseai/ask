@@ -2,13 +2,23 @@
 name: Axios
 description: Promise-based HTTP client for the browser and Node.js
 repo: axios/axios
-docsPath: docs
 homepage: https://axios-http.com
 license: MIT
-aliases:
-  - ecosystem: npm
-    name: axios
-tags: [http, client, promise, browser, node]
+tags:
+  - http
+  - client
+  - promise
+  - browser
+  - node
+packages:
+  - name: axios
+    aliases:
+      - ecosystem: npm
+        name: axios
+    sources:
+      - type: github
+        repo: axios/axios
+        path: docs
 ---
 
 # Axios

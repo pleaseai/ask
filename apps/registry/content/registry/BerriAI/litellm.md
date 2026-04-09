@@ -2,13 +2,23 @@
 name: LiteLLM
 description: Call 100+ LLM APIs using the OpenAI format
 repo: BerriAI/litellm
-docsPath: docs
 homepage: https://docs.litellm.ai
 license: MIT
-aliases:
-  - ecosystem: pypi
-    name: litellm
-tags: [ai, llm, openai, proxy, python]
+tags:
+  - ai
+  - llm
+  - openai
+  - proxy
+  - python
+packages:
+  - name: litellm
+    aliases:
+      - ecosystem: pypi
+        name: litellm
+    sources:
+      - type: github
+        repo: BerriAI/litellm
+        path: docs
 ---
 
 # LiteLLM

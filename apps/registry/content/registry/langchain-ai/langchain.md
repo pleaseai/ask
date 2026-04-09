@@ -2,13 +2,23 @@
 name: LangChain
 description: Framework for developing applications powered by LLMs
 repo: langchain-ai/langchain
-docsPath: docs/docs
 homepage: https://python.langchain.com
 license: MIT
-aliases:
-  - ecosystem: pypi
-    name: langchain
-tags: [ai, llm, chains, agents, python]
+tags:
+  - ai
+  - llm
+  - chains
+  - agents
+  - python
+packages:
+  - name: langchain
+    aliases:
+      - ecosystem: pypi
+        name: langchain
+    sources:
+      - type: github
+        repo: langchain-ai/langchain
+        path: docs/docs
 ---
 
 # LangChain

@@ -2,20 +2,26 @@
 name: Vercel AI SDK
 description: TypeScript SDK for building AI-powered applications and agents
 repo: vercel/ai
-docsPath: dist/docs
 homepage: https://sdk.vercel.ai
 license: Apache-2.0
-aliases:
-  - ecosystem: npm
-    name: ai
-strategies:
-  - source: npm
-    package: ai
-    docsPath: dist/docs
-  - source: github
-    repo: vercel/ai
-    docsPath: content/docs
-tags: [ai, llm, sdk, agents, typescript]
+tags:
+  - ai
+  - llm
+  - sdk
+  - agents
+  - typescript
+packages:
+  - name: ai
+    aliases:
+      - ecosystem: npm
+        name: ai
+    sources:
+      - type: npm
+        package: ai
+        path: dist/docs
+      - type: github
+        repo: vercel/ai
+        path: content/docs
 ---
 
 # Vercel AI SDK

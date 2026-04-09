@@ -2,13 +2,22 @@
 name: pyinfra
 description: Infrastructure automation in Python
 repo: Fizzadar/pyinfra
-docsPath: docs
 homepage: https://pyinfra.com
 license: MIT
-aliases:
-  - ecosystem: pypi
-    name: pyinfra
-tags: [infrastructure, automation, devops, python]
+tags:
+  - infrastructure
+  - automation
+  - devops
+  - python
+packages:
+  - name: pyinfra
+    aliases:
+      - ecosystem: pypi
+        name: pyinfra
+    sources:
+      - type: github
+        repo: Fizzadar/pyinfra
+        path: docs
 ---
 
 # pyinfra

@@ -2,13 +2,23 @@
 name: TensorFlow
 description: Open source platform for machine learning
 repo: tensorflow/tensorflow
-docsPath: tensorflow/docs
 homepage: https://www.tensorflow.org
 license: Apache-2.0
-aliases:
-  - ecosystem: pypi
-    name: tensorflow
-tags: [ai, deep-learning, ml, google, python]
+tags:
+  - ai
+  - deep-learning
+  - ml
+  - google
+  - python
+packages:
+  - name: tensorflow
+    aliases:
+      - ecosystem: pypi
+        name: tensorflow
+    sources:
+      - type: github
+        repo: tensorflow/tensorflow
+        path: tensorflow/docs
 ---
 
 # TensorFlow
