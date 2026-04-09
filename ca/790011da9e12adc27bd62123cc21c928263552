@@ -1,0 +1,38 @@
+.please/docs/decisions/index.md
+  a32b737e9033b302 7
+.please/docs/decisions/0001-registry-entry-schema-entry-package-source.md
+  a32b737e9033b302 1-258
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.6",
+  "base_commit_sha": "ca790011da9e12adc27bd62123cc21c928263552",
+  "prompts": {
+    "614e81b0bd6ab6d6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ee7dc120-37f2-48da-8f19-9c657aad0d59",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 5,
+      "overriden_lines": 0
+    },
+    "a32b737e9033b302": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "25c9e57a-e829-4940-8e3d-5eb21f375474",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 925,
+      "total_deletions": 454,
+      "accepted_lines": 917,
+      "overriden_lines": 0
+    }
+  }
+}
