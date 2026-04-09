@@ -4,10 +4,19 @@ description: Module bundler for modern JavaScript applications
 repo: webpack/webpack
 homepage: https://webpack.js.org
 license: MIT
-aliases:
-  - ecosystem: npm
-    name: webpack
-tags: [bundler, build, modules, assets]
+tags:
+  - bundler
+  - build
+  - modules
+  - assets
+packages:
+  - name: webpack
+    aliases:
+      - ecosystem: npm
+        name: webpack
+    sources:
+      - type: github
+        repo: webpack/webpack
 ---
 
 # Webpack

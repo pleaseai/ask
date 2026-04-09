@@ -1,7 +1,6 @@
-import type { RegistryStrategy } from '@pleaseai/ask-schema'
 import type { ParsedDocSpec } from '../src/registry.js'
 import { describe, expect, it } from 'bun:test'
-import { parseDocSpec, parseEcosystem, selectBestStrategy } from '../src/registry.js'
+import { parseDocSpec, parseEcosystem } from '../src/registry.js'
 
 describe('parseEcosystem', () => {
   it('splits simple ecosystem prefix', () => {
@@ -213,85 +212,7 @@ describe('parseDocSpec', () => {
   })
 })
 
-describe('selectBestStrategy', () => {
-  // T-3/T-4 (npm-tarball-docs-20260408): An npm strategy carrying a `docsPath`
-  // is treated as author-curated and outranks github. Without `docsPath` the
-  // static SOURCE_PRIORITY table still wins. These tests are the regression
-  // guard for that selection rule.
-
-  const github: RegistryStrategy = { source: 'github', repo: 'vercel/next.js', docsPath: 'docs' }
-  const npmCurated: RegistryStrategy = { source: 'npm', package: 'next', docsPath: 'dist/docs' }
-  const npmBare: RegistryStrategy = { source: 'npm', package: 'next' }
-  const web: RegistryStrategy = { source: 'web', urls: ['https://example.com/docs'] }
-
-  it('returns the only strategy when list has one entry (github)', () => {
-    expect(selectBestStrategy([github])).toBe(github)
-  })
-
-  it('returns the only strategy when list has one entry (curated npm)', () => {
-    expect(selectBestStrategy([npmCurated])).toBe(npmCurated)
-  })
-
-  it('npm-with-docsPath beats github even when github is listed first', () => {
-    // Real-world case: vercel/ai entry lists npm + github strategies; the
-    // curated npm dist/docs path must win regardless of declaration order.
-    expect(selectBestStrategy([github, npmCurated])).toBe(npmCurated)
-    expect(selectBestStrategy([npmCurated, github])).toBe(npmCurated)
-  })
-
-  it('npm-without-docsPath does NOT beat github (falls back to static priority)', () => {
-    // A bare `source: npm` entry has no proof of curation — github wins.
-    expect(selectBestStrategy([github, npmBare])).toBe(github)
-    expect(selectBestStrategy([npmBare, github])).toBe(github)
-  })
-
-  it('curated npm wins over web too', () => {
-    expect(selectBestStrategy([web, npmCurated])).toBe(npmCurated)
-  })
-
-  it('tie-break is stable (declaration order) for non-curated case', () => {
-    const githubA: RegistryStrategy = { source: 'github', repo: 'a/x' }
-    const githubB: RegistryStrategy = { source: 'github', repo: 'b/y' }
-    expect(selectBestStrategy([githubA, githubB])).toBe(githubA)
-    expect(selectBestStrategy([githubB, githubA])).toBe(githubB)
-  })
-
-  it('among multiple curated npm strategies WITHOUT context, declaration order wins', () => {
-    const core: RegistryStrategy = { source: 'npm', package: '@mastra/core', docsPath: 'dist/docs' }
-    const memory: RegistryStrategy = { source: 'npm', package: '@mastra/memory', docsPath: 'dist/docs' }
-    expect(selectBestStrategy([core, memory])).toBe(core)
-    expect(selectBestStrategy([memory, core])).toBe(memory)
-  })
-
-  it('throws on empty list', () => {
-    expect(() => selectBestStrategy([])).toThrow(/at least one/i)
-  })
-
-  // The registry server handles monorepo disambiguation and reorders the
-  // strategies array so the matching curated npm strategy is at the head.
-  // From the client's POV, that means it always sees the right strategy
-  // first — no client-side context is needed. This test documents the
-  // contract: when the server has put the matching strategy first, the
-  // client must honor it.
-  it('honors server-side ordering for monorepo entries', () => {
-    // Server-shaped response for `npm:@mastra/memory` against the
-    // mastra-ai/mastra entry: matching npm strategy is at index 0,
-    // followed by the github fallback.
-    const memory: RegistryStrategy = { source: 'npm', package: '@mastra/memory', docsPath: 'dist/docs' }
-    const github: RegistryStrategy = { source: 'github', repo: 'mastra-ai/mastra', docsPath: 'docs' }
-    expect(selectBestStrategy([memory, github])).toBe(memory)
-  })
-
-  // T-14 regression: ensure that registry entries WITHOUT explicit
-  // strategies (the common case for entries created before this track) keep
-  // resolving to a github strategy via expandStrategies + selectBestStrategy.
-  // The full chain runs in fetchRegistryEntry → resolveFromRegistry. Here we
-  // just exercise selectBestStrategy on the synthetic shape that
-  // expandStrategies emits for those entries.
-  it('regression: bare github entry (no strategies array) still resolves to github', () => {
-    // Mirrors the shape `expandStrategies({ repo, docsPath })` produces for
-    // entries like lodash/lodash, axios/axios, jquery/jquery.
-    const fromBareEntry: RegistryStrategy = { source: 'github', repo: 'lodash/lodash' }
-    expect(selectBestStrategy([fromBareEntry])).toBe(fromBareEntry)
-  })
-})
+// NOTE: Source selection moved from the client to the entry author per
+// ADR-0001 — `sources[]` is iterated in declaration order, and the registry
+// server no longer reorders. There is no `selectBestStrategy` equivalent on
+// the CLI side. Schema-level shape tests live in `packages/schema/test/`.

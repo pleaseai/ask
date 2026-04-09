@@ -4,10 +4,19 @@ description: Modern JavaScript utility library delivering modularity and perform
 repo: lodash/lodash
 homepage: https://lodash.com
 license: MIT
-aliases:
-  - ecosystem: npm
-    name: lodash
-tags: [utility, functional, collections, arrays]
+tags:
+  - utility
+  - functional
+  - collections
+  - arrays
+packages:
+  - name: lodash
+    aliases:
+      - ecosystem: npm
+        name: lodash
+    sources:
+      - type: github
+        repo: lodash/lodash
 ---
 
 # Lodash

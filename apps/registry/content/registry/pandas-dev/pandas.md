@@ -2,13 +2,22 @@
 name: pandas
 description: Powerful data analysis and manipulation library for Python
 repo: pandas-dev/pandas
-docsPath: doc
 homepage: https://pandas.pydata.org
 license: BSD-3-Clause
-aliases:
-  - ecosystem: pypi
-    name: pandas
-tags: [data, analysis, dataframe, python]
+tags:
+  - data
+  - analysis
+  - dataframe
+  - python
+packages:
+  - name: pandas
+    aliases:
+      - ecosystem: pypi
+        name: pandas
+    sources:
+      - type: github
+        repo: pandas-dev/pandas
+        path: doc
 ---
 
 # pandas

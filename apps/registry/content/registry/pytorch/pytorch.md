@@ -2,13 +2,23 @@
 name: PyTorch
 description: Tensors and dynamic neural networks in Python with GPU acceleration
 repo: pytorch/pytorch
-docsPath: docs/source
 homepage: https://pytorch.org
 license: BSD-3-Clause
-aliases:
-  - ecosystem: pypi
-    name: torch
-tags: [ai, deep-learning, ml, gpu, python]
+tags:
+  - ai
+  - deep-learning
+  - ml
+  - gpu
+  - python
+packages:
+  - name: torch
+    aliases:
+      - ecosystem: pypi
+        name: torch
+    sources:
+      - type: github
+        repo: pytorch/pytorch
+        path: docs/source
 ---
 
 # PyTorch

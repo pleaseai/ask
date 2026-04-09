@@ -2,25 +2,37 @@
 name: Mastra
 description: TypeScript framework for building AI agents, workflows, and RAG pipelines
 repo: mastra-ai/mastra
-docsPath: docs
 homepage: https://mastra.ai
 license: Apache-2.0
-aliases:
-  - ecosystem: npm
-    name: "@mastra/core"
-  - ecosystem: npm
-    name: "@mastra/memory"
-strategies:
-  - source: npm
-    package: "@mastra/core"
-    docsPath: dist/docs
-  - source: npm
-    package: "@mastra/memory"
-    docsPath: dist/docs
-  - source: github
-    repo: mastra-ai/mastra
-    docsPath: docs
-tags: [ai, agents, framework, typescript, rag]
+tags:
+  - ai
+  - agents
+  - framework
+  - typescript
+  - rag
+packages:
+  - name: "@mastra/core"
+    aliases:
+      - ecosystem: npm
+        name: "@mastra/core"
+    sources:
+      - type: npm
+        package: "@mastra/core"
+        path: dist/docs
+      - type: github
+        repo: mastra-ai/mastra
+        path: docs
+  - name: "@mastra/memory"
+    aliases:
+      - ecosystem: npm
+        name: "@mastra/memory"
+    sources:
+      - type: npm
+        package: "@mastra/memory"
+        path: dist/docs
+      - type: github
+        repo: mastra-ai/mastra
+        path: docs
 ---
 
 # Mastra

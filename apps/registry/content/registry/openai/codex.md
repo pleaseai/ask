@@ -2,12 +2,22 @@
 name: Codex
 description: Lightweight AI coding agent from OpenAI
 repo: openai/codex
-docsPath: docs
 license: Apache-2.0
-aliases:
-  - ecosystem: npm
-    name: codex
-tags: [ai, coding, agent, openai, cli]
+tags:
+  - ai
+  - coding
+  - agent
+  - openai
+  - cli
+packages:
+  - name: codex
+    aliases:
+      - ecosystem: npm
+        name: codex
+    sources:
+      - type: github
+        repo: openai/codex
+        path: docs
 ---
 
 # Codex

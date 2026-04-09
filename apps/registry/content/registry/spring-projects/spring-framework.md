@@ -4,10 +4,20 @@ description: Core support framework for Java applications
 repo: spring-projects/spring-framework
 homepage: https://spring.io/projects/spring-framework
 license: Apache-2.0
-aliases:
-  - ecosystem: maven
-    name: spring-framework
-tags: [java, spring, framework, di, aop]
+tags:
+  - java
+  - spring
+  - framework
+  - di
+  - aop
+packages:
+  - name: spring-framework
+    aliases:
+      - ecosystem: maven
+        name: spring-framework
+    sources:
+      - type: github
+        repo: spring-projects/spring-framework
 ---
 
 # Spring Framework

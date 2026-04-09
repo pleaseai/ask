@@ -2,12 +2,20 @@
 name: Zod
 description: TypeScript-first schema validation library
 repo: colinhacks/zod
-docsPath: docs
 license: MIT
-aliases:
-  - ecosystem: npm
-    name: zod
-tags: [typescript, validation, schema]
+tags:
+  - typescript
+  - validation
+  - schema
+packages:
+  - name: zod
+    aliases:
+      - ecosystem: npm
+        name: zod
+    sources:
+      - type: github
+        repo: colinhacks/zod
+        path: docs
 ---
 
 # Zod

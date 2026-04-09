@@ -1,11 +1,9 @@
-import type { RegistryEntry, RegistryStrategy } from '@pleaseai/ask-schema'
+import type { RegistrySource } from '@pleaseai/ask-schema'
 import fs from 'node:fs'
 import path from 'node:path'
-import { expandStrategies } from '@pleaseai/ask-schema'
 import { consola } from 'consola'
 
-export type { ExpandInput, RegistryAlias, RegistryEntry, RegistryStrategy } from '@pleaseai/ask-schema'
-export { expandStrategies } from '@pleaseai/ask-schema'
+export type { RegistryAlias, RegistryEntry, RegistryPackage, RegistrySource } from '@pleaseai/ask-schema'
 
 const REGISTRY_BASE_URL = 'https://ask-registry.pages.dev'
 
@@ -144,19 +142,36 @@ function detectEcosystem(projectDir: string): string {
 }
 
 /**
- * Shape of the registry API response — a stored entry plus the
- * server-side `resolvedName` field that disambiguates monorepo entries.
+ * Shape of the registry API response — flattened view of one registry
+ * entry focused on a single package.
  *
- * The server returns:
- *   - `resolvedName === entry.name` for non-monorepo entries
- *   - `resolvedName === slugifyPackageName(requestedAlias)` for monorepo
- *     entries that hold multiple npm strategies
+ * For direct `owner/repo` lookups the server returns the sole package of a
+ * single-package entry (and 409s on monorepo entries). For alias lookups
+ * the server returns the one package that declared the alias.
  *
- * It also reorders `strategies` so that the curated npm strategy matching
- * the requested alias comes first. The CLI trusts both fields and does no
- * client-side disambiguation. See `apps/registry/server/api/registry/[...slug].get.ts`.
+ * `resolvedName` is the CLI-facing identifier safe for use as both a
+ * directory name and a Claude Code skill name — `@mastra/core` →
+ * `mastra-core`. For single-package entries it equals `entry.name`; for
+ * monorepo entries it is `slugifyPackageName(package.name)`.
+ *
+ * `sources` is in the entry author's declared priority order. The CLI
+ * uses the head as the primary choice and can walk the remainder as a
+ * fallback chain on download failure. See the ADR-0001 decision record.
  */
-export type RegistryApiResponse = RegistryEntry & { resolvedName?: string }
+export interface RegistryApiResponse {
+  name: string
+  description: string
+  repo: string
+  homepage?: string
+  license?: string
+  tags?: string[]
+  resolvedName: string
+  package: {
+    name: string
+    description?: string
+  }
+  sources: RegistrySource[]
+}
 
 /**
  * Fetch registry entry from the registry API.
@@ -175,7 +190,20 @@ export async function fetchRegistryEntry(
 
   try {
     const response = await fetch(url)
+    if (response.status === 404) {
+      return null
+    }
     if (!response.ok) {
+      // Non-404 errors carry actionable information we must not swallow.
+      // The registry server returns 409 Conflict with a `statusMessage`
+      // telling the caller to disambiguate a monorepo entry via an
+      // ecosystem alias (e.g. `npm:@mastra/core` instead of
+      // `mastra-ai/mastra`). Surface it via `consola.warn` so the user
+      // sees the guidance; 5xx/other errors get the same treatment so
+      // they don't silently degrade to "entry not found".
+      const body = await response.json().catch(() => ({})) as { statusMessage?: string }
+      const message = body.statusMessage ?? response.statusText
+      consola.warn(`Registry lookup for ${first}/${second} returned ${response.status}: ${message}`)
       return null
     }
     const data = await response.json() as RegistryApiResponse
@@ -188,77 +216,17 @@ export async function fetchRegistryEntry(
 }
 
 /**
- * Source type priority for selecting the best strategy from a registry entry.
- *
- * Lower number = higher priority. Based on Nuxt UI eval results (2026-04-07):
- * GitHub docs achieved 100% pass rate at lowest cost, while llms.txt scored
- * below baseline. See evals/nuxt-ui/README.md for full methodology.
- *
- * Note: an explicit `npm` strategy carrying a `docsPath` overrides this table
- * — see `selectBestStrategy` for the rationale. The base table only matters
- * for tie-break and for npm strategies *without* an explicit docsPath.
- */
-const SOURCE_PRIORITY: Record<RegistryStrategy['source'], number> = {
-  'github': 0,
-  'npm': 1,
-  'web': 2,
-  'llms-txt': 3,
-}
-
-/**
- * An npm strategy that explicitly declares a `docsPath` is treated as
- * author-curated (e.g. `vercel/ai`'s `dist/docs`). It outranks every other
- * strategy in the same entry. Without `docsPath` we fall back to the static
- * SOURCE_PRIORITY table — npm without curation is no better than github.
- */
-function isCuratedNpm(strategy: RegistryStrategy): boolean {
-  return strategy.source === 'npm' && Boolean(strategy.docsPath)
-}
-
-/**
- * Pick the highest-priority strategy from a list, preserving the original
- * order for ties (stable sort).
- *
- * Selection rules (in order):
- *   1. If any strategy is a "curated npm" (`source: npm` with `docsPath`),
- *      pick the first one in declaration order. The registry server is
- *      responsible for putting the right curated npm strategy first when
- *      the request was for a specific scoped package in a monorepo entry
- *      — see `apps/registry/server/api/registry/[...slug].get.ts`. The
- *      client's job here is just to honor the order.
- *   2. Otherwise, sort by SOURCE_PRIORITY (github > npm > web > llms-txt)
- *      preserving original order on ties.
- */
-export function selectBestStrategy(strategies: RegistryStrategy[]): RegistryStrategy {
-  if (strategies.length === 0) {
-    throw new Error('selectBestStrategy requires at least one strategy')
-  }
-  // Rule 1: curated npm wins outright (first in declaration order — the
-  // server has already put the right one at the head when applicable)
-  const curated = strategies.find(isCuratedNpm)
-  if (curated) {
-    return curated
-  }
-  // Rule 2: stable sort by static priority
-  const indexed = Array.from(strategies, (s, i) => ({ s, i }))
-  indexed.sort((a, b) => {
-    const pa = SOURCE_PRIORITY[a.s.source] ?? 99
-    const pb = SOURCE_PRIORITY[b.s.source] ?? 99
-    if (pa !== pb)
-      return pa - pb
-    return a.i - b.i
-  })
-  return indexed[0].s
-}
-
-/**
  * Resolve source config from registry.
- * Returns the highest-priority strategy from the registry entry.
+ *
+ * Returns the first source from the selected package in declaration order.
+ * Per ADR-0001, priority is author-decided — the CLI no longer reorders
+ * sources client-side. A future enhancement can walk `entry.sources` as a
+ * fallback chain when the primary source fails.
  */
 export async function resolveFromRegistry(
   input: string,
   projectDir: string,
-): Promise<{ ecosystem: string, name: string, version: string, strategy: RegistryStrategy } | null> {
+): Promise<{ ecosystem: string, name: string, version: string, source: RegistrySource } | null> {
   const { ecosystem: explicitEcosystem, spec } = parseEcosystem(input)
 
   const lastAt = spec.lastIndexOf('@')
@@ -274,34 +242,19 @@ export async function resolveFromRegistry(
     return null
   }
 
-  let strategies: RegistryStrategy[]
-  try {
-    strategies = expandStrategies({
-      repo: entry.repo,
-      docsPath: entry.docsPath,
-      strategies: entry.strategies,
-    })
-  }
-  catch (error) {
-    consola.warn(`Registry entry for ${name} is misconfigured: ${(error as Error).message}`)
+  const [primary] = entry.sources
+  if (!primary) {
+    consola.warn(`Registry entry for ${name} has no sources`)
     return null
   }
 
   consola.success(`Found ${entry.name} in registry: ${entry.description}`)
-
-  const strategy = selectBestStrategy(strategies)
-  consola.info(`Using source: ${strategy.source}`)
-
-  // The server has already disambiguated and slugified `resolvedName` for
-  // monorepo entries (multiple scoped packages under one repo entry). For
-  // older server versions that don't return `resolvedName`, fall back to
-  // the entry's display name — the same behavior as before.
-  const resolvedName = entry.resolvedName ?? entry.name
+  consola.info(`Using source: ${primary.type}`)
 
   return {
     ecosystem,
-    name: resolvedName,
+    name: entry.resolvedName,
     version,
-    strategy,
+    source: primary,
   }
 }

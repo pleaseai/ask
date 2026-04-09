@@ -2,19 +2,24 @@
 name: Nuxt
 description: The Intuitive Vue Framework
 repo: nuxt/nuxt
-docsPath: docs
 homepage: https://nuxt.com
 license: MIT
-aliases:
-  - ecosystem: npm
-    name: nuxt
-strategies:
-  - source: github
-    repo: nuxt/nuxt
-    docsPath: docs
-  - source: llms-txt
-    url: https://nuxt.com/llms.txt
-tags: [vue, framework, ssr, nitro]
+tags:
+  - vue
+  - framework
+  - ssr
+  - nitro
+packages:
+  - name: nuxt
+    aliases:
+      - ecosystem: npm
+        name: nuxt
+    sources:
+      - type: github
+        repo: nuxt/nuxt
+        path: docs
+      - type: llms-txt
+        url: https://nuxt.com/llms.txt
 ---
 
 # Nuxt

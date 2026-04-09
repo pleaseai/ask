@@ -4,10 +4,19 @@ description: Fast, small, and feature-rich JavaScript library
 repo: jquery/jquery
 homepage: https://jquery.com
 license: MIT
-aliases:
-  - ecosystem: npm
-    name: jquery
-tags: [dom, manipulation, ajax, browser]
+tags:
+  - dom
+  - manipulation
+  - ajax
+  - browser
+packages:
+  - name: jquery
+    aliases:
+      - ecosystem: npm
+        name: jquery
+    sources:
+      - type: github
+        repo: jquery/jquery
 ---
 
 # jQuery

@@ -24,6 +24,7 @@ import {
 import { manageIgnoreFiles } from './ignore-files.js'
 import { contentHash, getConfigPath, getLockPath, readLock, upsertLockEntry } from './io.js'
 import { getReader } from './manifest/index.js'
+import type { RegistrySource } from './registry.js'
 import { fetchRegistryEntry, parseDocSpec, parseEcosystem, resolveFromRegistry } from './registry.js'
 import { getResolver } from './resolvers/index.js'
 import { generateSkill, removeSkill } from './skill.js'
@@ -182,6 +183,53 @@ function parseSpec(spec: string): { name: string, version: string } {
   return { name: spec, version: 'latest' }
 }
 
+/**
+ * Adapt a registry API `RegistrySource` (the fetch recipe the server
+ * returned) into the internal `SourceConfig` shape the rest of the CLI
+ * operates on. The two types carry the same information in slightly
+ * different layouts — `type` vs `source`, `path` vs `docsPath` — per
+ * ADR-0001 (see `.please/docs/decisions/0001-*.md`).
+ */
+function sourceConfigFromRegistrySource(
+  name: string,
+  version: string,
+  source: RegistrySource,
+): SourceConfig {
+  const base = { name, version }
+  switch (source.type) {
+    case 'npm':
+      return {
+        ...base,
+        source: 'npm',
+        package: source.package,
+        docsPath: source.path,
+      } satisfies NpmSourceOptions
+    case 'github':
+      return {
+        ...base,
+        source: 'github',
+        repo: source.repo,
+        branch: source.branch,
+        tag: source.tag,
+        docsPath: source.path,
+      } satisfies GithubSourceOptions
+    case 'web':
+      return {
+        ...base,
+        source: 'web',
+        urls: source.urls,
+        maxDepth: source.maxDepth ?? 1,
+        allowedPathPrefix: source.allowedPathPrefix,
+      } satisfies WebSourceOptions
+    case 'llms-txt':
+      return {
+        ...base,
+        source: 'llms-txt',
+        url: source.url,
+      } satisfies LlmsTxtSourceOptions
+  }
+}
+
 function buildSourceConfig(
   name: string,
   version: string,
@@ -307,13 +355,19 @@ const addCmd = defineCommand({
       const version = ref ?? 'latest'
       const libName = `${owner}-${repo}`
 
-      // Enrich with registry metadata (docsPath, strategies) when available
+      // Enrich with registry metadata (github source `path`) when available.
+      // Direct owner/repo lookup returns the entry's single package on
+      // single-package entries and 409 on monorepo entries — we only act
+      // on the single-package case.
       let docsPath = args.docsPath
       if (!docsPath) {
         const entry = await fetchRegistryEntry(owner, repo)
         if (entry) {
           consola.info(`Found ${entry.name} in registry`)
-          docsPath = entry.docsPath
+          const githubSource = entry.sources.find(s => s.type === 'github')
+          if (githubSource && githubSource.type === 'github') {
+            docsPath = githubSource.path
+          }
         }
       }
 
@@ -347,18 +401,9 @@ const addCmd = defineCommand({
       // Auto-detect from registry
       const resolved = await resolveFromRegistry(effectiveSpec, projectDir)
       if (resolved) {
-        const { strategy } = resolved
-        consola.start(`Downloading ${resolved.name}@${resolved.version} docs (source: ${strategy.source})...`)
-        sourceConfig = buildSourceConfig(resolved.name, resolved.version, {
-          source: strategy.source,
-          repo: strategy.repo,
-          docsPath: strategy.docsPath,
-          url: strategy.urls ?? (strategy.url ? [strategy.url] : undefined),
-          maxDepth: strategy.maxDepth?.toString(),
-          pathPrefix: strategy.allowedPathPrefix,
-          branch: strategy.branch,
-          tag: strategy.tag,
-        })
+        const { source } = resolved
+        consola.start(`Downloading ${resolved.name}@${resolved.version} docs (source: ${source.type})...`)
+        sourceConfig = sourceConfigFromRegistrySource(resolved.name, resolved.version, source)
       }
       else if (parsed.kind === 'ecosystem' && parsed.ecosystem === 'npm') {
         // Registry miss with explicit `npm:` prefix → honor the user's

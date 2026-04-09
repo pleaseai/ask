@@ -2,12 +2,22 @@
 name: FastMCP
 description: Fast, Pythonic way to build MCP servers and clients
 repo: jlowin/fastmcp
-docsPath: docs
 license: MIT
-aliases:
-  - ecosystem: pypi
-    name: fastmcp
-tags: [mcp, ai, agents, python, server]
+tags:
+  - mcp
+  - ai
+  - agents
+  - python
+  - server
+packages:
+  - name: fastmcp
+    aliases:
+      - ecosystem: pypi
+        name: fastmcp
+    sources:
+      - type: github
+        repo: jlowin/fastmcp
+        path: docs
 ---
 
 # FastMCP
