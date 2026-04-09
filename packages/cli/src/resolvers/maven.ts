@@ -116,7 +116,7 @@ export class MavenResolver implements EcosystemResolver {
       throw new Error(
         `Cannot resolve GitHub repository for Maven package '${groupId}:${artifactId}'. `
         + `Neither the Search API nor the POM contains a GitHub URL. `
-        + `Use 'owner/repo' format instead: ask docs add owner/repo`,
+        + `Use 'github:owner/repo' format instead: ask add github:owner/repo --ref <tag>`,
       )
     }
 

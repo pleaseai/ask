@@ -67,7 +67,7 @@ export class PypiResolver implements EcosystemResolver {
       throw new Error(
         `Cannot resolve GitHub repository for PyPI package '${name}'. `
         + `The 'project_urls' field does not contain a GitHub URL. `
-        + `Use 'owner/repo' format instead: ask docs add owner/repo`,
+        + `Use 'github:owner/repo' format instead: ask add github:owner/repo --ref <tag>`,
       )
     }
 

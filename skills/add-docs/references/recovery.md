@@ -1,37 +1,41 @@
-# Recovery — when `ask docs add` fails
+# Recovery — when `ask add` / `ask install` fails
 
-> Read this **only** when the CLI exited non-zero. The happy path in
-> [`../SKILL.md`](../SKILL.md) covers the 95% case where the upfront
-> planning in Step 3 picks the correct spec on the first try.
+> Read this **only** when the CLI exited non-zero or warn-and-skipped a
+> single entry. The happy path in [`../SKILL.md`](../SKILL.md) covers
+> the 95% case where the upfront planning in Step 3 picks the correct
+> spec on the first try.
 
-The CLI is **deterministic**: it executes one spec and either succeeds or
-exits non-zero with a clear error. It does **not** automatically fall back
-between sources. When it fails, the recovery decision is **your job** as
-the LLM driving `add-docs` — read the error, decide which alternative is
-viable, and re-invoke the CLI with a different spec.
+`ask install` is `postinstall`-friendly: per-entry failures emit a
+warning on stderr and the command exits 0. After a run, scan stderr
+for `[warn] <spec>: …` lines to see what was skipped. The recovery
+decision is **your job** as the LLM driving `add-docs` — read the
+warning, decide which alternative is viable, and re-invoke `ask add`
+with a different spec.
 
 ## Hard limits
 
-- **At most 1 retry per CLI invocation.** If the second attempt also
-  fails, report both errors verbatim and stop. Do not chain a third try.
+- **At most 1 retry per entry.** If the second attempt also fails,
+  report both errors verbatim and stop. Do not chain a third try.
 - **Never silently change the user's intent.** If the user said
-  `next@14.2.0`, the recovery retry must keep the version constraint
-  (`vercel/next.js@v14.2.0`). Do not drop or relax it.
+  `next 14.2.0`, the recovery retry must keep the version constraint
+  (`github:vercel/next.js --ref v14.2.0`). Do not drop or relax it.
 - **Always tell the user which path you took.** A one-line summary like
-  "npm tarball had no docs, retried via `vercel/next.js` — succeeded" is
-  the minimum acceptable verification trail.
+  "npm tarball had no docs, retried as `github:vercel/next.js --ref v14.2.0` — succeeded"
+  is the minimum acceptable verification trail.
 
 ## Error classification
 
-When the CLI exits non-zero, classify the error message and act:
+When `ask install` warns or `ask add` exits non-zero, classify the
+message and act:
 
-| Error pattern | Cause | Action |
+| Warning / error pattern | Cause | Action |
 |---|---|---|
-| `No docs found in <spec>` | npm tarball missing curated docs dir | Find GitHub repo → retry as `<owner>/<repo>` |
-| `Docs path "<x>" not found in <spec>` | Wrong `docsPath` in registry/strategy | Same: find repo → retry |
-| `not found in registry` / `no resolver for` | Unknown ecosystem name | Find repo → retry |
-| `Ambiguous spec '<x>'` (Gate A) | You sent a bare name | Add ecosystem prefix or `owner/repo` and retry — this is a skill bug, not CLI failure |
-| `--from-manifest was set but no … manifest entry` | Package not in lockfile | Ask user: install first, or use a different source? |
+| `not found in any lockfile` | PM-driven `npm:` entry but the package is not in `bun.lock` / `package-lock.json` / `pnpm-lock.yaml` / `yarn.lock` / `package.json` | Ask user to install the package first, OR retry as a standalone `github:owner/repo --ref <ref>` entry |
+| `No docs found in <spec>` | npm tarball missing curated docs dir | Find GitHub repo → retry as `github:owner/repo --ref <ref> --docs-path <path>` |
+| `Docs path "<x>" not found in <spec>` | Wrong `docsPath` for the registry strategy | Same: find repo → retry with explicit `--docs-path` |
+| `not found in registry` | Unknown library, not in the ASK Registry | Find repo → retry as `github:owner/repo --ref <ref>` |
+| `Ambiguous spec '<x>'` | You sent a bare name | Add ecosystem prefix or `github:owner/repo` and retry — this is a skill bug, not CLI failure |
+| `github specs require --ref` | Forgot `--ref` for a `github:` spec | Re-run with `--ref <tag-or-branch>` |
 | Network / DNS / fetch failure | Transient or environment issue | Report verbatim, do **not** retry — second attempt will fail the same way |
 | Anything else | Unknown | Report verbatim, do not invent a fix |
 
@@ -68,43 +72,43 @@ every Claude Code environment — do **not** assume MCP servers
    matches the npm package name exactly.
 
 5. **`AskUserQuestion`** — Last resort. Present what you found (or what
-   you ruled out) and ask the user to confirm or supply the repo
+   you ruled out) and ask the user to confirm or supply the repo + ref
    directly.
 
 ## Worked examples
 
-### Example A — npm tarball missing dist/docs
+### Example A — npm package not in lockfile
 
 ```
-$ bunx @pleaseai/ask docs add npm:foo
+$ bunx @pleaseai/ask add npm:foo
 …
-✖ No docs found in foo@1.2.3. Specify --docs-path …
+[warn]   npm:foo: not found in any lockfile (bun.lock / package-lock.json / pnpm-lock.yaml / yarn.lock / package.json) — skipping
 ```
 
-1. Read `node_modules/foo/package.json` → `repository.url = "git+https://github.com/acme/foo.git"`.
+1. Read `node_modules/foo/package.json` (if installed) → `repository.url = "git+https://github.com/acme/foo.git"`.
 2. Extract: `acme/foo`.
-3. Retry: `bunx @pleaseai/ask docs add acme/foo`.
-4. Report: "npm tarball had no curated docs dir, retried via `acme/foo` — succeeded."
+3. Pick a release tag from npm or `node_modules/foo/package.json` → `v1.2.3`.
+4. Retry: `bunx @pleaseai/ask add github:acme/foo --ref v1.2.3 --docs-path docs`.
+5. Report: "npm:foo was not in the lockfile, retried as `github:acme/foo --ref v1.2.3` — succeeded."
 
-### Example B — package not installed, training knowledge has the repo
+### Example B — package installed but tarball has no docs dir
 
 ```
-$ bunx @pleaseai/ask docs add npm:react
+$ bunx @pleaseai/ask add npm:bar
 …
-✖ No docs found in react@19.0.0. Specify --docs-path …
+[warn]   npm:bar: No docs found in bar@2.0.0. Specify --docs-path … — skipping
 ```
 
-1. Training knowledge: `react` → `facebook/react`. High confidence.
-2. Skip steps 2–5.
-3. Retry: `bunx @pleaseai/ask docs add facebook/react@v19.0.0` (preserve user's resolved version).
-4. Report.
+1. Training knowledge or `node_modules/bar/package.json`: `bar` → `acme/bar`.
+2. Retry: `bunx @pleaseai/ask add github:acme/bar --ref v2.0.0 --docs-path docs`.
+3. Report.
 
 ### Example C — network error (do not retry)
 
 ```
-$ bunx @pleaseai/ask docs add npm:foo
+$ bunx @pleaseai/ask add npm:foo
 …
-✖ fetch failed: ETIMEDOUT https://registry.npmjs.org/foo
+[warn]   npm:foo: fetch failed: ETIMEDOUT https://registry.npmjs.org/foo — skipping
 ```
 
 1. Classify: network failure.

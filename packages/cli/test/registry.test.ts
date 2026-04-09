@@ -152,7 +152,7 @@ describe('parseDocSpec', () => {
     // T-6: ensure none of the shipped registry entries collide with the new
     // github fast-path. All bare names must parse as `name`, prefixed names
     // as `ecosystem`. A regression here would route them away from the
-    // registry lookup and break `ask docs add next` etc.
+    // registry lookup and break `ask add next` etc.
     const entries: Array<[string, ParsedDocSpec['kind']]> = [
       ['next', 'name'],
       ['nuxt', 'name'],

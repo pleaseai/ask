@@ -48,7 +48,7 @@ if (!entry.value) {
           Quick Start
         </h2>
       </template>
-      <code class="text-sm">ask docs add {{ entry.ecosystem }}:{{ entry.name }}</code>
+      <code class="text-sm">ask add {{ entry.ecosystem }}:{{ entry.name }}</code>
     </UCard>
 
     <div v-if="entry.strategies?.length" class="mb-8">

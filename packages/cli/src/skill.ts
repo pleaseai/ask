@@ -58,7 +58,7 @@ export function generateSkill(
 
 If the files listed above are missing or stale (e.g. someone deleted the
 \`${docsRelPath}/\` directory, or the project was just cloned without running
-\`ask docs sync\`), look for first-party documentation that may already be
+\`ask install\`), look for first-party documentation that may already be
 shipped inside \`node_modules\`:
 
 1. \`node_modules/${name}/dist/docs/\` — preferred when present, this is the
@@ -75,7 +75,7 @@ If you find usable docs there, propose registering them with ASK so future
 sessions get them automatically:
 
 \`\`\`
-ask docs add npm:${name}
+ask add npm:${name}
 \`\`\`
 
 This will let ASK record the path in the registry and skill so subsequent

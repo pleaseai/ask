@@ -86,7 +86,7 @@ bunx agent-eval --force
 
 ## Key insight
 
-The `AGENTS.md` injected by with-ask experiments is identical to what ASK's `ask docs add npm:next` produces — a pointer to version-specific docs bundled in the npm package at `dist/docs/`. This is the same approach Vercel used to achieve 100% pass rate.
+The `AGENTS.md` injected by with-ask experiments is identical to what ASK's `ask add npm:next` produces — a pointer to version-specific docs bundled in the npm package at `dist/docs/`. This is the same approach Vercel used to achieve 100% pass rate.
 
 ## Results
 

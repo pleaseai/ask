@@ -58,7 +58,7 @@ export class PubResolver implements EcosystemResolver {
       throw new Error(
         `Cannot resolve GitHub repository for pub package '${name}'. `
         + `The 'repository' field is missing or not a GitHub URL. `
-        + `Use 'owner/repo' format instead: ask docs add owner/repo`,
+        + `Use 'github:owner/repo' format instead: ask add github:owner/repo --ref <tag>`,
       )
     }
 
