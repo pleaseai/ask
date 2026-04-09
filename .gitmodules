@@ -1,0 +1,3 @@
+[submodule "vendor/intent"]
+	path = vendor/intent
+	url = https://github.com/TanStack/intent
