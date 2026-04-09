@@ -31,9 +31,9 @@ const githubSourceSchema = z.object({
   type: z.literal('github'),
   /** GitHub repo in `owner/name` form. */
   repo: z.string().regex(/^[^/]+\/[^/]+$/, 'repo must be in "owner/name" form'),
-  /** Branch to fetch. Ignored when `tag` is set. Defaults to the repo's default branch. */
+  /** Branch to fetch. Mutually exclusive with `tag`. Defaults to the repo's default branch. */
   branch: z.string().optional(),
-  /** Tag or ref to fetch. Takes precedence over `branch`. */
+  /** Tag or ref to fetch. Mutually exclusive with `branch`. */
   tag: z.string().optional(),
   /** Path inside the repository (e.g. `docs`, `content/docs`). Auto-detected when omitted. */
   path: z.string().optional(),
@@ -61,6 +61,19 @@ export const sourceSchema = z.discriminatedUnion('type', [
   webSourceSchema,
   llmsTxtSourceSchema,
 ])
+  .superRefine((source, ctx) => {
+    // GithubSource invariant: `branch` and `tag` are mutually exclusive.
+    // The prose contract used to document that `tag` takes precedence,
+    // which meant silently dropping a caller-supplied branch. Fail loudly
+    // instead — the caller must pick one.
+    if (source.type === 'github' && source.branch && source.tag) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['tag'],
+        message: 'github source: `branch` and `tag` are mutually exclusive',
+      })
+    }
+  })
 
 export type RegistrySource = z.infer<typeof sourceSchema>
 export type NpmSource = z.infer<typeof npmSourceSchema>
@@ -157,6 +170,27 @@ export const registryEntrySchema = z.object({
       }
       else {
         nameSeen.set(pkg.name, pkgIdx)
+      }
+    })
+
+    // Reject slug collisions. Two distinct package names can slugify to the
+    // same directory name (e.g. `@a/b-c` and `a-b/c` both → `a-b-c`), which
+    // would cause `.ask/docs/<slug>@<ver>/` directory clashes on the CLI
+    // side. The `nameSeen` check above does not catch this because the
+    // package names differ, only their slugs collide.
+    const slugSeen = new Map<string, number>()
+    entry.packages.forEach((pkg, pkgIdx) => {
+      const slug = slugifyPackageName(pkg.name)
+      const prev = slugSeen.get(slug)
+      if (prev !== undefined) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['packages', pkgIdx, 'name'],
+          message: `Package name "${pkg.name}" slugifies to "${slug}", colliding with packages[${prev}]`,
+        })
+      }
+      else {
+        slugSeen.set(slug, pkgIdx)
       }
     })
   })

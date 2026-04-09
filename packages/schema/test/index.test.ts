@@ -51,6 +51,20 @@ describe('sourceSchema', () => {
     expect(() => sourceSchema.parse({ type: 'invalid' })).toThrow()
   })
 
+  it('rejects a github source with both branch and tag', () => {
+    expect(() => sourceSchema.parse({
+      type: 'github',
+      repo: 'vercel/next.js',
+      branch: 'main',
+      tag: 'v15.0.0',
+    })).toThrow(/mutually exclusive/)
+  })
+
+  it('accepts a github source with only branch', () => {
+    const result = sourceSchema.parse({ type: 'github', repo: 'vercel/next.js', branch: 'canary' })
+    expect(result.type).toBe('github')
+  })
+
   it('requires npm.package (no silent default to entry name)', () => {
     expect(() => sourceSchema.parse({ type: 'npm', path: 'docs' })).toThrow()
   })
@@ -199,6 +213,27 @@ describe('registryEntrySchema', () => {
         },
       ],
     })).toThrow(/Duplicate alias/)
+  })
+
+  it('rejects package names that slugify to the same directory', () => {
+    // Different names, same slug: `@a/b-c` and `a-b-c` both → `a-b-c`
+    expect(() => registryEntrySchema.parse({
+      name: 'SlugClash',
+      description: 'slug collision test',
+      repo: 'foo/bar',
+      packages: [
+        {
+          name: '@a/b-c',
+          aliases: [{ ecosystem: 'npm' as const, name: '@a/b-c' }],
+          sources: [{ type: 'github' as const, repo: 'foo/bar' }],
+        },
+        {
+          name: 'a-b-c',
+          aliases: [{ ecosystem: 'npm' as const, name: 'a-b-c' }],
+          sources: [{ type: 'github' as const, repo: 'foo/bar' }],
+        },
+      ],
+    })).toThrow(/slugifies/)
   })
 
   it('rejects duplicate package names', () => {
