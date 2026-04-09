@@ -29,12 +29,49 @@ export const localConventionsAdapter: LocalDiscoveryAdapter = async (opts) => {
 
   const npmSource = new NpmSource()
 
+  // Resolve pkgDir once so every convention candidate's realpath
+  // containment check shares the same base. We must know the real
+  // path, not the symlink target, because bun / pnpm install to
+  // `.bun/` or `.pnpm/` and surface the package via a symlink at
+  // `node_modules/<pkg>`.
+  let realPkgDir: string
+  try {
+    realPkgDir = fs.realpathSync(pkgDir)
+  }
+  catch {
+    return null
+  }
+
   // Stage 1: conventional directories, quality-filtered.
   for (const convention of LOCAL_CONVENTIONS) {
     const candidate = path.join(pkgDir, convention)
     if (!fs.existsSync(candidate)) {
       continue
     }
+
+    // Defense-in-depth: before we recursively walk `candidate` to score
+    // it, ensure the realpath is still inside the installed package
+    // directory. A symlink at e.g. `node_modules/<pkg>/dist/docs -> /etc`
+    // would otherwise make `scoreDirectory` walk `/etc` during scoring,
+    // even though `NpmSource.tryLocalRead` would later reject it. String-
+    // level check first, realpath second — matches the two-stage pattern
+    // used by `NpmSource.tryLocalRead`.
+    const relString = path.relative(pkgDir, candidate)
+    if (relString.startsWith('..') || path.isAbsolute(relString)) {
+      continue
+    }
+    let realCandidate: string
+    try {
+      realCandidate = fs.realpathSync(candidate)
+    }
+    catch {
+      continue
+    }
+    const realRel = path.relative(realPkgDir, realCandidate)
+    if (realRel.startsWith('..') || path.isAbsolute(realRel)) {
+      continue
+    }
+
     const score = scoreDirectory(candidate)
     if (!score.passes) {
       continue

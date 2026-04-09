@@ -32,8 +32,6 @@ const TASK_LINE_RE = /^\s*-\s+task:\s*"((?:[^"\\]|\\.)*)"\s*$/
 const LOAD_LINE_RE = /^\s+load:\s*"((?:[^"\\]|\\.)*)"\s*$/
 const BACKSLASH_RE = /\\/g
 const DQUOTE_RE = /"/g
-const ESCAPED_BACKSLASH_RE = /\\\\/g
-const ESCAPED_DQUOTE_RE = /\\"/g
 const TRAILING_NEWLINES_RE = /\n+$/
 const LEADING_NEWLINES_RE = /^\n+/
 
@@ -48,8 +46,32 @@ function escapeDq(value: string): string {
   return value.replace(BACKSLASH_RE, '\\\\').replace(DQUOTE_RE, '\\"')
 }
 
+/**
+ * Single-pass inverse of `escapeDq`. Must NOT be implemented as two
+ * sequential `.replace()` calls: `value.replace(/\\\\/g, '\\').replace(/\\"/g, '"')`
+ * is lossy because the second pass would consume backslashes the first
+ * pass just produced, corrupting round-trips for tasks that originally
+ * contained a literal backslash adjacent to a quote. A single walk over
+ * the input with explicit two-char escape recognition is the correct
+ * decoder for the `\\` / `\"` alphabet emitted by `escapeDq`.
+ */
 function unescapeDq(value: string): string {
-  return value.replace(ESCAPED_BACKSLASH_RE, '\\').replace(ESCAPED_DQUOTE_RE, '"')
+  let out = ''
+  let i = 0
+  while (i < value.length) {
+    const ch = value[i]
+    if (ch === '\\' && i + 1 < value.length) {
+      const next = value[i + 1]
+      if (next === '\\' || next === '"') {
+        out += next
+        i += 2
+        continue
+      }
+    }
+    out += ch
+    i++
+  }
+  return out
 }
 
 /**

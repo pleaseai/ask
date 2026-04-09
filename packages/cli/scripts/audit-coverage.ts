@@ -39,8 +39,22 @@ interface RegistryEntry {
   docsPath?: string
 }
 
-/** Module-scope regex — parses `aliases:` list for `npm:<name>` hits. */
-const NPM_ALIAS_RE = /^\s*-\s*['"]?npm:([^'"\s]+)['"]?/gm
+/**
+ * Registry alias entries are structured YAML objects, not the shorthand
+ * `- npm:<name>` strings an earlier draft of this script expected. A
+ * typical entry looks like:
+ *
+ *     aliases:
+ *       - ecosystem: npm
+ *         name: zod
+ *
+ * The regex below matches that two-line pair anywhere in the
+ * frontmatter. `[\s\S]*?` is a non-greedy wildcard that lets the
+ * `name:` line be any distance below the `ecosystem: npm` line (the
+ * real registry files put them on adjacent lines, but staying lenient
+ * keeps the audit robust across hand-edits).
+ */
+const NPM_ALIAS_RE = /ecosystem:\s*npm[\s\S]*?name:\s*['"]?([^'"\s]+)['"]?/g
 const REPO_RE = /^repo:\s*['"]?([^'"\s]+)['"]?/m
 const DOCS_PATH_RE = /^docsPath:\s*['"]?([^'"\s]+)['"]?/m
 

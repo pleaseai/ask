@@ -36,17 +36,19 @@ export const REPO_CONVENTIONS: readonly string[] = [
 ] as const
 
 /**
- * Filenames that are excluded from the quality score even if they carry
- * a `.md` extension. These are project-meta files that most repositories
- * contain and that on their own never represent "docs" — including them
- * would let a bare `CONTRIBUTING.md` + `CHANGELOG.md` repo (SC-3 failure
- * case) falsely pass the threshold.
+ * Filenames (case-insensitive) that are excluded from the quality score
+ * even if they carry a `.md` extension. These are project-meta files
+ * that most repositories contain and that on their own never represent
+ * "docs" — including them would let a bare `contributing.md` +
+ * `CHANGELOG.md` repo (SC-3 failure case) falsely pass the threshold.
+ * Stored lowercase so we can match case-insensitively via a single
+ * `toLowerCase()` call on the candidate.
  */
-const EXCLUDED_EXACT = new Set<string>([
-  'CONTRIBUTING.md',
-  'CHANGELOG.md',
-  'CODE_OF_CONDUCT.md',
-  'SECURITY.md',
+const EXCLUDED_EXACT_LOWER = new Set<string>([
+  'contributing.md',
+  'changelog.md',
+  'code_of_conduct.md',
+  'security.md',
 ])
 
 /**
@@ -57,8 +59,20 @@ const EXCLUDED_EXACT = new Set<string>([
 const EXCLUDED_PREFIX_RE = /^licen[cs]e/i
 
 export function isExcludedFilename(filename: string): boolean {
-  if (EXCLUDED_EXACT.has(filename)) {
+  if (EXCLUDED_EXACT_LOWER.has(filename.toLowerCase())) {
     return true
   }
   return EXCLUDED_PREFIX_RE.test(filename)
 }
+
+/**
+ * Maximum directory recursion depth for any discovery walker.
+ * Shared between `quality.ts` (scoreDirectory) and
+ * `repo-conventions.ts` (collectDocFiles) so both stages agree on what
+ * counts as "too deep". Keeping them in sync prevents scoreDirectory
+ * from accepting a candidate whose deep files collectDocFiles later
+ * skips, and vice-versa. 20 levels is both generous (real docs trees
+ * rarely exceed ~6) and bounded enough to survive symlink loops that
+ * the tarball extractor failed to resolve.
+ */
+export const MAX_WALK_DEPTH = 20

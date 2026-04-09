@@ -743,7 +743,17 @@ export async function runSync(
   const config = loadConfig(projectDir)
   const lock = readLock(projectDir)
 
-  if (config.docs.length === 0) {
+  // Collect intent-skills lock entries up front — they have no
+  // `config.docs` row, so the early-exit on empty config would
+  // otherwise skip them entirely for intent-only projects.
+  const intentKeysPrecomputed: string[] = []
+  for (const [key, entry] of Object.entries(lock.entries)) {
+    if (entry.source === 'npm' && entry.format === 'intent-skills') {
+      intentKeysPrecomputed.push(key)
+    }
+  }
+
+  if (config.docs.length === 0 && intentKeysPrecomputed.length === 0) {
     consola.info('No docs configured in .ask/config.json')
     return { drifted: 0, unchanged: 0, failed: 0 }
   }
@@ -786,12 +796,7 @@ export async function runSync(
   // marker block. If the package was uninstalled from `node_modules`,
   // the adapter returns null and we leave the existing block alone —
   // users can explicitly remove it via `ask docs remove <pkg>`.
-  const intentKeys: string[] = []
-  for (const [key, entry] of Object.entries(lock.entries)) {
-    if (entry.source === 'npm' && entry.format === 'intent-skills') {
-      intentKeys.push(key)
-    }
-  }
+  const intentKeys = intentKeysPrecomputed
   if (intentKeys.length > 0) {
     consola.info(`Resyncing ${intentKeys.length} intent-skills entr${intentKeys.length === 1 ? 'y' : 'ies'}...`)
     for (const key of intentKeys) {

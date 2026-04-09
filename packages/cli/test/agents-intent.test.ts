@@ -130,6 +130,27 @@ describe('upsertIntentSkillsBlock', () => {
     const content = readAgents()
     expect(content).toContain('"has \\"quotes\\" and \\\\slash"')
   })
+
+  it('round-trips values containing a backslash adjacent to a quote', () => {
+    // Regression guard for the double-pass unescape bug: the value
+    // `\"` (literal backslash + literal quote) must survive
+    // encode → parse → re-emit without losing the backslash.
+    const originalTask = 'literal \\" pair'
+    upsertIntentSkillsBlock(tmpDir, 'pkg-a', [
+      { task: originalTask, load: 'node_modules/pkg-a/skills/x/SKILL.md' },
+    ])
+    // Force a parse-then-serialize cycle by upserting a DIFFERENT
+    // package against the same AGENTS.md — the writer will read the
+    // existing pkg-a entry, parse it, and re-emit it alongside the
+    // new pkg-b entry. If unescape is lossy, pkg-a's task value will
+    // drift here.
+    upsertIntentSkillsBlock(tmpDir, 'pkg-b', [
+      { task: 'unrelated', load: 'node_modules/pkg-b/skills/y/SKILL.md' },
+    ])
+    const content = readAgents()
+    // The re-emitted form must still carry the backslash-quote pair.
+    expect(content).toContain('literal \\\\\\" pair')
+  })
 })
 
 describe('removeFromIntentSkillsBlock', () => {

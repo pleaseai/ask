@@ -2,19 +2,11 @@ import type { DocFile } from '../sources/index.js'
 import type { DiscoveryResult, RepoDiscoveryAdapter } from './types.js'
 import fs from 'node:fs'
 import path from 'node:path'
-import { REPO_CONVENTIONS } from './conventions.js'
+import { MAX_WALK_DEPTH, REPO_CONVENTIONS } from './conventions.js'
 import { scoreDirectory } from './quality.js'
 
 /** Module-scope regex — reused across every file visited by the walker. */
 const DOC_EXT_RE = /\.(?:mdx?|txt|rst)$/i
-
-/**
- * Maximum recursion depth for `collectDocFiles`. Guards against symlink
- * loops the tarball extractor failed to resolve and pathological monorepo
- * layouts. Real docs trees rarely exceed ~6 levels deep, so 20 is both
- * generous and bounded.
- */
-const MAX_WALK_DEPTH = 20
 
 /**
  * Adapter: `repo-conventions` — scans a downloaded GitHub repo archive

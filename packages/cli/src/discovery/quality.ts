@@ -1,7 +1,7 @@
 import type { QualityScore } from './types.js'
 import fs from 'node:fs'
 import path from 'node:path'
-import { isExcludedFilename } from './conventions.js'
+import { isExcludedFilename, MAX_WALK_DEPTH } from './conventions.js'
 
 /** Minimum markdown file count OR byte total required to pass the filter. */
 const MIN_FILES = 3
@@ -26,7 +26,10 @@ export function scoreDirectory(dir: string): QualityScore {
   let fileCount = 0
   let totalBytes = 0
 
-  const walk = (current: string): void => {
+  const walk = (current: string, depth: number): void => {
+    if (depth > MAX_WALK_DEPTH) {
+      return
+    }
     let entries: fs.Dirent[]
     try {
       entries = fs.readdirSync(current, { withFileTypes: true })
@@ -37,7 +40,7 @@ export function scoreDirectory(dir: string): QualityScore {
     for (const entry of entries) {
       const full = path.join(current, entry.name)
       if (entry.isDirectory()) {
-        walk(full)
+        walk(full, depth + 1)
         continue
       }
       if (!entry.isFile()) {
@@ -71,7 +74,7 @@ export function scoreDirectory(dir: string): QualityScore {
     return { fileCount: 0, totalBytes: 0, passes: false }
   }
 
-  walk(dir)
+  walk(dir, 0)
 
   return {
     fileCount,

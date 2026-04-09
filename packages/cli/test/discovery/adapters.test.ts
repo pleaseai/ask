@@ -115,11 +115,13 @@ describe('localConventionsAdapter', () => {
       requestedVersion: 'latest',
     })
     expect(result).not.toBeNull()
-    if (result && result.kind === 'docs') {
-      expect(result.docsPath).toBe('dist/docs')
-      expect(result.adapter).toBe('local-conventions')
-      expect(result.files.length).toBe(3)
+    expect(result!.kind).toBe('docs')
+    if (result!.kind !== 'docs') {
+      throw new Error(`expected docs result, got ${result!.kind}`)
     }
+    expect(result!.docsPath).toBe('dist/docs')
+    expect(result!.adapter).toBe('local-conventions')
+    expect(result!.files.length).toBe(3)
   })
 
   it('falls through to README.md when conventions have only noise', async () => {
@@ -138,9 +140,29 @@ describe('localConventionsAdapter', () => {
       requestedVersion: 'latest',
     })
     expect(result).not.toBeNull()
-    if (result && result.kind === 'docs') {
-      expect(result.docsPath).toBe('README.md')
+    expect(result!.kind).toBe('docs')
+    if (result!.kind !== 'docs') {
+      throw new Error(`expected docs result, got ${result!.kind}`)
     }
+    expect(result!.docsPath).toBe('README.md')
+  })
+
+  it('treats lowercase meta filenames as noise (case-insensitive filter)', async () => {
+    writePkg(
+      'pkg-lower-noise',
+      { name: 'pkg-lower-noise', version: '1.0.0' },
+      {
+        'docs/contributing.md': 'c',
+        'docs/changelog.md': 'c',
+        'docs/security.md': 'c',
+      },
+    )
+    const result = await localConventionsAdapter({
+      projectDir: tmpDir,
+      pkg: 'pkg-lower-noise',
+      requestedVersion: 'latest',
+    })
+    expect(result).toBeNull()
   })
 
   it('returns null for a noise-only package (SC-3)', async () => {
