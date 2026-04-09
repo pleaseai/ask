@@ -1,68 +1,82 @@
-import type { RegistryAlias, RegistryStrategy } from '@pleaseai/ask-schema'
-import { expandStrategies } from '@pleaseai/ask-schema'
+import type { RegistryEntry, RegistryPackage, RegistrySource } from '@pleaseai/ask-schema'
+import { findPackageByAlias, isMonorepoEntry, slugifyPackageName } from '@pleaseai/ask-schema'
 
 /**
- * Convert an npm package name into a filesystem- and skill-name-safe slug.
+ * Registry lookup endpoint.
  *
- * Examples:
- *   - `@mastra/core`     → `mastra-core`
- *   - `@scope/pkg-name`  → `scope-pkg-name`
- *   - `lodash`           → `lodash`
+ * Implements ADR-0001 (`Entry → Package → Source` hierarchy). Each registry
+ * entry documents one repo and one or more packages. Callers can look up
+ * either:
  *
- * The CLI uses the returned slug as both a directory name
- * (`.ask/docs/<slug>@<ver>/`) and a Claude Code skill name. Both surfaces
- * reject `@` and `/`, so the registry server pre-slugifies the name and
- * exposes it as `resolvedName` in the response. Doing this on the server
- * keeps every client (CLI today, future SDKs tomorrow) consistent without
- * forcing each client to re-implement the rule.
+ *   1. Direct path: `GET /api/registry/<owner>/<repo>`
+ *      - Single-package entries return that package.
+ *      - Monorepo entries return `409 Conflict` — the caller must
+ *        disambiguate via an ecosystem alias.
+ *
+ *   2. Alias:       `GET /api/registry/<ecosystem>/<name>`
+ *      - Scans all entries for a package whose `aliases` include
+ *        `{ ecosystem, name }`. The lookup is unambiguous because the
+ *        schema's `superRefine` rejects duplicate aliases across packages
+ *        within the same entry. (Cross-entry collisions are possible in
+ *        theory but unenforced; the first match wins, which matches the
+ *        previous endpoint's behavior.)
+ *
+ * The response carries a `resolvedName` field that the CLI uses as the
+ * directory name (`.ask/docs/<resolvedName>@<ver>/`) and skill name. For
+ * single-package entries this is the entry's display `name`; for monorepo
+ * entries it is `slugifyPackageName(package.name)` so distinct scoped
+ * packages land in distinct directories.
  */
-function slugifyPackageName(pkg: string): string {
-  if (pkg.startsWith('@')) {
-    return pkg.slice(1).replace('/', '-')
+
+interface RegistryApiResponse {
+  /** Entry-level display name (the library as a whole). */
+  name: string
+  /** Entry-level one-line description. */
+  description: string
+  /** GitHub `owner/name`. */
+  repo: string
+  homepage?: string
+  license?: string
+  tags?: string[]
+  /**
+   * CLI-facing identifier. Safe for use as a directory name and a Claude
+   * Code skill name — `@mastra/core` is slugified to `mastra-core`.
+   */
+  resolvedName: string
+  /** The selected package's canonical metadata. */
+  package: {
+    name: string
+    description?: string
   }
-  return pkg
+  /**
+   * Fetch sources in the entry author's declared priority order. The CLI
+   * is expected to try them head-first and walk the list on failure.
+   */
+  sources: RegistrySource[]
 }
 
-/**
- * Pick the strategy that best satisfies a request for `requestedPackage`
- * out of an entry's full strategy list.
- *
- * Rules (in order):
- *   1. A curated npm strategy (`source: npm` with `docsPath`) whose
- *      `package` field equals `requestedPackage` wins outright. This is
- *      the monorepo disambiguation case — `mastra-ai/mastra` declares
- *      both `@mastra/core` and `@mastra/memory`; we must hand the caller
- *      the strategy that matches what they actually asked for.
- *   2. Any other curated npm strategy (first in declaration order).
- *   3. Fall through to the default github strategy.
- *
- * The result is a list of strategies in execution priority order — the
- * caller picks the head and uses the rest as fallback. We return a list
- * (not a single strategy) so the CLI can still iterate through fallbacks
- * if the head fails (e.g. tarball missing the curated docs dir → github).
- */
-function disambiguateStrategies(
-  all: RegistryStrategy[],
-  requestedPackage?: string,
-): RegistryStrategy[] {
-  if (!requestedPackage) {
-    return all
+function buildResponse(
+  entry: RegistryEntry,
+  pkg: RegistryPackage,
+  resolvedName: string,
+): RegistryApiResponse {
+  return {
+    name: entry.name,
+    description: entry.description,
+    repo: entry.repo,
+    homepage: entry.homepage,
+    license: entry.license,
+    tags: entry.tags,
+    resolvedName,
+    package: {
+      name: pkg.name,
+      description: pkg.description,
+    },
+    sources: pkg.sources,
   }
-
-  const matchingNpm = all.find(
-    s => s.source === 'npm' && s.package === requestedPackage && s.docsPath,
-  )
-  if (!matchingNpm) {
-    return all
-  }
-
-  // Put the matching npm strategy first; keep every other strategy in its
-  // original order behind it (the github fallback in particular).
-  const rest = all.filter(s => s !== matchingNpm)
-  return [matchingNpm, ...rest]
 }
 
-export default defineEventHandler(async (event) => {
+export default defineEventHandler(async (event): Promise<RegistryApiResponse> => {
   const slug = getRouterParam(event, 'slug')
 
   if (!slug) {
@@ -72,104 +86,64 @@ export default defineEventHandler(async (event) => {
   // Decode each segment so callers can URL-encode scoped npm packages
   // (`@mastra/client-js` → `%40mastra%2Fclient-js`) and still land on a
   // two-segment slug here. Nitro decodes `%40` but leaves `%2F` in the
-  // catch-all param, so we have to handle the decode ourselves.
+  // catch-all param, so we handle the decode ourselves.
   const segments = slug.split('/').map(s => decodeURIComponent(s))
   if (segments.length !== 2) {
-    throw createError({ statusCode: 400, statusMessage: 'Slug must be in "owner/repo" or "ecosystem/name" form' })
+    throw createError({
+      statusCode: 400,
+      statusMessage: 'Slug must be in "owner/repo" or "ecosystem/name" form',
+    })
   }
 
-  const [first, second] = segments
-  const directPath = `/registry/${first}/${second}`
+  const [first, second] = segments as [string, string]
 
-  // 1. Try direct path lookup (owner/repo). No disambiguation needed —
-  //    `owner/repo` is unambiguous and the caller is asking for the
-  //    repo as a whole.
+  // 1. Direct path lookup (owner/repo). Unambiguous for single-package
+  //    entries; a monorepo entry cannot be resolved without a package
+  //    selector, so return 409.
+  const directPath = `/registry/${first}/${second}`
+  // @ts-expect-error — Nuxt Content v3 types expect queryCollection(name)
+  // but the runtime accepts queryCollection(event, name). Pre-existing
+  // project-wide quirk, not part of this refactor.
   const directEntries = await queryCollection(event, 'registry')
     .where('path', '=', directPath)
     .all()
 
   if (directEntries.length > 0) {
-    const entry = directEntries[0]
+    const entry = directEntries[0] as unknown as RegistryEntry
 
-    let strategies: RegistryStrategy[]
-    try {
-      strategies = expandStrategies({
-        repo: entry.repo,
-        docsPath: entry.docsPath,
-        strategies: entry.strategies,
-      })
-    }
-    catch (error) {
+    if (isMonorepoEntry(entry)) {
       throw createError({
-        statusCode: 422,
-        statusMessage: `Misconfigured registry entry ${slug}: ${(error as Error).message}`,
+        statusCode: 409,
+        statusMessage: `${first}/${second} documents ${entry.packages.length} packages — look up via an ecosystem alias (e.g. \`npm:<pkg>\`) to disambiguate`,
       })
     }
 
-    return {
-      name: entry.name,
-      resolvedName: entry.name,
-      description: entry.description,
-      repo: entry.repo,
-      docsPath: entry.docsPath,
-      homepage: entry.homepage,
-      license: entry.license,
-      aliases: entry.aliases,
-      strategies,
-      tags: entry.tags,
+    const [pkg] = entry.packages
+    if (!pkg) {
+      throw createError({ statusCode: 500, statusMessage: `Registry entry ${slug} has no packages (schema should have prevented this)` })
+    }
+    return buildResponse(entry, pkg, entry.name)
+  }
+
+  // 2. Alias lookup (ecosystem/name). Intra-entry alias uniqueness is
+  //    enforced by the schema's superRefine; we still scan all entries
+  //    linearly to find the owning one.
+  // @ts-expect-error — see above note on queryCollection signature.
+  const allEntries = await queryCollection(event, 'registry').all()
+
+  for (const rawEntry of allEntries) {
+    const entry = rawEntry as unknown as RegistryEntry
+    if (!entry.packages)
+      continue
+
+    const pkg = findPackageByAlias(entry, first as RegistryPackage['aliases'][number]['ecosystem'], second)
+    if (pkg) {
+      const resolvedName = isMonorepoEntry(entry)
+        ? slugifyPackageName(pkg.name)
+        : entry.name
+      return buildResponse(entry, pkg, resolvedName)
     }
   }
 
-  // 2. Fallback: search by alias (ecosystem/name). The alias is the
-  //    user's intent, so disambiguate strategies and slugify the
-  //    response name based on `second` (the requested package).
-  const allEntries = await queryCollection(event, 'registry').all()
-  const matched = allEntries.find((entry) => {
-    const aliases = entry.aliases as RegistryAlias[] | undefined
-    if (!aliases)
-      return false
-    return aliases.some(a => a.ecosystem === first && a.name === second)
-  })
-
-  if (!matched) {
-    throw createError({ statusCode: 404, statusMessage: `Entry not found: ${slug}` })
-  }
-
-  let allStrategies: RegistryStrategy[]
-  try {
-    allStrategies = expandStrategies({
-      repo: matched.repo,
-      docsPath: matched.docsPath,
-      strategies: matched.strategies,
-    })
-  }
-  catch (error) {
-    throw createError({
-      statusCode: 422,
-      statusMessage: `Misconfigured registry entry ${slug}: ${(error as Error).message}`,
-    })
-  }
-
-  // Detect monorepo entries (multiple npm strategies). For these, the
-  // resolved name is the slugified requested package so different scoped
-  // packages from the same repo land in distinct `.ask/docs/<slug>@<ver>`
-  // directories on the client side.
-  const npmStrategyCount = (matched.strategies ?? []).filter((s: RegistryStrategy) => s.source === 'npm').length
-  const isMonorepoEntry = npmStrategyCount > 1
-  const resolvedName = isMonorepoEntry ? slugifyPackageName(second) : matched.name
-
-  const strategies = disambiguateStrategies(allStrategies, second)
-
-  return {
-    name: matched.name,
-    resolvedName,
-    description: matched.description,
-    repo: matched.repo,
-    docsPath: matched.docsPath,
-    homepage: matched.homepage,
-    license: matched.license,
-    aliases: matched.aliases,
-    strategies,
-    tags: matched.tags,
-  }
+  throw createError({ statusCode: 404, statusMessage: `Entry not found: ${slug}` })
 })
