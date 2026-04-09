@@ -153,17 +153,29 @@ Snapshot tests over the four fixture scenarios from T-6.
 - **REFACTOR**: Factor out `renderHeader`, `renderTable`,
   `renderSkillTrees`, `renderConflicts`, `renderWarnings` subfunctions.
 
-### T-8: Wire into `listCmd`
+### T-8: Wire into `listCmd` + promote to top-level
 
-Modify `packages/cli/src/index.ts:643`:
+Modify `packages/cli/src/index.ts`:
 
-- Add `args: { json: { type: 'boolean', description: 'Emit JSON' } }`.
-- Replace inline loop with call to `buildListModel` + `renderList` or
-  `JSON.stringify(ListModelSchema.parse(model), null, 2)`.
+1. Rename the existing `listCmd` body to a shared `runList(args)`
+   helper or keep `listCmd` as the canonical command and reference it
+   from both mount points.
+2. Add `args: { json: { type: 'boolean', description: 'Emit JSON' } }`.
+3. Replace the inline loop with `buildListModel` + `renderList` or
+   `JSON.stringify(ListModelSchema.parse(model), null, 2)`.
+4. Mount `listCmd` at the top level on `main.subCommands.list` so
+   `ask list` works.
+5. Keep `docsCmd.subCommands.list` pointing at a thin wrapper that:
+   - calls `consola.warn('`ask docs list` is deprecated, use `ask list`')`
+   - then delegates to `listCmd.run({ args })`.
 
-- **RED**: Integration test spawning the CLI (`execa`) against a
-  fixture project, asserting stdout matches the snapshot.
-- **GREEN**: Wire up.
+- **RED**: Integration tests spawning the CLI (`execa`) against a
+  fixture project for three invocations:
+  1. `ask list` → snapshot, no warning line.
+  2. `ask docs list` → snapshot identical to (1) plus one warning on
+     stderr/consola.warn channel.
+  3. `ask list --json` → JSON parses against the Zod schema.
+- **GREEN**: Wire up both mount points.
 - **REFACTOR**: None expected — `listCmd` should shrink significantly.
 
 ### T-9: End-to-end snapshot for `--json` mode
@@ -175,8 +187,9 @@ fixture project and pipes stdout through `JSON.parse` →
 ### T-10: Lint, build, docs update
 
 - Run `bun run --cwd packages/cli lint` and `bun run build` at root.
-- Update `packages/cli/README.md` (if it documents `list`) and the
-  `list` subcommand help string in `index.ts`.
+- Update `packages/cli/README.md` (if it documents `list`) to show
+  `ask list` as primary with `ask docs list` marked deprecated, and
+  the `list` subcommand help string in `index.ts`.
 - Add a gotcha to `CLAUDE.md` if any non-obvious behavior emerged
   (e.g. how conflicts are picked).
 

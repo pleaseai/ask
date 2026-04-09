@@ -7,7 +7,11 @@
 ## Overview
 
 The current `ask docs list` (`packages/cli/src/index.ts:643`) prints only
-`<name>@<version> (N files)` per entry. Once
+`<name>@<version> (N files)` per entry. This track also promotes the
+command to a top-level `ask list`, matching `bunx @tanstack/intent list`
+and dropping the unnecessary `docs` namespace (currently the only
+namespace under `ask`). `ask docs list` is kept as a deprecated alias
+that prints a one-line warning and forwards to `ask list`. Once
 `convention-based-discovery-20260409` lands, a single project can host
 two kinds of entries (classic `format: 'docs'` and
 `format: 'intent-skills'` with per-package skill trees), plus
@@ -140,6 +144,9 @@ exit code.
       the schema so future changes must update the schema file.
 - [ ] **SC-5**: Existing tests for `listDocs(projectDir)` pass unchanged;
       no regression in `ask docs add`/`sync`/`remove` behavior.
+- [ ] **SC-7**: `ask list` and `ask docs list` produce identical stdout
+      modulo a single deprecation warning line emitted only by the
+      latter. Both accept `--json` and produce byte-identical JSON.
 - [ ] **SC-6**: `packages/cli` builds and lints clean; root
       `bun run build` pipeline is unchanged.
 
@@ -153,8 +160,10 @@ exit code.
   first release.
 - **No new runtime dependencies** beyond what convention-based-discovery
   already pins (`@tanstack/intent`).
-- **CLI interface**: only adds `--json` flag to `list`; no new
-  subcommands, no renames.
+- **CLI interface**: promotes `list` to top-level (`ask list`) and adds
+  `--json` flag. `ask docs list` is preserved as a deprecated alias
+  emitting a `consola.warn` line ("`ask docs list` is deprecated, use
+  `ask list`") then delegating. No other subcommand renames.
 - **Respect `consola`**: all human output goes through `consola`, never
   raw `console.log`, to match project convention (CLAUDE.md). This is
   a notable divergence from Intent's direct `console.log` usage —
