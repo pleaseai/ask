@@ -1,0 +1,39 @@
+packages/cli/src/discovery/local-conventions.ts
+  08b346ec09c39067 1-91
+packages/cli/src/discovery/index.ts
+  08b346ec09c39067 1-78
+packages/cli/src/discovery/types.ts
+  08b346ec09c39067 1-101
+packages/cli/src/discovery/conventions.ts
+  08b346ec09c39067 1-64
+packages/cli/src/discovery/quality.ts
+  08b346ec09c39067 1-81
+packages/cli/src/discovery/local-intent.ts
+  08b346ec09c39067 1-141
+packages/cli/src/discovery/repo-conventions.ts
+  08b346ec09c39067 1-101
+.please/docs/tracks/active/convention-based-discovery-20260409/plan.md
+  08b346ec09c39067 173-180
+packages/cli/src/discovery/local-ask.ts
+  08b346ec09c39067 1-67
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.6",
+  "base_commit_sha": "437ce8c569162b86141c84e6b544cdfa353275dc",
+  "prompts": {
+    "08b346ec09c39067": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "fa932e7a-9916-414d-92d2-868dd01a4d78",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 732,
+      "total_deletions": 8,
+      "accepted_lines": 732,
+      "overriden_lines": 0
+    }
+  }
+}
