@@ -1,0 +1,25 @@
+packages/cli/test/list/aggregate.test.ts
+  b29f55a0556fe640 1-194
+packages/cli/src/list/aggregate.ts
+  b29f55a0556fe640 1-59
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.6",
+  "base_commit_sha": "855b4e0fcbf88398b3b77a869cdd347a6002f214",
+  "prompts": {
+    "b29f55a0556fe640": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "07c7f820-9777-4776-b140-1838ff11e32f",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 253,
+      "total_deletions": 0,
+      "accepted_lines": 253,
+      "overriden_lines": 0
+    }
+  }
+}
