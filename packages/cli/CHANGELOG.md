@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.3.0](https://github.com/pleaseai/ask/compare/ask-v0.2.2...ask-v0.3.0) (2026-04-09)
+
+
+### ⚠ BREAKING CHANGES
+
+* **registry:** all consumers of RegistryStrategy/expandStrategies must migrate to the new Package/Source types. See ADR-0001.
+
+### Bug Fixes
+
+* **cli:** split bin entry into cli.ts so bunx/npx invocations run ([9f0ec29](https://github.com/pleaseai/ask/commit/9f0ec29245d141452fe7f035149d686421577234))
+
+
+### Code Refactoring
+
+* **registry:** restructure entries as Entry → Package → Source (ADR-0001) ([#43](https://github.com/pleaseai/ask/issues/43)) ([9da66eb](https://github.com/pleaseai/ask/commit/9da66eb21a0181b600c582af5cb20d4c9e5de299))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @pleaseai/ask-schema bumped to 0.3.0
+
 ## [0.2.2](https://github.com/pleaseai/ask/compare/ask-v0.2.1...ask-v0.2.2) (2026-04-09)
 
 

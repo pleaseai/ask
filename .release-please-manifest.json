@@ -1,5 +1,5 @@
 {
-  "packages/schema": "0.2.1",
-  "packages/cli": "0.2.2",
-  ".": "0.2.3"
+  "packages/schema": "0.3.0",
+  "packages/cli": "0.3.0",
+  ".": "0.3.0"
 }
