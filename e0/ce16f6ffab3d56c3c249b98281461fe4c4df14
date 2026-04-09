@@ -1,0 +1,23 @@
+.please/docs/tracks/completed/rich-list-command-20260409/metadata.json
+  b29f55a0556fe640 4,6,8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.6",
+  "base_commit_sha": "e0ce16f6ffab3d56c3c249b98281461fe4c4df14",
+  "prompts": {
+    "b29f55a0556fe640": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "07c7f820-9777-4776-b140-1838ff11e32f",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 4,
+      "total_deletions": 4,
+      "accepted_lines": 4,
+      "overriden_lines": 0
+    }
+  }
+}
