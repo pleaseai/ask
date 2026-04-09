@@ -1,0 +1,25 @@
+packages/schema/src/registry.ts
+  a32b737e9033b302 34,36,64-76,175-195
+packages/schema/test/index.test.ts
+  a32b737e9033b302 54-67,218-238
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.6",
+  "base_commit_sha": "6b37e99ccfdf44a80ec930bf279890a74cc7c711",
+  "prompts": {
+    "a32b737e9033b302": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "25c9e57a-e829-4940-8e3d-5eb21f375474",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 71,
+      "overriden_lines": 0
+    }
+  }
+}
