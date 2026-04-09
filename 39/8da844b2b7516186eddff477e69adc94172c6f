@@ -1,0 +1,27 @@
+CLAUDE.md
+  08b346ec09c39067 66-68
+packages/cli/scripts/audit-coverage.ts
+  08b346ec09c39067 1-163
+.please/docs/tracks/active/convention-based-discovery-20260409/plan.md
+  08b346ec09c39067 196-200,291-295
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.6",
+  "base_commit_sha": "398da844b2b7516186eddff477e69adc94172c6f",
+  "prompts": {
+    "08b346ec09c39067": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "fa932e7a-9916-414d-92d2-868dd01a4d78",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 176,
+      "total_deletions": 10,
+      "accepted_lines": 176,
+      "overriden_lines": 0
+    }
+  }
+}
