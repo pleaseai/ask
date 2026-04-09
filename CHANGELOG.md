@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.3](https://github.com/pleaseai/ask/compare/ask-plugin-v0.2.2...ask-plugin-v0.2.3) (2026-04-09)
+
+
+### Features
+
+* **setup-docs:** default to runtime deps with deny-list filter ([63197dc](https://github.com/pleaseai/ask/commit/63197dcc2e599b363520bae0e92e4e93697365cd))
+
+
+### Bug Fixes
+
+* **cli:** stop downloading full GitHub monorepo for scoped npm specs ([#39](https://github.com/pleaseai/ask/issues/39)) ([0dc5ce2](https://github.com/pleaseai/ask/commit/0dc5ce2fdfb1ea222a09e76f5ab857186b2f6ff0))
+
 ## [0.2.2](https://github.com/pleaseai/ask/compare/ask-plugin-v0.2.1...ask-plugin-v0.2.2) (2026-04-08)
 
 
