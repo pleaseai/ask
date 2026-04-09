@@ -178,12 +178,12 @@ ask docs add npm:<pkg>
 - [x] T008 Implement `local-conventions` adapter scanning `dist/docs/`, `docs/`, `README.md` using `NpmSource.tryLocalRead` as file collector (file: packages/cli/src/discovery/local-conventions.ts) (depends on T003, T004, T005)
 - [x] T009 Implement `repo-conventions` adapter scanning a downloaded repo tree (file: packages/cli/src/discovery/repo-conventions.ts) (depends on T003, T004, T005)
 - [x] T010 Orchestrate `runLocalDiscovery` and `runRepoDiscovery` with the documented adapter priority order (file: packages/cli/src/discovery/index.ts) (depends on T006, T007, T008, T009)
-- [ ] T011 Extend `generateSkill` to accept optional `docsDir` parameter that overrides the `.ask/docs/` reference and skips the "docs not found" fallback section (file: packages/cli/src/skill.ts) (depends on T001)
-- [ ] T012 Implement `upsertIntentSkillsBlock` and `removeFromIntentSkillsBlock` helpers that manage the `<!-- intent-skills:start --> / :end -->` block in `AGENTS.md` with byte-identical output to `@tanstack/intent/src/commands/install.ts` (file: packages/cli/src/agents-intent.ts) (depends on T003)
-- [ ] T013 Dispatch `DiscoveryResult` in the `add` command: call `runLocalDiscovery` before `resolveFromRegistry`, branch on `kind`, skip `saveDocs` when `installPath` is set, call `upsertIntentSkillsBlock` for `intent-skills` (file: packages/cli/src/index.ts) (depends on T010, T011, T012)
-- [ ] T014 Wire `runRepoDiscovery` into the ecosystem-resolver fall-through so github-tarball fetches use convention scan for their download root (file: packages/cli/src/index.ts) (depends on T010)
-- [ ] T015 Branch `ask docs sync` behavior on the lock entry's `format`: `'intent-skills'` entries call `@tanstack/intent.checkStaleness` and update the marker block, `'docs'` with `installPath` short-circuits on version match (file: packages/cli/src/index.ts) (depends on T012)
-- [ ] T016 Branch `ask docs remove` behavior on the lock entry's `format`: `'intent-skills'` entries call `removeFromIntentSkillsBlock`, `'docs'` entries preserve existing delete path (file: packages/cli/src/index.ts) (depends on T012)
+- [x] T011 Extend `generateSkill` to accept optional `docsDir` parameter that overrides the `.ask/docs/` reference and skips the "docs not found" fallback section (file: packages/cli/src/skill.ts) (depends on T001)
+- [x] T012 Implement `upsertIntentSkillsBlock` and `removeFromIntentSkillsBlock` helpers that manage the `<!-- intent-skills:start --> / :end -->` block in `AGENTS.md` with byte-identical output to `@tanstack/intent/src/commands/install.ts` (file: packages/cli/src/agents-intent.ts) (depends on T003)
+- [x] T013 Dispatch `DiscoveryResult` in the `add` command: call `runLocalDiscovery` before `resolveFromRegistry`, branch on `kind`, skip `saveDocs` when `installPath` is set, call `upsertIntentSkillsBlock` for `intent-skills` (file: packages/cli/src/index.ts) (depends on T010, T011, T012)
+- [~] T014 Wire `runRepoDiscovery` into the ecosystem-resolver fall-through so github-tarball fetches use convention scan for their download root (file: packages/cli/src/index.ts) (depends on T010) — DEFERRED, see Surprises
+- [x] T015 Branch `ask docs sync` behavior on the lock entry's `format`: `'intent-skills'` entries call `@tanstack/intent.checkStaleness` and update the marker block, `'docs'` with `installPath` short-circuits on version match (file: packages/cli/src/index.ts) (depends on T012)
+- [x] T016 Branch `ask docs remove` behavior on the lock entry's `format`: `'intent-skills'` entries call `removeFromIntentSkillsBlock`, `'docs'` entries preserve existing delete path (file: packages/cli/src/index.ts) (depends on T012)
 - [ ] T017 [P] Add fixture `pkg-ask-manifest` under `packages/cli/test/fixtures/` with `package.json.ask.docsPath` and populated docs tree (file: packages/cli/test/fixtures/pkg-ask-manifest/)
 - [ ] T018 [P] Add fixture `pkg-intent` with `keywords: ['tanstack-intent']` + `skills/usage/SKILL.md` (file: packages/cli/test/fixtures/pkg-intent/)
 - [ ] T019 [P] Add fixture `pkg-conventional` with `dist/docs/*.md` containing ≥3 meaningful files (file: packages/cli/test/fixtures/pkg-conventional/)
@@ -318,4 +318,29 @@ add/sync/remove` tests continue to pass unchanged.
 
 ## Surprises & Discoveries
 
-(populated during implementation)
+- **T014 deferred** — Wiring `runRepoDiscovery` through `GithubSource`
+  requires exposing the extracted tarball directory as a post-fetch hook
+  (current `GithubSource.fetch` encapsulates the extract dir inside its
+  own try/finally). This is a focused refactor that is safer to land in
+  a follow-up once unit coverage of `repo-conventions.ts` exists. The
+  adapter + orchestrator are both in place, so the follow-up work is
+  only the wiring call site. Impact: github-ecosystem resolves still go
+  through the existing registry-miss path; npm is fully covered.
+- **Reference-in-place for `docs` kind uses `saveDocs` for now** — the
+  spec's ideal "no copies of `node_modules` docs" model requires
+  `listDocs` / `generateAgentsMd` to read from config+lock state instead
+  of walking `.ask/docs/` on disk. Rather than rewrite those two writers
+  in this refactor, `handleLocalDiscovery` still calls `saveDocs` for
+  `kind: 'docs'` results. The `T011` `docsDir` parameter is in place
+  for the follow-up; `ask docs sync` still auto-updates because
+  `NpmSource.tryLocalRead` re-reads from `node_modules` on every sync.
+  Intent-skills format remains reference-in-place (its marker block
+  emits `load:` paths that point directly into `node_modules`).
+- **Intent CLI does not actually emit the marker block at write time** —
+  `@tanstack/intent`'s `install` command prints an *instruction text*
+  telling the agent to write the block, not a writer that produces
+  bytes. SC-2's "byte-identical" comparison is therefore against the
+  canonical format documented in that instruction text (reproduced in
+  `agents-intent.ts`), not against a live-captured Intent-CLI output.
+  Verification for T028 should diff our writer's output against the
+  canonical snippet in `install-*.mjs`.

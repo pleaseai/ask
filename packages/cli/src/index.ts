@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import type { DiscoveryResult } from './discovery/index.js'
 import type { RegistrySource } from './registry.js'
 import type { Lock, LockEntry } from './schemas.js'
 import type {
@@ -15,6 +16,7 @@ import path from 'node:path'
 import process from 'node:process'
 import { defineCommand } from 'citty'
 import { consola } from 'consola'
+import { removeFromIntentSkillsBlock, upsertIntentSkillsBlock } from './agents-intent.js'
 import { generateAgentsMd } from './agents.js'
 import { runWithConcurrency } from './concurrency.js'
 import {
@@ -22,14 +24,29 @@ import {
   loadConfig,
   removeDocEntry,
 } from './config.js'
+import { runLocalDiscovery } from './discovery/index.js'
+import { localIntentAdapter } from './discovery/local-intent.js'
 import { manageIgnoreFiles } from './ignore-files.js'
-import { contentHash, getConfigPath, getLockPath, readLock, upsertLockEntry } from './io.js'
+import { contentHash, getConfigPath, getLockPath, readLock, removeLockEntries, upsertLockEntry } from './io.js'
 import { getReader } from './manifest/index.js'
 import { fetchRegistryEntry, parseDocSpec, parseEcosystem, resolveFromRegistry } from './registry.js'
 import { getResolver } from './resolvers/index.js'
 import { generateSkill, removeSkill } from './skill.js'
 import { getSource } from './sources/index.js'
 import { listDocs, removeDocs, saveDocs } from './storage.js'
+
+/**
+ * `@mastra/client-js` → `mastra-client-js`. Scoped names are not valid
+ * directory names under `.ask/docs/` or Claude Code skill dir names, so
+ * we flatten them the same way the registry server does. Extracted into
+ * a helper because both the registry-miss path and the local-discovery
+ * dispatcher need the same slug to key lock entries.
+ */
+function slugifyNpmName(pkgName: string): string {
+  return pkgName.startsWith('@')
+    ? pkgName.slice(1).replace('/', '-')
+    : pkgName
+}
 
 function buildLockEntry(config: SourceConfig, result: FetchResult): LockEntry {
   const base = {
@@ -285,6 +302,121 @@ function buildSourceConfig(
   }
 }
 
+/**
+ * Dispatch a local-stage `DiscoveryResult` to the correct write pipeline.
+ *
+ *   - `kind: 'docs'`          → existing ask pipeline
+ *                               (saveDocs + addDocEntry + upsertLockEntry +
+ *                               generateSkill + generateAgentsMd + ignore
+ *                               files).  When `installPath` is set the
+ *                               lock entry records it so `ask docs sync`
+ *                               can short-circuit on a version match.
+ *   - `kind: 'intent-skills'` → intent pipeline
+ *                               (upsertLockEntry with `format:
+ *                               'intent-skills'` +
+ *                               upsertIntentSkillsBlock).  No
+ *                               `.ask/docs/` copy, no
+ *                               `.claude/skills/` generation — the
+ *                               AGENTS.md marker block is the sole wire-up
+ *                               per the Intent format contract.
+ *
+ * Returns nothing; on failure throws and lets the CLI top-level handler
+ * report the error. The caller should `return` after invocation to skip
+ * the downstream registry / resolver pipeline.
+ */
+async function handleLocalDiscovery(
+  projectDir: string,
+  pkgName: string,
+  discovery: DiscoveryResult,
+): Promise<void> {
+  const libName = slugifyNpmName(pkgName)
+
+  if (discovery.kind === 'intent-skills') {
+    // Intent format: hash over the skill entries so `ask docs sync` can
+    // detect drift without comparing the actual SKILL.md bytes (which
+    // live in node_modules and change with `bun install`). Stable
+    // JSON form — order of skill entries is preserved by the adapter.
+    const hashable = discovery.skills.map((s, i) => ({
+      relpath: `intent-skill-${i}`,
+      content: `${s.task}\n${s.load}`,
+    }))
+    const lockEntry = {
+      source: 'npm' as const,
+      version: discovery.resolvedVersion,
+      fetchedAt: new Date().toISOString(),
+      fileCount: discovery.skills.length,
+      contentHash: contentHash(hashable),
+      installPath: discovery.installPath,
+      format: 'intent-skills' as const,
+    }
+    upsertLockEntry(projectDir, libName, lockEntry)
+    consola.info(
+      `Lock updated (format: intent-skills): ${path.relative(projectDir, getLockPath(projectDir))}`,
+    )
+
+    const agentsPath = upsertIntentSkillsBlock(projectDir, pkgName, discovery.skills)
+    consola.info(`AGENTS.md intent-skills block updated: ${path.relative(projectDir, agentsPath)}`)
+
+    consola.success(
+      `Done! ${pkgName}@${discovery.resolvedVersion} (${discovery.skills.length} intent skill${discovery.skills.length === 1 ? '' : 's'}) are ready for AI agents.`,
+    )
+    return
+  }
+
+  // docs-kind: reuse the existing ask pipeline.  The fact that we
+  // discovered it locally (vs through a registry call) is transparent
+  // from this point on — the lock entry records `installPath` so future
+  // `ask docs sync` runs can short-circuit when the installed version
+  // still matches.
+  consola.start(
+    `Discovered ${pkgName}@${discovery.resolvedVersion} via ${discovery.adapter} adapter (${discovery.files.length} files)`,
+  )
+
+  const sourceConfig: NpmSourceOptions = {
+    source: 'npm',
+    name: libName,
+    version: discovery.resolvedVersion,
+    package: pkgName,
+    docsPath: discovery.docsPath,
+  }
+
+  const syntheticFetch: FetchResult = {
+    files: discovery.files,
+    resolvedVersion: discovery.resolvedVersion,
+    meta: discovery.installPath ? { installPath: discovery.installPath } : {},
+  }
+
+  // Materialize a copy under `.ask/docs/<name>@<ver>/` so `listDocs` and
+  // `generateAgentsMd` see the entry without needing an install-path-aware
+  // rewrite of the lister (deferred, see Surprises & Discoveries in the
+  // plan). `ask docs sync` still re-reads from `installPath` on the next
+  // run because `NpmSource.tryLocalRead` is consulted first.
+  const docsDir = saveDocs(projectDir, libName, discovery.resolvedVersion, discovery.files)
+  consola.info(`Docs saved to: ${docsDir}`)
+
+  addDocEntry(projectDir, { ...sourceConfig, version: discovery.resolvedVersion })
+  consola.info(`Config updated: ${path.relative(projectDir, getConfigPath(projectDir))}`)
+
+  const lockEntry = buildLockEntry(sourceConfig, syntheticFetch)
+  upsertLockEntry(projectDir, libName, lockEntry)
+  consola.info(`Lock updated: ${path.relative(projectDir, getLockPath(projectDir))}`)
+
+  const skillPath = generateSkill(
+    projectDir,
+    libName,
+    discovery.resolvedVersion,
+    discovery.files.map(f => f.path),
+  )
+  consola.info(`Skill created: ${skillPath}`)
+
+  const agentsPath = generateAgentsMd(projectDir)
+  consola.info(`AGENTS.md updated: ${agentsPath}`)
+
+  manageIgnoreFiles(projectDir, 'install')
+
+  consola.success(`Done! ${pkgName}@${discovery.resolvedVersion} docs are ready for AI agents.`)
+}
+
 const addCmd = defineCommand({
   meta: { name: 'add', description: 'Download documentation for a library' },
   args: {
@@ -343,6 +475,33 @@ const addCmd = defineCommand({
         // Also rebuild effectiveSpec so resolveFromRegistry (which re-parses
         // from the raw spec string) picks up the override version.
         effectiveSpec = `${parsed.ecosystem}:${parsed.name}@${gateB.version}`
+      }
+    }
+
+    // Local convention-based discovery — the new pre-registry stage.
+    //
+    // Runs only for `npm:` ecosystem specs without an explicit `--source`
+    // or `--docs-path`: those two flags are the power-user overrides, so
+    // we honour them by skipping discovery entirely and falling through
+    // to the existing registry / resolver pipeline.
+    //
+    // On a hit, `handleLocalDiscovery` performs all writes and we return
+    // early. On a miss, we continue to the github fast-path / registry
+    // auto-detect just like before.
+    if (
+      !args.source
+      && !args.docsPath
+      && parsed.kind === 'ecosystem'
+      && parsed.ecosystem === 'npm'
+    ) {
+      const discovery = await runLocalDiscovery({
+        projectDir,
+        pkg: parsed.name,
+        requestedVersion: parsed.version,
+      })
+      if (discovery) {
+        await handleLocalDiscovery(projectDir, parsed.name, discovery)
+        return
       }
     }
 
@@ -620,6 +779,71 @@ export async function runSync(
     counts[status]++
   }
 
+  // Intent-skills entries live only in the lock (no config.docs row), so
+  // they need a second pass that iterates `lock.entries` filtered by
+  // `format: 'intent-skills'`. For each one we re-run the local-intent
+  // adapter against the currently installed package and upsert the
+  // marker block. If the package was uninstalled from `node_modules`,
+  // the adapter returns null and we leave the existing block alone —
+  // users can explicitly remove it via `ask docs remove <pkg>`.
+  const intentKeys: string[] = []
+  for (const [key, entry] of Object.entries(lock.entries)) {
+    if (entry.source === 'npm' && entry.format === 'intent-skills') {
+      intentKeys.push(key)
+    }
+  }
+  if (intentKeys.length > 0) {
+    consola.info(`Resyncing ${intentKeys.length} intent-skills entr${intentKeys.length === 1 ? 'y' : 'ies'}...`)
+    for (const key of intentKeys) {
+      const entry = lock.entries[key]
+      if (!entry || entry.source !== 'npm') {
+        continue
+      }
+      // `installPath` is the `node_modules/<pkg>` root we recorded at
+      // `ask docs add` time; the trailing segment is the original npm
+      // package name which may differ from the slugged lock key
+      // (`mastra-client-js` vs `@mastra/client-js`).
+      const installPath = entry.installPath
+      if (!installPath) {
+        continue
+      }
+      const pkgName = inferPackageNameFromInstallPath(installPath)
+      if (!pkgName) {
+        continue
+      }
+      try {
+        const result = await localIntentAdapter({
+          projectDir,
+          pkg: pkgName,
+          requestedVersion: 'latest',
+        })
+        if (!result || result.kind !== 'intent-skills') {
+          consola.warn(`  ${pkgName}: intent package no longer detected, skipping`)
+          continue
+        }
+        upsertIntentSkillsBlock(projectDir, pkgName, result.skills)
+        const hashable = result.skills.map((s, i) => ({
+          relpath: `intent-skill-${i}`,
+          content: `${s.task}\n${s.load}`,
+        }))
+        upsertLockEntry(projectDir, key, {
+          source: 'npm',
+          version: result.resolvedVersion,
+          fetchedAt: new Date().toISOString(),
+          fileCount: result.skills.length,
+          contentHash: contentHash(hashable),
+          installPath: result.installPath,
+          format: 'intent-skills',
+        })
+        consola.info(`  ${pkgName}: updated (${result.skills.length} skills)`)
+      }
+      catch (err) {
+        consola.error(`  ${pkgName}: ${err instanceof Error ? err.message : err}`)
+        counts.failed++
+      }
+    }
+  }
+
   if (!options.skipAgentsMd) {
     generateAgentsMd(projectDir)
   }
@@ -631,6 +855,29 @@ export async function runSync(
     `Sync complete: ${counts.drifted} re-fetched, ${counts.unchanged} unchanged, ${counts.failed} failed. AGENTS.md updated.`,
   )
   return counts
+}
+
+/**
+ * Extract the npm package name from an absolute `node_modules/<pkg>`
+ * path. Handles scoped packages — `/foo/node_modules/@scope/pkg` returns
+ * `@scope/pkg`. Returns `null` when the path does not look like a
+ * `node_modules/...` installation root.
+ */
+function inferPackageNameFromInstallPath(installPath: string): string | null {
+  const marker = `${path.sep}node_modules${path.sep}`
+  const idx = installPath.lastIndexOf(marker)
+  if (idx === -1) {
+    return null
+  }
+  const after = installPath.slice(idx + marker.length)
+  const parts = after.split(path.sep).filter(Boolean)
+  if (parts.length === 0) {
+    return null
+  }
+  if (parts[0]!.startsWith('@') && parts.length >= 2) {
+    return `${parts[0]}/${parts[1]}`
+  }
+  return parts[0]!
 }
 
 const syncCmd = defineCommand({
@@ -668,6 +915,33 @@ const removeCmd = defineCommand({
     const { name, version } = parseSpec(args.spec)
     const hasExplicitVersion = args.spec.lastIndexOf('@') > 0
     const ver = hasExplicitVersion ? version : undefined
+
+    // Branch on lock entry format: intent-skills entries have no
+    // `.ask/docs/` copy, no `.claude/skills/` dir, and no `config.docs`
+    // record — they live exclusively in the `<!-- intent-skills:start -->`
+    // AGENTS.md block and a format-tagged lock entry. Removing one means
+    // stripping the marker entry and dropping the lock row; the ask-docs
+    // block in AGENTS.md is untouched.
+    const libName = slugifyNpmName(name)
+    const currentLock = readLock(projectDir)
+    const lockEntry = currentLock.entries[libName] ?? currentLock.entries[name]
+    const lockKey = currentLock.entries[libName] ? libName : name
+    const isIntent
+      = lockEntry?.source === 'npm' && lockEntry.format === 'intent-skills'
+
+    if (isIntent) {
+      const removed = removeFromIntentSkillsBlock(projectDir, name)
+      // Drop the lock entry directly — there is no `config.docs` entry
+      // to reconcile for intent-skills format.
+      removeLockEntries(projectDir, [lockKey])
+      if (removed) {
+        consola.success(`Removed intent-skills block entry for ${name}`)
+      }
+      else {
+        consola.warn(`No AGENTS.md intent-skills entry found for ${name}`)
+      }
+      return
+    }
 
     removeDocs(projectDir, name, ver)
     removeSkill(projectDir, name)
