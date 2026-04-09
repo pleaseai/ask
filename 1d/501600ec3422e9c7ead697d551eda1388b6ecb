@@ -1,0 +1,23 @@
+.please/docs/tracks.jsonl
+  b29f55a0556fe640 13
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.6",
+  "base_commit_sha": "1d501600ec3422e9c7ead697d551eda1388b6ecb",
+  "prompts": {
+    "b29f55a0556fe640": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "07c7f820-9777-4776-b140-1838ff11e32f",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 1,
+      "total_deletions": 1,
+      "accepted_lines": 1,
+      "overriden_lines": 0
+    }
+  }
+}
