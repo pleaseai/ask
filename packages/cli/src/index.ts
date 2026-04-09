@@ -24,7 +24,6 @@ import {
 import { manageIgnoreFiles } from './ignore-files.js'
 import { contentHash, getConfigPath, getLockPath, readLock, upsertLockEntry } from './io.js'
 import { getReader } from './manifest/index.js'
-import { migrateLegacyWorkspace } from './migrate-legacy.js'
 import { fetchRegistryEntry, parseDocSpec, parseEcosystem, resolveFromRegistry } from './registry.js'
 import { getResolver } from './resolvers/index.js'
 import { generateSkill, removeSkill } from './skill.js'
@@ -255,7 +254,6 @@ const addCmd = defineCommand({
   },
   async run({ args }) {
     const projectDir = process.cwd()
-    migrateLegacyWorkspace(projectDir)
     let effectiveSpec = args.spec
     const parsed = parseDocSpec(effectiveSpec)
     const { spec: cleanSpec } = parseEcosystem(effectiveSpec)
@@ -538,7 +536,6 @@ export async function runSync(
   projectDir: string,
   options: RunSyncOptions = {},
 ): Promise<{ drifted: number, unchanged: number, failed: number }> {
-  migrateLegacyWorkspace(projectDir)
   const config = loadConfig(projectDir)
   const lock = readLock(projectDir)
 
@@ -602,7 +599,6 @@ const listCmd = defineCommand({
   meta: { name: 'list', description: 'List downloaded documentation' },
   run() {
     const projectDir = process.cwd()
-    migrateLegacyWorkspace(projectDir)
     const entries = listDocs(projectDir)
 
     if (entries.length === 0) {
@@ -624,7 +620,6 @@ const removeCmd = defineCommand({
   },
   run({ args }) {
     const projectDir = process.cwd()
-    migrateLegacyWorkspace(projectDir)
     const { name, version } = parseSpec(args.spec)
     const hasExplicitVersion = args.spec.lastIndexOf('@') > 0
     const ver = hasExplicitVersion ? version : undefined
