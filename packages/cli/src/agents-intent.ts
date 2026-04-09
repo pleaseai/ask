@@ -204,6 +204,50 @@ export function upsertIntentSkillsBlock(
 }
 
 /**
+ * Read the intent-skills block from `AGENTS.md` and group entries by
+ * package name (derived from each entry's `node_modules/<pkg>/` prefix
+ * in the `load:` path). Returns an empty map when the file or block
+ * does not exist. Used by `list` to surface skill details for
+ * intent-skills lock entries without re-scanning `node_modules`.
+ */
+export function readIntentSkillsMap(
+  projectDir: string,
+): Map<string, IntentSkillEntry[]> {
+  const agentsPath = path.join(projectDir, 'AGENTS.md')
+  const { block } = readExistingBlock(agentsPath)
+  const map = new Map<string, IntentSkillEntry[]>()
+  if (!block)
+    return map
+  for (const entry of block.entries) {
+    const pkg = packageFromLoadPath(entry.load)
+    if (!pkg)
+      continue
+    const list = map.get(pkg) ?? []
+    list.push(entry)
+    map.set(pkg, list)
+  }
+  return map
+}
+
+/**
+ * Derive `owner/pkg` (or `pkg`) from a `node_modules/<pkg>/...` load
+ * path. Returns `null` for any other shape.
+ */
+function packageFromLoadPath(load: string): string | null {
+  const prefix = 'node_modules/'
+  if (!load.startsWith(prefix))
+    return null
+  const rest = load.slice(prefix.length)
+  const parts = rest.split('/').filter(Boolean)
+  if (parts.length === 0)
+    return null
+  if (parts[0]!.startsWith('@') && parts.length >= 2) {
+    return `${parts[0]}/${parts[1]}`
+  }
+  return parts[0]!
+}
+
+/**
  * Remove every entry whose `load:` path belongs to `packageName`. When
  * the resulting block would be empty, the entire block (including the
  * markers) is stripped so `AGENTS.md` does not carry an empty skeleton.

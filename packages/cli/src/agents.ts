@@ -6,7 +6,7 @@ const BEGIN_MARKER = '<!-- BEGIN:ask-docs-auto-generated -->'
 const END_MARKER = '<!-- END:ask-docs-auto-generated -->'
 
 export function generateAgentsMd(projectDir: string): string {
-  const docs = listDocs(projectDir)
+  const docs = listDocs(projectDir).filter(e => e.format === 'docs')
 
   if (docs.length === 0)
     return ''
