@@ -1,0 +1,31 @@
+packages/cli/test/display/table.test.ts
+  b29f55a0556fe640 1-42
+packages/cli/test/display/tree.test.ts
+  b29f55a0556fe640 1-81
+packages/cli/src/display/table.ts
+  b29f55a0556fe640 1-57
+.please/docs/tracks/active/rich-list-command-20260409/decision.md
+  b29f55a0556fe640 1-40
+packages/cli/src/display/tree.ts
+  b29f55a0556fe640 1-120
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.6",
+  "base_commit_sha": "f61a112ab51326845f4e7b801524e90f07607c49",
+  "prompts": {
+    "b29f55a0556fe640": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "07c7f820-9777-4776-b140-1838ff11e32f",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 340,
+      "total_deletions": 0,
+      "accepted_lines": 340,
+      "overriden_lines": 0
+    }
+  }
+}
