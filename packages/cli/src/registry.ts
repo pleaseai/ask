@@ -15,8 +15,14 @@ const REGISTRY_BASE_URL = 'https://ask-registry.pages.dev'
  * "next@canary" -> { ecosystem: undefined, spec: "next@canary" }
  */
 export function parseEcosystem(input: string): { ecosystem: string | undefined, spec: string } {
+  // An ecosystem prefix is anything before the first `:`, as long as that
+  // colon appears before any `/`. The `/` guard rules out `owner/repo`
+  // shorthand (which has no colon anyway) while still correctly handling
+  // scoped npm names like `npm:@mastra/client-js`, where the colon comes
+  // before the slash.
   const colonIdx = input.indexOf(':')
-  if (colonIdx > 0 && !input.includes('/')) {
+  const slashIdx = input.indexOf('/')
+  if (colonIdx > 0 && (slashIdx === -1 || colonIdx < slashIdx)) {
     return {
       ecosystem: input.substring(0, colonIdx),
       spec: input.substring(colonIdx + 1),
@@ -162,7 +168,10 @@ export async function fetchRegistryEntry(
   first: string,
   second: string,
 ): Promise<RegistryApiResponse | null> {
-  const url = `${REGISTRY_BASE_URL}/api/registry/${first}/${second}`
+  // `second` may contain `/` for scoped npm packages (`@mastra/client-js`).
+  // Encode it so the server sees a single catch-all segment instead of
+  // splitting the scope into its own segment and rejecting the slug.
+  const url = `${REGISTRY_BASE_URL}/api/registry/${encodeURIComponent(first)}/${encodeURIComponent(second)}`
 
   try {
     const response = await fetch(url)

@@ -1,7 +1,39 @@
 import type { RegistryStrategy } from '@pleaseai/ask-schema'
 import type { ParsedDocSpec } from '../src/registry.js'
 import { describe, expect, it } from 'bun:test'
-import { parseDocSpec, selectBestStrategy } from '../src/registry.js'
+import { parseDocSpec, parseEcosystem, selectBestStrategy } from '../src/registry.js'
+
+describe('parseEcosystem', () => {
+  it('splits simple ecosystem prefix', () => {
+    expect(parseEcosystem('npm:next')).toEqual({ ecosystem: 'npm', spec: 'next' })
+  })
+
+  it('splits scoped npm package (colon before slash)', () => {
+    // Regression: the old `!input.includes('/')` guard bailed on scoped
+    // names and returned `{ ecosystem: undefined, spec: 'npm:@scope/pkg' }`,
+    // which fed a garbage URL (`registry/npm/npm:`) into the registry
+    // lookup and forced a miss → github-monorepo download.
+    expect(parseEcosystem('npm:@mastra/client-js')).toEqual({
+      ecosystem: 'npm',
+      spec: '@mastra/client-js',
+    })
+  })
+
+  it('does not treat owner/repo shorthand as ecosystem', () => {
+    expect(parseEcosystem('vercel/next.js')).toEqual({
+      ecosystem: undefined,
+      spec: 'vercel/next.js',
+    })
+  })
+
+  it('does not treat owner/repo@ref shorthand as ecosystem', () => {
+    // No colon at all, so nothing to split.
+    expect(parseEcosystem('vercel/next.js@canary')).toEqual({
+      ecosystem: undefined,
+      spec: 'vercel/next.js@canary',
+    })
+  })
+})
 
 describe('parseDocSpec', () => {
   describe('github kind (owner/repo)', () => {

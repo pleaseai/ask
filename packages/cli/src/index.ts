@@ -362,6 +362,28 @@ const addCmd = defineCommand({
           tag: strategy.tag,
         })
       }
+      else if (parsed.kind === 'ecosystem' && parsed.ecosystem === 'npm') {
+        // Registry miss with explicit `npm:` prefix → honor the user's
+        // intent and fetch the single npm tarball directly. Falling back to
+        // the ecosystem resolver here would download the whole GitHub
+        // monorepo (e.g. `mastra-ai/mastra` for `@mastra/client-js`), which
+        // is exactly the surprise the user is trying to avoid.
+        //
+        // Scoped names (`@scope/pkg`) are not valid as `.ask/docs/<dir>` or
+        // as Claude Code skill names, so slugify the same way the registry
+        // server does: `@mastra/client-js` → `mastra-client-js`.
+        const libName = parsed.name.startsWith('@')
+          ? parsed.name.slice(1).replace('/', '-')
+          : parsed.name
+        consola.info(`Registry miss — fetching npm tarball for ${parsed.name}@${parsed.version}...`)
+        sourceConfig = {
+          source: 'npm',
+          name: libName,
+          version: parsed.version,
+          package: parsed.name,
+          docsPath: args.docsPath,
+        } satisfies NpmSourceOptions
+      }
       else if (parsed.kind === 'ecosystem') {
         // Registry miss with ecosystem prefix → try ecosystem resolver
         const resolver = getResolver(parsed.ecosystem)

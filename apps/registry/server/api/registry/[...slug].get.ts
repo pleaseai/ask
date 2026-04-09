@@ -69,7 +69,11 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Missing slug' })
   }
 
-  const segments = slug.split('/')
+  // Decode each segment so callers can URL-encode scoped npm packages
+  // (`@mastra/client-js` → `%40mastra%2Fclient-js`) and still land on a
+  // two-segment slug here. Nitro decodes `%40` but leaves `%2F` in the
+  // catch-all param, so we have to handle the decode ourselves.
+  const segments = slug.split('/').map(s => decodeURIComponent(s))
   if (segments.length !== 2) {
     throw createError({ statusCode: 400, statusMessage: 'Slug must be in "owner/repo" or "ecosystem/name" form' })
   }
