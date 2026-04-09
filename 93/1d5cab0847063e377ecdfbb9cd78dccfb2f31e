@@ -1,0 +1,25 @@
+apps/registry/wrangler.jsonc
+  71d94f2e4da1ad70 1-38
+apps/registry/package.json
+  71d94f2e4da1ad70 6-7,10
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.6",
+  "base_commit_sha": "931d5cab0847063e377ecdfbb9cd78dccfb2f31e",
+  "prompts": {
+    "71d94f2e4da1ad70": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "5bed4e58-3854-49c9-8a6a-78a7c2518d29",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 42,
+      "total_deletions": 2,
+      "accepted_lines": 41,
+      "overriden_lines": 0
+    }
+  }
+}
