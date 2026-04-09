@@ -1,0 +1,27 @@
+.please/docs/tracks/active/rich-list-command-20260409/plan.md
+  4b0fcc995406bd31 1-209
+.please/docs/tracks/active/rich-list-command-20260409/metadata.json
+  4b0fcc995406bd31 1-11
+.please/docs/tracks/active/rich-list-command-20260409/spec.md
+  4b0fcc995406bd31 1-193
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.6",
+  "base_commit_sha": "1e5e1b0a7691209fb15e8f8a3cb153964940ae94",
+  "prompts": {
+    "4b0fcc995406bd31": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "43d79a80-2052-4e6c-b175-34656581878b",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 415,
+      "total_deletions": 2,
+      "accepted_lines": 413,
+      "overriden_lines": 0
+    }
+  }
+}
