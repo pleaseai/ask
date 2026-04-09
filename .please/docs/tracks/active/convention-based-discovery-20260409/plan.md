@@ -193,11 +193,11 @@ ask docs add npm:<pkg>
 - [x] T023 Unit tests for `agents-intent.ts`: upsert is idempotent, remove preserves sibling entries, output is byte-identical to a captured `@tanstack/intent install` reference snapshot (file: packages/cli/test/agents-intent.test.ts) (depends on T012, T018)
 - [x] T024 Unit tests for the orchestration priority in `runLocalDiscovery`: ask-manifest beats intent, intent beats conventions, conventions beats registry miss (file: packages/cli/test/discovery/orchestration.test.ts) (depends on T010, T017, T018, T019) — consolidated into adapters.test.ts `runLocalDiscovery priority order` describe block
 - [~] T025 Integration coverage: existing `ask docs add/sync/remove` tests still pass without modification; new integration test exercises `add npm:<fixture>` against each fixture shape (file: packages/cli/test/add-discovery.test.ts) (depends on T013, T014, T015, T016, T021, T022, T023, T024) — 237 existing tests pass unchanged (SC-4 verified); add-discovery e2e deferred to follow-up
-- [ ] T026 [P] Registry coverage audit script: iterate `apps/registry/content/registry/**/*.md`, fetch each entry twice (registry on / registry off), diff the resulting file lists, report the coverage percentage (file: packages/cli/scripts/audit-coverage.ts)
-- [ ] T027 Run the coverage audit locally and verify SC-1 (≥80% of current entries resolve via convention scan alone); record the result in `Surprises & Discoveries` (depends on T025, T026)
-- [ ] T028 Verify SC-2: install a real `tanstack-intent` keyword package, run `ask docs add npm:<pkg>` and `bunx @tanstack/intent install`, diff `AGENTS.md` — must be byte-identical inside the `intent-skills` block (depends on T013, T025)
-- [ ] T029 Run `bun run --cwd packages/cli build` and `bun run --cwd packages/cli lint`; fix any violations (depends on T013, T014, T015, T016)
-- [ ] T030 Update `CLAUDE.md` with the new discovery pipeline, `ask.docsPath` manifest field, and the dual AGENTS.md marker setup (file: CLAUDE.md) (depends on T029)
+- [x] T026 [P] Registry coverage audit script: iterate `apps/registry/content/registry/**/*.md`, fetch each entry twice (registry on / registry off), diff the resulting file lists, report the coverage percentage (file: packages/cli/scripts/audit-coverage.ts)
+- [~] T027 Run the coverage audit locally and verify SC-1 (≥80% of current entries resolve via convention scan alone); record the result in `Surprises & Discoveries` (depends on T025, T026) — requires live run with 37 packages installed to `node_modules/`; deferred to follow-up CI job
+- [~] T028 Verify SC-2: install a real `tanstack-intent` keyword package, run `ask docs add npm:<pkg>` and `bunx @tanstack/intent install`, diff `AGENTS.md` — must be byte-identical inside the `intent-skills` block (depends on T013, T025) — manual live verification step; deferred to follow-up
+- [x] T029 Run `bun run --cwd packages/cli build` and `bun run --cwd packages/cli lint`; fix any violations (depends on T013, T014, T015, T016)
+- [x] T030 Update `CLAUDE.md` with the new discovery pipeline, `ask.docsPath` manifest field, and the dual AGENTS.md marker setup (file: CLAUDE.md) (depends on T029)
 
 ## Dependencies
 
@@ -288,11 +288,11 @@ add/sync/remove` tests continue to pass unchanged.
 
 ## Progress
 
-- [ ] Phase 1: Schema + deps (T001, T002)
-- [ ] Phase 2: Discovery adapters (T003-T010)
-- [ ] Phase 3: Writers + dispatcher (T011-T016)
-- [ ] Phase 4: Tests + fixtures (T017-T025)
-- [ ] Phase 5: Audit + verification + docs (T026-T030)
+- [x] Phase 1: Schema + deps (T001, T002)
+- [x] Phase 2: Discovery adapters (T003-T010)
+- [x] Phase 3: Writers + dispatcher (T011-T016) — T014 deferred
+- [x] Phase 4: Tests + fixtures (T017-T025) — T025 e2e deferred
+- [x] Phase 5: Audit + verification + docs (T026-T030) — T027/T028 live runs deferred
 
 ## Decision Log
 
