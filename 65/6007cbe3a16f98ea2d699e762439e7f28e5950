@@ -1,0 +1,23 @@
+.please/docs/tracks/active/global-docs-store-20260410/plan.md
+  03217db608910a05 68-95
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "656007cbe3a16f98ea2d699e762439e7f28e5950",
+  "prompts": {
+    "03217db608910a05": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "46e500fa-7344-42db-95f4-c76ca119ea3b",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 28,
+      "total_deletions": 28,
+      "accepted_lines": 28,
+      "overriden_lines": 0
+    }
+  }
+}
