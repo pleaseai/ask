@@ -1,0 +1,29 @@
+.please/docs/tracks/completed/in-place-npm-docs-20260410/metadata.json
+  d8ac658346ec948d 4,6,8
+.please/docs/tracks/completed/in-place-npm-docs-20260410/spec.md
+  d8ac658346ec948d 1-120
+.please/docs/tracks.jsonl
+  d8ac658346ec948d 17
+.please/docs/tracks/completed/in-place-npm-docs-20260410/plan.md
+  d8ac658346ec948d 1-159
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "cc05f2451ff29d81068f53c5c9b6a5d5ccab1a42",
+  "prompts": {
+    "d8ac658346ec948d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d2f55bab-2ca8-49b7-a46a-490c69f01afe",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 307,
+      "total_deletions": 164,
+      "accepted_lines": 283,
+      "overriden_lines": 0
+    }
+  }
+}
