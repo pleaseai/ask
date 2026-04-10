@@ -1,0 +1,31 @@
+packages/cli/src/sources/npm.ts
+  03217db608910a05 15-21,48-51,241-243,247,308-337
+packages/cli/src/sources/llms-txt.ts
+  03217db608910a05 7,9-15,50-67,69,71
+packages/cli/src/sources/web.ts
+  03217db608910a05 8,11-17,50-67
+packages/cli/src/sources/github.ts
+  03217db608910a05 13-20,31,37-66,80,82-94,98,105-125,127
+packages/cli/src/sources/index.ts
+  03217db608910a05 61-62
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "c591a769cdc8e38dbea3fab997422dbd6aaf7d2f",
+  "prompts": {
+    "03217db608910a05": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "46e500fa-7344-42db-95f4-c76ca119ea3b",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 181,
+      "total_deletions": 31,
+      "accepted_lines": 181,
+      "overriden_lines": 0
+    }
+  }
+}
