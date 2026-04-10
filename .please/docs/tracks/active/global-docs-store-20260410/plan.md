@@ -9,7 +9,7 @@
 - **Track**: global-docs-store-20260410
 - **Issue**: TBD
 - **Created**: 2026-04-10
-- **Approach**: Introduce a `store.ts` module that owns `ASK_HOME` resolution and per-kind layout (`npm/`, `github/`, `web/`, `llms-txt/`). Source adapters (`sources/npm.ts`, `sources/github.ts`, `sources/web.ts`) grow a "write into store" code path; the install orchestrator then materializes the project-local `.ask/docs/<pkg>@<v>/` pointer via `copy | link | ref` per `storeMode`. `github.ts` additionally uses a bare clone + `git worktree add` for multi-ref efficiency (Cargo-style). `ask cache ls|gc` are new top-level commands.
+- **Approach**: Introduce a `store.ts` module that owns `ASK_HOME` resolution and per-kind layout (`npm/`, `github/`, `web/`, `llms-txt/`). Source adapters (`sources/npm.ts`, `sources/github.ts`, `sources/web.ts`) grow a "write into store" code path; the install orchestrator then materializes the project-local `.ask/docs/<pkg>@<v>/` pointer via `copy | link | ref` per `storeMode`. `github.ts` additionally uses a bare clone + `git archive | tar -x` for multi-ref efficiency (Cargo-style). `ask cache ls|gc` are new top-level commands.
 
 ## Purpose
 
