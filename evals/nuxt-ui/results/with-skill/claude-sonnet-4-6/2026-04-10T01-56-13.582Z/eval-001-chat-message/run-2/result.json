@@ -1,0 +1,51 @@
+{
+  "status": "passed",
+  "duration": 126.616,
+  "model": "claude-sonnet-4-6",
+  "transcriptPath": "./transcript.json",
+  "transcriptRawPath": "./transcript-raw.jsonl",
+  "o11y": {
+    "totalTurns": 3,
+    "toolCalls": {
+      "file_read": 6,
+      "file_write": 1,
+      "file_edit": 0,
+      "shell": 2,
+      "web_fetch": 0,
+      "web_search": 0,
+      "glob": 2,
+      "grep": 0,
+      "list_dir": 0,
+      "agent_task": 0,
+      "unknown": 1
+    },
+    "totalToolCalls": 12,
+    "webFetches": [],
+    "filesRead": [
+      "/vercel/sandbox/node_modules/@nuxt/ui/dist/runtime/components/ChatMessage.vue.d.ts",
+      "/vercel/sandbox/node_modules/@nuxt/ui/dist/runtime/components/ChatMessages.vue.d.ts",
+      "/vercel/sandbox/node_modules/@nuxt/ui/dist/runtime/components/ChatPrompt.vue.d.ts",
+      "/vercel/sandbox/app/pages/index.vue",
+      "/vercel/sandbox/app/app.vue",
+      "/vercel/sandbox/node_modules/@nuxt/ui/dist/runtime/components/ChatMessage.vue"
+    ],
+    "filesModified": [
+      "/vercel/sandbox/app/pages/index.vue"
+    ],
+    "shellCommands": [
+      {
+        "command": "ls /vercel/sandbox/.claude/skills/nuxt-ui-docs/",
+        "success": true
+      },
+      {
+        "command": "find /vercel/sandbox/node_modules/@nuxt/ui -name \"*.md\" 2>/dev/null | head -20 && find /vercel/sandbox/node_modules/@nuxt/ui/dist -name \"Chat*\" 2>/dev/null | head -20",
+        "success": true
+      }
+    ],
+    "errors": [],
+    "thinkingBlocks": 4
+  },
+  "outputPaths": {
+    "eval": "./outputs/eval.txt"
+  }
+}

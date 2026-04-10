@@ -197,13 +197,13 @@ Crawls documentation websites and converts HTML to Markdown.
 
 ## Eval Results
 
-We run our own eval suite ([`evals/nuxt-ui/`](evals/nuxt-ui/)) comparing 4 documentation strategies on 6 Nuxt UI v4 tasks — including 3 breaking-change evals with negative assertions that catch deprecated v2/v3 API usage.
+We run our own eval suite ([`evals/nuxt-ui/`](evals/nuxt-ui/)) comparing documentation strategies on 6 Nuxt UI v4 tasks — including 3 breaking-change evals with negative assertions that catch deprecated v2/v3 API usage.
 
-### Pass Rate (claude-sonnet-4-6, 2026-04-07)
+### Doc source comparison (claude-sonnet-4-6, 2026-04-07)
 
 | Doc source | Pass rate | Est. cost | Retries needed |
 |---|---|---|---|
-| **ASK github-docs** | **100%** (6/6) | **$1.67** | 0 |
+| **ASK github-docs (AGENTS.md)** | **100%** (6/6) | **$1.67** | 0 |
 | No docs (baseline) | 86% (6/7) | $1.82 | 1 |
 | llms-full.txt (~200KB) | 46% (6/13) | $2.93 | 7 |
 | llms.txt (~5KB) | 40% (6/15) | $4.83 | 9 |
@@ -213,6 +213,22 @@ We run our own eval suite ([`evals/nuxt-ui/`](evals/nuxt-ui/)) comparing 4 docum
 - **ASK-style docs outperform all alternatives** — 100% pass rate at the lowest cost. Structured docs with version warnings let the agent find correct v4 APIs without excessive exploration.
 - **llms.txt / llms-full.txt hurt more than they help** — Both scored below baseline. The agent spends tokens searching through unstructured docs but still uses deprecated patterns.
 - **Cost scales inversely with quality** — The worst performer (llms.txt) costs 2.9x more than the best (ASK github-docs), driven by retry loops and exploratory tool calls.
+
+### Delivery format comparison: AGENTS.md vs Claude Code skill (2026-04-10)
+
+Same docs payload, same model, same sandbox — only the delivery format changes:
+
+| Delivery format | First-try pass rate | Notes |
+|---|---|---|
+| **AGENTS.md pointer** | **100%** (6/6) | Baseline ASK behavior |
+| `.claude/skills/<pkg>-docs/SKILL.md` | 50% (3/6) | Failed first-try on 3 breaking-change evals (001, 003, 005); only recovered on retry |
+
+This reproduces [Vercel's public finding](https://vercel.com/blog/agents-md-outperforms-skills-in-our-agent-evals)
+("AGENTS.md outperforms skills in our agent evals") inside ASK's own suite.
+The Claude Code skill format's auto-trigger heuristics do not reliably fire
+on v4 rename/API-shift cases where reading the docs actually matters. A
+follow-up track will make skill emission opt-in via a flag, with AGENTS.md
+remaining the default delivery format.
 
 See [`evals/nuxt-ui/README.md`](evals/nuxt-ui/README.md) for full methodology and detailed results.
 

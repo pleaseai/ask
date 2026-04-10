@@ -126,3 +126,59 @@ Results saved to `results/<experiment>/<timestamp>/<eval>/` with:
 4. **Baseline is surprisingly strong** — Training data already covers most v4 APIs (86%). The main gap is `ButtonGroup → FieldGroup` rename (eval-004), which only github-docs consistently caught.
 
 5. **Cost scales inversely with quality** — The worst performer (with-llms-txt) costs 2.9x more than the best (with-github-docs), driven by retry loops and exploratory tool calls.
+
+## Results (2026-04-10) — AGENTS.md vs Skill file
+
+Follow-up run isolating the **delivery format**. Both experiments use the
+identical GitHub docs payload (`nuxt-ui-docs/`); the only difference is how
+the agent is pointed at it:
+
+- `with-github-docs` — pointer in `AGENTS.md` (imported from `CLAUDE.md`)
+- `with-skill` — pointer in `.claude/skills/nuxt-ui-docs/SKILL.md` (Claude Code
+  skill format, no `AGENTS.md`, no `CLAUDE.md`)
+
+**Model**: claude-sonnet-4-6 | **Sandbox**: Docker | **Runs**: 4 (early exit on first pass)
+
+### First-try pass rate
+
+| Eval | `with-github-docs` (AGENTS.md) | `with-skill` (SKILL.md) |
+|---|---|---|
+| eval-001-chat-message | ✅ pass | ❌ fail → ✅ run-2 |
+| eval-002-command-palette | ✅ pass | ✅ pass |
+| eval-003-theme-customization | ✅ pass | ❌ fail → ✅ run-2 |
+| eval-004-field-group | ✅ pass | ✅ pass |
+| eval-005-nullable-input | ✅ pass | ❌ fail → ✅ run-2 |
+| eval-006-nested-form | ✅ pass | ✅ pass |
+| **First-try pass rate** | **100% (6/6)** | **50% (3/6)** |
+
+Both eventually converge because `earlyExit: true` keeps retrying, but only
+`with-github-docs` gets there on the first attempt across every eval.
+
+### Key findings
+
+1. **AGENTS.md beats SKILL.md head-to-head** — Same docs payload, same model,
+   same sandbox. The only variable is the delivery format, and AGENTS.md wins
+   100% vs 50% on first-try pass rate. Reproduces [Vercel's public finding](https://vercel.com/blog/agents-md-outperforms-skills-in-our-agent-evals)
+   ("AGENTS.md outperforms skills").
+
+2. **Skill failures cluster on breaking-change evals** — Exactly the three
+   v4 rename/API-shift evals (001, 003, 005) failed on the first attempt under
+   the skill format, which is precisely where reading the docs matters. The
+   skill's auto-trigger heuristics do not reliably activate on these cases.
+
+3. **Implication for `ask install`** — ASK currently emits both `AGENTS.md`
+   and `.claude/skills/<name>-docs/SKILL.md`. The skill file adds no
+   measurable value on top of AGENTS.md in this suite, is Claude Code-only
+   (codex, cursor, etc. ignore it), and duplicates the same pointer. A
+   follow-up track should make skill emission opt-in via a flag, with
+   AGENTS.md remaining the default.
+
+### Caveats
+
+- Sample sizes are small (1–2 runs per eval under `earlyExit: true`). A
+  definitive statistical claim would need `earlyExit: false` plus a larger
+  `runs` count. The direction, however, is consistent with the Vercel
+  benchmark and with the failure concentrations on breaking-change evals.
+- `with-github-docs` numbers in this section are from the 2026-04-07 run;
+  re-running it today would strengthen the head-to-head if the model
+  weights drift.
