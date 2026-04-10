@@ -1,0 +1,29 @@
+.please/docs/product-specs/index.md
+  f85e8e7ca6b3d0ad 5-7
+.please/docs/tracks.jsonl
+  f85e8e7ca6b3d0ad 15
+.please/docs/tracks/completed/skill-emission-opt-in-20260410/metadata.json
+  f85e8e7ca6b3d0ad 4,6,8
+.please/docs/product-specs/default-off-claude-code-skill-/spec.md
+  f85e8e7ca6b3d0ad 1-20
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "e5f08212156d971c789e45a709cf275ece9474d0",
+  "prompts": {
+    "f85e8e7ca6b3d0ad": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "0837cc4b-a9d2-4e17-af5f-696754132b1f",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 47,
+      "total_deletions": 5,
+      "accepted_lines": 27,
+      "overriden_lines": 0
+    }
+  }
+}
