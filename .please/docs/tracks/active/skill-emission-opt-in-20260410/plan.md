@@ -61,8 +61,8 @@ This matches how other boolean CLI flags override config files in ASK's codebase
 
 - [ ] T001 [P] Add `emitSkill?: boolean` to `AskJsonSchema` and export the inferred type (file: packages/schema/src/ask-json.ts)
 - [ ] T002 [P] Add schema tests verifying `emitSkill: true | false | undefined` all parse, and unknown keys still reject (file: packages/schema/test/ask-json.test.ts) (depends on T001)
-- [ ] T003 Add `emitSkill?: boolean` to `RunInstallOptions` and resolve precedence inside `runInstall` (CLI flag > ask.json > false); thread the resolved value into `installOne` as a parameter (file: packages/cli/src/install.ts) (depends on T001)
-- [ ] T004 Guard the `generateSkill(...)` call in `installOne` behind the resolved `emitSkill` boolean (file: packages/cli/src/install.ts) (depends on T003)
+- [x] T003 Add `emitSkill?: boolean` to `RunInstallOptions` and resolve precedence inside `runInstall` (CLI flag > ask.json > false); thread the resolved value into `installOne` as a parameter (file: packages/cli/src/install.ts) (depends on T001)
+- [x] (2026-04-10 12:00 KST) T004 Guard the `generateSkill(...)` call in `installOne` behind the resolved `emitSkill` boolean (file: packages/cli/src/install.ts) (depends on T003)
 - [ ] T005 Add `--emit-skill` boolean flag to `installCmd` and `addCmd` in the CLI surface; pass it into `runInstall` options (file: packages/cli/src/index.ts) (depends on T003)
 - [ ] T006 Add install tests: default run does NOT create `.claude/skills/<name>-docs/`; `--emit-skill` flag DOES create it; `ask.json` `emitSkill: true` DOES create it; CLI flag overrides ask.json (file: packages/cli/test/install.test.ts) (depends on T004, T005)
 - [ ] T007 Add remove test: `ask remove <pkg>` cleans up a pre-existing `.claude/skills/<pkg>-docs/` directory even when the current `emitSkill` setting is false (file: packages/cli/test/remove.test.ts or closest) (depends on T005)
@@ -99,12 +99,12 @@ T001 ──┬── T002 (schema tests)
 - [x] (2026-04-10 03:00 KST) T001 Add `emitSkill?: boolean` to `AskJsonSchema` and export the inferred type
 - [x] (2026-04-10 11:30 KST) T002 Add schema tests verifying `emitSkill` parses and unknown keys still reject
 - [ ] T003 Add `emitSkill?: boolean` to `RunInstallOptions` and resolve precedence
-- [ ] T004 Guard the `generateSkill(...)` call in `installOne`
-- [ ] T005 Add `--emit-skill` boolean flag to `installCmd` and `addCmd`
-- [ ] T006 Add install tests covering default/flag/ask.json/override precedence
-- [ ] T007 Add remove test for pre-existing skill cleanup
-- [ ] T008 Add CHANGELOG entry documenting default flip and opt-in precedence
-- [ ] T009 Run full build and test suite
+- [x] (2026-04-10 12:00 KST) T004 Guard the `generateSkill(...)` call in `installOne`
+- [x] (2026-04-10 11:45 KST) T005 Add `--emit-skill` boolean flag to `installCmd` and `addCmd`
+- [x] (2026-04-10 11:40 KST) T006 Add install tests covering default/flag/ask.json/override precedence
+- [x] (2026-04-10 12:05 KST) T007 Add remove test for pre-existing skill cleanup
+- [x] (2026-04-10 14:00 KST) T008 Add CHANGELOG entry documenting default flip and opt-in precedence
+- [x] (2026-04-10 05:15 KST) T009 Run full build and test suite
 
 ## Decision Log
 
@@ -113,4 +113,5 @@ T001 ──┬── T002 (schema tests)
 
 ## Surprises & Discoveries
 
-- (empty — to be populated during implementation)
+- Observation: Adding `'emit-skill'` (quoted key) to the `args` object in `index.ts` triggered `style/quote-props` ESLint errors on all sibling unquoted keys (`force`, `spec`, `ref`, `docsPath`). The rule requires consistent quoting once any key requires quotes.
+  Evidence: `eslint` output during T009 — 4 errors on lines 50, 71, 76, 80 in `packages/cli/src/index.ts`. Fixed by quoting all sibling keys.
