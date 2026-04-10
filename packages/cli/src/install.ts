@@ -200,7 +200,9 @@ async function installOne(
       // Docs are cached, but skill may still need generation if emitSkill
       // was toggled on after a previous install without it.
       if (emitSkill && !fs.existsSync(path.join(getSkillDir(projectDir, libName), 'SKILL.md'))) {
-        const files = fs.readdirSync(docsDir)
+        const files = fs.readdirSync(docsDir, { recursive: true })
+          .map(f => String(f))
+          .filter(f => fs.statSync(path.join(docsDir, f)).isFile())
         generateSkill(projectDir, libName, resolvedVersion, files)
         consola.info(`  ${lib.spec}: already up to date — generated skill (${resolvedVersion})`)
         return 'unchanged'
