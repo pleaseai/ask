@@ -1,0 +1,27 @@
+example/ask.json
+  56dad13b7d2ff847 1-5
+example/.gitignore
+  56dad13b7d2ff847 1-4
+example/package.json
+  56dad13b7d2ff847 1-9
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.6",
+  "base_commit_sha": "139d5a90ef4a7172eb316cb4a6ad104c6044b953",
+  "prompts": {
+    "56dad13b7d2ff847": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "447fc761-0237-48eb-83ad-2238827377ad",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 4,
+      "total_deletions": 5,
+      "accepted_lines": 18,
+      "overriden_lines": 0
+    }
+  }
+}
