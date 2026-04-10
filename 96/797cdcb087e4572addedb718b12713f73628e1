@@ -1,0 +1,25 @@
+.please/docs/tracks/active/global-docs-store-20260410/metadata.json
+  56dad13b7d2ff847 8
+.please/docs/tracks/active/in-place-npm-docs-20260410/metadata.json
+  56dad13b7d2ff847 8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.6",
+  "base_commit_sha": "96797cdcb087e4572addedb718b12713f73628e1",
+  "prompts": {
+    "56dad13b7d2ff847": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "447fc761-0237-48eb-83ad-2238827377ad",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 2,
+      "total_deletions": 2,
+      "accepted_lines": 2,
+      "overriden_lines": 0
+    }
+  }
+}
