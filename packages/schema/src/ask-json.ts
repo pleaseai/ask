@@ -73,6 +73,7 @@ export const AskJsonSchema = z.object({
   libraries: z.array(LibraryEntrySchema),
   emitSkill: z.boolean().optional(),
   storeMode: StoreModeSchema.optional(),
+  inPlace: z.boolean().optional(),
 }).strict()
 
 export type AskJson = z.infer<typeof AskJsonSchema>

@@ -17,6 +17,11 @@
 * **cache:** New `ask cache ls [--kind]` and `ask cache gc [--dry-run]` commands for store introspection and cleanup.
   - `gc` scans `$HOME` (or `ASK_GC_SCAN_ROOTS`) for `.ask/resolved.json` files to build the referenced-keys set before deleting.
 * **schema:** `ask.json` gains optional `storeMode` field; `resolved.json` entries gain `storePath` and `materialization` fields.
+* **install:** In-place npm docs — when convention-based discovery finds docs already shipped inside an npm package (`node_modules/<pkg>/dist/docs/`, `node_modules/<pkg>/docs/`, etc.), ASK now references them in place instead of copying into `.ask/docs/`. This eliminates disk duplication and keeps docs in sync with `bun install` automatically.
+* **install:** Add `--no-in-place` CLI flag for `ask install` and `ask add` to force the copy path for discovery-detected npm docs.
+* **ask.json:** Add `inPlace?: boolean` field — set to `false` to project-wide disable in-place referencing. Default is `true`.
+* **agents:** AGENTS.md blocks for in-place entries now include "shipped by the package — `bun install` keeps them in sync" wording, differentiating them from vendored docs blocks.
+* **schema:** `resolved.json` entries gain optional `inPlacePath` field; `materialization` gains `'in-place'` variant alongside `copy`/`link`/`ref`.
 
 ### ⚠ BREAKING CHANGES
 

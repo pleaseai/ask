@@ -62,6 +62,7 @@ export const localAskAdapter: LocalDiscoveryAdapter = async (opts) => {
     resolvedVersion: local.resolvedVersion,
     installPath: local.meta?.installPath,
     docsPath,
+    inPlace: local.meta?.installPath != null ? true : undefined,
   }
   return result
 }
