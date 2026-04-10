@@ -5,8 +5,16 @@ import type {
   SourceConfig,
   WebSourceOptions,
 } from './index.js'
+import fs from 'node:fs'
 import { consola } from 'consola'
 import { NodeHtmlMarkdown } from 'node-html-markdown'
+import {
+  acquireEntryLock,
+  resolveAskHome,
+  stampEntry,
+  webStorePath,
+  writeEntryAtomic,
+} from '../store/index.js'
 
 /* eslint-disable regexp/no-unused-capturing-group -- all capturing groups accessed via match[1] */
 const RE_MAIN = /<main[^>]*>([\s\S]*?)<\/main>/i
@@ -39,7 +47,24 @@ export class WebSource implements DocSource {
       )
     }
 
-    return { files, resolvedVersion: opts.version }
+    // Write to global store for cross-project reuse
+    const askHome = resolveAskHome()
+    const primaryUrl = opts.urls[0]
+    const storeDir = webStorePath(askHome, primaryUrl)
+    if (!fs.existsSync(storeDir)) {
+      const lock = await acquireEntryLock(storeDir)
+      if (lock) {
+        try {
+          writeEntryAtomic(storeDir, files)
+          stampEntry(storeDir)
+        }
+        finally {
+          lock.release()
+        }
+      }
+    }
+
+    return { files, resolvedVersion: opts.version, storePath: storeDir }
   }
 
   private async crawl(

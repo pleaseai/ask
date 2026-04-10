@@ -10,6 +10,14 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { consola } from 'consola'
+import { withBareClone } from '../store/github-bare.js'
+import {
+  acquireEntryLock,
+  githubCheckoutPath,
+  resolveAskHome,
+  stampEntry,
+  writeEntryAtomic,
+} from '../store/index.js'
 
 const RE_LEADING_V = /^v/
 const RE_SHA40 = /^[0-9a-f]{40}$/
@@ -20,12 +28,42 @@ export class GithubSource implements DocSource {
     const opts = options as GithubSourceOptions
     const { repo, docsPath } = opts
     const ref = opts.tag ?? opts.branch ?? 'main'
+    const [owner, repoName] = repo.split('/')
 
     // Resolve the ref to get the actual version (strip leading "v" from tags)
     const tagVersion = opts.tag?.replace(RE_LEADING_V, '')
     const resolvedVersion = tagVersion ?? opts.version
 
-    // Download repo archive and extract docs
+    // Try bare clone first (reuses shared git object store across refs)
+    const askHome = resolveAskHome()
+    const storeCheckoutDir = githubCheckoutPath(askHome, owner, repoName, ref)
+
+    // Check store hit
+    if (fs.existsSync(storeCheckoutDir)) {
+      const files = this.extractDocsFromDir(storeCheckoutDir, repo, ref, docsPath)
+      const commit = this.resolveCommit(repo, ref)
+      return { files, resolvedVersion, storePath: storeCheckoutDir, meta: { commit, ref } }
+    }
+
+    // Try bare clone path
+    const bareResult = withBareClone(askHome, owner, repoName, ref)
+    if (bareResult) {
+      const files = this.extractDocsFromDir(bareResult, repo, ref, docsPath)
+      const commit = this.resolveCommit(repo, ref)
+      return { files, resolvedVersion, storePath: bareResult, meta: { commit, ref } }
+    }
+
+    // Fallback: tar.gz download
+    return this.fetchFromTarGz(opts, repo, ref, resolvedVersion, docsPath)
+  }
+
+  private async fetchFromTarGz(
+    opts: GithubSourceOptions,
+    repo: string,
+    ref: string,
+    resolvedVersion: string,
+    docsPath?: string,
+  ): Promise<FetchResult> {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ask-gh-'))
 
     try {
@@ -34,46 +72,59 @@ export class GithubSource implements DocSource {
         encoding: 'utf-8',
       })
 
-      // Find extracted directory (format: reponame-ref)
       const extractedDirs = fs.readdirSync(tmpDir)
       if (extractedDirs.length === 0) {
         throw new Error(`Failed to extract archive from ${repo}@${ref}`)
       }
       const extractedDir = path.join(tmpDir, extractedDirs[0])
+      const files = this.extractDocsFromDir(extractedDir, repo, ref, docsPath)
 
-      // Find docs
-      const targetPath = docsPath ?? this.detectDocsPath(extractedDir)
-      if (!targetPath) {
-        throw new Error(
-          `No docs directory found in ${repo}@${ref}. Specify --path to point to the docs directory.`,
-        )
-      }
-
-      const docsDir = path.join(extractedDir, targetPath)
-      if (!fs.existsSync(docsDir)) {
-        throw new Error(`Path "${targetPath}" not found in ${repo}@${ref}`)
-      }
-
-      let files: DocFile[]
-      if (fs.statSync(docsDir).isFile()) {
-        // Single file specified
-        const content = fs.readFileSync(docsDir, 'utf-8')
-        files = [{ path: path.basename(docsDir), content }]
-      }
-      else {
-        files = this.collectDocFiles(docsDir, docsDir)
+      // Write to store for future reuse
+      const [owner, repoName] = repo.split('/')
+      const askHome = resolveAskHome()
+      const storeDir = githubCheckoutPath(askHome, owner, repoName, ref)
+      const lock = await acquireEntryLock(storeDir)
+      if (lock) {
+        try {
+          writeEntryAtomic(storeDir, files)
+          stampEntry(storeDir)
+        }
+        finally {
+          lock.release()
+        }
       }
 
       const commit = this.resolveCommit(repo, ref)
-      return {
-        files,
-        resolvedVersion,
-        meta: { commit, ref },
-      }
+      return { files, resolvedVersion, storePath: storeDir, meta: { commit, ref } }
     }
     finally {
       fs.rmSync(tmpDir, { recursive: true, force: true })
     }
+  }
+
+  private extractDocsFromDir(
+    extractedDir: string,
+    repo: string,
+    ref: string,
+    docsPath?: string,
+  ): DocFile[] {
+    const targetPath = docsPath ?? this.detectDocsPath(extractedDir)
+    if (!targetPath) {
+      throw new Error(
+        `No docs directory found in ${repo}@${ref}. Specify --path to point to the docs directory.`,
+      )
+    }
+
+    const docsDir = path.join(extractedDir, targetPath)
+    if (!fs.existsSync(docsDir)) {
+      throw new Error(`Path "${targetPath}" not found in ${repo}@${ref}`)
+    }
+
+    if (fs.statSync(docsDir).isFile()) {
+      const content = fs.readFileSync(docsDir, 'utf-8')
+      return [{ path: path.basename(docsDir), content }]
+    }
+    return this.collectDocFiles(docsDir, docsDir)
   }
 
   private detectDocsPath(dir: string): string | null {

@@ -4,7 +4,15 @@ import type {
   LlmsTxtSourceOptions,
   SourceConfig,
 } from './index.js'
+import fs from 'node:fs'
 import { consola } from 'consola'
+import {
+  acquireEntryLock,
+  llmsTxtStorePath,
+  resolveAskHome,
+  stampEntry,
+  writeEntryAtomic,
+} from '../store/index.js'
 
 export class LlmsTxtSource implements DocSource {
   async fetch(options: SourceConfig): Promise<FetchResult> {
@@ -39,9 +47,28 @@ export class LlmsTxtSource implements DocSource {
 
     consola.info(`  Fetched: ${url} -> ${filePath} (${content.length} chars)`)
 
+    const files = [{ path: filePath, content }]
+
+    // Write to global store
+    const askHome = resolveAskHome()
+    const storeDir = llmsTxtStorePath(askHome, url, opts.version)
+    if (!fs.existsSync(storeDir)) {
+      const lock = await acquireEntryLock(storeDir)
+      if (lock) {
+        try {
+          writeEntryAtomic(storeDir, files)
+          stampEntry(storeDir)
+        }
+        finally {
+          lock.release()
+        }
+      }
+    }
+
     return {
-      files: [{ path: filePath, content }],
+      files,
       resolvedVersion: opts.version,
+      storePath: storeDir,
     }
   }
 }

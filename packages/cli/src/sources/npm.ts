@@ -12,6 +12,13 @@ import path from 'node:path'
 import process from 'node:process'
 import { consola } from 'consola'
 import { satisfies, validRange } from 'semver'
+import {
+  acquireEntryLock,
+  npmStorePath,
+  resolveAskHome,
+  stampEntry,
+  writeEntryAtomic,
+} from '../store/index.js'
 
 /**
  * npm source — fetches docs from a published tarball OR, when the package is
@@ -38,6 +45,10 @@ export class NpmSource implements DocSource {
     })
     if (local) {
       consola.info(`  Using local node_modules for ${pkg}@${local.resolvedVersion}`)
+      // Also materialize into the global store for cross-project reuse
+      await this.writeToStore(pkg, local.resolvedVersion, local.files)
+      const askHome = resolveAskHome()
+      local.storePath = npmStorePath(askHome, pkg, local.resolvedVersion)
       return local
     }
 
@@ -227,9 +238,13 @@ export class NpmSource implements DocSource {
       else {
         files = this.collectMarkdownFiles(docsDir, docsDir)
       }
+      await this.writeToStore(pkg, resolvedVersion, files)
+      const askHome = resolveAskHome()
+
       return {
         files,
         resolvedVersion,
+        storePath: npmStorePath(askHome, pkg, resolvedVersion),
         meta: { tarball: tarballUrl, integrity },
       }
     }
@@ -289,5 +304,35 @@ export class NpmSource implements DocSource {
   private isDocFile(filename: string): boolean {
     const ext = path.extname(filename).toLowerCase()
     return ['.md', '.mdx', '.txt', '.rst'].includes(ext)
+  }
+
+  /**
+   * Write fetched docs into the global store at
+   * `<ASK_HOME>/npm/<pkg>@<version>/`. Skips if the entry already exists.
+   */
+  private async writeToStore(
+    pkg: string,
+    version: string,
+    files: DocFile[],
+  ): Promise<void> {
+    const askHome = resolveAskHome()
+    const storeDir = npmStorePath(askHome, pkg, version)
+
+    if (fs.existsSync(storeDir)) {
+      return // already stored
+    }
+
+    const lock = await acquireEntryLock(storeDir)
+    if (!lock) {
+      return // another process completed the write
+    }
+
+    try {
+      writeEntryAtomic(storeDir, files)
+      stampEntry(storeDir)
+    }
+    finally {
+      lock.release()
+    }
   }
 }

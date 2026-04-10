@@ -58,6 +58,8 @@ export interface DocFile {
 export interface FetchResult {
   files: DocFile[]
   resolvedVersion: string
+  /** Absolute path to the finalized store entry (when global store is active). */
+  storePath?: string
   /** Source-specific metadata propagated to ask.lock */
   meta?: {
     /** GitHub commit sha (40 hex chars) */
