@@ -1,0 +1,25 @@
+packages/schema/src/resolved.ts
+  d8ac658346ec948d 35-43
+packages/schema/test/ask-json.test.ts
+  d8ac658346ec948d 156-163
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "1ea25c284e3921243fa156bbb936776fbbc05d28",
+  "prompts": {
+    "d8ac658346ec948d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d2f55bab-2ca8-49b7-a46a-490c69f01afe",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 17,
+      "total_deletions": 268,
+      "accepted_lines": 17,
+      "overriden_lines": 0
+    }
+  }
+}
