@@ -1,0 +1,29 @@
+packages/schema/test/ask-json.test.ts
+  03217db608910a05 87-110,175-264
+packages/schema/src/ask-json.ts
+  03217db608910a05 69-71,75
+packages/schema/src/resolved.ts
+  03217db608910a05 31-34
+CLAUDE.md
+  03217db608910a05 49
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "e853124d46eb884601a0c932b9eab78c7d57fc00",
+  "prompts": {
+    "03217db608910a05": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "46e500fa-7344-42db-95f4-c76ca119ea3b",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 123,
+      "total_deletions": 0,
+      "accepted_lines": 123,
+      "overriden_lines": 0
+    }
+  }
+}
