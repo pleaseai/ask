@@ -96,8 +96,15 @@ T001 ──┬── T002 (schema tests)
 
 ## Progress
 
-- Spec drafted
-- Plan drafted
+- [ ] T001 Add `emitSkill?: boolean` to `AskJsonSchema` and export the inferred type
+- [ ] T002 Add schema tests verifying `emitSkill` parses and unknown keys still reject
+- [ ] T003 Add `emitSkill?: boolean` to `RunInstallOptions` and resolve precedence
+- [ ] T004 Guard the `generateSkill(...)` call in `installOne`
+- [ ] T005 Add `--emit-skill` boolean flag to `installCmd` and `addCmd`
+- [ ] T006 Add install tests covering default/flag/ask.json/override precedence
+- [ ] T007 Add remove test for pre-existing skill cleanup
+- [ ] T008 Add CHANGELOG entry documenting default flip and opt-in precedence
+- [ ] T009 Run full build and test suite
 
 ## Decision Log
 
