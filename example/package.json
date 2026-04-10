@@ -1,0 +1,9 @@
+{
+  "name": "ask-example",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "dependencies": {
+    "next": "16.2.3"
+  }
+}

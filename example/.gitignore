@@ -1,0 +1,4 @@
+node_modules
+.ask/docs
+.ask/resolved.json
+.claude/skills
