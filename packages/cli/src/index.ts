@@ -47,13 +47,18 @@ const installCmd = defineCommand({
     description: 'Install documentation for all libraries declared in ask.json',
   },
   args: {
-    force: {
+    'force': {
       type: 'boolean',
       description: 'Re-fetch every entry, ignoring the .ask/resolved.json cache',
     },
+    'emit-skill': {
+      type: 'boolean',
+      description: 'Emit a .claude/skills/<name>-docs/SKILL.md file for each installed library',
+    },
   },
   async run({ args }) {
-    await runInstall(process.cwd(), { force: Boolean(args.force) })
+    const emitSkill = args['emit-skill'] ? true : undefined
+    await runInstall(process.cwd(), { force: Boolean(args.force), emitSkill })
   },
 })
 
@@ -63,18 +68,22 @@ const addCmd = defineCommand({
     description: 'Add a library entry to ask.json and install it',
   },
   args: {
-    spec: {
+    'spec': {
       type: 'positional',
       description: 'Library spec (e.g. npm:next, github:vercel/next.js)',
       required: true,
     },
-    ref: {
+    'ref': {
       type: 'string',
       description: 'Git ref for github specs (tag/branch/sha)',
     },
-    docsPath: {
+    'docsPath': {
       type: 'string',
       description: 'Path to docs within the package/repo',
+    },
+    'emit-skill': {
+      type: 'boolean',
+      description: 'Emit a .claude/skills/<name>-docs/SKILL.md file for each installed library',
     },
   },
   async run({ args }) {
@@ -118,7 +127,8 @@ const addCmd = defineCommand({
     }
     writeAskJson(projectDir, askJson)
 
-    await runInstall(projectDir, { onlySpecs: [spec] })
+    const emitSkill = args['emit-skill'] ? true : undefined
+    await runInstall(projectDir, { onlySpecs: [spec], emitSkill })
   },
 })
 

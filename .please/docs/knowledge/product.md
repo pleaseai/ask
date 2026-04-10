@@ -15,13 +15,13 @@ AI coding agents frequently hallucinate or reference outdated APIs because their
 
 ## Core Value Proposition
 
-One command (`ask docs add <lib>@<version>`) downloads version-specific docs, generates `AGENTS.md`, and creates IDE-integrated skills — turning any project into an AI-friendly workspace.
+One command (`ask install`) downloads version-specific docs and generates `AGENTS.md` — turning any project into an AI-friendly workspace. Claude Code skill emission is available via opt-in (`--emit-skill` flag or `emitSkill: true` in `ask.json`).
 
 ## Product Components
 
 | Component | Purpose |
 |---|---|
-| **CLI** (`@pleaseai/ask`) | Downloads docs, generates AGENTS.md + skills |
+| **CLI** (`@pleaseai/ask`) | Downloads docs, generates AGENTS.md (+ opt-in Claude Code skills) |
 | **Registry** (`apps/registry`) | Community-curated catalog of library doc configs |
 
 ## Long-term Vision

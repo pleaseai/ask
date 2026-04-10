@@ -20,7 +20,7 @@ import {
 } from './io.js'
 import { npmEcosystemReader } from './lockfiles/index.js'
 import { fetchRegistryEntry } from './registry.js'
-import { generateSkill } from './skill.js'
+import { generateSkill, getSkillDir } from './skill.js'
 import { getSource } from './sources/index.js'
 import { parseSpec } from './spec.js'
 import { saveDocs } from './storage.js'
@@ -32,6 +32,12 @@ export interface RunInstallOptions {
   onlySpecs?: string[]
   /** Force re-fetch even when the resolved-cache short-circuit would skip. */
   force?: boolean
+  /**
+   * When true, emit a `.claude/skills/<name>-docs/SKILL.md` file alongside
+   * the AGENTS.md block. Overrides the `emitSkill` field in `ask.json`.
+   * Precedence: CLI flag > ask.json `emitSkill` > default false.
+   */
+  emitSkill?: boolean
 }
 
 export interface InstallSummary {
@@ -68,6 +74,11 @@ export async function runInstall(
     return { installed: 0, unchanged: 0, skipped: 0, failed: 0 }
   }
 
+  // Resolve emitSkill: CLI flag (options.emitSkill) > ask.json emitSkill > false.
+  // The CLI flag wins when explicitly supplied (true or false).
+  // When absent (undefined), fall through to the ask.json field, then default false.
+  const resolvedEmitSkill: boolean = options.emitSkill ?? askJson.emitSkill ?? false
+
   const targets = options.onlySpecs
     ? askJson.libraries.filter(l => options.onlySpecs!.includes(l.spec))
     : askJson.libraries
@@ -83,7 +94,7 @@ export async function runInstall(
 
   for (const lib of targets) {
     try {
-      const status = await installOne(projectDir, lib, options)
+      const status = await installOne(projectDir, lib, options, resolvedEmitSkill)
       summary[status]++
     }
     catch (err) {
@@ -112,6 +123,7 @@ async function installOne(
   projectDir: string,
   lib: LibraryEntry,
   options: RunInstallOptions,
+  emitSkill: boolean,
 ): Promise<InstallStatus> {
   const parsed = parseSpec(lib.spec)
   const libName = parsed.name
@@ -177,13 +189,24 @@ async function installOne(
   // still exist, skip the fetch.
   if (!options.force) {
     const cached = readResolvedJson(projectDir).entries[libName]
+    const docsDir = path.join(projectDir, '.ask', 'docs', `${libName}@${resolvedVersion}`)
     if (
       cached
       && cached.spec === lib.spec
       && cached.resolvedVersion === resolvedVersion
       && cached.format !== 'intent-skills'
-      && fs.existsSync(path.join(projectDir, '.ask', 'docs', `${libName}@${resolvedVersion}`))
+      && fs.existsSync(docsDir)
     ) {
+      // Docs are cached, but skill may still need generation if emitSkill
+      // was toggled on after a previous install without it.
+      if (emitSkill && !fs.existsSync(path.join(getSkillDir(projectDir, libName), 'SKILL.md'))) {
+        const files = fs.readdirSync(docsDir, { recursive: true })
+          .map(f => String(f))
+          .filter(f => fs.statSync(path.join(docsDir, f)).isFile())
+        generateSkill(projectDir, libName, resolvedVersion, files)
+        consola.info(`  ${lib.spec}: already up to date — generated skill (${resolvedVersion})`)
+        return 'unchanged'
+      }
       consola.info(`  ${lib.spec}: already up to date (${resolvedVersion})`)
       return 'unchanged'
     }
@@ -194,12 +217,14 @@ async function installOne(
   const result = await source.fetch(sourceConfig)
 
   saveDocs(projectDir, libName, result.resolvedVersion, result.files)
-  generateSkill(
-    projectDir,
-    libName,
-    result.resolvedVersion,
-    result.files.map(f => f.path),
-  )
+  if (emitSkill) {
+    generateSkill(
+      projectDir,
+      libName,
+      result.resolvedVersion,
+      result.files.map(f => f.path),
+    )
+  }
 
   const entry: ResolvedEntry = {
     spec: lib.spec,
