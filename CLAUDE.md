@@ -122,3 +122,23 @@ Nuxt + Nuxt Content v3 + Nuxt UI. Registry entries are GitHub repo-based: `conte
 - Use `consola` for all user-facing output, never raw `console.log`
 - Regex patterns used in loops must be defined at module scope (`e18e/prefer-static-regex`)
 - Import `process` from `node:process` explicitly (`node/prefer-global/process`)
+
+<!-- please:knowledge v1 -->
+## Project Knowledge
+
+Consult these files for project context before exploring the codebase.
+For full file listing with workspace artifacts, use `Skill("please:project-knowledge")`.
+
+### Project Documents
+- `ARCHITECTURE.md` — Codebase structure, module boundaries, architectural invariants
+
+### Domain Knowledge (.please/docs/knowledge/)
+- `product.md` — Product vision, goals, target users
+- `product-guidelines.md` — Branding, UX principles, design system
+- `tech-stack.md` — Technology choices with rationale
+- `workflow.md` — Task lifecycle, TDD, quality gates, dev commands
+- `gotchas.md` — Known project pitfalls and workarounds
+
+### Decision Records
+- `.please/docs/decisions/` — Architecture Decision Records (ADR)
+<!-- /please:knowledge -->
