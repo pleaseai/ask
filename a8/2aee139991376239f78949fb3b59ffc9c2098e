@@ -1,0 +1,23 @@
+.please/docs/tracks/active/skill-emission-opt-in-20260410/plan.md
+  f85e8e7ca6b3d0ad 64-65,102-107,116-117
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.6",
+  "base_commit_sha": "a82aee139991376239f78949fb3b59ffc9c2098e",
+  "prompts": {
+    "f85e8e7ca6b3d0ad": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "0837cc4b-a9d2-4e17-af5f-696754132b1f",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 3,
+      "total_deletions": 2,
+      "accepted_lines": 10,
+      "overriden_lines": 0
+    }
+  }
+}
