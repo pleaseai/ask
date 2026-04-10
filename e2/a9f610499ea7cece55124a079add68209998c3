@@ -1,0 +1,31 @@
+evals/next-canary/experiments/claude-opus-4.6--with-skill.ts
+  56dad13b7d2ff847 1-46
+evals/nuxt-ui/experiments/with-skill.ts
+  56dad13b7d2ff847 1-65
+evals/next-canary/README.md
+  56dad13b7d2ff847 36,38,42,45-51
+evals/nuxt-ui/README.md
+  56dad13b7d2ff847 3,16-17
+evals/next-canary/experiments/claude-sonnet-4.6--with-skill.ts
+  56dad13b7d2ff847 1-58
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.6",
+  "base_commit_sha": "e2a9f610499ea7cece55124a079add68209998c3",
+  "prompts": {
+    "56dad13b7d2ff847": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "447fc761-0237-48eb-83ad-2238827377ad",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 182,
+      "total_deletions": 4,
+      "accepted_lines": 182,
+      "overriden_lines": 0
+    }
+  }
+}
