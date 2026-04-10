@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import type { LibraryEntry } from './schemas.js'
+import type { LibraryEntry, StoreMode } from './schemas.js'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
@@ -24,6 +24,15 @@ import { listDocs, removeDocs } from './storage.js'
  * `github:owner/repo` so the install pipeline knows which path to
  * take.
  */
+const VALID_STORE_MODES = new Set<StoreMode>(['copy', 'link', 'ref'])
+
+function parseStoreMode(value: string | undefined): StoreMode | undefined {
+  if (!value) return undefined
+  if (VALID_STORE_MODES.has(value as StoreMode)) return value as StoreMode
+  consola.error(`Invalid --store-mode '${value}'. Must be one of: copy, link, ref`)
+  process.exit(1)
+}
+
 const OWNER_REPO_RE = /^[^/]+\/[^/]+$/
 
 function normalizeAddSpec(input: string): string {
@@ -55,10 +64,15 @@ const installCmd = defineCommand({
       type: 'boolean',
       description: 'Emit a .claude/skills/<name>-docs/SKILL.md file for each installed library',
     },
+    'store-mode': {
+      type: 'string',
+      description: 'How to materialize store entries: copy (default), link (symlink), ref (no project-local files)',
+    },
   },
   async run({ args }) {
     const emitSkill = args['emit-skill'] ? true : undefined
-    await runInstall(process.cwd(), { force: Boolean(args.force), emitSkill })
+    const storeMode = parseStoreMode(args['store-mode'])
+    await runInstall(process.cwd(), { force: Boolean(args.force), emitSkill, storeMode })
   },
 })
 
@@ -84,6 +98,10 @@ const addCmd = defineCommand({
     'emit-skill': {
       type: 'boolean',
       description: 'Emit a .claude/skills/<name>-docs/SKILL.md file for each installed library',
+    },
+    'store-mode': {
+      type: 'string',
+      description: 'How to materialize store entries: copy (default), link (symlink), ref (no project-local files)',
     },
   },
   async run({ args }) {
@@ -128,7 +146,8 @@ const addCmd = defineCommand({
     writeAskJson(projectDir, askJson)
 
     const emitSkill = args['emit-skill'] ? true : undefined
-    await runInstall(projectDir, { onlySpecs: [spec], emitSkill })
+    const storeMode = parseStoreMode(args['store-mode'])
+    await runInstall(projectDir, { onlySpecs: [spec], emitSkill, storeMode })
   },
 })
 

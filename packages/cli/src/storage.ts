@@ -1,8 +1,10 @@
 import type { IntentSkillEntry } from './discovery/types.js'
+import type { StoreMode } from './schemas.js'
 import type { LibraryEntry } from './schemas.js'
 import type { DocFile } from './sources/index.js'
 import fs from 'node:fs'
 import path from 'node:path'
+import { consola } from 'consola'
 import { readIntentSkillsMap } from './agents-intent.js'
 import { getAskDir, readAskJson, readResolvedJson } from './io.js'
 import { libraryNameFromSpec } from './spec.js'
@@ -19,15 +21,51 @@ export function getLibraryDocsDir(
   return path.join(getDocsDir(projectDir), `${name}@${version}`)
 }
 
+export interface SaveDocsOptions {
+  storeMode?: StoreMode
+  storePath?: string
+}
+
 export function saveDocs(
   projectDir: string,
   name: string,
   version: string,
   files: DocFile[],
+  options: SaveDocsOptions = {},
 ): string {
   const docsDir = getLibraryDocsDir(projectDir, name, version)
+  const mode = options.storeMode ?? 'copy'
 
-  // Clean existing docs for this library version
+  // ref mode: no project-local materialization at all
+  if (mode === 'ref') {
+    return options.storePath ?? docsDir
+  }
+
+  // link mode: create a symlink from project-local to store
+  if (mode === 'link' && options.storePath) {
+    // Clean existing docs for this library version
+    if (fs.existsSync(docsDir)) {
+      fs.rmSync(docsDir, { recursive: true })
+    }
+    fs.mkdirSync(path.dirname(docsDir), { recursive: true })
+
+    try {
+      fs.symlinkSync(options.storePath, docsDir, 'dir')
+      return docsDir
+    }
+    catch (err: unknown) {
+      const code = (err as NodeJS.ErrnoException).code
+      if (code === 'EPERM' || code === 'EACCES') {
+        consola.warn(`  Symlink creation failed (${code}), falling back to copy mode`)
+        // Fall through to copy mode below
+      }
+      else {
+        throw err
+      }
+    }
+  }
+
+  // copy mode (default): write files into project-local directory
   if (fs.existsSync(docsDir)) {
     fs.rmSync(docsDir, { recursive: true })
   }

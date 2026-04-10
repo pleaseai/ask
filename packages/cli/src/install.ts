@@ -1,5 +1,5 @@
 import type { LocalDiscoveryAdapter } from './discovery/types.js'
-import type { LibraryEntry, ResolvedEntry } from './schemas.js'
+import type { LibraryEntry, ResolvedEntry, StoreMode } from './schemas.js'
 import type { GithubSourceOptions, NpmSourceOptions, SourceConfig } from './sources/index.js'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -38,6 +38,11 @@ export interface RunInstallOptions {
    * Precedence: CLI flag > ask.json `emitSkill` > default false.
    */
   emitSkill?: boolean
+  /**
+   * How to materialize store entries into the project.
+   * Precedence: CLI flag > ask.json `storeMode` > 'copy'.
+   */
+  storeMode?: StoreMode
 }
 
 export interface InstallSummary {
@@ -79,6 +84,9 @@ export async function runInstall(
   // When absent (undefined), fall through to the ask.json field, then default false.
   const resolvedEmitSkill: boolean = options.emitSkill ?? askJson.emitSkill ?? false
 
+  // Resolve storeMode: CLI flag > ask.json storeMode > 'copy'.
+  const resolvedStoreMode: StoreMode = options.storeMode ?? askJson.storeMode ?? 'copy'
+
   const targets = options.onlySpecs
     ? askJson.libraries.filter(l => options.onlySpecs!.includes(l.spec))
     : askJson.libraries
@@ -94,7 +102,7 @@ export async function runInstall(
 
   for (const lib of targets) {
     try {
-      const status = await installOne(projectDir, lib, options, resolvedEmitSkill)
+      const status = await installOne(projectDir, lib, options, resolvedEmitSkill, resolvedStoreMode)
       summary[status]++
     }
     catch (err) {
@@ -124,6 +132,7 @@ async function installOne(
   lib: LibraryEntry,
   options: RunInstallOptions,
   emitSkill: boolean,
+  storeMode: StoreMode,
 ): Promise<InstallStatus> {
   const parsed = parseSpec(lib.spec)
   const libName = parsed.name
@@ -216,7 +225,15 @@ async function installOne(
   const source = getSource(sourceConfig.source)
   const result = await source.fetch(sourceConfig)
 
-  saveDocs(projectDir, libName, result.resolvedVersion, result.files)
+  // Determine effective materialization mode. If the source returned a
+  // storePath, honor the requested storeMode. Otherwise, fall back to
+  // copy (the source wrote files but not to the global store).
+  const effectiveMode = result.storePath ? storeMode : 'copy'
+
+  saveDocs(projectDir, libName, result.resolvedVersion, result.files, {
+    storeMode: effectiveMode,
+    storePath: result.storePath,
+  })
   if (emitSkill) {
     generateSkill(
       projectDir,
@@ -233,6 +250,8 @@ async function installOne(
     fetchedAt: new Date().toISOString(),
     fileCount: result.files.length,
     format: 'docs',
+    storePath: result.storePath,
+    materialization: effectiveMode,
   }
   upsertResolvedEntry(projectDir, libName, entry)
 
