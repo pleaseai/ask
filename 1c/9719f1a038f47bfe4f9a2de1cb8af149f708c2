@@ -1,0 +1,27 @@
+packages/cli/test/cli/emit-skill-flag.test.ts
+  f85e8e7ca6b3d0ad 1-39
+packages/cli/src/index.ts
+  f85e8e7ca6b3d0ad 54-57,60-61,84-87,130-131
+packages/cli/test/cli/commands.test.ts
+  f85e8e7ca6b3d0ad 114-122
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.6",
+  "base_commit_sha": "1c9719f1a038f47bfe4f9a2de1cb8af149f708c2",
+  "prompts": {
+    "f85e8e7ca6b3d0ad": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "0837cc4b-a9d2-4e17-af5f-696754132b1f",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 159,
+      "total_deletions": 101,
+      "accepted_lines": 63,
+      "overriden_lines": 0
+    }
+  }
+}
