@@ -1,0 +1,46 @@
+.claude/agent-memory/gardening-doc-gardener/state.json
+  2f2e167221717cfb 3-5
+skills/add-docs/references/inline-pipeline.md
+  2f2e167221717cfb 149,151-152,154,158-160,165-166,168,170,172-174,176-177,181,185-186,188,198,219
+skills/sync-docs/SKILL.md
+  2f2e167221717cfb 5,36,38-39,46,56,63,65-68,97,110,124,126
+skills/setup-docs/SKILL.md
+  2f2e167221717cfb 60,182,196
+.claude/agent-memory/gardening-gardening-doc-gardener/recurring-issues.md
+  2f2e167221717cfb 32-56
+ARCHITECTURE.md
+  2f2e167221717cfb 4,13,38,50-52,56,59-62,64,69,71-79,122,160,169,173,175
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.6",
+  "base_commit_sha": "d677e20d14dd2c0238b2dd762a635f7eb908c1b8",
+  "prompts": {
+    "2f2e167221717cfb": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "821fff4b-8af2-4cbc-b870-9b310f56568d",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 96,
+      "total_deletions": 76,
+      "accepted_lines": 96,
+      "overriden_lines": 0
+    },
+    "56dad13b7d2ff847": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "447fc761-0237-48eb-83ad-2238827377ad",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 21,
+      "total_deletions": 2,
+      "accepted_lines": 19,
+      "overriden_lines": 0
+    }
+  }
+}
