@@ -20,7 +20,7 @@ import {
 } from './io.js'
 import { npmEcosystemReader } from './lockfiles/index.js'
 import { fetchRegistryEntry } from './registry.js'
-import { generateSkill } from './skill.js'
+import { generateSkill, getSkillDir } from './skill.js'
 import { getSource } from './sources/index.js'
 import { parseSpec } from './spec.js'
 import { saveDocs } from './storage.js'
@@ -189,13 +189,22 @@ async function installOne(
   // still exist, skip the fetch.
   if (!options.force) {
     const cached = readResolvedJson(projectDir).entries[libName]
+    const docsDir = path.join(projectDir, '.ask', 'docs', `${libName}@${resolvedVersion}`)
     if (
       cached
       && cached.spec === lib.spec
       && cached.resolvedVersion === resolvedVersion
       && cached.format !== 'intent-skills'
-      && fs.existsSync(path.join(projectDir, '.ask', 'docs', `${libName}@${resolvedVersion}`))
+      && fs.existsSync(docsDir)
     ) {
+      // Docs are cached, but skill may still need generation if emitSkill
+      // was toggled on after a previous install without it.
+      if (emitSkill && !fs.existsSync(path.join(getSkillDir(projectDir, libName), 'SKILL.md'))) {
+        const files = fs.readdirSync(docsDir)
+        generateSkill(projectDir, libName, resolvedVersion, files)
+        consola.info(`  ${lib.spec}: already up to date — generated skill (${resolvedVersion})`)
+        return 'unchanged'
+      }
       consola.info(`  ${lib.spec}: already up to date (${resolvedVersion})`)
       return 'unchanged'
     }

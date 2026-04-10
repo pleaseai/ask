@@ -113,4 +113,18 @@ describe('emitSkill precedence in runInstall (SC-1 through SC-4)', () => {
 
     expect(fs.existsSync(skillPath())).toBe(true)
   })
+
+  it('SC-5: toggling emitSkill on after cached install generates SKILL.md without --force', async () => {
+    writeAskJson(tmpDir, {
+      libraries: [{ spec: `npm:${FIXTURE_PKG}`, docsPath: FIXTURE_DOCS_PATH }],
+    })
+
+    // First install: no emitSkill → docs cached, no SKILL.md
+    await runInstall(tmpDir)
+    expect(fs.existsSync(skillPath())).toBe(false)
+
+    // Second install: emitSkill toggled on → cache hits but SKILL.md generated
+    await runInstall(tmpDir, { emitSkill: true })
+    expect(fs.existsSync(skillPath())).toBe(true)
+  })
 })
