@@ -206,12 +206,14 @@ async function installOne(
   const result = await source.fetch(sourceConfig)
 
   saveDocs(projectDir, libName, result.resolvedVersion, result.files)
-  generateSkill(
-    projectDir,
-    libName,
-    result.resolvedVersion,
-    result.files.map(f => f.path),
-  )
+  if (emitSkill) {
+    generateSkill(
+      projectDir,
+      libName,
+      result.resolvedVersion,
+      result.files.map(f => f.path),
+    )
+  }
 
   const entry: ResolvedEntry = {
     spec: lib.spec,
