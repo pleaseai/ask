@@ -146,57 +146,46 @@ Target directory: `.ask/docs/<name>@<resolvedVersion>/`
 
 <!-- CLI equivalent: packages/cli/src/storage.ts:saveDocs -->
 
-## Step 6 — Update `.ask/config.json`
+## Step 6 — Update `ask.json`
 
-Read the file (create `{ "docs": [] }` if missing). The `docs` array stores entries that
-`sync-docs` later replays. Each entry is the `SourceConfig` you used in Step 4:
+Read `ask.json` from the project root (create `{ "libraries": [] }` if missing). The
+`libraries` array is the declarative list of tracked entries that `ask install` replays.
+
+Append a new entry (or replace an existing one with the same `spec`):
 
 ```json
 {
-  "docs": [
-    {
-      "name": "zod",
-      "version": "3.22.4",
-      "source": "github",
-      "repo": "colinhacks/zod",
-      "tag": "v3.22.4",
-      "docsPath": "docs"
-    }
+  "libraries": [
+    { "spec": "npm:zod" },
+    { "spec": "github:colinhacks/zod", "ref": "v3.22.4", "docsPath": "docs" }
   ]
 }
 ```
 
-If an entry with the same `name` already exists, **replace it** (not append). Match on
-name only — version changes should overwrite, not duplicate. Write the file back as
-pretty-printed JSON (2-space indent) with a trailing newline.
+Match on `spec` only — version changes should overwrite, not duplicate. Write the file
+back as pretty-printed JSON (2-space indent) with a trailing newline.
 
-<!-- CLI equivalent: packages/cli/src/config.ts:addDocEntry -->
+<!-- CLI equivalent: packages/cli/src/io.ts:writeAskJson -->
 
-## Step 6.5 — Record the fetch in `.ask/ask.lock`
+## Step 6.5 — Record the fetch in `.ask/resolved.json`
 
-`config.json` is **intent** ("track this library"); `ask.lock` is **fact** ("here is
-exactly what we last downloaded"). The lock is what makes drift detection in `sync-docs`
-reliable, especially when the user tracks `latest` instead of a pinned version.
+`ask.json` is **intent** ("track this library"); `.ask/resolved.json` is **fact** ("here is
+exactly what we last downloaded"). The resolved cache is what makes drift detection in
+`sync-docs` reliable and enables the content-hash short-circuit on subsequent installs.
 
-Read `.ask/ask.lock` (create with `{ "lockfileVersion": 1, "entries": {} }` if missing),
-then upsert the entry for this library by name:
+Read `.ask/resolved.json` (create with `{ "schemaVersion": 1, "entries": {} }` if missing),
+then upsert the entry for this library by its slug name:
 
 ```json
 {
-  "lockfileVersion": 1,
+  "schemaVersion": 1,
   "generatedAt": "<ISO-8601 timestamp>",
   "entries": {
     "<name>": {
-      "version": "<resolvedVersion>",
-      "source": "<github|npm|web|llms-txt>",
-      "repo": "<owner/repo>",
-      "ref": "<tag-or-branch>",
-      "commit": "<full-sha>",
-      "tarball": "<url>",
-      "integrity": "<sha512-...>",
-      "url": "<url>",
+      "spec": "<original spec string>",
+      "resolvedVersion": "<resolvedVersion>",
       "fetchedAt": "<ISO-8601 timestamp>",
-      "fileCount": <number>,
+      "fileCount": "<number>",
       "contentHash": "sha256-<hex>"
     }
   }
@@ -206,7 +195,7 @@ then upsert the entry for this library by name:
 `contentHash` is computed by sorting the saved files by relative path, concatenating
 `<relpath>\0<bytes>\0` for each, and taking SHA-256 of the whole stream.
 
-<!-- CLI equivalent: packages/cli/src/io.ts:upsertLockEntry + contentHash -->
+<!-- CLI equivalent: packages/cli/src/io.ts:upsertResolvedEntry + contentHash -->
 
 ## Step 7 — Update `AGENTS.md`
 
@@ -227,7 +216,7 @@ inside it, fenced by HTML comment markers:
 - **File exists, no markers**: append the marker block at the end with one blank line
   before it.
 
-The block content lists **every entry currently in `.ask/config.json`** (not just the
+The block content lists **every entry currently in `ask.json`** (not just the
 one you added). Use this template per library:
 
 ```markdown

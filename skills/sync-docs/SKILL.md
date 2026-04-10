@@ -2,7 +2,7 @@
 name: sync-docs
 description: >
   Detect drift between the project's installed dependency versions and the docs already
-  saved under `.ask/docs/`, then re-fetch only what changed. Reads `.ask/config.json`,
+  saved under `.ask/docs/`, then re-fetch only what changed. Reads `ask.json`,
   compares each tracked entry to the current resolved version in the project's lockfile,
   and runs the `add-docs` pipeline for any version that moved. Also prunes entries for
   dependencies that were removed and reports any new dependencies that have no docs yet.
@@ -33,17 +33,17 @@ For adding a brand-new library that isn't tracked yet, use `add-docs`.
 ## Pipeline
 
 ```
-read .ask/config.json + .ask/ask.lock → parse current manifest/lockfile → classify each entry
+read ask.json + .ask/resolved.json → parse current manifest/lockfile → classify each entry
   → for each "changed": run add-docs steps 1–6.5 (and delete the old version dir)
-  → for each "removed": prune dir + remove from config + remove from lock (with confirmation)
-  → for each "new in manifest, missing from config": report only, recommend setup-docs
+  → for each "removed": prune dir + remove from ask.json + clear from resolved.json (with confirmation)
+  → for each "new in manifest, missing from ask.json": report only, recommend setup-docs
   → final pass: rebuild AGENTS.md block once → ensure CLAUDE.md @AGENTS.md
   → summarize
 ```
 
 ## Step 1 — Load tracked entries
 
-Read `.ask/config.json`. If it doesn't exist or has an empty `docs[]`, tell the user
+Read `ask.json`. If it doesn't exist or has an empty `libraries[]`, tell the user
 there's nothing to sync and recommend `setup-docs`. Stop.
 
 ## Step 2 — Read current installed versions
@@ -53,20 +53,19 @@ Parse the manifest and lockfile exactly like `setup-docs` Step 1. Build a map of
 
 ## Step 3 — Classify every tracked entry
 
-For each entry in `.ask/config.json`'s `docs[]`, compute one of these states:
+For each entry in `ask.json`'s `libraries[]`, compute one of these states:
 
 | State | Condition | Action |
 |---|---|---|
 | **unchanged** | Tracked version === current version | Skip |
 | **drifted** | Tracked version ≠ current version, name still in manifest | Re-fetch |
 | **removed** | Name no longer in manifest at all | Prune (with confirmation) |
-| **untracked** | Name **is** in manifest but **not** in `.ask/config.json` | Report only |
+| **untracked** | Name **is** in manifest but **not** in `ask.json` | Report only |
 
-**Comparison source**: prefer `.ask/ask.lock` `entries.<name>.version` (and `.commit`
-for github sources) over `config.json.version`. The lock records what was *actually*
-fetched last time, while `config.json.version` may be a moving target like `latest`. If
-the lock has no entry for a tracked name, treat it as **drifted** (forces a re-fetch
-to populate the lock).
+**Comparison source**: prefer `.ask/resolved.json` `entries.<name>.resolvedVersion` (and
+content hash) over the declared spec. The resolved cache records what was *actually*
+fetched last time. If the cache has no entry for a tracked name, treat it as **drifted**
+(forces a re-fetch to populate the cache).
 
 For github entries, also compare `lock.commit` against the current head of the same
 ref. If the version string is unchanged but the commit moved (common when tracking
@@ -95,7 +94,7 @@ Proceed with re-fetch and prune?
 For each `drifted` entry:
 
 1. Run `add-docs` Steps 1–6 with the new version. The pipeline will overwrite the
-   `.ask/config.json` entry in place (Step 6 already replaces by name).
+   `.ask/resolved.json` entry in place (Step 6 already replaces by name).
 2. **After** the new version is on disk, delete the **old** directory:
    `rm -rf .ask/docs/<name>@<oldVersion>/`. Do this only after the new fetch
    succeeds so a failed fetch can't leave the project with no docs at all.
@@ -108,7 +107,7 @@ Parallelism rules from `setup-docs` Step 3 apply: github/npm in parallel (≤4),
 For each `removed` entry, after the user has confirmed:
 
 1. Delete `.ask/docs/<name>@<version>/` recursively.
-2. Remove the entry from `.ask/config.json`'s `docs[]`.
+2. Remove the entry from `ask.json`'s `libraries[]` and clear it from `.ask/resolved.json`.
 
 If the user declined to prune, skip — do not silently keep stale data and do not
 silently delete it either.
@@ -122,9 +121,9 @@ Recommend `add-docs <name>` or `setup-docs` if they want full coverage.
 ## Step 7 — Rebuild AGENTS.md and CLAUDE.md
 
 Run `add-docs` Step 7 once at the end so the marker block reflects the post-sync state
-of `.ask/config.json`. Then `add-docs` Step 8 to ensure the `@AGENTS.md` reference.
+of `ask.json`. Then `add-docs` Step 8 to ensure the `@AGENTS.md` reference.
 
-If the sync resulted in **zero changes** to `.ask/config.json`, you can still re-run
+If the sync resulted in **zero changes** to `ask.json`, you can still re-run
 Step 7 — it'll be a no-op rewrite — or skip it. Skipping is fine and avoids touching
 the file's mtime.
 

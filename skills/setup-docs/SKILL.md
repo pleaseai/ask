@@ -57,7 +57,7 @@ is more valuable than an exhaustive list of 60 where 50 are build plumbing.
 parse manifest + lockfile → derive (name, version) list
   → apply default scope (dependencies only) + deny-list filter
   → confirm with user (show included / deny-filtered / devDeps buckets)
-  → for each confirmed: run add-docs steps 1–6.5 (writes config + ask.lock per entry)
+  → for each confirmed: run add-docs steps 1–6.5 (writes resolved.json per entry)
   → final pass: rebuild AGENTS.md block once → ensure CLAUDE.md @AGENTS.md
 ```
 
@@ -179,7 +179,7 @@ warn about wall-clock time before starting.
 For each `(ecosystem, name, version)`:
 
 1. Follow `add-docs` Steps 1–6.5 exactly (parse, registry lookup, fallback, fetch, save,
-   update `.ask/config.json`, record into `.ask/ask.lock`).
+   upsert into `.ask/resolved.json`).
 2. **Skip Step 7** for now — the AGENTS.md regeneration is deferred.
 3. On failure, **do not abort the whole batch**. Record the error and continue. Examples
    of survivable failures: registry miss + no fallback, source returned zero files,
@@ -193,7 +193,7 @@ serial to be polite to upstream servers).
 ## Step 4 — Regenerate AGENTS.md once
 
 After the loop, run `add-docs` Step 7 a single time. Because Step 6 already populated
-`.ask/config.json` with every successful entry, the regenerated marker block will
+`ask.json` + `.ask/resolved.json` with every successful entry, the regenerated marker block will
 list them all in one shot. Then run Step 8 to ensure `CLAUDE.md` references `AGENTS.md`.
 
 ## Step 5 — Report

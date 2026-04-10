@@ -1,7 +1,7 @@
 # ARCHITECTURE.md
 
 > Bird's-eye view of the ASK (Agent Skills Kit) monorepo.
-> Last updated: 2026-04-08
+> Last updated: 2026-04-10
 
 ## Overview
 
@@ -10,7 +10,7 @@ ASK is a CLI tool + web registry that downloads version-specific library documen
 The system has two components: a **CLI** (`packages/cli/`) that developers run locally, and a **Registry** (`apps/registry/`) that serves community-curated library configs via a Nuxt web app on Cloudflare Pages.
 
 ```
-Developer runs:  ask docs add next@canary
+Developer runs:  ask add npm:next
                        │
                        ▼
               ┌─────────────────┐
@@ -35,7 +35,7 @@ Developer runs:  ask docs add next@canary
 
 | Entry Point | Purpose | When to read |
 |---|---|---|
-| `packages/cli/src/index.ts` | CLI commands (`ask docs add/sync/list/remove`) | Understanding command flow |
+| `packages/cli/src/index.ts` | CLI commands (`ask install/add/remove/list`) | Understanding command flow |
 | `packages/cli/src/sources/index.ts` | `DocSource` interface + `getSource()` factory | Adding a new source adapter |
 | `packages/cli/src/registry.ts` | Registry API client + ecosystem detection | Changing auto-detection logic |
 | `apps/registry/app/pages/index.vue` | Registry home page (search + grid) | Modifying the registry UI |
@@ -47,29 +47,36 @@ Developer runs:  ask docs add next@canary
 
 ```
 src/
-├── index.ts          # Command definitions (citty defineCommand)
+├── index.ts          # Command definitions (citty defineCommand): install/add/remove/list
+├── install.ts        # runInstall() orchestrator — drives the full output pipeline
+├── spec.ts           # parseSpec() — canonical spec string → discriminated union
 ├── registry.ts       # Registry API lookup + ecosystem auto-detection
 ├── sources/
 │   ├── index.ts      # DocSource interface, SourceConfig union, getSource() factory
-│   ├── npm.ts        # NpmSource — downloads npm tarballs, extracts docs
+│   ├── npm.ts        # NpmSource — local-first node_modules read, npm tarball fallback
 │   ├── github.ts     # GithubSource — downloads GitHub repo archives
 │   └── web.ts        # WebSource — crawls HTML, converts to Markdown
+├── lockfiles/
+│   └── index.ts      # npmEcosystemReader — resolves version from bun/npm/pnpm/yarn lockfile
+├── discovery/
+│   └── local-intent.ts  # Checks if package ships TanStack Intent skills (intent-skills path)
 ├── storage.ts        # Saves docs to .ask/docs/<name>@<version>/, creates INDEX.md
-├── config.ts         # Persists source config to .ask/config.json
+├── io.ts             # Read/write ask.json + .ask/resolved.json; contentHash
 ├── skill.ts          # Generates .claude/skills/<name>-docs/SKILL.md
 └── agents.ts         # Generates/updates AGENTS.md + references in CLAUDE.md
 ```
 
-**Data flow for `ask docs add <spec>`:**
+**Data flow for `ask add <spec>` / `ask install`:**
 
-1. **Parse** — `index.ts` parses spec string (`npm:zod@3.22` → ecosystem, name, version)
-2. **Resolve** — `registry.ts` fetches strategy from Registry API (if no `--source` flag)
-3. **Fetch** — `sources/*.ts` downloads docs via the appropriate adapter
-4. **Store** — `storage.ts` writes files to `.ask/docs/<name>@<version>/`
-5. **Configure** — `config.ts` saves entry to `.ask/config.json` for later `sync`
-6. **Lock** — `io.ts` upserts version/hash into `.ask/ask.lock` for drift detection
-7. **Skill** — `skill.ts` generates `.claude/skills/<name>-docs/SKILL.md`
-8. **Agents** — `agents.ts` updates `AGENTS.md` with all downloaded doc references
+1. **Parse** — `spec.ts` parses spec string (`npm:zod` → kind, name; `github:owner/repo` → kind, owner, repo)
+2. **Resolve version** — `lockfiles/index.ts` reads the project lockfile to pin the exact version for `npm:` entries
+3. **Discover** — `discovery/local-intent.ts` checks if the package is a TanStack Intent package (short-circuits to intent path if so)
+4. **Registry** — `registry.ts` fetches strategy from Registry API to find best docs source (omitted when `--source` is set)
+5. **Fetch** — `sources/*.ts` downloads docs via the appropriate adapter
+6. **Store** — `storage.ts` writes files to `.ask/docs/<name>@<version>/`
+7. **Cache** — `io.ts` upserts version/hash into `.ask/resolved.json` for drift detection
+8. **Skill** — `skill.ts` generates `.claude/skills/<name>-docs/SKILL.md`
+9. **Agents** — `agents.ts` updates `AGENTS.md` with all downloaded doc references
 
 ### `apps/registry/` — Registry Browser (`@pleaseai/ask-registry`)
 
@@ -112,7 +119,7 @@ strategies:
 tags: [react, framework, ssr]
 ```
 
-**Content API**: Nuxt Content v3 exposes registry entries as JSON via `/api/registry/{owner}/{name}`. The CLI fetches this during `ask docs add` when `--source` is omitted, passing either `{ecosystem}/{name}` (for ecosystem-prefixed specs) or `{owner}/{repo}` (for github shorthand specs).
+**Content API**: Nuxt Content v3 exposes registry entries as JSON via `/api/registry/{owner}/{name}`. The CLI fetches this during `ask add` / `ask install` when `--source` is omitted, passing either `{ecosystem}/{name}` (for ecosystem-prefixed specs) or `{owner}/{repo}` (for github shorthand specs).
 
 ## Key Types
 
@@ -150,7 +157,7 @@ interface RegistryEntry {
 These constraints must be maintained across all changes:
 
 1. **Source adapters are stateless** — each `DocSource.fetch()` call is independent. No shared state between fetches.
-2. **Output pipeline is sequential** — storage → config → lock → skill → agents. Each step depends on the previous.
+2. **Output pipeline is sequential** — storage → resolved-cache → skill → agents. Each step depends on the previous.
 3. **Registry is read-only for CLI** — the CLI only fetches from the registry API, never writes to it.
 4. **Pure ESM everywhere** — all imports use `.js` extensions. No CommonJS.
 5. **CLI output via consola only** — never use raw `console.log`. Use `consola.info/success/warn/error`.
@@ -159,13 +166,13 @@ These constraints must be maintained across all changes:
 
 ## Files Generated in User Projects
 
-When a developer runs `ask docs add`, these files are created/updated:
+When a developer runs `ask add` or `ask install`, these files are created/updated:
 
 ```
 project-root/
+├── ask.json                           # Declarative library list (checked in)
 ├── .ask/
-│   ├── config.json                    # Tracks all downloaded docs for sync
-│   ├── ask.lock                       # Records exact versions/hashes fetched
+│   ├── resolved.json                  # Cache: resolved versions/hashes (gitignored)
 │   └── docs/
 │       └── <name>@<version>/
 │           ├── INDEX.md               # Auto-generated file listing
