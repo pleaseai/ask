@@ -1,0 +1,25 @@
+packages/cli/src/store/github-bare.ts
+  03217db608910a05 1-104
+packages/cli/test/store/github-bare.test.ts
+  03217db608910a05 1-139
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "71a899866bbdb16774e29d53e99e17eed65df2e9",
+  "prompts": {
+    "03217db608910a05": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "46e500fa-7344-42db-95f4-c76ca119ea3b",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 254,
+      "total_deletions": 11,
+      "accepted_lines": 243,
+      "overriden_lines": 0
+    }
+  }
+}
