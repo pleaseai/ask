@@ -111,4 +111,13 @@ describe('ask CLI surface (install/add/remove/list)', () => {
     // the command path completes without throwing.
     await runCli(tmpDir, ['list', '--json'])
   })
+
+  it('ask add npm:<pkg> accepts --emit-skill flag without error (SC-2)', async () => {
+    fs.writeFileSync(path.join(tmpDir, 'bun.lock'), '{}\n')
+    // The flag should be accepted at parse level; install will skip (no lockfile entry),
+    // but ask.json should have the entry appended.
+    await runCli(tmpDir, ['add', 'npm:lodash', '--emit-skill'])
+    const askJson = readAskJson(tmpDir)
+    expect(askJson?.libraries).toEqual([{ spec: 'npm:lodash' }])
+  })
 })

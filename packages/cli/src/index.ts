@@ -51,9 +51,14 @@ const installCmd = defineCommand({
       type: 'boolean',
       description: 'Re-fetch every entry, ignoring the .ask/resolved.json cache',
     },
+    'emit-skill': {
+      type: 'boolean',
+      description: 'Emit a .claude/skills/<name>-docs/SKILL.md file for each installed library',
+    },
   },
   async run({ args }) {
-    await runInstall(process.cwd(), { force: Boolean(args.force) })
+    const emitSkill = args['emit-skill'] ? true : undefined
+    await runInstall(process.cwd(), { force: Boolean(args.force), emitSkill })
   },
 })
 
@@ -75,6 +80,10 @@ const addCmd = defineCommand({
     docsPath: {
       type: 'string',
       description: 'Path to docs within the package/repo',
+    },
+    'emit-skill': {
+      type: 'boolean',
+      description: 'Emit a .claude/skills/<name>-docs/SKILL.md file for each installed library',
     },
   },
   async run({ args }) {
@@ -118,7 +127,8 @@ const addCmd = defineCommand({
     }
     writeAskJson(projectDir, askJson)
 
-    await runInstall(projectDir, { onlySpecs: [spec] })
+    const emitSkill = args['emit-skill'] ? true : undefined
+    await runInstall(projectDir, { onlySpecs: [spec], emitSkill })
   },
 })
 
