@@ -1,6 +1,5 @@
 import type { IntentSkillEntry } from './discovery/types.js'
-import type { StoreMode } from './schemas.js'
-import type { LibraryEntry } from './schemas.js'
+import type { LibraryEntry, StoreMode } from './schemas.js'
 import type { DocFile } from './sources/index.js'
 import fs from 'node:fs'
 import path from 'node:path'

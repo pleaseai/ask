@@ -53,9 +53,11 @@ export function llmsTxtStorePath(askHome: string, url: string, version: string):
   return path.join(askHome, 'llms-txt', `${hash}@${version}`)
 }
 
+const RE_TRAILING_SLASHES = /\/+$/
+
 function normalizeUrl(url: string): string {
   // Strip trailing slash and lowercase scheme+host for dedup
-  return url.replace(/\/+$/, '').toLowerCase()
+  return url.replace(RE_TRAILING_SLASHES, '').toLowerCase()
 }
 
 // ── Atomic writes ──────────────────────────────────────────────────
@@ -197,7 +199,8 @@ function hashDir(dir: string): string {
   const hash = crypto.createHash('sha256')
   const files = collectFiles(dir).sort()
   for (const file of files) {
-    if (path.basename(file) === HASH_FILE) continue
+    if (path.basename(file) === HASH_FILE)
+      continue
     hash.update(file)
     hash.update(fs.readFileSync(path.join(dir, file)))
   }

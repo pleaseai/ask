@@ -195,6 +195,50 @@ Downloads documentation from a GitHub repository at a specific tag or branch.
 
 Crawls documentation websites and converts HTML to Markdown.
 
+## Global Store
+
+ASK maintains a global docs store at `~/.ask/` so identical `<pkg>@<version>` entries are fetched once per machine and reused across projects.
+
+```
+~/.ask/                                     # ASK_HOME
+├── npm/
+│   └── next@16.2.3/                        # immutable doc entry
+├── github/
+│   ├── db/
+│   │   └── vercel__next.js.git/            # shared bare clone
+│   └── checkouts/
+│       └── vercel__next.js/v16.2.3/        # per-ref extraction
+├── web/
+│   └── <sha256>/                           # crawled snapshots
+└── llms-txt/
+    └── <sha256>@<version>/
+```
+
+### `ASK_HOME`
+
+Override the store location: `ASK_HOME=/path/to/store ask install`
+
+### `storeMode`
+
+Configure how store entries are materialized into each project (CLI flag `--store-mode` or `ask.json` field):
+
+| Mode   | Behavior                                            | Best for                |
+| ------ | --------------------------------------------------- | ----------------------- |
+| `copy` | (default) Full copy into `.ask/docs/<pkg>@<v>/`     | CI, Docker, Windows     |
+| `link` | Symlink → store (falls back to copy on `EPERM`)     | Local dev, disk savings |
+| `ref`  | No project files; AGENTS.md points at store directly | Max dedup, local only   |
+
+### Cache management
+
+```bash
+ask cache ls                   # list store entries with sizes
+ask cache ls --kind npm        # filter by kind
+ask cache gc --dry-run         # preview what would be removed
+ask cache gc                   # remove unreferenced entries
+```
+
+> **Windows note:** `link` mode requires Developer Mode or admin privileges for symlinks. When unavailable, ASK falls back to `copy` automatically.
+
 ## Eval Results
 
 We run our own eval suite ([`evals/nuxt-ui/`](evals/nuxt-ui/)) comparing documentation strategies on 6 Nuxt UI v4 tasks — including 3 breaking-change evals with negative assertions that catch deprecated v2/v3 API usage.

@@ -115,7 +115,7 @@ describe('writeEntryAtomic', () => {
   it('cleans up temp dir on failure', () => {
     const target = path.join(tmpDir, 'entry')
     // Simulate write failure with an unwritable parent
-    const files = [{ path: '../../../escape.txt', content: 'bad' }]
+    const _files = [{ path: '../../../escape.txt', content: 'bad' }]
     // This should still create the file (path traversal is allowed in temp dirs)
     // but let's test the normal path works
     writeEntryAtomic(target, [{ path: 'ok.md', content: 'ok' }])

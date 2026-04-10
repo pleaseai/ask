@@ -16,9 +16,9 @@ import { ListModelSchema } from './list/model.js'
 import { renderList } from './list/render.js'
 import { removeSkill } from './skill.js'
 import { libraryNameFromSpec, parseSpec } from './spec.js'
+import { listDocs, removeDocs } from './storage.js'
 import { cacheGc, cacheLs, formatBytes } from './store/cache.js'
 import { resolveAskHome } from './store/index.js'
-import { listDocs, removeDocs } from './storage.js'
 
 /**
  * Validate the spec passed to `ask add`. Bare names (no ecosystem
@@ -29,8 +29,10 @@ import { listDocs, removeDocs } from './storage.js'
 const VALID_STORE_MODES = new Set<StoreMode>(['copy', 'link', 'ref'])
 
 function parseStoreMode(value: string | undefined): StoreMode | undefined {
-  if (!value) return undefined
-  if (VALID_STORE_MODES.has(value as StoreMode)) return value as StoreMode
+  if (!value)
+    return undefined
+  if (VALID_STORE_MODES.has(value as StoreMode))
+    return value as StoreMode
   consola.error(`Invalid --store-mode '${value}'. Must be one of: copy, link, ref`)
   process.exit(1)
 }

@@ -1,5 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import process from 'node:process'
 import { consola } from 'consola'
 
 // ── Types ──────────────────────────────────────────────────────────
@@ -37,18 +38,21 @@ export function cacheLs(
       ? path.join(askHome, 'github', 'checkouts')
       : path.join(askHome, kind)
 
-    if (!fs.existsSync(kindDir)) continue
+    if (!fs.existsSync(kindDir))
+      continue
 
     if (kind === 'github') {
       // github checkouts: <owner>__<repo>/<ref>/
       const repoDirs = safeReaddir(kindDir)
       for (const repoDir of repoDirs) {
         const repoPath = path.join(kindDir, repoDir)
-        if (!fs.statSync(repoPath).isDirectory()) continue
+        if (!fs.statSync(repoPath).isDirectory())
+          continue
         const refs = safeReaddir(repoPath)
         for (const ref of refs) {
           const refPath = path.join(repoPath, ref)
-          if (!fs.statSync(refPath).isDirectory()) continue
+          if (!fs.statSync(refPath).isDirectory())
+            continue
           entries.push({
             kind: 'github',
             key: `${repoDir}/${ref}`,
@@ -63,7 +67,8 @@ export function cacheLs(
       const subdirs = safeReaddir(kindDir)
       for (const subdir of subdirs) {
         const entryPath = path.join(kindDir, subdir)
-        if (!fs.statSync(entryPath).isDirectory()) continue
+        if (!fs.statSync(entryPath).isDirectory())
+          continue
         entries.push({
           kind,
           key: subdir,
@@ -130,7 +135,8 @@ function collectReferencedStorePaths(scanRoots: string[]): Set<string> {
   const referenced = new Set<string>()
 
   for (const root of scanRoots) {
-    if (!root || !fs.existsSync(root)) continue
+    if (!root || !fs.existsSync(root))
+      continue
     findResolvedJsonFiles(root, referenced, 0, 8)
   }
 
@@ -143,7 +149,8 @@ function findResolvedJsonFiles(
   depth: number,
   maxDepth: number,
 ): void {
-  if (depth > maxDepth) return
+  if (depth > maxDepth)
+    return
 
   const resolvedPath = path.join(dir, '.ask', 'resolved.json')
   if (fs.existsSync(resolvedPath)) {
@@ -166,9 +173,11 @@ function findResolvedJsonFiles(
   try {
     const entries = fs.readdirSync(dir, { withFileTypes: true })
     for (const entry of entries) {
-      if (!entry.isDirectory()) continue
+      if (!entry.isDirectory())
+        continue
       // Skip hidden dirs, node_modules, .git
-      if (entry.name.startsWith('.') || entry.name === 'node_modules') continue
+      if (entry.name.startsWith('.') || entry.name === 'node_modules')
+        continue
       findResolvedJsonFiles(path.join(dir, entry.name), referenced, depth + 1, maxDepth)
     }
   }
@@ -207,8 +216,11 @@ function safeReaddir(dir: string): string[] {
 }
 
 export function formatBytes(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  if (bytes < 1024)
+    return `${bytes} B`
+  if (bytes < 1024 * 1024)
+    return `${(bytes / 1024).toFixed(1)} KB`
+  if (bytes < 1024 * 1024 * 1024)
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`
 }
