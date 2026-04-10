@@ -1,0 +1,35 @@
+packages/cli/src/store/cache.ts
+  03217db608910a05 3,41-42,49-50,54-55,70-71,138-139,152-153,176-177,179-180,219-224
+packages/cli/src/storage.ts
+  03217db608910a05 2
+packages/cli/src/store/index.ts
+  03217db608910a05 56-57,60,202-203
+README.md
+  03217db608910a05 198-241
+packages/cli/CHANGELOG.md
+  03217db608910a05 5-20
+packages/cli/test/store/index.test.ts
+  03217db608910a05 118
+packages/cli/src/index.ts
+  03217db608910a05 19,32-35
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "0a8ad6f43e059207a321e3c4a6626d9c992dd002",
+  "prompts": {
+    "03217db608910a05": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "46e500fa-7344-42db-95f4-c76ca119ea3b",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 95,
+      "total_deletions": 19,
+      "accepted_lines": 95,
+      "overriden_lines": 0
+    }
+  }
+}
