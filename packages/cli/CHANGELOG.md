@@ -1,5 +1,37 @@
 # Changelog
 
+## [Unreleased]
+
+### ⚠ BREAKING CHANGES
+
+* **install:** Claude Code skill emission is now **off by default**. Running `ask install` no longer writes `.claude/skills/<name>-docs/SKILL.md`. Only `.ask/docs/`, `AGENTS.md`, and `CLAUDE.md` are created by default.
+
+  **Why:** Internal evals (`evals/nuxt-ui/`, 2026-04-10) and Vercel's public benchmark both show that the AGENTS.md pointer format outperforms SKILL.md delivery with the same docs payload and model (`claude-sonnet-4-6`): 100% vs 50% first-try pass rate on breaking-change scenarios. Additionally, `.claude/skills/` is Claude Code-specific — other agents (`codex`, `cursor`, Amp) ignore it entirely.
+
+### Migration
+
+If you depend on skill file generation, opt in with one of the following:
+
+**Option A — CLI flag (per-invocation):**
+
+```bash
+ask install --emit-skill
+ask add npm:react --emit-skill
+```
+
+**Option B — `ask.json` field (project-wide):**
+
+```json
+{
+  "emitSkill": true,
+  "libraries": [...]
+}
+```
+
+**Precedence** (highest → lowest): CLI `--emit-skill` flag → `ask.json` `emitSkill` → default `false`.
+
+Existing `.claude/skills/` directories left over from ASK ≤ 0.3.x are still cleaned up by `ask remove` regardless of the current `emitSkill` setting.
+
 ## [0.3.1](https://github.com/pleaseai/ask/compare/ask-v0.3.0...ask-v0.3.1) (2026-04-09)
 
 
