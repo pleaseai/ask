@@ -1,6 +1,6 @@
 # Nuxt UI Eval Suite
 
-Compares documentation source quality for Nuxt UI by measuring how well AI agents use Nuxt UI v4 APIs across 4 conditions: no docs (baseline), llms.txt, llms-full.txt, and GitHub docs.
+Compares documentation source quality for Nuxt UI by measuring how well AI agents use Nuxt UI v4 APIs across 5 conditions: no docs (baseline), llms.txt, llms-full.txt, GitHub docs via AGENTS.md, and GitHub docs via Claude Code skill file.
 
 ## Motivation
 
@@ -13,7 +13,8 @@ Libraries increasingly offer `llms.txt` / `llms-full.txt` as LLM-optimized docum
 | `base` | none | Baseline — agent relies on training data only |
 | `with-llms-txt` | `ui.nuxt.com/llms.txt` | Concise overview + doc links (~5KB) |
 | `with-llms-full-txt` | `ui.nuxt.com/llms-full.txt` | Complete docs inlined (~200KB) |
-| `with-github-docs` | `nuxt/ui` repo `docs/` | GitHub docs with ASK-style AGENTS.md |
+| `with-github-docs` | `nuxt/ui` repo `docs/` | GitHub docs surfaced via ASK-style AGENTS.md pointer |
+| `with-skill` | `nuxt/ui` repo `docs/` | Same docs, surfaced via a Claude Code skill file (`.claude/skills/nuxt-ui-docs/SKILL.md`) instead of AGENTS.md. Isolates the skill delivery format — reproduces [Vercel's benchmark](https://vercel.com/blog/agents-md-outperforms-skills-in-our-agent-evals) finding that skills underperform AGENTS.md |
 
 ## Evals
 

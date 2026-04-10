@@ -33,14 +33,22 @@ This suite tests the same approach using ASK's documentation pipeline.
 
 ## Experiments
 
-4 experiment configurations comparing baseline vs ASK-assisted:
+6 experiment configurations comparing baseline vs ASK-assisted delivery formats:
 
-| Experiment | Model | Docs | File |
+| Experiment | Model | Docs delivery | File |
 |---|---|---|---|
 | `claude-sonnet-4.6` | Sonnet 4.6 | none | `experiments/claude-sonnet-4.6.ts` |
 | `claude-sonnet-4.6--with-ask` | Sonnet 4.6 | AGENTS.md | `experiments/claude-sonnet-4.6--with-ask.ts` |
+| `claude-sonnet-4.6--with-skill` | Sonnet 4.6 | `.claude/skills/next-docs/SKILL.md` | `experiments/claude-sonnet-4.6--with-skill.ts` |
 | `claude-opus-4.6` | Opus 4.6 | none | `experiments/claude-opus-4.6.ts` |
 | `claude-opus-4.6--with-ask` | Opus 4.6 | AGENTS.md | `experiments/claude-opus-4.6--with-ask.ts` |
+| `claude-opus-4.6--with-skill` | Opus 4.6 | `.claude/skills/next-docs/SKILL.md` | `experiments/claude-opus-4.6--with-skill.ts` |
+
+The `--with-skill` variants isolate the Claude Code skill file format so we can
+empirically compare it against the AGENTS.md pointer. Vercel's public
+benchmark ([AGENTS.md outperforms skills in our agent evals](https://vercel.com/blog/agents-md-outperforms-skills-in-our-agent-evals))
+found skills underperform AGENTS.md; these experiments reproduce that test
+inside ASK to inform whether we keep emitting skill files from `ask install`.
 
 ## Prerequisites
 
