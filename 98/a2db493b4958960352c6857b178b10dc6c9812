@@ -1,0 +1,23 @@
+packages/cli/test/install/remove.test.ts
+  f85e8e7ca6b3d0ad 1-82
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.6",
+  "base_commit_sha": "98a2db493b4958960352c6857b178b10dc6c9812",
+  "prompts": {
+    "f85e8e7ca6b3d0ad": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "0837cc4b-a9d2-4e17-af5f-696754132b1f",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 83,
+      "total_deletions": 1,
+      "accepted_lines": 87,
+      "overriden_lines": 0
+    }
+  }
+}
