@@ -1,0 +1,25 @@
+.please/docs/tracks.jsonl
+  03217db608910a05 16
+.please/docs/tracks/active/global-docs-store-20260410/metadata.json
+  03217db608910a05 4,6
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "22619715850afdcc0f42550cafa310c668bd0253",
+  "prompts": {
+    "03217db608910a05": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "46e500fa-7344-42db-95f4-c76ca119ea3b",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 3,
+      "total_deletions": 3,
+      "accepted_lines": 3,
+      "overriden_lines": 0
+    }
+  }
+}
