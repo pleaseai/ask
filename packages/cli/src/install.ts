@@ -25,6 +25,8 @@ import { getSource } from './sources/index.js'
 import { parseSpec } from './spec.js'
 import { saveDocs } from './storage.js'
 
+const RE_LEADING_V = /^v/
+
 export interface RunInstallOptions {
   /** Subset of libraries to install (by spec). When omitted, install all. */
   onlySpecs?: string[]
@@ -116,9 +118,12 @@ async function installOne(
   const isStandaloneGithub = 'ref' in lib
 
   // Resolve version: lockfile (PM-driven) or `ref` (standalone github).
+  // For standalone GitHub entries, strip a leading "v" from the ref so
+  // the resolved-cache key and docs-path match the version that
+  // GithubSource.fetch() returns (it normalises tags the same way).
   let resolvedVersion: string
   if (isStandaloneGithub) {
-    resolvedVersion = lib.ref
+    resolvedVersion = lib.ref.replace(RE_LEADING_V, '')
   }
   else if (parsed.kind === 'npm') {
     const hit = npmEcosystemReader.read(parsed.pkg, projectDir)
