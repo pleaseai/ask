@@ -1,0 +1,27 @@
+.please/docs/tracks/active/skill-emission-opt-in-20260410/metadata.json
+  56dad13b7d2ff847 1-11
+.please/docs/tracks/active/skill-emission-opt-in-20260410/spec.md
+  56dad13b7d2ff847 1-63
+.please/docs/tracks/active/skill-emission-opt-in-20260410/plan.md
+  56dad13b7d2ff847 1-109
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.6",
+  "base_commit_sha": "893a52ff03abf841148c16e4b7f15f4de9416d17",
+  "prompts": {
+    "56dad13b7d2ff847": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "447fc761-0237-48eb-83ad-2238827377ad",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 187,
+      "total_deletions": 4,
+      "accepted_lines": 183,
+      "overriden_lines": 0
+    }
+  }
+}
