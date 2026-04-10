@@ -16,6 +16,8 @@ import { ListModelSchema } from './list/model.js'
 import { renderList } from './list/render.js'
 import { removeSkill } from './skill.js'
 import { libraryNameFromSpec, parseSpec } from './spec.js'
+import { cacheGc, cacheLs, formatBytes } from './store/cache.js'
+import { resolveAskHome } from './store/index.js'
 import { listDocs, removeDocs } from './storage.js'
 
 /**
@@ -244,6 +246,86 @@ const listCmd = defineCommand({
   },
 })
 
+const cacheLsCmd = defineCommand({
+  meta: {
+    name: 'ls',
+    description: 'List entries in the global ASK store',
+  },
+  args: {
+    kind: {
+      type: 'string',
+      description: 'Filter by kind: npm, github, web, llms-txt',
+    },
+  },
+  run({ args }) {
+    const askHome = resolveAskHome()
+    const kind = args.kind as 'npm' | 'github' | 'web' | 'llms-txt' | undefined
+    const entries = cacheLs(askHome, kind ? { kind } : undefined)
+
+    if (entries.length === 0) {
+      consola.info(`No entries in store at ${askHome}`)
+      return
+    }
+
+    consola.info(`Store: ${askHome}`)
+    consola.info(`${entries.length} entr${entries.length === 1 ? 'y' : 'ies'}:\n`)
+    for (const entry of entries) {
+      consola.log(`  ${entry.kind}/${entry.key}  ${formatBytes(entry.sizeBytes)}`)
+    }
+
+    const totalBytes = entries.reduce((sum, e) => sum + e.sizeBytes, 0)
+    consola.info(`\nTotal: ${formatBytes(totalBytes)}`)
+  },
+})
+
+const cacheGcCmd = defineCommand({
+  meta: {
+    name: 'gc',
+    description: 'Remove unreferenced entries from the global ASK store',
+  },
+  args: {
+    'dry-run': {
+      type: 'boolean',
+      description: 'Show what would be removed without deleting',
+    },
+  },
+  run({ args }) {
+    const askHome = resolveAskHome()
+    const dryRun = Boolean(args['dry-run'])
+    const scanRoots = process.env.ASK_GC_SCAN_ROOTS
+      ? process.env.ASK_GC_SCAN_ROOTS.split(':')
+      : undefined
+
+    const result = cacheGc(askHome, { dryRun, scanRoots })
+
+    if (result.removed.length === 0) {
+      consola.success('Store is clean — no unreferenced entries.')
+      return
+    }
+
+    if (dryRun) {
+      consola.info(`Would remove ${result.removed.length} entr${result.removed.length === 1 ? 'y' : 'ies'} (${formatBytes(result.freedBytes)}):`)
+      for (const entry of result.removed) {
+        consola.log(`  ${entry.kind}/${entry.key}  ${formatBytes(entry.sizeBytes)}`)
+      }
+    }
+    else {
+      consola.success(`Removed ${result.removed.length} entr${result.removed.length === 1 ? 'y' : 'ies'}, freed ${formatBytes(result.freedBytes)}.`)
+    }
+  },
+})
+
+const cacheCmd = defineCommand({
+  meta: {
+    name: 'cache',
+    description: 'Manage the global ASK documentation store',
+  },
+  subCommands: {
+    ls: cacheLsCmd,
+    gc: cacheGcCmd,
+  },
+})
+
 // Read version from package.json at runtime so release-please bumps
 // automatically propagate to `--version` output. `import.meta.url`
 // resolves relative to the compiled file location (`dist/index.js` →
@@ -264,6 +346,7 @@ export const main = defineCommand({
     add: addCmd,
     remove: removeCmd,
     list: listCmd,
+    cache: cacheCmd,
   },
 })
 
