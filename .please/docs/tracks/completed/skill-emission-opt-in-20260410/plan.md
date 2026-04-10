@@ -106,6 +106,26 @@ T001 ──┬── T002 (schema tests)
 - [x] (2026-04-10 14:00 KST) T008 Add CHANGELOG entry documenting default flip and opt-in precedence
 - [x] (2026-04-10 05:15 KST) T009 Run full build and test suite
 
+## Outcomes & Retrospective
+
+### What Was Shipped
+- `emitSkill?: boolean` schema field + `--emit-skill` CLI flag with precedence resolution
+- `generateSkill()` guard in `installOne` + cache-hit skill generation for toggle scenarios
+- 12 new tests (schema 3, install 5, remove 2, CLI 2), 229 total passing
+- CHANGELOG with breaking change documentation + migration guide
+
+### What Went Well
+- Guard-at-caller approach kept the diff minimal (349 lines) and fully reversible
+- TDD cycle caught the `style/quote-props` consistency rule early via lint
+- Spec compliance: 100% on first check (all SC-1 through SC-6)
+
+### What Could Improve
+- Review caught a cache-hit bug: toggling `emitSkill` on after a cached install silently skipped skill generation. Should have been caught during implementation.
+- `readdirSync` without `{ recursive: true }` was a subtle miss in the fix — nested docs would have produced incomplete skill TOC.
+
+### Tech Debt Created
+- None identified. `skill.ts` helper intact for future re-enable if evals show parity.
+
 ## Decision Log
 
 - 2026-04-10: Chose guard-at-caller over full removal or deprecation. Rationale in Architecture Decision section.

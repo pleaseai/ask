@@ -1,11 +1,11 @@
 {
   "track_id": "skill-emission-opt-in-20260410",
   "type": "refactor",
-  "status": "in_progress",
+  "status": "review",
   "created_at": "2026-04-10T01:58:00Z",
-  "updated_at": "2026-04-10T02:30:00Z",
+  "updated_at": "2026-04-10T12:00:00Z",
   "issue": "#53",
-  "pr": "",
+  "pr": "#54",
   "project": "",
   "project_item_id": ""
 }
