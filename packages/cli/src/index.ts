@@ -47,7 +47,7 @@ const installCmd = defineCommand({
     description: 'Install documentation for all libraries declared in ask.json',
   },
   args: {
-    force: {
+    'force': {
       type: 'boolean',
       description: 'Re-fetch every entry, ignoring the .ask/resolved.json cache',
     },
@@ -68,16 +68,16 @@ const addCmd = defineCommand({
     description: 'Add a library entry to ask.json and install it',
   },
   args: {
-    spec: {
+    'spec': {
       type: 'positional',
       description: 'Library spec (e.g. npm:next, github:vercel/next.js)',
       required: true,
     },
-    ref: {
+    'ref': {
       type: 'string',
       description: 'Git ref for github specs (tag/branch/sha)',
     },
-    docsPath: {
+    'docsPath': {
       type: 'string',
       description: 'Path to docs within the package/repo',
     },
