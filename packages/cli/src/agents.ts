@@ -41,7 +41,7 @@ The libraries in this project may have APIs and patterns that differ from your t
 \`.ask/docs/\` contains third-party library documentation downloaded by ASK.
 Treat it as **read-only**: AI context should reference these files, but they are
 **not** subject to modification, lint, format, or code review. Updates are
-performed via \`ask docs sync\`.
+performed via \`ask install\`.
 
 ${sections.join('\n\n')}
 ${END_MARKER}`

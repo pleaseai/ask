@@ -30,7 +30,9 @@ export function parseEcosystem(input: string): { ecosystem: string | undefined, 
 }
 
 /**
- * Parsed identifier passed to `ask docs add`.
+ * Parsed identifier passed to the legacy add path (kept for the
+ * registry resolver). The new install orchestrator uses `parseSpec`
+ * from `./spec.ts` instead.
  *
  * Three shapes are supported:
  *   - `owner/repo[@ref]`        → github fast-path (no registry lookup)

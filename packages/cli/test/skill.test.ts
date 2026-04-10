@@ -40,7 +40,7 @@ describe('generateSkill', () => {
     expect(content).toContain('@scope/pkg')
 
     // Mentions the registration suggestion command
-    expect(content).toContain('ask docs add npm:ai')
+    expect(content).toContain('ask add npm:ai')
   })
 
   it('emits the available-guides table of contents above the fallback section', () => {

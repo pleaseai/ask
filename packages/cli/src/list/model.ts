@@ -11,11 +11,9 @@ import { z } from 'zod'
  * distinguish in-place installs from copied tarballs.
  */
 export const ListEntrySourceSchema = z.enum([
-  'tarball',
-  'installPath',
+  'pm-driven',
   'github',
-  'web',
-  'llms-txt',
+  'unresolved',
 ])
 export type ListEntrySource = z.infer<typeof ListEntrySourceSchema>
 

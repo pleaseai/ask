@@ -73,7 +73,7 @@ const filtered = computed(() => {
         </div>
 
         <template #footer>
-          <code class="text-xs">ask docs add {{ entry.ecosystem }}:{{ entry.name }}</code>
+          <code class="text-xs">ask add {{ entry.ecosystem }}:{{ entry.name }}</code>
         </template>
       </UCard>
       </NuxtLink>

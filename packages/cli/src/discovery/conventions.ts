@@ -4,7 +4,7 @@
  * `quality.ts` score passes the threshold.
  *
  * The lists intentionally stay short. Every additional path is a miss we
- * pay on every `ask docs add`, so entries should be justified by real-world
+ * pay on every `ask add`, so entries should be justified by real-world
  * prevalence across the current registry corpus (see T026 audit).
  */
 

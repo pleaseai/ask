@@ -20,7 +20,7 @@ import { consola } from 'consola'
 import { formatTable } from '../display/table.js'
 import { computeSkillNameWidth, formatSkillTree } from '../display/tree.js'
 
-const EMPTY_MESSAGE = 'No docs downloaded yet. Use `ask docs add` to get started.'
+const EMPTY_MESSAGE = 'No libraries declared in ask.json. Use `ask add npm:<pkg>` or `ask add github:<owner>/<repo> --ref <tag>` to get started.'
 
 export function formatList(model: ListModel): string {
   if (model.entries.length === 0) {

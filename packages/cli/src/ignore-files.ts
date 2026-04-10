@@ -18,7 +18,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { consola } from 'consola'
-import { loadConfig } from './config.js'
+import { readAskJson } from './io.js'
 import { inject, remove as removeMarker, wrap } from './markers.js'
 import { getDocsDir } from './storage.js'
 
@@ -84,7 +84,7 @@ const ROOT_PATCHES: RootPatch[] = [
   {
     file: '.prettierignore',
     syntax: 'hash',
-    payload: '# Vendored docs — managed by ASK\n.ask/docs/',
+    payload: '# Vendored docs — managed by ASK\n.ask/docs/\n.ask/resolved.json',
   },
   {
     file: 'sonar-project.properties',
@@ -96,6 +96,11 @@ const ROOT_PATCHES: RootPatch[] = [
     syntax: 'hash',
     payload: '# Vendored docs — managed by ASK\n.ask/docs/',
     warn: 'Legacy .markdownlintignore detected. Consider migrating to markdownlint-cli2, which supports nested config inside .ask/docs/ automatically.',
+  },
+  {
+    file: '.gitignore',
+    syntax: 'hash',
+    payload: '# Vendored docs — managed by ASK\n.ask/docs/\n.ask/resolved.json',
   },
 ]
 
@@ -201,20 +206,18 @@ export function unpatchRootIgnores(projectDir: string): string[] {
  * - `install` mode: create nested configs and patch detected root files.
  * - `remove`  mode: delete nested configs and strip root marker blocks.
  *
- * Respects `manageIgnores` in `.ask/config.json` (default: true). When the
- * flag is explicitly set to false, the function is a no-op.
+ * No-op when `ask.json` is absent (the user hasn't opted into ASK).
  */
 export function manageIgnoreFiles(
   projectDir: string,
   mode: 'install' | 'remove',
 ): void {
-  // `loadConfig` returns a default empty config when `.ask/config.json`
-  // does not exist, and throws for corrupt/invalid files. We deliberately
-  // do NOT wrap this in a try/catch: callers should hear about a broken
-  // config rather than silently proceeding with mutations.
-  const config = loadConfig(projectDir)
-  if (config.manageIgnores === false) {
-    consola.info('Skipping ignore-file management (manageIgnores: false).')
+  // The pre-refactor `manageIgnores: false` opt-out lived in
+  // .ask/config.json, which no longer exists. The new contract: if
+  // ask.json is absent, do nothing (the user hasn't opted in to ASK
+  // at all).
+  const askJson = readAskJson(projectDir)
+  if (!askJson) {
     return
   }
 

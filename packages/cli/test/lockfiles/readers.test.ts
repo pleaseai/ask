@@ -2,10 +2,12 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
-import { NpmManifestReader } from '../../src/manifest/npm.js'
+import { npmEcosystemReader } from '../../src/lockfiles/index.js'
 
-describe('NpmManifestReader', () => {
-  const reader = new NpmManifestReader()
+describe('npmEcosystemReader', () => {
+  const reader = {
+    readInstalledVersion: (name: string, dir: string) => npmEcosystemReader.read(name, dir),
+  }
   let tmpDir: string
 
   beforeEach(() => {

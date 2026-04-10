@@ -1,6 +1,6 @@
 # Inline Pipeline — Fallback for add-docs
 
-> ⚠️  **FALLBACK ONLY.** The CLI (`bunx @pleaseai/ask docs add`) is the
+> ⚠️  **FALLBACK ONLY.** The CLI (`bunx @pleaseai/ask add`) is the
 > primary path and the source of truth. This document mirrors that pipeline
 > for environments where the CLI cannot be used (no network access to fetch
 > the package, sandboxed CI without `bunx`, etc.). It may drift from the CLI —

@@ -5,7 +5,7 @@ import type { ExperimentConfig } from '@vercel/agent-eval'
  *
  * Replicates the Vercel AGENTS.md approach: a short pointer file that directs
  * the agent to read version-specific docs bundled in node_modules/next/dist/docs/.
- * This is exactly what `ask docs add npm:next` produces.
+ * This is exactly what `ask add npm:next` produces.
  *
  * Vercel results: Sonnet 4.6 baseline 67% → 100% with AGENTS.md (+33%)
  * Ref: https://github.com/vercel/next-evals-oss
@@ -22,7 +22,7 @@ const config: ExperimentConfig = {
     await sandbox.runCommand('npm', ['install', 'next@canary'])
 
     // Inject ASK-style documentation pointers
-    // This mirrors what `ask docs add npm:next` generates
+    // This mirrors what `ask add npm:next` generates
     await sandbox.writeFiles({
       'AGENTS.md': `<!-- BEGIN:nextjs-agent-rules -->
 # This is NOT the Next.js you know
