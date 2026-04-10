@@ -38,7 +38,15 @@ export const ResolvedEntrySchema = z.object({
   materialization: z.enum(['copy', 'link', 'ref', 'in-place']).optional(),
   /** Project-relative path to docs when materialization is 'in-place' (e.g. node_modules/next/dist/docs). */
   inPlacePath: z.string().optional(),
-}).strict()
+}).strict().superRefine((val, ctx) => {
+  if (val.materialization === 'in-place' && !val.inPlacePath) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'inPlacePath is required when materialization is \'in-place\'',
+      path: ['inPlacePath'],
+    })
+  }
+})
 
 export type ResolvedEntry = z.infer<typeof ResolvedEntrySchema>
 

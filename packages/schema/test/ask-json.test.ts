@@ -177,6 +177,14 @@ describe('ResolvedEntrySchema — materialization & inPlacePath', () => {
       entries: { next: { ...base, materialization: 'symlink' } },
     })).toThrow()
   })
+
+  it('rejects materialization: in-place without inPlacePath', () => {
+    expect(() => ResolvedJsonSchema.parse({
+      schemaVersion: 1,
+      generatedAt: validIso,
+      entries: { next: { ...base, materialization: 'in-place' } },
+    })).toThrow(/inPlacePath is required when materialization is 'in-place'/)
+  })
 })
 
 describe('ResolvedJsonSchema', () => {
