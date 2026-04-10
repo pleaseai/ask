@@ -98,7 +98,7 @@ T001 ──┬── T002 (schema tests)
 
 - [x] (2026-04-10 03:00 KST) T001 Add `emitSkill?: boolean` to `AskJsonSchema` and export the inferred type
 - [x] (2026-04-10 11:30 KST) T002 Add schema tests verifying `emitSkill` parses and unknown keys still reject
-- [ ] T003 Add `emitSkill?: boolean` to `RunInstallOptions` and resolve precedence
+- [x] (2026-04-10 12:00 KST) T003 Add `emitSkill?: boolean` to `RunInstallOptions` and resolve precedence
 - [x] (2026-04-10 12:00 KST) T004 Guard the `generateSkill(...)` call in `installOne`
 - [x] (2026-04-10 11:45 KST) T005 Add `--emit-skill` boolean flag to `installCmd` and `addCmd`
 - [x] (2026-04-10 11:40 KST) T006 Add install tests covering default/flag/ask.json/override precedence
