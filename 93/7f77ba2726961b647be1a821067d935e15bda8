@@ -1,0 +1,23 @@
+CLAUDE.md
+  afaba9397b1c1eb9 125-144
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "937f77ba2726961b647be1a821067d935e15bda8",
+  "prompts": {
+    "afaba9397b1c1eb9": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "23f4b337-d14a-4db2-aea1-4e755948b5b6",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 20,
+      "total_deletions": 0,
+      "accepted_lines": 20,
+      "overriden_lines": 0
+    }
+  }
+}
