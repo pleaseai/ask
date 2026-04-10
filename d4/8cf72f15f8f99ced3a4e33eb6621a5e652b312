@@ -1,0 +1,57 @@
+packages/cli/src/index.ts
+  d8ac658346ec948d 58-61,65-66,93-96,140-141
+packages/cli/CHANGELOG.md
+  d8ac658346ec948d 5-11
+.please/docs/tracks/active/in-place-npm-docs-20260410/metadata.json
+  d8ac658346ec948d 4,6
+packages/cli/test/agents.in-place.test.ts
+  d8ac658346ec948d 1-115
+packages/schema/src/ask-json.ts
+  d8ac658346ec948d 72
+.please/docs/tracks.jsonl
+  d8ac658346ec948d 17
+packages/cli/src/discovery/local-conventions.ts
+  d8ac658346ec948d 96,123
+packages/cli/src/storage.ts
+  d8ac658346ec948d 151-163
+packages/cli/src/discovery/local-ask.ts
+  d8ac658346ec948d 65
+packages/cli/src/install.ts
+  d8ac658346ec948d 1,9,27,42-47,89-92,108,138,190-210,277-347
+README.md
+  d8ac658346ec948d 37-38,119-144
+packages/schema/src/resolved.ts
+  d8ac658346ec948d 31-34
+packages/cli/src/agents.ts
+  d8ac658346ec948d 3,15-16,18-34
+packages/cli/test/discovery/adapters.test.ts
+  d8ac658346ec948d 74,126,150
+packages/cli/test/install/install.in-place.test.ts
+  d8ac658346ec948d 1-258
+packages/cli/src/discovery/types.ts
+  d8ac658346ec948d 36-42
+.please/docs/tracks/active/in-place-npm-docs-20260410/plan.md
+  d8ac658346ec948d 63-84
+packages/schema/test/ask-json.test.ts
+  d8ac658346ec948d 87-155
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "d48cf72f15f8f99ced3a4e33eb6621a5e652b312",
+  "prompts": {
+    "d8ac658346ec948d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d2f55bab-2ca8-49b7-a46a-490c69f01afe",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 801,
+      "total_deletions": 160,
+      "accepted_lines": 673,
+      "overriden_lines": 0
+    }
+  }
+}
