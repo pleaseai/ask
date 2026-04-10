@@ -1,0 +1,25 @@
+evals/nuxt-ui/README.md
+  56dad13b7d2ff847 129-184
+README.md
+  56dad13b7d2ff847 200,202,206,217-231
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.6",
+  "base_commit_sha": "8deac4a1dbeda2c60af18cde54ae14c6d6e9381a",
+  "prompts": {
+    "56dad13b7d2ff847": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "447fc761-0237-48eb-83ad-2238827377ad",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 75,
+      "total_deletions": 3,
+      "accepted_lines": 75,
+      "overriden_lines": 0
+    }
+  }
+}
