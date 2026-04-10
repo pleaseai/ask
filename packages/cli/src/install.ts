@@ -32,6 +32,12 @@ export interface RunInstallOptions {
   onlySpecs?: string[]
   /** Force re-fetch even when the resolved-cache short-circuit would skip. */
   force?: boolean
+  /**
+   * When true, emit a `.claude/skills/<name>-docs/SKILL.md` file alongside
+   * the AGENTS.md block. Overrides the `emitSkill` field in `ask.json`.
+   * Precedence: CLI flag > ask.json `emitSkill` > default false.
+   */
+  emitSkill?: boolean
 }
 
 export interface InstallSummary {
@@ -68,6 +74,11 @@ export async function runInstall(
     return { installed: 0, unchanged: 0, skipped: 0, failed: 0 }
   }
 
+  // Resolve emitSkill: CLI flag (options.emitSkill) > ask.json emitSkill > false.
+  // The CLI flag wins when explicitly supplied (true or false).
+  // When absent (undefined), fall through to the ask.json field, then default false.
+  const resolvedEmitSkill: boolean = options.emitSkill ?? askJson.emitSkill ?? false
+
   const targets = options.onlySpecs
     ? askJson.libraries.filter(l => options.onlySpecs!.includes(l.spec))
     : askJson.libraries
@@ -83,7 +94,7 @@ export async function runInstall(
 
   for (const lib of targets) {
     try {
-      const status = await installOne(projectDir, lib, options)
+      const status = await installOne(projectDir, lib, options, resolvedEmitSkill)
       summary[status]++
     }
     catch (err) {
@@ -112,6 +123,7 @@ async function installOne(
   projectDir: string,
   lib: LibraryEntry,
   options: RunInstallOptions,
+  emitSkill: boolean,
 ): Promise<InstallStatus> {
   const parsed = parseSpec(lib.spec)
   const libName = parsed.name
