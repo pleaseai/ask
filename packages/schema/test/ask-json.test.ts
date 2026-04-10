@@ -69,6 +69,21 @@ describe('AskJsonSchema', () => {
   it('rejects unknown top-level fields', () => {
     expect(() => AskJsonSchema.parse({ libraries: [], extra: 1 })).toThrow()
   })
+
+  it('accepts emitSkill: true at the top level', () => {
+    const result = AskJsonSchema.parse({ libraries: [], emitSkill: true })
+    expect((result as { emitSkill?: boolean }).emitSkill).toBe(true)
+  })
+
+  it('accepts emitSkill: false at the top level', () => {
+    const result = AskJsonSchema.parse({ libraries: [], emitSkill: false })
+    expect((result as { emitSkill?: boolean }).emitSkill).toBe(false)
+  })
+
+  it('accepts absence of emitSkill (optional field)', () => {
+    const result = AskJsonSchema.parse({ libraries: [] })
+    expect((result as { emitSkill?: boolean }).emitSkill).toBeUndefined()
+  })
 })
 
 describe('ResolvedJsonSchema', () => {

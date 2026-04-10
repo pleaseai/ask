@@ -68,6 +68,7 @@ export type StandaloneGithubLibrary = z.infer<typeof StandaloneGithubLibraryEntr
 
 export const AskJsonSchema = z.object({
   libraries: z.array(LibraryEntrySchema),
+  emitSkill: z.boolean().optional(),
 }).strict()
 
 export type AskJson = z.infer<typeof AskJsonSchema>
