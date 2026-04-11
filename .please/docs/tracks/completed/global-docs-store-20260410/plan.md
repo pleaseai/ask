@@ -157,4 +157,38 @@ T020–T026 ─ T028
 
 ## Surprises & Discoveries
 
-- (empty — to be populated during implementation)
+- The tar.gz fallback in `GithubSource` originally wrote only flat doc files to the store but the store-hit fast path re-parsed as a repo root — creating a permanent failure mode on git-less machines. Caught in code review. Fixed by copying the full extracted repo root to the store.
+- `execSync` with template-string interpolation in `curl | tar` pipeline was a command injection vector. Replaced with Node `fetch` + `spawnSync` discrete args (no shell).
+- `acquireEntryLock` initially deleted the lock file on timeout — dangerous when the holder was still alive. Changed to throw a descriptive error instead.
+- `withBareClone` tests initially ran `git clone --bare` manually rather than calling the function under test, providing false confidence. Rewritten with an injectable `remoteUrl` option so tests point at a local file-path repo.
+
+## Outcomes & Retrospective
+
+### What Was Shipped
+
+- Global ASK docs store at `~/.ask/` with `ASK_HOME` override
+- Three materialization modes (`copy` / `link` / `ref`) configurable via CLI flag and `ask.json`
+- All four source adapters (npm, github, web, llms-txt) integrated with store
+- GitHub bare clone + archive-extract for efficient multi-ref handling
+- `ask cache ls` and `ask cache gc` (with `--dry-run` and `--older-than <duration>`)
+- Schema additions: `storeMode`, `storePath`, `materialization` — backward-compatible
+- 342 tests passing (60 schema + 282 cli), +12 tests added during review-fix cycle
+
+### What Went Well
+
+- TDD-style incremental commits: 10 well-scoped commits made review straightforward
+- Code review loop (4 parallel reviewer agents + spec compliance check) surfaced real security bugs that simple lint/tests missed
+- Atomic swap pattern (`rename-to-backup`) minimized race windows without sacrificing simplicity
+- Schema additions were additive and backward-compatible — no breaking changes to existing `ask.json` files
+
+### What Could Improve
+
+- Initial test suite was too mechanical — several tests re-implemented the logic they were supposed to exercise instead of calling the functions under test. Test coverage gaps were only caught by the `review:test-analyzer` agent.
+- Should have added `withBareClone`'s injectable `remoteUrl` option from the start, rather than hardcoding `github.com/` and retrofitting a test seam during review.
+- Command injection risk in `execSync` pipeline was pre-existing code I moved into a new function without noticing — need to audit shell-outs as part of the refactor checklist.
+
+### Tech Debt Created
+
+- `tryLocalRead` now logs parse failures at `consola.debug` level, but verbose-flag wiring is not yet hooked up (debug output is suppressed by default). Will surface if users hit malformed `package.json` in `node_modules`.
+- `cacheGc` scanner uses a hard-coded max depth of 8; real-world monorepos with deep nesting may miss `.ask/resolved.json` files. Acceptable for v1, revisit if users report misses.
+- GitHub bare clone uses `git fetch origin <ref> --depth=1` which only works when the remote allows `uploadpack.allowAnySHA1InWant`. github.com enables it, but self-hosted instances may not — need to document or detect.
