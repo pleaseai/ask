@@ -1,0 +1,23 @@
+packages/cli/test/commands/cache-sharing.test.ts
+  74a2e7a6401ed388 1-138
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "3bf6a4a6d5a0b03273eb3ea821d31e4809db5f4f",
+  "prompts": {
+    "74a2e7a6401ed388": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d319e5fd-e178-4adb-9d0b-ec62e3fe1a92",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 140,
+      "total_deletions": 2,
+      "accepted_lines": 151,
+      "overriden_lines": 0
+    }
+  }
+}
