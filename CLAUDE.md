@@ -16,6 +16,7 @@ ASK (Agent Skills Kit) downloads version-specific library documentation and gene
 - `packages/cli/` — `@pleaseai/ask` CLI (npm publishable)
 - `apps/registry/` — Nuxt + Nuxt Content v3 + Nuxt UI registry browser (Cloudflare Pages)
 - `vendor/intent/` — git submodule: [TanStack/intent](https://github.com/TanStack/intent) (reference only)
+- `vendor/opensrc/` — git submodule: [vercel-labs/opensrc](https://github.com/vercel-labs/opensrc) (reference only)
 
 ## Commands
 
