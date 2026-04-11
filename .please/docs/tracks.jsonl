@@ -14,5 +14,5 @@
 {"id":"pm-driven-install-20260410","type":"feature","status":"review","phase":"finalize","issue":"#51","pr":"#52","created":"2026-04-10","section":"completed"}
 {"id":"skill-emission-opt-in-20260410","type":"refactor","status":"planned","phase":"spec","issue":"#53","created":"2026-04-10","section":"active"}
 {"id":"global-docs-store-20260410","type":"feature","status":"review","phase":"finalize","issue":"#55","pr":"#60","created":"2026-04-10","section":"completed"}
-{"id":"in-place-npm-docs-20260410","type":"refactor","status":"planned","phase":"spec","issue":"#56","created":"2026-04-10","section":"active"}
+{"id":"in-place-npm-docs-20260410","type":"refactor","status":"review","phase":"finalize","issue":"#56","pr":"#59","created":"2026-04-10","section":"completed"}
 {"id":"skill-emission-opt-in-20260410","type":"refactor","status":"review","phase":"finalize","issue":"#53","pr":"#54","created":"2026-04-10","section":"completed"}

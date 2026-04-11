@@ -1,4 +1,4 @@
-import type { LocalDiscoveryAdapter } from './discovery/types.js'
+import type { DocsDiscoveryResult, LocalDiscoveryAdapter } from './discovery/types.js'
 import type { LibraryEntry, ResolvedEntry, StoreMode } from './schemas.js'
 import type { DocFile, GithubSourceOptions, NpmSourceOptions, SourceConfig } from './sources/index.js'
 import fs from 'node:fs'
@@ -6,6 +6,7 @@ import path from 'node:path'
 import { consola } from 'consola'
 import { upsertIntentSkillsBlock } from './agents-intent.js'
 import { generateAgentsMd } from './agents.js'
+import { runLocalDiscovery } from './discovery/index.js'
 import { localIntentAdapter } from './discovery/local-intent.js'
 import { manageIgnoreFiles } from './ignore-files.js'
 import {
@@ -23,7 +24,7 @@ import { fetchRegistryEntry } from './registry.js'
 import { generateSkill, getSkillDir } from './skill.js'
 import { getSource } from './sources/index.js'
 import { parseSpec } from './spec.js'
-import { saveDocs } from './storage.js'
+import { removeDocs, saveDocs } from './storage.js'
 import { npmStorePath, resolveAskHome } from './store/index.js'
 
 const RE_LEADING_V = /^v/
@@ -44,6 +45,12 @@ export interface RunInstallOptions {
    * Precedence: CLI flag > ask.json `storeMode` > 'copy'.
    */
   storeMode?: StoreMode
+  /**
+   * When set to false, disable in-place referencing of discovery-detected
+   * npm docs and force the copy path. Overrides the `inPlace` field in
+   * `ask.json`. Precedence: CLI flag > ask.json `inPlace` > default true.
+   */
+  inPlace?: boolean
 }
 
 export interface InstallSummary {
@@ -88,6 +95,10 @@ export async function runInstall(
   // Resolve storeMode: CLI flag > ask.json storeMode > 'copy'.
   const resolvedStoreMode: StoreMode = options.storeMode ?? askJson.storeMode ?? 'copy'
 
+  // Resolve inPlace: CLI flag (options.inPlace) > ask.json inPlace > true.
+  // Default is true: discovery-detected npm docs are referenced in place.
+  const resolvedInPlace: boolean = options.inPlace ?? askJson.inPlace ?? true
+
   const targets = options.onlySpecs
     ? askJson.libraries.filter(l => options.onlySpecs!.includes(l.spec))
     : askJson.libraries
@@ -103,7 +114,14 @@ export async function runInstall(
 
   for (const lib of targets) {
     try {
-      const status = await installOne(projectDir, lib, options, resolvedEmitSkill, resolvedStoreMode)
+      const status = await installOne(
+        projectDir,
+        lib,
+        options,
+        resolvedEmitSkill,
+        resolvedStoreMode,
+        resolvedInPlace,
+      )
       summary[status]++
     }
     catch (err) {
@@ -134,6 +152,7 @@ async function installOne(
   options: RunInstallOptions,
   emitSkill: boolean,
   storeMode: StoreMode,
+  inPlace: boolean = true,
 ): Promise<InstallStatus> {
   const parsed = parseSpec(lib.spec)
   const libName = parsed.name
@@ -182,6 +201,27 @@ async function installOne(
     })
     if (intent) {
       return await materializeIntent(projectDir, lib, libName, intent.skills, intent.resolvedVersion, options)
+    }
+  }
+
+  // In-place discovery: when enabled and no explicit docsPath is supplied,
+  // run local discovery to check if the package ships docs in node_modules.
+  // If discovery returns an in-place result, skip the copy pipeline entirely.
+  if (inPlace && parsed.kind === 'npm' && !lib.docsPath) {
+    const discovery = await runLocalDiscovery({
+      projectDir,
+      pkg: parsed.pkg,
+      requestedVersion: resolvedVersion,
+    })
+    if (discovery && discovery.kind === 'docs' && discovery.inPlace && discovery.installPath) {
+      return await materializeInPlace(
+        projectDir,
+        lib,
+        libName,
+        discovery,
+        options,
+        emitSkill,
+      )
     }
   }
 
@@ -292,6 +332,78 @@ async function installOne(
   upsertResolvedEntry(projectDir, libName, entry)
 
   consola.success(`  ${lib.spec}: installed ${libName}@${result.resolvedVersion} (${result.files.length} files)`)
+  return 'installed'
+}
+
+/**
+ * Materialize an in-place discovery result: skip `saveDocs`, clean up any
+ * stale `.ask/docs/<name>@<ver>/` directories left by previous copy installs,
+ * generate a skill file pointing at the node_modules path, and stamp the
+ * resolved cache with `materialization: 'in-place'`.
+ */
+async function materializeInPlace(
+  projectDir: string,
+  lib: LibraryEntry,
+  libName: string,
+  discovery: DocsDiscoveryResult,
+  options: RunInstallOptions,
+  emitSkill: boolean,
+): Promise<InstallStatus> {
+  const resolvedVersion = discovery.resolvedVersion
+  const docsPath = discovery.docsPath ?? ''
+  const inPlacePath = path.relative(
+    projectDir,
+    path.join(discovery.installPath!, docsPath),
+  )
+
+  // Resolved-cache short-circuit: if the same spec + version + in-place path
+  // is already recorded, skip.
+  if (!options.force) {
+    const cached = readResolvedJson(projectDir).entries[libName]
+    if (
+      cached
+      && cached.spec === lib.spec
+      && cached.resolvedVersion === resolvedVersion
+      && cached.materialization === 'in-place'
+      && cached.inPlacePath === inPlacePath
+    ) {
+      // Skill may still need generation if emitSkill was toggled on.
+      if (emitSkill && !fs.existsSync(path.join(getSkillDir(projectDir, libName), 'SKILL.md'))) {
+        generateSkill(projectDir, libName, resolvedVersion, discovery.files.map(f => f.path), { docsDir: inPlacePath })
+        consola.info(`  ${lib.spec}: already up to date (in-place) — generated skill (${resolvedVersion})`)
+        return 'unchanged'
+      }
+      consola.info(`  ${lib.spec}: already up to date (in-place, ${resolvedVersion})`)
+      return 'unchanged'
+    }
+  }
+
+  // Clean up any stale vendored directories from previous copy installs
+  // (SC-8: pre-existing .ask/docs/next@<old>/ removed on first in-place install).
+  removeDocs(projectDir, libName)
+
+  // Generate skill file pointing at the in-place docs path.
+  if (emitSkill) {
+    generateSkill(projectDir, libName, resolvedVersion, discovery.files.map(f => f.path), { docsDir: inPlacePath })
+  }
+
+  // Stamp the resolved cache.
+  const entry: ResolvedEntry = {
+    spec: lib.spec,
+    resolvedVersion,
+    contentHash: contentHash(discovery.files.map(f => ({ relpath: f.path, content: f.content }))),
+    fetchedAt: new Date().toISOString(),
+    fileCount: discovery.files.length,
+    format: 'docs',
+    materialization: 'in-place',
+    inPlacePath,
+  }
+  upsertResolvedEntry(projectDir, libName, entry)
+
+  consola.success(
+    `  ${lib.spec}: installed in-place ${libName}@${resolvedVersion} `
+    + `(${discovery.files.length} files at ${inPlacePath})`,
+  )
   return 'installed'
 }
 

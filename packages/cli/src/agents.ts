@@ -15,10 +15,29 @@ export function generateAgentsMd(projectDir: string): string {
   const resolved = readResolvedJson(projectDir)
 
   const sections = docs.map(({ name, version }) => {
-    // For ref mode, use the storePath directly instead of project-local path
-    const resolvedEntry = resolved.entries[name]
-    const docsRelPath = resolvedEntry?.materialization === 'ref' && resolvedEntry.storePath
-      ? resolvedEntry.storePath
+    const entry = resolved.entries[name]
+
+    // In-place mode: docs are referenced directly from node_modules.
+    // The section wording differs so users understand that `bun install`
+    // keeps them in sync — not `ask install`.
+    if (entry?.materialization === 'in-place' && entry.inPlacePath) {
+      const docsRelPath = entry.inPlacePath
+      const major = version.split('.')[0]
+      return `## ${name} v${version}
+
+> **WARNING:** This version may differ from your training data.
+> Read the docs in \`${docsRelPath}/\` before writing any ${name}-related code.
+> These docs are shipped by the package — \`bun install\` keeps them in sync.
+> Heed deprecation notices and breaking changes.
+
+- **Version**: \`${version}\` — use \`"^${major}"\` in package.json (NOT older major versions)
+- Documentation: \`${docsRelPath}/\``
+    }
+
+    // For ref mode, use the storePath directly instead of project-local path.
+    // copy/link modes fall through to the project-local path.
+    const docsRelPath = entry?.materialization === 'ref' && entry.storePath
+      ? entry.storePath
       : path.relative(projectDir, getLibraryDocsDir(projectDir, name, version))
 
     const major = version.split('.')[0]

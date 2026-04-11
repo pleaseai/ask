@@ -33,6 +33,13 @@ export interface DocsDiscoveryResult {
   docsPath?: string
   /** Quality score that selected this directory, if any. */
   quality?: QualityScore
+  /**
+   * When true, the docs live inside `node_modules/<pkg>/<subdir>` and
+   * should be referenced in place rather than copied into `.ask/docs/`.
+   * Set by local-stage adapters (`local-ask`, `local-conventions`) when
+   * `installPath` is present.
+   */
+  inPlace?: true
 }
 
 /**

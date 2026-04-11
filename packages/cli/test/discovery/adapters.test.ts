@@ -71,6 +71,7 @@ describe('localAskAdapter', () => {
       expect(result!.docsPath).toBe('dist/docs')
       expect(result!.files.length).toBe(2)
       expect(result!.installPath).toBeDefined()
+      expect(result!.inPlace).toBe(true)
     }
   })
 
@@ -122,6 +123,7 @@ describe('localConventionsAdapter', () => {
     expect(result!.docsPath).toBe('dist/docs')
     expect(result!.adapter).toBe('local-conventions')
     expect(result!.files.length).toBe(3)
+    expect(result!.inPlace).toBe(true)
   })
 
   it('falls through to README.md when conventions have only noise', async () => {
@@ -145,6 +147,7 @@ describe('localConventionsAdapter', () => {
       throw new Error(`expected docs result, got ${result!.kind}`)
     }
     expect(result!.docsPath).toBe('README.md')
+    expect(result!.inPlace).toBe(true)
   })
 
   it('treats lowercase meta filenames as noise (case-insensitive filter)', async () => {

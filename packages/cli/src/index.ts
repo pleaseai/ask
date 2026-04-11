@@ -72,11 +72,16 @@ const installCmd = defineCommand({
       type: 'string',
       description: 'How to materialize store entries: copy (default), link (symlink), ref (no project-local files)',
     },
+    'no-in-place': {
+      type: 'boolean',
+      description: 'Force copy of discovery-detected npm docs into .ask/docs/ instead of referencing node_modules in place',
+    },
   },
   async run({ args }) {
     const emitSkill = args['emit-skill'] ? true : undefined
     const storeMode = parseStoreMode(args['store-mode'])
-    await runInstall(process.cwd(), { force: Boolean(args.force), emitSkill, storeMode })
+    const inPlace = args['no-in-place'] ? false : undefined
+    await runInstall(process.cwd(), { force: Boolean(args.force), emitSkill, storeMode, inPlace })
   },
 })
 
@@ -106,6 +111,10 @@ const addCmd = defineCommand({
     'store-mode': {
       type: 'string',
       description: 'How to materialize store entries: copy (default), link (symlink), ref (no project-local files)',
+    },
+    'no-in-place': {
+      type: 'boolean',
+      description: 'Force copy of discovery-detected npm docs into .ask/docs/ instead of referencing node_modules in place',
     },
   },
   async run({ args }) {
@@ -151,7 +160,8 @@ const addCmd = defineCommand({
 
     const emitSkill = args['emit-skill'] ? true : undefined
     const storeMode = parseStoreMode(args['store-mode'])
-    await runInstall(projectDir, { onlySpecs: [spec], emitSkill, storeMode })
+    const inPlace = args['no-in-place'] ? false : undefined
+    await runInstall(projectDir, { onlySpecs: [spec], emitSkill, storeMode, inPlace })
   },
 })
 

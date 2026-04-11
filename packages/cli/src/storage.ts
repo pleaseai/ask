@@ -198,6 +198,19 @@ export function listDocs(projectDir: string): ListDocsEntry[] {
       continue
     }
 
+    if (cached.materialization === 'in-place' && cached.inPlacePath) {
+      out.push({
+        name,
+        version: cached.resolvedVersion,
+        format: 'docs',
+        source: sourceKind,
+        spec: lib.spec,
+        location: cached.inPlacePath,
+        fileCount: cached.fileCount,
+      })
+      continue
+    }
+
     const docsDir = getLibraryDocsDir(projectDir, name, cached.resolvedVersion)
     const fileCount = fs.existsSync(docsDir) ? countFiles(docsDir) : cached.fileCount
     out.push({

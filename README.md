@@ -34,8 +34,8 @@ Each successful install:
 1. Resolves the version (lockfile for `npm:`, `ref` for `github:`)
 2. Looks up the library in the [ASK Registry](https://ask-registry.pages.dev) when applicable
 3. Downloads the library's documentation from the resolved source
-4. Saves it to `.ask/docs/<library>@<version>/`
-5. Creates a Claude Code skill in `.claude/skills/<library>-docs/SKILL.md`
+4. Saves it to `.ask/docs/<library>@<version>/` — or references `node_modules/<pkg>/<subdir>/` in place when the package ships its own docs (see [In-place npm docs](#in-place-npm-docs))
+5. Creates a Claude Code skill in `.claude/skills/<library>-docs/SKILL.md` (opt-in via `--emit-skill`)
 6. Generates/updates `AGENTS.md` with instructions for AI agents
 7. Records the resolution in `.ask/resolved.json` (gitignored cache for fast re-runs)
 
@@ -115,6 +115,32 @@ ask remove github:vercel/next.js
 `ask remove` deletes the matching entry from `ask.json`, removes the
 materialized files under `.ask/docs/<name>@*/`, removes the skill
 file, and updates the `AGENTS.md` block.
+
+## In-place npm docs
+
+When ASK's convention-based discovery finds documentation shipped inside an npm
+package (e.g. `node_modules/next/dist/docs/`), it **references the files in
+place** rather than copying them into `.ask/docs/`. This means:
+
+- **Zero disk duplication** — the same bytes are not stored twice.
+- **Automatic freshness** — `bun install` bumps the version, and the next
+  `ask install` picks up the new path immediately.
+- **AGENTS.md differentiates** — in-place entries say "shipped by the package —
+  `bun install` keeps them in sync" so agents know the lifecycle owner.
+
+To opt out and force the old copy behavior:
+
+```bash
+ask install --no-in-place       # Per-invocation CLI flag
+```
+
+or add to `ask.json`:
+
+```json
+{ "inPlace": false, "libraries": [...] }
+```
+
+Precedence: CLI flag > `ask.json` > default `true`.
 
 ## Registry
 

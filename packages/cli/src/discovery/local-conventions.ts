@@ -93,6 +93,7 @@ export const localConventionsAdapter: LocalDiscoveryAdapter = async (opts) => {
       installPath: local.meta?.installPath,
       docsPath: convention,
       quality: score,
+      inPlace: true,
     }
     return result
   }
@@ -119,6 +120,7 @@ export const localConventionsAdapter: LocalDiscoveryAdapter = async (opts) => {
         resolvedVersion: local.resolvedVersion,
         installPath: local.meta?.installPath,
         docsPath: 'README.md',
+        inPlace: true,
       }
       return result
     }

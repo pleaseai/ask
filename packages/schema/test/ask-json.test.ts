@@ -108,6 +108,83 @@ describe('AskJsonSchema', () => {
   it('rejects invalid storeMode value', () => {
     expect(() => AskJsonSchema.parse({ libraries: [], storeMode: 'invalid' })).toThrow()
   })
+
+  it('accepts inPlace: true at the top level', () => {
+    const result = AskJsonSchema.parse({ libraries: [], inPlace: true })
+    expect((result as { inPlace?: boolean }).inPlace).toBe(true)
+  })
+
+  it('accepts inPlace: false at the top level', () => {
+    const result = AskJsonSchema.parse({ libraries: [], inPlace: false })
+    expect((result as { inPlace?: boolean }).inPlace).toBe(false)
+  })
+
+  it('accepts absence of inPlace (optional field)', () => {
+    const result = AskJsonSchema.parse({ libraries: [] })
+    expect((result as { inPlace?: boolean }).inPlace).toBeUndefined()
+  })
+})
+
+describe('ResolvedEntrySchema — materialization & inPlacePath', () => {
+  const validHash = `sha256-${'a'.repeat(64)}`
+  const validIso = '2026-04-10T00:00:00+00:00'
+  const base = {
+    spec: 'npm:next',
+    resolvedVersion: '16.2.3',
+    contentHash: validHash,
+    fetchedAt: validIso,
+    fileCount: 42,
+  }
+
+  it('accepts materialization: copy', () => {
+    const result = ResolvedJsonSchema.parse({
+      schemaVersion: 1,
+      generatedAt: validIso,
+      entries: { next: { ...base, materialization: 'copy' } },
+    })
+    expect(result.entries.next!.materialization).toBe('copy')
+  })
+
+  it('accepts materialization: in-place with inPlacePath', () => {
+    const result = ResolvedJsonSchema.parse({
+      schemaVersion: 1,
+      generatedAt: validIso,
+      entries: {
+        next: {
+          ...base,
+          materialization: 'in-place',
+          inPlacePath: 'node_modules/next/dist/docs',
+        },
+      },
+    })
+    expect(result.entries.next!.materialization).toBe('in-place')
+    expect(result.entries.next!.inPlacePath).toBe('node_modules/next/dist/docs')
+  })
+
+  it('accepts absence of materialization (backward compat)', () => {
+    const result = ResolvedJsonSchema.parse({
+      schemaVersion: 1,
+      generatedAt: validIso,
+      entries: { next: base },
+    })
+    expect(result.entries.next!.materialization).toBeUndefined()
+  })
+
+  it('rejects invalid materialization value', () => {
+    expect(() => ResolvedJsonSchema.parse({
+      schemaVersion: 1,
+      generatedAt: validIso,
+      entries: { next: { ...base, materialization: 'symlink' } },
+    })).toThrow()
+  })
+
+  it('rejects materialization: in-place without inPlacePath', () => {
+    expect(() => ResolvedJsonSchema.parse({
+      schemaVersion: 1,
+      generatedAt: validIso,
+      entries: { next: { ...base, materialization: 'in-place' } },
+    })).toThrow(/inPlacePath is required when materialization is 'in-place'/)
+  })
 })
 
 describe('ResolvedJsonSchema', () => {

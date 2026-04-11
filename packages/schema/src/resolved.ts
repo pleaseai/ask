@@ -30,9 +30,23 @@ export const ResolvedEntrySchema = z.object({
   format: z.enum(['docs', 'intent-skills']).optional(),
   /** Absolute path to the finalized store entry (when global store is active). */
   storePath: z.string().optional(),
-  /** How the project-local `.ask/docs/<pkg>@<v>/` was materialized from the store. */
-  materialization: z.enum(['copy', 'link', 'ref']).optional(),
-}).strict()
+  /**
+   * How the docs were materialized:
+   *   - `copy` / `link` / `ref` — global store modes (from the store feature).
+   *   - `in-place` — referenced directly from `node_modules/<pkg>/<docsPath>`.
+   */
+  materialization: z.enum(['copy', 'link', 'ref', 'in-place']).optional(),
+  /** Project-relative path to docs when materialization is 'in-place' (e.g. node_modules/next/dist/docs). */
+  inPlacePath: z.string().optional(),
+}).strict().superRefine((val, ctx) => {
+  if (val.materialization === 'in-place' && !val.inPlacePath) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'inPlacePath is required when materialization is \'in-place\'',
+      path: ['inPlacePath'],
+    })
+  }
+})
 
 export type ResolvedEntry = z.infer<typeof ResolvedEntrySchema>
 

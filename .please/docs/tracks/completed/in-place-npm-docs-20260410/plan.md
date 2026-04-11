@@ -60,28 +60,28 @@ Three options considered:
 
 ## Tasks
 
-- [ ] T001 [P] Add `inPlace?: boolean` to `AskJsonSchema`; export inferred type (file: packages/schema/src/ask-json.ts)
-- [ ] T002 [P] Add `inPlacePath?: string` to `ResolvedEntrySchema` and extend `materialization` to include `'in-place'` (file: packages/schema/src/resolved.ts)
-- [ ] T003 Add schema tests for the new optional fields (file: packages/schema/test/*.test.ts) (depends on T001, T002)
-- [ ] T004 [P] Extend discovery result type with `inPlace?: true` marker (file: packages/cli/src/discovery/index.ts)
-- [ ] T005 Update `local-intent.ts` to set `inPlace: true` (file: packages/cli/src/discovery/local-intent.ts) (depends on T004)
-- [ ] T006 Update `local-conventions.ts` to set `inPlace: true` (file: packages/cli/src/discovery/local-conventions.ts) (depends on T004)
-- [ ] T007 Update `local-ask.ts` to set `inPlace: true` when the opt-in path resolves under `node_modules/` (file: packages/cli/src/discovery/local-ask.ts) (depends on T004)
-- [ ] T008 Add discovery tests asserting `inPlace: true` on local-adapter results (file: packages/cli/test/discovery/*.test.ts) (depends on T005, T006, T007)
-- [ ] T009 Resolve `inPlace` precedence (CLI > ask.json > true) once per `runInstall` and thread into `installOne` (file: packages/cli/src/install.ts) (depends on T001)
-- [ ] T010 In `installOne`, branch on `discoveryResult.inPlace && resolvedInPlace`: remove any prior vendored docs for the library (e.g. `.ask/docs/<pkg>@*`), skip `saveDocs`, call `generateSkill({ docsDir: <project-rel path> })`, upsert resolved cache with `materialization: 'in-place'` and `inPlacePath` (file: packages/cli/src/install.ts) (depends on T002, T004, T009)
-- [ ] T011 Update `agents.ts:generateAgentsMd` to read `materialization` from resolved entries and emit a differentiated AGENTS.md block for `'in-place'` with "shipped by the package" wording (file: packages/cli/src/agents.ts) (depends on T002, T010)
-- [ ] T012 Add `--no-in-place` boolean flag to `installCmd` and `addCmd` and pass through to `runInstall` options (file: packages/cli/src/index.ts) (depends on T009)
-- [ ] T013 Integration test SC-1: in-place install does NOT create `.ask/docs/next@<v>/`, AGENTS.md points at `node_modules/next/dist/docs/` (file: packages/cli/test/install.in-place.test.ts) (depends on T010, T011)
-- [ ] T014 Integration test SC-2: AGENTS.md block for in-place entries contains the "shipped by the package" / "bun install keeps them in sync" wording (file: packages/cli/test/agents.in-place.test.ts) (depends on T011)
-- [ ] T015 Integration test SC-3: version bump in `node_modules` → second `ask install` updates resolved version and AGENTS.md without stale `.ask/docs/<old>/` leftovers (file: packages/cli/test/install.in-place.test.ts) (depends on T010)
-- [ ] T016 Integration test SC-4: npm package without shipped docs (`lodash` fixture) falls through to the tarball/copy path unchanged (file: packages/cli/test/install.in-place.test.ts) (depends on T010)
-- [ ] T017 Integration test SC-5/SC-6: `--no-in-place` flag and `ask.json` `inPlace: false` force the copy path for a normally-in-place package (file: packages/cli/test/install.in-place.test.ts) (depends on T012)
-- [ ] T018 Integration test SC-7: `ask remove npm:next` on an in-place entry removes the resolved entry + AGENTS.md block without touching `node_modules/next/` (file: packages/cli/test/install.in-place.test.ts) (depends on T010, T011)
-- [ ] T019 Integration test SC-8: pre-existing `.ask/docs/next@<old-v>/` from a prior copy install is removed on the first in-place install (file: packages/cli/test/install.in-place.test.ts) (depends on T010)
-- [ ] T020 Update CHANGELOG under unreleased `@pleaseai/ask` with the in-place default, the `--no-in-place` flag, and `ask.json` `inPlace` field (file: packages/cli/CHANGELOG.md) (depends on T010, T011, T012)
-- [ ] T021 Update root README with a short "In-place npm docs" paragraph under Architecture explaining the default behavior + opt-out (file: README.md) (depends on T020)
-- [ ] T022 Run `bun run build && bun test` across all workspaces; manually verify `example/` produces the in-place AGENTS.md pointing at `node_modules/next/dist/docs/` (depends on T013–T019)
+- [x] T001 [P] Add `inPlace?: boolean` to `AskJsonSchema`; export inferred type (file: packages/schema/src/ask-json.ts)
+- [x] T002 [P] Add `inPlacePath?: string` to `ResolvedEntrySchema` and extend `materialization` to include `'in-place'` (file: packages/schema/src/resolved.ts)
+- [x] T003 Add schema tests for the new optional fields (file: packages/schema/test/*.test.ts) (depends on T001, T002)
+- [x] T004 [P] Extend discovery result type with `inPlace?: true` marker (file: packages/cli/src/discovery/index.ts)
+- [x] T005 Update `local-intent.ts` to set `inPlace: true` (file: packages/cli/src/discovery/local-intent.ts) (depends on T004)
+- [x] T006 Update `local-conventions.ts` to set `inPlace: true` (file: packages/cli/src/discovery/local-conventions.ts) (depends on T004)
+- [x] T007 Update `local-ask.ts` to set `inPlace: true` when the opt-in path resolves under `node_modules/` (file: packages/cli/src/discovery/local-ask.ts) (depends on T004)
+- [x] T008 Add discovery tests asserting `inPlace: true` on local-adapter results (file: packages/cli/test/discovery/*.test.ts) (depends on T005, T006, T007)
+- [x] T009 Resolve `inPlace` precedence (CLI > ask.json > true) once per `runInstall` and thread into `installOne` (file: packages/cli/src/install.ts) (depends on T001)
+- [x] T010 In `installOne`, branch on `discoveryResult.inPlace && resolvedInPlace`: remove any prior vendored docs for the library (e.g. `.ask/docs/<pkg>@*`), skip `saveDocs`, call `generateSkill({ docsDir: <project-rel path> })`, upsert resolved cache with `materialization: 'in-place'` and `inPlacePath` (file: packages/cli/src/install.ts) (depends on T002, T004, T009)
+- [x] T011 Update `agents.ts:generateAgentsMd` to read `materialization` from resolved entries and emit a differentiated AGENTS.md block for `'in-place'` with "shipped by the package" wording (file: packages/cli/src/agents.ts) (depends on T002, T010)
+- [x] T012 Add `--no-in-place` boolean flag to `installCmd` and `addCmd` and pass through to `runInstall` options (file: packages/cli/src/index.ts) (depends on T009)
+- [x] T013 Integration test SC-1: in-place install does NOT create `.ask/docs/next@<v>/`, AGENTS.md points at `node_modules/next/dist/docs/` (file: packages/cli/test/install.in-place.test.ts) (depends on T010, T011)
+- [x] T014 Integration test SC-2: AGENTS.md block for in-place entries contains the "shipped by the package" / "bun install keeps them in sync" wording (file: packages/cli/test/agents.in-place.test.ts) (depends on T011)
+- [x] T015 Integration test SC-3: version bump in `node_modules` → second `ask install` updates resolved version and AGENTS.md without stale `.ask/docs/<old>/` leftovers (file: packages/cli/test/install.in-place.test.ts) (depends on T010)
+- [x] T016 Integration test SC-4: npm package without shipped docs (`lodash` fixture) falls through to the tarball/copy path unchanged (file: packages/cli/test/install.in-place.test.ts) (depends on T010)
+- [x] T017 Integration test SC-5/SC-6: `--no-in-place` flag and `ask.json` `inPlace: false` force the copy path for a normally-in-place package (file: packages/cli/test/install.in-place.test.ts) (depends on T012)
+- [x] T018 Integration test SC-7: `ask remove npm:next` on an in-place entry removes the resolved entry + AGENTS.md block without touching `node_modules/next/` (file: packages/cli/test/install.in-place.test.ts) (depends on T010, T011)
+- [x] T019 Integration test SC-8: pre-existing `.ask/docs/next@<old-v>/` from a prior copy install is removed on the first in-place install (file: packages/cli/test/install.in-place.test.ts) (depends on T010)
+- [x] T020 Update CHANGELOG under unreleased `@pleaseai/ask` with the in-place default, the `--no-in-place` flag, and `ask.json` `inPlace` field (file: packages/cli/CHANGELOG.md) (depends on T010, T011, T012)
+- [x] T021 Update root README with a short "In-place npm docs" paragraph under Architecture explaining the default behavior + opt-out (file: README.md) (depends on T020)
+- [x] T022 Run `bun run build && bun test` across all workspaces; manually verify `example/` produces the in-place AGENTS.md pointing at `node_modules/next/dist/docs/` (depends on T013–T019)
 
 ## Dependencies
 
@@ -133,4 +133,27 @@ T013–T019 ── T022
 
 ## Surprises & Discoveries
 
-- (empty — to be populated during implementation)
+- JSDoc comment containing `.ask/docs/<name>@*/` caused a build failure — the `*/` terminated the comment block prematurely. Fixed by rewriting as `<name>@<ver>/`.
+- `NpmSource.fetch` hardcodes `process.cwd()` as the project dir, making it impossible to test the non-in-place npm copy path with a fake project in tmpdir. SC-5/SC-6 tests verify bypass semantics only; the actual copy path is covered by existing tests.
+- The `local-ask` adapter only sets `inPlace: true` when `installPath` is present (conditional), while `local-conventions` always sets it since it always reads from `node_modules/`.
+
+## Outcomes & Retrospective
+
+### What Was Shipped
+- In-place npm docs: discovery-detected npm docs are referenced from `node_modules/` instead of copied
+- `--no-in-place` CLI flag and `ask.json` `inPlace: false` opt-out
+- Differentiated AGENTS.md wording for in-place vs vendored entries
+- `materialization` and `inPlacePath` fields on resolved cache entries
+- 10 new tests (SC-1 through SC-8)
+
+### What Went Well
+- The `generateSkill` helper already had `docsDir` support — half the plumbing was done
+- The discovery result type change was minimal (`inPlace?: true` marker)
+- Clean separation: discovery tags, install branches, agents differentiates
+
+### What Could Improve
+- `NpmSource.fetch` coupling to `process.cwd()` limits testability for the copy path in isolation
+- SC-5/SC-6 tests are weaker than ideal (bypass-only, not end-to-end copy verification)
+
+### Tech Debt Created
+- None significant
