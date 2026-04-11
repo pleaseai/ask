@@ -1,3 +1,4 @@
+import path from 'node:path'
 import { z } from 'zod'
 
 /**
@@ -12,6 +13,8 @@ import { z } from 'zod'
  * The shape is forward-extensible — adding new ecosystems in follow-up
  * tracks does not require breaking the v1 `ask.json` shape (NFR-4).
  */
+const RE_DOCS_PATH_TRAVERSAL = /(?:^|[\\/])\.\.(?:[\\/]|$)/
+
 const SpecField = z.string().min(1).regex(
   /^[a-z][a-z0-9+-]*:.+$/,
   'spec must start with an ecosystem prefix (e.g. "npm:next", "github:owner/repo")',
@@ -77,7 +80,12 @@ const PmDrivenLibraryEntry = z.object({
     s => !s.startsWith('github:'),
     'github: specs must include a `ref` field (standalone entries)',
   ),
-  docsPath: z.string().optional(),
+  docsPath: z.string()
+    .refine(
+      p => !path.isAbsolute(p) && !RE_DOCS_PATH_TRAVERSAL.test(p),
+      'docsPath must be a relative path without traversal segments',
+    )
+    .optional(),
 }).strict()
 
 /**
@@ -89,7 +97,12 @@ function buildStandaloneGithubLibraryEntry(strictRefs: boolean): z.ZodTypeAny {
   return z.object({
     spec: SpecField.regex(RE_GITHUB_PREFIX, 'standalone entries must use github: prefix'),
     ref: strictRefs ? StrictGitRefField : GitRefField,
-    docsPath: z.string().optional(),
+    docsPath: z.string()
+      .refine(
+        p => !path.isAbsolute(p) && !RE_DOCS_PATH_TRAVERSAL.test(p),
+        'docsPath must be a relative path without traversal segments',
+      )
+      .optional(),
   }).strict()
 }
 

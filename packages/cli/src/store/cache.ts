@@ -162,7 +162,11 @@ function safeIsDirectory(p: string): boolean {
   try {
     return fs.statSync(p).isDirectory()
   }
-  catch {
+  catch (err) {
+    const code = (err as NodeJS.ErrnoException).code
+    if (code !== 'ENOENT') {
+      consola.warn(`  Could not stat ${p}: ${err instanceof Error ? err.message : err}`)
+    }
     return false
   }
 }
@@ -233,8 +237,10 @@ export function cacheGc(
           continue
         }
       }
-      catch {
-        // Cannot stat → assume stale, fall through to removal
+      catch (err) {
+        consola.warn(`  Could not stat ${entry.path}: ${err instanceof Error ? err.message : err}. Keeping entry to avoid accidental removal.`)
+        kept.push(entry)
+        continue
       }
     }
     if (!dryRun) {
@@ -302,8 +308,8 @@ function findResolvedJsonFiles(
         }
       }
     }
-    catch {
-      // malformed resolved.json, skip
+    catch (err) {
+      consola.warn(`  Malformed ${resolvedPath}: ${err instanceof Error ? err.message : err}. Skipping — referenced entries in this project may be GC'd.`)
     }
   }
 
@@ -327,8 +333,12 @@ function findResolvedJsonFiles(
       )
     }
   }
-  catch {
-    // permission denied, etc
+  catch (err) {
+    const code = (err as NodeJS.ErrnoException).code
+    if (code !== 'ENOENT' && code !== 'EACCES') {
+      consola.warn(`  Could not walk ${dir}: ${err instanceof Error ? err.message : err}`)
+    }
+    // EACCES is common on system dirs during scan — stay quiet on those to avoid noise.
   }
 }
 
@@ -346,8 +356,11 @@ function dirSize(dir: string): number {
       }
     }
   }
-  catch {
-    // permission denied, etc
+  catch (err) {
+    const code = (err as NodeJS.ErrnoException).code
+    if (code !== 'ENOENT') {
+      consola.warn(`  Could not measure ${dir}: ${err instanceof Error ? err.message : err}`)
+    }
   }
   return size
 }
@@ -356,7 +369,11 @@ function safeReaddir(dir: string): string[] {
   try {
     return fs.readdirSync(dir)
   }
-  catch {
+  catch (err) {
+    const code = (err as NodeJS.ErrnoException).code
+    if (code !== 'ENOENT') {
+      consola.warn(`  Could not read ${dir}: ${err instanceof Error ? err.message : err}`)
+    }
     return []
   }
 }

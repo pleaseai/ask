@@ -324,6 +324,12 @@ export class GithubSource implements DocSource {
     }
 
     const docsDir = path.join(extractedDir, targetPath)
+    const resolvedBase = path.resolve(extractedDir)
+    const resolvedDocs = path.resolve(docsDir)
+    const rel = path.relative(resolvedBase, resolvedDocs)
+    if (rel.startsWith('..') || path.isAbsolute(rel)) {
+      throw new Error(`Unsafe docsPath '${targetPath}': must be a relative path within the repository`)
+    }
     if (!fs.existsSync(docsDir)) {
       throw new Error(`Path "${targetPath}" not found in ${repo}@${ref}`)
     }
