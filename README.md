@@ -116,6 +116,69 @@ ask remove github:vercel/next.js
 materialized files under `.ask/docs/<name>@*/`, removes the skill
 file, and updates the `AGENTS.md` block.
 
+### Lazy commands for ad-hoc exploration
+
+`ask install` is the eager, declarative path: every library you care about
+goes in `ask.json` and gets materialized into `.ask/docs/`. For libraries
+that are **not** declared — a transitive dependency you bumped into mid-task,
+an upstream you want to grep, a framework you're exploring — use the lazy
+commands:
+
+```bash
+ask src <spec>     # Print the absolute path to a cached library source tree
+ask docs <spec>    # Print all candidate documentation paths from node_modules + the cached source
+```
+
+Both commands fetch on cache miss (first run) and short-circuit on cache
+hit. They share the same `~/.ask/github/checkouts/` store that `ask install`
+writes to — so a library you have already installed via the eager path is
+instantly available via the lazy path with zero duplication.
+
+```bash
+# Print the absolute path to React's source tree (fetches on first run)
+ask src react
+
+# Grep across the full React source via shell substitution
+rg "useState" $(ask src react)
+
+# Print all docs candidates for vue — one path per line, agent picks
+ask docs vue
+
+# Search across every monorepo docs/ directory at once
+rg "defineComponent" $(ask docs vue)
+
+# CI guard: exit 1 if the cache is empty
+ask src react --no-fetch
+```
+
+**Spec syntax** — same `npm:`/`github:`/ecosystem-prefixed format as
+`ask add`, plus an optional trailing `@version`:
+
+```bash
+ask src react                              # latest from npm registry
+ask src react@18.2.0                       # explicit version
+ask src @vercel/ai@5.0.0                   # scoped npm name + version
+ask src github:facebook/react              # github default branch
+ask src github:facebook/react@v18.2.0      # github tag
+ask src pypi:requests                      # cross-ecosystem
+```
+
+**Version resolution priority** for npm specs without an explicit
+`@version`: project lockfile → resolver "latest". Explicit `@version`
+always wins.
+
+**Registry-free** — neither command consults the curated ASK Registry; both
+go straight to upstream package metadata. This is a deliberate departure
+from `ask install`/`ask add`: eager mode trusts curation, lazy mode trusts
+convention plus agent intelligence.
+
+`ask docs` walks `node_modules/<pkg>/` only for npm-ecosystem specs (not
+for `github:`/`pypi:`/etc.), and surfaces every subdirectory whose name
+matches `/doc/i` up to depth 4, skipping `node_modules`, `.git`, `.next`,
+`.nuxt`, `dist`, `build`, `coverage`, and dotdirs. The source root is
+always emitted as the first line so the agent can fall back to it when no
+`docs/` directory exists.
+
 ## In-place npm docs
 
 When ASK's convention-based discovery finds documentation shipped inside an npm

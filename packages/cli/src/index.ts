@@ -8,6 +8,8 @@ import { defineCommand } from 'citty'
 import { consola } from 'consola'
 import { removeFromIntentSkillsBlock } from './agents-intent.js'
 import { generateAgentsMd } from './agents.js'
+import { docsCmd } from './commands/docs.js'
+import { srcCmd } from './commands/src.js'
 import { manageIgnoreFiles } from './ignore-files.js'
 import { dropResolvedEntry, runInstall } from './install.js'
 import { readAskJson, writeAskJson } from './io.js'
@@ -376,6 +378,8 @@ export const main = defineCommand({
     add: addCmd,
     remove: removeCmd,
     list: listCmd,
+    src: srcCmd,
+    docs: docsCmd,
     cache: cacheCmd,
   },
 })
