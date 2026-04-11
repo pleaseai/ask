@@ -160,6 +160,40 @@ describe('GithubSource — nested store layout', () => {
     expect(result.storePath).toContain('3.0.0')
   })
 
+  it('tag fallback: v-prefixed input does NOT emit vv-prefixed candidate', async () => {
+    // Invariant: if the caller supplies a v-prefixed ref, cloneAtTag
+    // must only try `<ref>` — never `v<ref>` (which would produce
+    // `vv1.2.3`). This test locks the guard at sources/github.ts
+    // `if (ref.startsWith('v')) return [ref]`.
+    const remoteUrl = createLocalRemote()
+    const source = new GithubSource()
+
+    // `v9.9.9` does not exist on the local remote (only v1.0.0, v2.0.0,
+    // and bare 3.0.0). The clone must fail, and the thrown error's
+    // "tried:" list must contain only `v9.9.9` — never `vv9.9.9`.
+    let capturedError: Error | null = null
+    try {
+      await source.fetch({
+        source: 'github',
+        name: 'test-repo',
+        version: '9.9.9',
+        repo: 'test/repo',
+        tag: 'v9.9.9',
+        docsPath: 'docs',
+        remoteUrl,
+      } as any)
+    }
+    catch (err) {
+      capturedError = err as Error
+    }
+
+    expect(capturedError).not.toBeNull()
+    const message = capturedError!.message
+    expect(message).toContain('v9.9.9')
+    // The negative invariant: vv-prefixed candidate must never appear
+    expect(message).not.toContain('vv9.9.9')
+  })
+
   it('tag fallback: "1.0.0" falls back to "v1.0.0" when unprefixed tag missing', async () => {
     const remoteUrl = createLocalRemote()
     const source = new GithubSource()

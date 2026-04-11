@@ -9,6 +9,7 @@ import {
   githubStorePath,
   llmsTxtStorePath,
   npmStorePath,
+  quarantineEntry,
   resolveAskHome,
   stampEntry,
   verifyEntry,
@@ -232,5 +233,63 @@ describe('stampEntry / verifyEntry', () => {
     fs.writeFileSync(path.join(entryDir, 'doc.md'), '# Hello', 'utf-8')
 
     expect(verifyEntry(entryDir)).toBe(false)
+  })
+})
+
+describe('quarantineEntry', () => {
+  it('moves a corrupted entry to <askHome>/.quarantine/<ts>-<uuid>/', () => {
+    const askHome = path.join(tmpDir, 'ask-home')
+    const storeDir = path.join(askHome, 'npm', 'pkg@1.0.0')
+    fs.mkdirSync(storeDir, { recursive: true })
+    fs.writeFileSync(path.join(storeDir, 'README.md'), '# Tampered', 'utf-8')
+
+    quarantineEntry(askHome, storeDir)
+
+    // Original entry is gone
+    expect(fs.existsSync(storeDir)).toBe(false)
+
+    // Quarantine directory exists and preserves the tampered file for
+    // forensic inspection (quarantine, not delete).
+    const quarantineRoot = path.join(askHome, '.quarantine')
+    expect(fs.existsSync(quarantineRoot)).toBe(true)
+    const quarantineEntries = fs.readdirSync(quarantineRoot)
+    expect(quarantineEntries).toHaveLength(1)
+
+    // Name shape: <iso-timestamp-with-dashes>-<8-hex>
+    const quarantineName = quarantineEntries[0]!
+    expect(quarantineName).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}-\d{3}Z-[0-9a-f]{8}$/)
+
+    // Contents preserved inside the quarantined directory
+    const movedFile = path.join(quarantineRoot, quarantineName, 'README.md')
+    expect(fs.existsSync(movedFile)).toBe(true)
+    expect(fs.readFileSync(movedFile, 'utf-8')).toBe('# Tampered')
+  })
+
+  it('creates .quarantine/ lazily on first call', () => {
+    const askHome = path.join(tmpDir, 'ask-home')
+    const storeDir = path.join(askHome, 'npm', 'pkg@1.0.0')
+    fs.mkdirSync(storeDir, { recursive: true })
+
+    // .quarantine/ does not exist beforehand
+    expect(fs.existsSync(path.join(askHome, '.quarantine'))).toBe(false)
+
+    quarantineEntry(askHome, storeDir)
+
+    expect(fs.existsSync(path.join(askHome, '.quarantine'))).toBe(true)
+  })
+
+  it('produces distinct quarantine dirs for successive calls', () => {
+    const askHome = path.join(tmpDir, 'ask-home')
+    const storeDirA = path.join(askHome, 'npm', 'a@1.0.0')
+    const storeDirB = path.join(askHome, 'npm', 'b@1.0.0')
+    fs.mkdirSync(storeDirA, { recursive: true })
+    fs.mkdirSync(storeDirB, { recursive: true })
+
+    quarantineEntry(askHome, storeDirA)
+    quarantineEntry(askHome, storeDirB)
+
+    const entries = fs.readdirSync(path.join(askHome, '.quarantine'))
+    expect(entries).toHaveLength(2)
+    expect(new Set(entries).size).toBe(2)
   })
 })
