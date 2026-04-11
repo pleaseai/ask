@@ -318,6 +318,7 @@ async function installOne(
   saveDocs(projectDir, libName, result.resolvedVersion, result.files, {
     storeMode: effectiveMode,
     storePath: result.storePath,
+    storeSubpath: result.storeSubpath,
   })
   if (emitSkill) {
     generateSkill(
@@ -336,6 +337,7 @@ async function installOne(
     fileCount: result.files.length,
     format: 'docs',
     storePath: result.storePath,
+    storeSubpath: result.storeSubpath,
     materialization: effectiveMode,
     // Propagate the github commit SHA (captured via git rev-parse HEAD
     // in the github source). For npm/web/llms-txt `meta.commit` is

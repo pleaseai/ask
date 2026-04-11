@@ -45,3 +45,72 @@ describe('storage paths', () => {
     expect(fs.existsSync(path.join(docsDir, 'new.md'))).toBe(true)
   })
 })
+
+describe('saveDocs — storeSubpath wiring (T007)', () => {
+  it('ref mode with storeSubpath returns path.join(storePath, storeSubpath)', () => {
+    const storePath = path.join(tmpDir, 'store', 'github.com', 'facebook', 'react', 'v18.0.0')
+    fs.mkdirSync(path.join(storePath, 'docs'), { recursive: true })
+    fs.writeFileSync(path.join(storePath, 'docs', 'guide.md'), '# Guide')
+
+    const result = saveDocs(tmpDir, 'react', '18.0.0', [], {
+      storeMode: 'ref',
+      storePath,
+      storeSubpath: 'docs',
+    })
+
+    expect(result).toBe(path.join(storePath, 'docs'))
+  })
+
+  it('ref mode without storeSubpath returns storePath unchanged', () => {
+    const storePath = path.join(tmpDir, 'store', 'npm', 'zod@3.22.4')
+    fs.mkdirSync(storePath, { recursive: true })
+    const result = saveDocs(tmpDir, 'zod', '3.22.4', [], {
+      storeMode: 'ref',
+      storePath,
+    })
+    expect(result).toBe(storePath)
+  })
+
+  it('link mode with storeSubpath points symlink at the docs subdirectory', () => {
+    const storePath = path.join(tmpDir, 'store', 'github.com', 'facebook', 'react', 'v18.0.0')
+    fs.mkdirSync(path.join(storePath, 'docs'), { recursive: true })
+    fs.writeFileSync(path.join(storePath, 'docs', 'README.md'), '# Docs')
+
+    const result = saveDocs(tmpDir, 'react', '18.0.0', [], {
+      storeMode: 'link',
+      storePath,
+      storeSubpath: 'docs',
+    })
+
+    // Result may be the project-local docsDir (link) or a copy fallback.
+    const linkStat = fs.lstatSync(result)
+    if (linkStat.isSymbolicLink()) {
+      const target = fs.readlinkSync(result)
+      expect(target).toBe(path.join(storePath, 'docs'))
+    }
+    else {
+      // Copy fallback (EPERM on some systems) — at least verify the
+      // docs subdirectory content is present.
+      expect(fs.existsSync(path.join(result, 'README.md'))).toBe(true)
+    }
+  })
+
+  it('link mode without storeSubpath points symlink at storePath (npm behavior)', () => {
+    const storePath = path.join(tmpDir, 'store', 'npm', 'zod@3.22.4')
+    fs.mkdirSync(storePath, { recursive: true })
+    fs.writeFileSync(path.join(storePath, 'README.md'), '# Zod')
+
+    const result = saveDocs(tmpDir, 'zod', '3.22.4', [], {
+      storeMode: 'link',
+      storePath,
+    })
+
+    const linkStat = fs.lstatSync(result)
+    if (linkStat.isSymbolicLink()) {
+      expect(fs.readlinkSync(result)).toBe(storePath)
+    }
+    else {
+      expect(fs.existsSync(path.join(result, 'README.md'))).toBe(true)
+    }
+  })
+})

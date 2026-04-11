@@ -56,6 +56,14 @@ export const ResolvedEntrySchema = z.object({
    * Omitted for npm/web/llms-txt entries.
    */
   commit: GitCommitShaField.optional(),
+  /**
+   * Relative subpath inside `storePath` that holds the docs tree.
+   * Populated from `FetchResult.storeSubpath`. Used at AGENTS.md
+   * generation and in link/ref materialization so the target path
+   * points at the docs subdirectory, not the repo root. Empty string
+   * or undefined means "use storePath as-is".
+   */
+  storeSubpath: z.string().optional(),
 }).strict().superRefine((val, ctx) => {
   if (val.materialization === 'in-place' && !val.inPlacePath) {
     ctx.addIssue({

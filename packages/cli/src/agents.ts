@@ -57,10 +57,12 @@ export function generateAgentsMd(projectDir: string): string {
 - Documentation: \`${docsRelPath}/\``
     }
 
-    // For ref mode, use the storePath directly instead of project-local path.
-    // copy/link modes fall through to the project-local path.
+    // For ref mode, use the storePath (joined with storeSubpath when
+    // the docs live in a subdirectory of the store entry, e.g. github
+    // entries with a docsPath). copy/link modes fall through to the
+    // project-local path.
     const docsRelPath = entry?.materialization === 'ref' && entry.storePath
-      ? entry.storePath
+      ? (entry.storeSubpath ? path.join(entry.storePath, entry.storeSubpath) : entry.storePath)
       : path.relative(projectDir, getLibraryDocsDir(projectDir, name, version))
 
     const major = version.split('.')[0]
