@@ -1,0 +1,31 @@
+packages/cli/test/commands/ensure-checkout.test.ts
+  74a2e7a6401ed388 95-101
+packages/cli/src/commands/ensure-checkout.ts
+  74a2e7a6401ed388 68-71,79-80,87-90
+.please/docs/tracks/completed/lazy-ask-src-docs-20260411/spec.md
+  74a2e7a6401ed388 35,40
+packages/cli/src/agents.ts
+  74a2e7a6401ed388 24
+packages/cli/test/agents-search-block.test.ts
+  74a2e7a6401ed388 74
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "a182829e55de66b065d1835decc9ba36dc600bab",
+  "prompts": {
+    "74a2e7a6401ed388": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d319e5fd-e178-4adb-9d0b-ec62e3fe1a92",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 24,
+      "total_deletions": 14,
+      "accepted_lines": 400,
+      "overriden_lines": 0
+    }
+  }
+}
