@@ -263,4 +263,93 @@ describe('GithubSource — nested store layout', () => {
       tag: 'v1.0.0',
     } as any)).rejects.toThrow()
   })
+
+  it('concurrent install of two different tags of the same repo both succeed (SC-2)', async () => {
+    const remoteUrl = createLocalRemote()
+    const source = new GithubSource()
+
+    // Fire both fetches in parallel. Both should land in distinct
+    // store directories with no lock contention, FETCH_HEAD race, or
+    // owner__repo collision because each entry is an independent
+    // shallow clone into its own nested path.
+    const [first, second] = await Promise.all([
+      source.fetch({
+        source: 'github',
+        name: 'test-repo',
+        version: '1.0.0',
+        repo: 'test/repo',
+        tag: 'v1.0.0',
+        docsPath: 'docs',
+        remoteUrl,
+      } as any),
+      source.fetch({
+        source: 'test-repo',
+        name: 'test-repo',
+        version: '2.0.0',
+        repo: 'test/repo',
+        tag: 'v2.0.0',
+        docsPath: 'docs',
+        remoteUrl,
+      } as any),
+    ])
+
+    // Separate directories, neither corrupts the other
+    expect(first.storePath).not.toBe(second.storePath)
+    expect(first.storePath).toContain('v1.0.0')
+    expect(second.storePath).toContain('v2.0.0')
+
+    // Content is correctly versioned
+    expect(fs.readFileSync(path.join(first.storePath!, 'docs', 'guide.md'), 'utf-8'))
+      .toBe('# Guide v1\n')
+    expect(fs.readFileSync(path.join(second.storePath!, 'docs', 'guide.md'), 'utf-8'))
+      .toBe('# Guide v2\n')
+
+    // Both stamps are valid
+    expect(verifyEntry(first.storePath!)).toBe(true)
+    expect(verifyEntry(second.storePath!)).toBe(true)
+  })
+})
+
+/**
+ * A3 — `.git/` dependency audit: after the shallow clone strips
+ * `.git/`, the only consumer of `.git/` metadata inside the CLI
+ * source should be `sources/github.ts` itself (it reads `rev-parse
+ * HEAD` inside a temp clone dir before removing .git/). A runtime
+ * assertion is too brittle because several unrelated files
+ * legitimately contain the substring ".git" (ignore files, repo URL
+ * parsers, inline examples in comments). This smoke test documents
+ * the audit strategy: run `rg '\.git/'` manually before merging and
+ * confirm each hit is either the github source itself, a string in
+ * a comment, or a read-only parser for external URLs. The shallow
+ * clone strip is covered by the "strips the .git/ directory after
+ * clone" test earlier in this file.
+ */
+describe('.git/ dependency audit (A3)', () => {
+  it('shallow-clone store entries are post-clone .git-free', async () => {
+    // The strongest runtime check: any store entry materialized via
+    // the github source contains no `.git/` anywhere in the tree.
+    const remoteUrl = createLocalRemote()
+    const source = new GithubSource()
+    const result = await source.fetch({
+      source: 'github',
+      name: 'test-repo',
+      version: '1.0.0',
+      repo: 'test/repo',
+      tag: 'v1.0.0',
+      docsPath: 'docs',
+      remoteUrl,
+    } as any)
+
+    // Walk the store entry recursively and assert no .git/ directory
+    function hasGitDir(dir: string): boolean {
+      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        if (entry.name === '.git')
+          return true
+        if (entry.isDirectory() && hasGitDir(path.join(dir, entry.name)))
+          return true
+      }
+      return false
+    }
+    expect(hasGitDir(result.storePath!)).toBe(false)
+  })
 })
