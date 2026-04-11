@@ -1,0 +1,38 @@
+.please/docs/tracks/active/github-store-pm-unified-20260411/metadata.json
+  25617ee857940675 4
+.please/docs/tracks.jsonl
+  25617ee857940675 20
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "b9a8448814250003e7644f71534fbf336e6ad411",
+  "prompts": {
+    "25617ee857940675": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "bdc50ebe-3a8e-4624-adb8-451ba7c54e11",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 2,
+      "total_deletions": 2,
+      "accepted_lines": 2,
+      "overriden_lines": 0
+    },
+    "d6cf5587ddaac39a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b4118b28-ab27-4508-b350-cc452b23b66c",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 1,
+      "overriden_lines": 0
+    }
+  }
+}
