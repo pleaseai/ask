@@ -143,6 +143,9 @@ T020–T026 ─ T028
 
 - Spec drafted
 - Plan drafted
+- All 28 tasks implemented (2026-04-10)
+- Code review completed: 7 Critical + 12 Important issues identified
+- (2026-04-11 09:50 KST) Review fixes applied (SHA: `0826f9f`) — security hardening, store layout fix, missing tests added, spec compliance SC-2/SC-7
 
 ## Decision Log
 
