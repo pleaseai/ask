@@ -1,0 +1,51 @@
+README.md
+  d8ac658346ec948d 37-38,119-144
+packages/cli/src/agents.ts
+  d8ac658346ec948d 3,15-16,18-19,25-36
+packages/cli/src/install.ts
+  d8ac658346ec948d 1,9,27,43,49-53,98-101,155,207-227,339-409
+packages/cli/src/discovery/local-conventions.ts
+  d8ac658346ec948d 96,123
+packages/schema/src/ask-json.ts
+  d8ac658346ec948d 76
+packages/cli/test/agents.in-place.test.ts
+  d8ac658346ec948d 1-115
+packages/cli/test/install/install.in-place.test.ts
+  d8ac658346ec948d 1-115,121,124-128,130-258
+packages/cli/src/discovery/types.ts
+  d8ac658346ec948d 36-42
+packages/cli/src/discovery/local-ask.ts
+  d8ac658346ec948d 65
+packages/cli/src/index.ts
+  d8ac658346ec948d 75-78,83,115-118,163
+packages/cli/CHANGELOG.md
+  d8ac658346ec948d 5-6,20-23,25
+packages/cli/src/storage.ts
+  d8ac658346ec948d 201-213
+packages/cli/test/discovery/adapters.test.ts
+  d8ac658346ec948d 74,126,150
+packages/schema/src/resolved.ts
+  d8ac658346ec948d 39-40
+packages/schema/test/ask-json.test.ts
+  d8ac658346ec948d 87,112-179
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "dde1219637d1f651ead450edc3908829166d0e34",
+  "prompts": {
+    "d8ac658346ec948d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d2f55bab-2ca8-49b7-a46a-490c69f01afe",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 801,
+      "total_deletions": 160,
+      "accepted_lines": 623,
+      "overriden_lines": 0
+    }
+  }
+}

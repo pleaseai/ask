@@ -1,0 +1,24 @@
+packages/cli/test/install/install.in-place.test.ts
+  d8ac658346ec948d 1-115,124,127-131,133-261
+  43825cac658f59bd 116-123,125-126,132
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "da010cd0a8f212fe562c2faa60e89cdb2e74917c",
+  "prompts": {
+    "43825cac658f59bd": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3763b098-c2c1-4cba-9fbf-9d56e981202b",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 11,
+      "total_deletions": 8,
+      "accepted_lines": 11,
+      "overriden_lines": 0
+    }
+  }
+}
