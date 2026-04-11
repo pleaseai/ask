@@ -1,0 +1,40 @@
+packages/schema/test/ask-json.test.ts
+  25617ee857940675 4-5,51-139
+packages/schema/src/ask-json.ts
+  25617ee857940675 26-66,83-94,102-105,107,120-121,127-131,136-161
+packages/cli/test/cli/commands.test.ts
+  25617ee857940675 76,83
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "1c1eab58320622d1ad04692987c5c84972773ff8",
+  "prompts": {
+    "25617ee857940675": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "bdc50ebe-3a8e-4624-adb8-451ba7c54e11",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 191,
+      "total_deletions": 16,
+      "accepted_lines": 189,
+      "overriden_lines": 0
+    },
+    "d6cf5587ddaac39a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b4118b28-ab27-4508-b350-cc452b23b66c",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 1,
+      "overriden_lines": 0
+    }
+  }
+}
