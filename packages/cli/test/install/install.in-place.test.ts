@@ -113,20 +113,23 @@ describe('in-place install', () => {
   })
 
   it('SC-4: package without shipped docs falls through to tarball/copy path', async () => {
-    // lodash has no dist/docs or docs/ — no convention match, no README
-    writePkg('lodash', '4.17.21', 'lib', {})
-    write(`node_modules/lodash/package.json`, JSON.stringify({
-      name: 'lodash',
-      version: '4.17.21',
+    // Use a fake package name that will 404 at `npm view` quickly. We want
+    // to prove the in-place discovery returned null for a package with no
+    // docs/dist/docs/README, not exercise a real tarball download (which is
+    // flaky on slow CI and unrelated to the assertion).
+    writePkg('fake-no-docs-pkg', '1.0.0', 'lib', {})
+    write(`node_modules/fake-no-docs-pkg/package.json`, JSON.stringify({
+      name: 'fake-no-docs-pkg',
+      version: '1.0.0',
     }))
-    writeBunLock('lodash', '4.17.21')
-    writeAskJson(tmpDir, { libraries: [{ spec: 'npm:lodash' }] })
+    writeBunLock('fake-no-docs-pkg', '1.0.0')
+    writeAskJson(tmpDir, { libraries: [{ spec: 'npm:fake-no-docs-pkg' }] })
 
     // This will fail at the source fetch stage (no registry, no local docs),
     // which is expected — we just verify it didn't take the in-place path.
     const summary = await runInstall(tmpDir)
     const resolved = readResolvedJson(tmpDir)
-    const entry = resolved.entries.lodash
+    const entry = resolved.entries['fake-no-docs-pkg']
     // Either skipped/failed (no docs found) or not materialized as in-place
     if (entry) {
       expect(entry.materialization).not.toBe('in-place')
