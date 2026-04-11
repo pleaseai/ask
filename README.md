@@ -130,9 +130,10 @@ ask docs <spec>    # Print all candidate documentation paths from node_modules +
 ```
 
 Both commands fetch on cache miss (first run) and short-circuit on cache
-hit. They share the same `~/.ask/github/checkouts/` store that `ask install`
-writes to — so a library you have already installed via the eager path is
-instantly available via the lazy path with zero duplication.
+hit. They share the same `~/.ask/github/github.com/<owner>/<repo>/<tag>/`
+store that `ask install` writes to — so a library you have already
+installed via the eager path is instantly available via the lazy path
+with zero duplication.
 
 ```bash
 # Print the absolute path to React's source tree (fetches on first run)
@@ -290,18 +291,35 @@ ASK maintains a global docs store at `~/.ask/` so identical `<pkg>@<version>` en
 
 ```
 ~/.ask/                                     # ASK_HOME
+├── STORE_VERSION                           # always "2"
 ├── npm/
 │   └── next@16.2.3/                        # immutable doc entry
 ├── github/
-│   ├── db/
-│   │   └── vercel__next.js.git/            # shared bare clone
-│   └── checkouts/
-│       └── vercel__next.js/v16.2.3/        # per-ref extraction
+│   └── github.com/                         # host (reserved — gitlab/bitbucket later)
+│       └── vercel/next.js/v16.2.3/         # per-tag shallow clone, .git/ stripped
 ├── web/
 │   └── <sha256>/                           # crawled snapshots
 └── llms-txt/
     └── <sha256>@<version>/
 ```
+
+All four source kinds (`npm`, `github`, `web`, `llms-txt`) follow the
+same `<kind>/<identity>@<version>/` mental model. Each github entry is
+an independent shallow clone into a nested path — there is no shared
+bare repo, no `FETCH_HEAD` race, and no `owner__repo` flattening.
+
+### Legacy layout migration
+
+If you upgraded from an older ASK, you may have a legacy
+`~/.ask/github/{db,checkouts}/` tree left behind. Running `ask install`
+prints a one-line warning on first touch pointing at the cleanup
+command:
+
+```bash
+ask cache clean --legacy
+```
+
+The command is idempotent and safe to run on a clean tree.
 
 ### `ASK_HOME`
 
