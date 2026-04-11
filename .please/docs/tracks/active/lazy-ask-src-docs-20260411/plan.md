@@ -192,6 +192,7 @@ All 10 acceptance criteria (AC-1 through AC-10) must be confirmed before merge.
 - [x] T005 — completed (9c1ef28)
 - [x] T006 — completed (a704fe6)
 - [x] T007 — completed (3bf6a4a)
+- [x] (2026-04-11 KST) Review fixes applied (SHA: `91a9ef1`)
 
 ## Decision Log
 
