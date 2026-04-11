@@ -1,0 +1,25 @@
+packages/cli/test/commands/ensure-checkout.test.ts
+  74a2e7a6401ed388 1-394
+packages/cli/src/commands/ensure-checkout.ts
+  74a2e7a6401ed388 1-208
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "87a8b77b467b1e96198370a88830e3e3eca5a808",
+  "prompts": {
+    "74a2e7a6401ed388": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d319e5fd-e178-4adb-9d0b-ec62e3fe1a92",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 604,
+      "total_deletions": 1,
+      "accepted_lines": 603,
+      "overriden_lines": 0
+    }
+  }
+}
