@@ -10,9 +10,9 @@ export interface RunSrcOptions {
 
 export interface RunSrcDeps {
   ensureCheckout?: typeof defaultEnsureCheckout
-  log: (msg: string) => void
-  error: (msg: string) => void
-  exit: (code: number) => void
+  log?: (msg: string) => void
+  error?: (msg: string) => void
+  exit?: (code: number) => void
 }
 
 /**
@@ -24,25 +24,28 @@ export interface RunSrcDeps {
  * routed through the injected `error` and `exit` callbacks so the
  * function stays unit-testable without process exits or console writes.
  */
-export async function runSrc(options: RunSrcOptions, deps: RunSrcDeps): Promise<void> {
+export async function runSrc(options: RunSrcOptions, deps: RunSrcDeps = {}): Promise<void> {
   const ensureCheckout = deps.ensureCheckout ?? defaultEnsureCheckout
+  const log = deps.log ?? ((msg: string) => process.stdout.write(`${msg}\n`))
+  const error = deps.error ?? ((msg: string) => process.stderr.write(`${msg}\n`))
+  const exit = deps.exit ?? ((code: number) => process.exit(code))
   try {
     const result = await ensureCheckout({
       spec: options.spec,
       projectDir: options.projectDir,
       noFetch: options.noFetch,
     })
-    deps.log(result.checkoutDir)
+    log(result.checkoutDir)
   }
   catch (err) {
     if (err instanceof NoCacheError) {
-      deps.error(err.message)
-      deps.exit(1)
+      error(err.message)
+      exit(1)
       return
     }
     const message = err instanceof Error ? err.message : String(err)
-    deps.error(message)
-    deps.exit(1)
+    error(message)
+    exit(1)
   }
 }
 
@@ -69,17 +72,10 @@ export const srcCmd = defineCommand({
     },
   },
   async run({ args }) {
-    await runSrc(
-      {
-        spec: args.spec,
-        projectDir: process.cwd(),
-        noFetch: Boolean(args['no-fetch']),
-      },
-      {
-        log: (msg: string) => process.stdout.write(`${msg}\n`),
-        error: (msg: string) => process.stderr.write(`${msg}\n`),
-        exit: (code: number) => process.exit(code),
-      },
-    )
+    await runSrc({
+      spec: args.spec,
+      projectDir: process.cwd(),
+      noFetch: Boolean(args['no-fetch']),
+    })
   },
 })

@@ -248,6 +248,7 @@ describe('ensureCheckout', () => {
     expect(result.checkoutDir).toBe(expectedDir)
     expect(calls).toHaveLength(1)
     expect(calls[0].opts.branch).toBe('main')
+    expect(calls[0].opts.tag).toBeUndefined()
   })
 
   it('handles github: spec with explicit @ref', async () => {
@@ -270,6 +271,7 @@ describe('ensureCheckout', () => {
     expect(result.ref).toBe('v18.2.0')
     expect(result.checkoutDir).toBe(expectedDir)
     expect(calls[0].opts.tag).toBe('v18.2.0')
+    expect(calls[0].opts.branch).toBeUndefined()
   })
 
   it('throws NoCacheError when noFetch is set and cache misses', async () => {

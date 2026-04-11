@@ -131,6 +131,34 @@ describe('runDocs', () => {
     expect(io.stdout.some(p => p.includes('node_modules'))).toBe(false)
   })
 
+  it('does NOT walk node_modules of unrelated packages even when node_modules exists', async () => {
+    // Set up node_modules with an unrelated package — but NOT 'react'.
+    // This proves the npm walk specifically targets `node_modules/<npmPackageName>/`
+    // and is not a generic node_modules sweep.
+    const otherNm = path.join(projectDir, 'node_modules', 'other-pkg')
+    fs.mkdirSync(path.join(otherNm, 'docs'), { recursive: true })
+    const { io, deps } = makeIo()
+    const ensureCheckout = mock(async () => ({
+      parsed: {} as any,
+      owner: 'facebook',
+      repo: 'react',
+      ref: 'v18.2.0',
+      resolvedVersion: '18.2.0',
+      checkoutDir,
+      npmPackageName: 'react',
+    }))
+
+    await runDocs(
+      { spec: 'react', projectDir },
+      { ensureCheckout, ...deps },
+    )
+
+    // Checkout root must be present.
+    expect(io.stdout).toContain(checkoutDir)
+    // No node_modules path of any kind — react is not installed, other-pkg is unrelated.
+    expect(io.stdout.some(p => p.includes('node_modules'))).toBe(false)
+  })
+
   it('still emits checkout root even when there are no doc-like dirs', async () => {
     // checkoutDir is empty — no docs subdir.
     const { io, deps } = makeIo()

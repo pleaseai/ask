@@ -13,9 +13,9 @@ export interface RunDocsOptions {
 
 export interface RunDocsDeps {
   ensureCheckout?: typeof defaultEnsureCheckout
-  log: (msg: string) => void
-  error: (msg: string) => void
-  exit: (code: number) => void
+  log?: (msg: string) => void
+  error?: (msg: string) => void
+  exit?: (code: number) => void
 }
 
 /**
@@ -34,8 +34,11 @@ export interface RunDocsDeps {
  * search across multiple candidates simultaneously via shell
  * substitution.
  */
-export async function runDocs(options: RunDocsOptions, deps: RunDocsDeps): Promise<void> {
+export async function runDocs(options: RunDocsOptions, deps: RunDocsDeps = {}): Promise<void> {
   const ensureCheckout = deps.ensureCheckout ?? defaultEnsureCheckout
+  const log = deps.log ?? ((msg: string) => process.stdout.write(`${msg}\n`))
+  const error = deps.error ?? ((msg: string) => process.stderr.write(`${msg}\n`))
+  const exit = deps.exit ?? ((code: number) => process.exit(code))
   let result
   try {
     result = await ensureCheckout({
@@ -46,13 +49,13 @@ export async function runDocs(options: RunDocsOptions, deps: RunDocsDeps): Promi
   }
   catch (err) {
     if (err instanceof NoCacheError) {
-      deps.error(err.message)
-      deps.exit(1)
+      error(err.message)
+      exit(1)
       return
     }
     const message = err instanceof Error ? err.message : String(err)
-    deps.error(message)
-    deps.exit(1)
+    error(message)
+    exit(1)
     return
   }
 
@@ -63,7 +66,7 @@ export async function runDocs(options: RunDocsOptions, deps: RunDocsDeps): Promi
     const nmPath = path.join(options.projectDir, 'node_modules', result.npmPackageName)
     if (fs.existsSync(nmPath)) {
       for (const p of findDocLikePaths(nmPath)) {
-        deps.log(p)
+        log(p)
       }
     }
   }
@@ -71,7 +74,7 @@ export async function runDocs(options: RunDocsOptions, deps: RunDocsDeps): Promi
   // Walk the cached source tree. Always emits the root as the first
   // line, even if no /doc/i subdirs are found.
   for (const p of findDocLikePaths(result.checkoutDir)) {
-    deps.log(p)
+    log(p)
   }
 }
 
@@ -97,17 +100,10 @@ export const docsCmd = defineCommand({
     },
   },
   async run({ args }) {
-    await runDocs(
-      {
-        spec: args.spec,
-        projectDir: process.cwd(),
-        noFetch: Boolean(args['no-fetch']),
-      },
-      {
-        log: (msg: string) => process.stdout.write(`${msg}\n`),
-        error: (msg: string) => process.stderr.write(`${msg}\n`),
-        exit: (code: number) => process.exit(code),
-      },
-    )
+    await runDocs({
+      spec: args.spec,
+      projectDir: process.cwd(),
+      noFetch: Boolean(args['no-fetch']),
+    })
   },
 })
