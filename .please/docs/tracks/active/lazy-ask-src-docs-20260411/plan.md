@@ -98,19 +98,19 @@ All boxes marked "existing" are read-only consumers — NFR-1 enforced.
 
 ## Tasks
 
-- [ ] T001 [P] Implement `ensureCheckout` helper (file: packages/cli/src/commands/ensure-checkout.ts) (test: packages/cli/test/commands/ensure-checkout.test.ts) — TDD cases: cache hit returns existing path without calling fetch; cache miss calls GithubSource.fetch and returns path; version resolution priority (explicit @version > lockfile > resolver latest); throws clear error when resolver cannot extract owner/repo. ~50 LOC src + ~100 LOC tests.
+- [x] T001 [P] Implement `ensureCheckout` helper (file: packages/cli/src/commands/ensure-checkout.ts) (test: packages/cli/test/commands/ensure-checkout.test.ts) — TDD cases: cache hit returns existing path without calling fetch; cache miss calls GithubSource.fetch and returns path; version resolution priority (explicit @version > lockfile > resolver latest); throws clear error when resolver cannot extract owner/repo. ~50 LOC src + ~100 LOC tests.
 
-- [ ] T002 [P] Implement `findDocLikePaths` walker helper (file: packages/cli/src/commands/find-doc-paths.ts) (test: packages/cli/test/commands/find-doc-paths.test.ts) — TDD cases: matches directory basename `/doc/i` case-insensitive; skips `node_modules`/`.git`/`.next`/`.nuxt`/`dist`/`build`/`coverage`/dotdirs; depth limit 4; returns empty list for non-existent root (no throw); always includes root as first element. ~40 LOC src + ~80 LOC tests.
+- [x] T002 [P] Implement `findDocLikePaths` walker helper (file: packages/cli/src/commands/find-doc-paths.ts) (test: packages/cli/test/commands/find-doc-paths.test.ts) — TDD cases: matches directory basename `/doc/i` case-insensitive; skips `node_modules`/`.git`/`.next`/`.nuxt`/`dist`/`build`/`coverage`/dotdirs; depth limit 4; returns empty list for non-existent root (no throw); always includes root as first element. ~40 LOC src + ~80 LOC tests.
 
-- [ ] T003 [P] Extend `generateAgentsMd` with substitution guide section (file: packages/cli/src/agents.ts) (test: packages/cli/test/agents-search-block.test.ts) — TDD cases: new "Searching across cached libraries" subsection appears at end of `<!-- BEGIN:ask-docs-auto-generated -->` block; existing per-library file listing is preserved unchanged; subsection contains the three substitution examples (rg/cat/fd) verbatim from FR-10. ~20 LOC modify + ~60 LOC tests.
+- [x] T003 [P] Extend `generateAgentsMd` with substitution guide section (file: packages/cli/src/agents.ts) (test: packages/cli/test/agents-search-block.test.ts) — TDD cases: new "Searching across cached libraries" subsection appears at end of `<!-- BEGIN:ask-docs-auto-generated -->` block; existing per-library file listing is preserved unchanged; subsection contains the three substitution examples (rg/cat/fd) verbatim from FR-10. ~20 LOC modify + ~60 LOC tests.
 
-- [ ] T004 Implement `ask src` command (file: packages/cli/src/commands/src.ts) (test: packages/cli/test/commands/src.test.ts) (depends on T001) — TDD cases: cache hit prints path and exits 0; cache miss triggers fetch via ensureCheckout, prints path, exits 0; `--no-fetch` + cache miss prints stderr message and exits 1; `--no-fetch` + cache hit prints path and exits 0; explicit `react@18.2.0` ignores lockfile; resolver error prints stderr and exits 1. Use citty `defineCommand`. ~40 LOC src + ~150 LOC tests.
+- [x] T004 Implement `ask src` command (file: packages/cli/src/commands/src.ts) (test: packages/cli/test/commands/src.test.ts) (depends on T001) — TDD cases: cache hit prints path and exits 0; cache miss triggers fetch via ensureCheckout, prints path, exits 0; `--no-fetch` + cache miss prints stderr message and exits 1; `--no-fetch` + cache hit prints path and exits 0; explicit `react@18.2.0` ignores lockfile; resolver error prints stderr and exits 1. Use citty `defineCommand`. ~40 LOC src + ~150 LOC tests.
 
-- [ ] T005 Implement `ask docs` command (file: packages/cli/src/commands/docs.ts) (test: packages/cli/test/commands/docs.test.ts) (depends on T001, T002) — TDD cases: npm-ecosystem spec walks both `node_modules/<pkg>/` and checkout dir, output is multi-line; non-npm spec (`pypi:`, `github:`) skips node_modules walk entirely; cache miss with `--no-fetch` exits 1; empty docs result still prints checkout root as first line; explicit `@version` ignores lockfile; resolver error exits 1. Use citty `defineCommand`. ~50 LOC src + ~150 LOC tests.
+- [x] T005 Implement `ask docs` command (file: packages/cli/src/commands/docs.ts) (test: packages/cli/test/commands/docs.test.ts) (depends on T001, T002) — TDD cases: npm-ecosystem spec walks both `node_modules/<pkg>/` and checkout dir, output is multi-line; non-npm spec (`pypi:`, `github:`) skips node_modules walk entirely; cache miss with `--no-fetch` exits 1; empty docs result still prints checkout root as first line; explicit `@version` ignores lockfile; resolver error exits 1. Use citty `defineCommand`. ~50 LOC src + ~150 LOC tests.
 
-- [ ] T006 Wire `ask src` and `ask docs` into root CLI (file: packages/cli/src/index.ts) (test: packages/cli/test/cli/commands.test.ts extension) (depends on T004, T005) — TDD cases: `ask src --help` lists the command in subcommand list; `ask docs --help` lists the command; spawning a subprocess `node dist/cli.js src nonexistent-package-xyz-12345` exits non-zero with stderr containing the helpful hint. Modify the citty `subCommands` block in index.ts. ~20 LOC modify + ~60 LOC tests.
+- [x] T006 Wire `ask src` and `ask docs` into root CLI (file: packages/cli/src/index.ts) (test: packages/cli/test/cli/commands.test.ts extension) (depends on T004, T005) — TDD cases: `ask src --help` lists the command in subcommand list; `ask docs --help` lists the command; spawning a subprocess `node dist/cli.js src nonexistent-package-xyz-12345` exits non-zero with stderr containing the helpful hint. Modify the citty `subCommands` block in index.ts. ~20 LOC modify + ~60 LOC tests.
 
-- [ ] T007 Cache-sharing integration test (file: packages/cli/test/commands/cache-sharing.test.ts) (depends on T006) — Verifies AC-6: after running `ask install` for a fixture library that populates `~/.ask/github/checkouts/<o>__<r>/<ref>/`, then running `ask src <spec>` hits the SAME directory (zero duplication). Use a small fixture or `vi.mock`/`bun:test` mock filesystem with `ASK_HOME` redirected to a temp dir. ~120 LOC tests, no production code.
+- [x] T007 Cache-sharing integration test (file: packages/cli/test/commands/cache-sharing.test.ts) (depends on T006) — Verifies AC-6: after running `ask install` for a fixture library that populates `~/.ask/github/checkouts/<o>__<r>/<ref>/`, then running `ask src <spec>` hits the SAME directory (zero duplication). Use a small fixture or `vi.mock`/`bun:test` mock filesystem with `ASK_HOME` redirected to a temp dir. ~120 LOC tests, no production code.
 
 ## Dependencies
 
@@ -185,13 +185,13 @@ All 10 acceptance criteria (AC-1 through AC-10) must be confirmed before merge.
 
 ## Progress
 
-- [ ] T001 — not started
-- [ ] T002 — not started
-- [ ] T003 — not started
-- [ ] T004 — not started (blocked on T001)
-- [ ] T005 — not started (blocked on T001, T002)
-- [ ] T006 — not started (blocked on T004, T005)
-- [ ] T007 — not started (blocked on T006)
+- [x] T001 — completed (87a8b77)
+- [x] T002 — completed (fec2e16)
+- [x] T003 — completed (a48bc41)
+- [x] T004 — completed (1b384c3)
+- [x] T005 — completed (9c1ef28)
+- [x] T006 — completed (a704fe6)
+- [x] T007 — completed (3bf6a4a)
 
 ## Decision Log
 

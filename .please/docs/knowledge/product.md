@@ -17,6 +17,8 @@ AI coding agents frequently hallucinate or reference outdated APIs because their
 
 One command (`ask install`) downloads version-specific docs and generates `AGENTS.md` — turning any project into an AI-friendly workspace. Claude Code skill emission is available via opt-in (`--emit-skill` flag or `emitSkill: true` in `ask.json`).
 
+For libraries that are NOT declared in `ask.json`, the lazy commands `ask src <spec>` and `ask docs <spec>` give coding agents a zero-friction escape hatch: they print absolute paths to a cached source tree (and any documentation directories), fetching on cache miss. Both commands work via shell substitution, e.g. `rg "pattern" $(ask src react)`.
+
 ## Product Components
 
 | Component | Purpose |
