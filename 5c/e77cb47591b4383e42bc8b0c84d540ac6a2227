@@ -1,0 +1,42 @@
+packages/cli/src/io.ts
+  25617ee857940675 5-30,113,128,134-136,138-143
+packages/cli/src/index.ts
+  25617ee857940675 81-84,90-97,132-135,141,182-188
+packages/cli/src/install.ts
+  25617ee857940675 19,55-60,97-113
+packages/cli/test/cli/commands.test.ts
+  25617ee857940675 87-111
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "5ce77cb47591b4383e42bc8b0c84d540ac6a2227",
+  "prompts": {
+    "25617ee857940675": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "bdc50ebe-3a8e-4624-adb8-451ba7c54e11",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 153,
+      "total_deletions": 46,
+      "accepted_lines": 114,
+      "overriden_lines": 1
+    },
+    "d6cf5587ddaac39a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b4118b28-ab27-4508-b350-cc452b23b66c",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 1,
+      "overriden_lines": 0
+    }
+  }
+}
