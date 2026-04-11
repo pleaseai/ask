@@ -1,0 +1,42 @@
+packages/cli/src/sources/index.ts
+  25617ee857940675 29-34
+packages/cli/test/sources/github.test.ts
+  25617ee857940675 5,7-8,11,14-16,20-25,30-32,39,56-60,62,66-67,69,71-80,82-94,96-104,106-107,110,112,114-122,124-126,128-130,132-140,142,145,147,149-157,159-165,167-179,182,184-198,200-203,205-217,220-254,256-264
+packages/cli/src/sources/github.ts
+  25617ee857940675 10,18,21,38-166,174-182,188-205,208-231,234,237,240-241,244-246,248-272,274-275,277,279-289,318-320,333-340
+packages/schema/src/ask-json.ts
+  25617ee857940675 136-151,166,168
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "4f084c972a8271ca1ed444bf83b0d19f048b82a8",
+  "prompts": {
+    "25617ee857940675": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "bdc50ebe-3a8e-4624-adb8-451ba7c54e11",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 535,
+      "total_deletions": 351,
+      "accepted_lines": 531,
+      "overriden_lines": 0
+    },
+    "d6cf5587ddaac39a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b4118b28-ab27-4508-b350-cc452b23b66c",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 1,
+      "overriden_lines": 0
+    }
+  }
+}
