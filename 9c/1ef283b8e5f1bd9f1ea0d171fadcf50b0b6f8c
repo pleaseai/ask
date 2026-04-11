@@ -1,0 +1,25 @@
+packages/cli/test/commands/docs.test.ts
+  74a2e7a6401ed388 1-208
+packages/cli/src/commands/docs.ts
+  74a2e7a6401ed388 1-113
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "9c1ef283b8e5f1bd9f1ea0d171fadcf50b0b6f8c",
+  "prompts": {
+    "74a2e7a6401ed388": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d319e5fd-e178-4adb-9d0b-ec62e3fe1a92",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 324,
+      "total_deletions": 3,
+      "accepted_lines": 330,
+      "overriden_lines": 0
+    }
+  }
+}
