@@ -25,7 +25,7 @@ import { generateSkill, getSkillDir } from './skill.js'
 import { getSource } from './sources/index.js'
 import { parseSpec } from './spec.js'
 import { removeDocs, saveDocs } from './storage.js'
-import { npmStorePath, resolveAskHome } from './store/index.js'
+import { npmStorePath, quarantineEntry, resolveAskHome, verifyEntry } from './store/index.js'
 
 const RE_LEADING_V = /^v/
 
@@ -271,7 +271,11 @@ async function installOne(
   if (!options.force && parsed.kind === 'npm' && sourceConfig.source === 'npm') {
     const askHome = resolveAskHome()
     const storeDir = npmStorePath(askHome, parsed.pkg, resolvedVersion)
-    if (fs.existsSync(storeDir)) {
+    // verifyEntry guard: never short-circuit on a store entry whose
+    // stamp is missing or whose content hash does not match. A
+    // corrupted entry is quarantined and the install falls through to
+    // a fresh fetch via the source adapter.
+    if (fs.existsSync(storeDir) && verifyEntry(storeDir)) {
       const files = readFilesFromStore(storeDir)
       if (files.length > 0) {
         consola.info(`  ${lib.spec}: store hit ${libName}@${resolvedVersion}`)
@@ -294,6 +298,11 @@ async function installOne(
         })
         return 'installed'
       }
+    }
+    else if (fs.existsSync(storeDir)) {
+      // Entry exists but failed verification — quarantine and
+      // continue to the fresh-fetch path below.
+      quarantineEntry(askHome, storeDir)
     }
   }
 
@@ -328,6 +337,10 @@ async function installOne(
     format: 'docs',
     storePath: result.storePath,
     materialization: effectiveMode,
+    // Propagate the github commit SHA (captured via git rev-parse HEAD
+    // in the github source). For npm/web/llms-txt `meta.commit` is
+    // unset so this is a no-op.
+    commit: result.meta?.commit,
   }
   upsertResolvedEntry(projectDir, libName, entry)
 

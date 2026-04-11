@@ -7,7 +7,6 @@ import type {
 } from './index.js'
 import { Buffer } from 'node:buffer'
 import { execFileSync, spawnSync } from 'node:child_process'
-import crypto from 'node:crypto'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
@@ -16,6 +15,7 @@ import {
   acquireEntryLock,
   cpDirAtomic,
   githubStorePath,
+  quarantineEntry,
   resolveAskHome,
   stampEntry,
   verifyEntry,
@@ -36,8 +36,6 @@ const RE_SAFE_REPO = /^[\w.-]+\/[\w.-]+$/
 const RE_SAFE_REF = /^[\w./-]+$/
 
 const DEFAULT_GITHUB_HOST = 'github.com'
-
-const RE_TIMESTAMP_PUNCT = /[:.]/g
 
 /**
  * Check whether `git` is available on the system PATH.
@@ -130,38 +128,6 @@ function cloneAtTag(
     `Failed to clone ${remoteUrl} at ${ref} (tried: ${candidates.join(', ')}): `
     + `${lastErr instanceof Error ? lastErr.message : String(lastErr)}`,
   )
-}
-
-/**
- * Move a corrupted store entry to the quarantine directory so a fresh
- * fetch can replace it. Quarantine is a timestamped directory under
- * `<askHome>/.quarantine/` so a human can inspect (or delete) the bad
- * entry later.
- */
-function quarantineEntry(askHome: string, storeDir: string): void {
-  const ts = new Date().toISOString().replace(RE_TIMESTAMP_PUNCT, '-')
-  const uuid = crypto.randomUUID().slice(0, 8)
-  const quarantineDir = path.join(askHome, '.quarantine', `${ts}-${uuid}`)
-  fs.mkdirSync(path.dirname(quarantineDir), { recursive: true })
-  try {
-    fs.renameSync(storeDir, quarantineDir)
-    consola.warn(
-      `Corrupted store entry at ${storeDir} quarantined to ${quarantineDir}. `
-      + 'A fresh fetch will replace it.',
-    )
-  }
-  catch (err) {
-    consola.warn(
-      `Could not quarantine corrupted entry at ${storeDir}: `
-      + `${err instanceof Error ? err.message : String(err)}. Removing in place.`,
-    )
-    try {
-      fs.rmSync(storeDir, { recursive: true, force: true })
-    }
-    catch {
-      // best-effort
-    }
-  }
 }
 
 export class GithubSource implements DocSource {

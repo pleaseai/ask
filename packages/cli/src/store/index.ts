@@ -3,6 +3,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
+import { consola } from 'consola'
 
 // ── ASK_HOME resolution ────────────────────────────────────────────
 
@@ -349,6 +350,47 @@ function hashDir(dir: string): string {
     hash.update('\0')
   }
   return `sha256-${hash.digest('hex')}`
+}
+
+// ── Quarantine ─────────────────────────────────────────────────────
+
+const RE_TIMESTAMP_PUNCT = /[:.]/g
+
+/**
+ * Move a corrupted store entry (one that fails `verifyEntry`) to the
+ * quarantine directory at `<askHome>/.quarantine/<ts>-<uuid>/`. Used
+ * by both the install orchestrator and the github source when a
+ * store-hit short-circuit detects tampering or a missing stamp — the
+ * corrupt entry is preserved for human inspection rather than deleted
+ * outright, and a fresh fetch replaces it on the next run.
+ *
+ * Failures to rename (cross-device, permissions) fall through to a
+ * best-effort `rm -rf` so the caller can always continue.
+ */
+export function quarantineEntry(askHome: string, storeDir: string): void {
+  const ts = new Date().toISOString().replace(RE_TIMESTAMP_PUNCT, '-')
+  const uuid = crypto.randomUUID().slice(0, 8)
+  const quarantineDir = path.join(askHome, '.quarantine', `${ts}-${uuid}`)
+  fs.mkdirSync(path.dirname(quarantineDir), { recursive: true })
+  try {
+    fs.renameSync(storeDir, quarantineDir)
+    consola.warn(
+      `Corrupted store entry at ${storeDir} quarantined to ${quarantineDir}. `
+      + 'A fresh fetch will replace it.',
+    )
+  }
+  catch (err) {
+    consola.warn(
+      `Could not quarantine corrupted entry at ${storeDir}: `
+      + `${err instanceof Error ? err.message : String(err)}. Removing in place.`,
+    )
+    try {
+      fs.rmSync(storeDir, { recursive: true, force: true })
+    }
+    catch {
+      // best-effort
+    }
+  }
 }
 
 function collectFiles(dir: string, prefix = ''): string[] {
