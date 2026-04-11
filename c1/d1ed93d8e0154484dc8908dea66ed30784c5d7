@@ -1,0 +1,29 @@
+.please/docs/tracks/completed/global-docs-store-20260410/metadata.json
+  03217db608910a05 4,6,8
+.please/docs/product-specs/index.md
+  03217db608910a05 8
+.please/docs/product-specs/global-ask-docs-store-at-ask/spec.md
+  03217db608910a05 1-20
+.please/docs/tracks.jsonl
+  03217db608910a05 16
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "c1d1ed93d8e0154484dc8908dea66ed30784c5d7",
+  "prompts": {
+    "03217db608910a05": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "46e500fa-7344-42db-95f4-c76ca119ea3b",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 60,
+      "total_deletions": 5,
+      "accepted_lines": 25,
+      "overriden_lines": 0
+    }
+  }
+}
