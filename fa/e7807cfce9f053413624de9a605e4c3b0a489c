@@ -1,0 +1,23 @@
+.please/docs/ideas/github-store-pm-unified.md
+  d6cf5587ddaac39a 1-282
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "fae7807cfce9f053413624de9a605e4c3b0a489c",
+  "prompts": {
+    "d6cf5587ddaac39a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b4118b28-ab27-4508-b350-cc452b23b66c",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 282,
+      "total_deletions": 0,
+      "accepted_lines": 282,
+      "overriden_lines": 0
+    }
+  }
+}
