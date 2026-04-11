@@ -73,14 +73,14 @@ describe('ask CLI surface (install/add/remove/list)', () => {
     // Note: install will fail (network), but the ask.json mutation
     // should land before the install runs.
     try {
-      await runCli(tmpDir, ['add', 'github:pleaseai/this-does-not-exist', '--ref', 'main'])
+      await runCli(tmpDir, ['add', 'github:pleaseai/this-does-not-exist', '--ref', 'v1.0.0'])
     }
     catch {
       // ignore install failure
     }
     const askJson = readAskJson(tmpDir)
     expect(askJson?.libraries).toEqual([
-      { spec: 'github:pleaseai/this-does-not-exist', ref: 'main' },
+      { spec: 'github:pleaseai/this-does-not-exist', ref: 'v1.0.0' },
     ])
   })
 

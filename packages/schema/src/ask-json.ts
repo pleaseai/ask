@@ -23,6 +23,48 @@ const GitRefField = z.string().regex(
 )
 
 /**
+ * Heuristic for "tag-like" refs that are safe to pin to. Accepts:
+ *   - 40-char lowercase hex SHA
+ *   - `v?<semver>` (including pre-release and build-metadata suffixes)
+ *   - tag-like strings containing at least one `.` or digit
+ *
+ * Rejects known mutable branches (`main`, `master`, `develop`, `trunk`,
+ * `HEAD`, `latest`) and any single-word string without a `.` or digit
+ * (e.g. `canary`).
+ *
+ * The refinement is wrapped in a factory so the CLI can bypass it via
+ * `--allow-mutable-ref` by selecting `LaxAskJsonSchema`.
+ */
+const RE_SHA40 = /^[0-9a-f]{40}$/
+const RE_CONTAINS_DIGIT_OR_DOT = /[.\d]/
+const MUTABLE_REF_BLOCKLIST = new Set([
+  'main',
+  'master',
+  'develop',
+  'trunk',
+  'HEAD',
+  'latest',
+])
+
+function isTagLikeRef(ref: string): boolean {
+  if (RE_SHA40.test(ref))
+    return true
+  if (MUTABLE_REF_BLOCKLIST.has(ref))
+    return false
+  return RE_CONTAINS_DIGIT_OR_DOT.test(ref)
+}
+
+const MUTABLE_REF_MESSAGE
+  = 'ref looks like a mutable branch (use a tag, SHA, or pass --allow-mutable-ref to bypass)'
+
+const RE_GITHUB_PREFIX = /^github:/
+
+const StrictGitRefField = GitRefField.refine(
+  isTagLikeRef,
+  MUTABLE_REF_MESSAGE,
+)
+
+/**
  * Entry shape A — PM-driven. Version is resolved from the project's
  * lockfile at `ask install` time. No `ref` field is permitted.
  *
@@ -39,17 +81,30 @@ const PmDrivenLibraryEntry = z.object({
 }).strict()
 
 /**
+ * Build a `StandaloneGithubLibraryEntry` schema parameterized on ref
+ * strictness. `strictRefs: true` applies the tag-like refinement;
+ * `false` keeps only the base shell-safety regex.
+ */
+function buildStandaloneGithubLibraryEntry(strictRefs: boolean): z.ZodTypeAny {
+  return z.object({
+    spec: SpecField.regex(RE_GITHUB_PREFIX, 'standalone entries must use github: prefix'),
+    ref: strictRefs ? StrictGitRefField : GitRefField,
+    docsPath: z.string().optional(),
+  }).strict()
+}
+
+/**
  * Entry shape B — standalone github. Version is fixed locally via
  * `ref` and never read from any lockfile. The `ref` field is required:
  * we used to accept `main` as an implicit default, but a missing ref
  * forced users to debug "why is the version `main`" later. Make it
  * explicit.
+ *
+ * The default export uses strict ref validation. CLI callers that
+ * need to accept mutable refs (CI pipelines, test fixtures) should
+ * use `LaxAskJsonSchema` via `createAskJsonSchema({ strictRefs: false })`.
  */
-const StandaloneGithubLibraryEntry = z.object({
-  spec: SpecField.regex(/^github:/, 'standalone entries must use github: prefix'),
-  ref: GitRefField,
-  docsPath: z.string().optional(),
-}).strict()
+const StandaloneGithubLibraryEntry = buildStandaloneGithubLibraryEntry(true)
 
 /**
  * Discriminator: presence of `ref` ⇒ standalone github; absence ⇒
@@ -62,18 +117,47 @@ export const LibraryEntrySchema = z.union([
   PmDrivenLibraryEntry,
 ])
 
+const LaxLibraryEntrySchema = z.union([
+  buildStandaloneGithubLibraryEntry(false),
+  PmDrivenLibraryEntry,
+])
+
 export type LibraryEntry = z.infer<typeof LibraryEntrySchema>
 export type PmDrivenLibrary = z.infer<typeof PmDrivenLibraryEntry>
-export type StandaloneGithubLibrary = z.infer<typeof StandaloneGithubLibraryEntry>
+export interface StandaloneGithubLibrary {
+  spec: string
+  ref: string
+  docsPath?: string
+}
 
 export const StoreModeSchema = z.enum(['copy', 'link', 'ref'])
 export type StoreMode = z.infer<typeof StoreModeSchema>
 
-export const AskJsonSchema = z.object({
-  libraries: z.array(LibraryEntrySchema),
-  emitSkill: z.boolean().optional(),
-  storeMode: StoreModeSchema.optional(),
-  inPlace: z.boolean().optional(),
-}).strict()
+/**
+ * Factory for the top-level `ask.json` schema. The `strictRefs` option
+ * toggles whether standalone github entries enforce the tag-like ref
+ * refinement. CLI callers use the factory when `--allow-mutable-ref`
+ * is set; all other code paths should import the default
+ * `AskJsonSchema` (strict) or `LaxAskJsonSchema` directly.
+ */
+export interface CreateAskJsonSchemaOptions {
+  /** When true (default), rejects mutable refs like `main`/`master`/`HEAD`. */
+  strictRefs?: boolean
+}
+
+export function createAskJsonSchema(
+  options: CreateAskJsonSchemaOptions = {},
+): z.ZodTypeAny {
+  const strictRefs = options.strictRefs ?? true
+  return z.object({
+    libraries: z.array(strictRefs ? LibraryEntrySchema : LaxLibraryEntrySchema),
+    emitSkill: z.boolean().optional(),
+    storeMode: StoreModeSchema.optional(),
+    inPlace: z.boolean().optional(),
+  }).strict()
+}
+
+export const AskJsonSchema = createAskJsonSchema({ strictRefs: true })
+export const LaxAskJsonSchema = createAskJsonSchema({ strictRefs: false })
 
 export type AskJson = z.infer<typeof AskJsonSchema>
