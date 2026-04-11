@@ -123,7 +123,7 @@ export function cacheGc(
   } = {},
 ): CacheGcResult {
   const { dryRun = false, olderThan } = options
-  const scanRoots = options.scanRoots ?? [process.env.HOME ?? '']
+  const scanRoots = options.scanRoots ?? [process.env.HOME].filter((r): r is string => Boolean(r))
 
   const referencedPaths = collectReferencedStorePaths(scanRoots, askHome)
   const allEntries = cacheLs(askHome)

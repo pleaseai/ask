@@ -8,7 +8,7 @@
   - All source adapters (npm, github, web, llms-txt) now write fetched docs into `<ASK_HOME>/<kind>/<key>/` before materializing into the project.
   - Three materialization modes via `--store-mode` or `ask.json.storeMode`:
     - `copy` (default): write files into `.ask/docs/<pkg>@<v>/` as before.
-    - `link`: symlink from `.ask/docs/<pkg>@<v>/` → store entry. Falls back to `copy` on `EPERM`.
+    - `link`: symlink from `.ask/docs/<pkg>@<v>/` → store entry. Falls back to `copy` on `EPERM`/`EACCES`.
     - `ref`: no project-local files; AGENTS.md points at the store path directly.
   - `ASK_HOME` env var overrides the default `~/.ask/` location.
   - GitHub source uses bare clone + `git archive` for multi-ref efficiency (Cargo-style).

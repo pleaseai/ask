@@ -47,10 +47,11 @@ export class WebSource implements DocSource {
       )
     }
 
-    // Write to global store for cross-project reuse
+    // Write to global store for cross-project reuse.
+    // Key on ALL urls (sorted for stability) so different multi-URL configs
+    // never alias to the same store entry.
     const askHome = resolveAskHome()
-    const primaryUrl = opts.urls[0]
-    const storeDir = webStorePath(askHome, primaryUrl)
+    const storeDir = webStorePath(askHome, [...opts.urls].sort().join('\0'))
     if (!fs.existsSync(storeDir)) {
       const lock = await acquireEntryLock(storeDir)
       if (lock) {

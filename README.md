@@ -225,7 +225,7 @@ Configure how store entries are materialized into each project (CLI flag `--stor
 | Mode   | Behavior                                            | Best for                |
 | ------ | --------------------------------------------------- | ----------------------- |
 | `copy` | (default) Full copy into `.ask/docs/<pkg>@<v>/`     | CI, Docker, Windows     |
-| `link` | Symlink → store (falls back to copy on `EPERM`)     | Local dev, disk savings |
+| `link` | Symlink → store (falls back to copy on `EPERM`/`EACCES`) | Local dev, disk savings |
 | `ref`  | No project files; AGENTS.md points at store directly | Max dedup, local only   |
 
 ### Cache management

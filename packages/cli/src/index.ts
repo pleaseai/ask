@@ -261,8 +261,12 @@ const cacheLsCmd = defineCommand({
   },
   run({ args }) {
     const askHome = resolveAskHome()
-    const kind = args.kind as 'npm' | 'github' | 'web' | 'llms-txt' | undefined
-    const entries = cacheLs(askHome, kind ? { kind } : undefined)
+    const kind = args.kind
+    if (kind && !['npm', 'github', 'web', 'llms-txt'].includes(kind)) {
+      consola.error(`Invalid --kind '${kind}'. Must be one of: npm, github, web, llms-txt`)
+      process.exit(1)
+    }
+    const entries = cacheLs(askHome, kind ? { kind: kind as 'npm' | 'github' | 'web' | 'llms-txt' } : undefined)
 
     if (entries.length === 0) {
       consola.info(`No entries in store at ${askHome}`)

@@ -14,6 +14,7 @@ import { consola } from 'consola'
 import { withBareClone } from '../store/github-bare.js'
 import {
   acquireEntryLock,
+  cpDirAtomic,
   githubCheckoutPath,
   resolveAskHome,
   stampEntry,
@@ -129,12 +130,11 @@ export class GithubSource implements DocSource {
       const lock = await acquireEntryLock(storeDir)
       if (lock) {
         try {
-          // Use fs.cpSync to copy the entire extracted repo into the store
+          // Atomically copy the extracted repo into the store so that a
+          // crash between the copy and the stamp never leaves a corrupt
+          // entry that passes the fs.existsSync hit check.
           fs.mkdirSync(path.dirname(storeDir), { recursive: true })
-          if (fs.existsSync(storeDir)) {
-            fs.rmSync(storeDir, { recursive: true })
-          }
-          fs.cpSync(extractedDir, storeDir, { recursive: true })
+          cpDirAtomic(extractedDir, storeDir)
           stampEntry(storeDir)
         }
         finally {

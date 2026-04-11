@@ -79,8 +79,18 @@ export function llmsTxtStorePath(askHome: string, url: string, version: string):
 const RE_TRAILING_SLASHES = /\/+$/
 
 function normalizeUrl(url: string): string {
-  // Strip trailing slash and lowercase scheme+host for dedup
-  return url.replace(RE_TRAILING_SLASHES, '').toLowerCase()
+  // Strip trailing slash and lowercase only the scheme+host (RFC 3986: path is case-sensitive)
+  const stripped = url.replace(RE_TRAILING_SLASHES, '')
+  try {
+    const parsed = new URL(stripped)
+    parsed.protocol = parsed.protocol.toLowerCase()
+    parsed.hostname = parsed.hostname.toLowerCase()
+    return parsed.toString()
+  }
+  catch {
+    // fallback for non-parseable strings: lowercase the whole thing
+    return stripped.toLowerCase()
+  }
 }
 
 // ── Atomic writes ──────────────────────────────────────────────────
@@ -136,6 +146,45 @@ export function writeEntryAtomic(
   }
   catch (err) {
     // Clean up temp directory on failure
+    try {
+      fs.rmSync(tmpDir, { recursive: true, force: true })
+    }
+    catch {
+      // best-effort cleanup
+    }
+    throw err
+  }
+}
+
+/**
+ * Atomically copy an entire directory tree to `targetDir`.
+ *
+ * Copies to a temp directory first, then renames. Mirrors the atomicity
+ * guarantee of `writeEntryAtomic` for the case where source files are
+ * already on disk (e.g., extracted GitHub tarballs).
+ */
+export function cpDirAtomic(sourceDir: string, targetDir: string): void {
+  const tmpDir = `${targetDir}.tmp-${crypto.randomUUID().slice(0, 8)}`
+  fs.mkdirSync(path.dirname(tmpDir), { recursive: true })
+  try {
+    fs.cpSync(sourceDir, tmpDir, { recursive: true })
+    if (fs.existsSync(targetDir)) {
+      const backupDir = `${targetDir}.bak-${crypto.randomUUID().slice(0, 8)}`
+      fs.renameSync(targetDir, backupDir)
+      try {
+        fs.renameSync(tmpDir, targetDir)
+      }
+      catch (err) {
+        fs.renameSync(backupDir, targetDir)
+        throw err
+      }
+      fs.rmSync(backupDir, { recursive: true, force: true })
+    }
+    else {
+      fs.renameSync(tmpDir, targetDir)
+    }
+  }
+  catch (err) {
     try {
       fs.rmSync(tmpDir, { recursive: true, force: true })
     }
@@ -251,7 +300,9 @@ function hashDir(dir: string): string {
     if (path.basename(file) === HASH_FILE)
       continue
     hash.update(file)
+    hash.update('\0')
     hash.update(fs.readFileSync(path.join(dir, file)))
+    hash.update('\0')
   }
   return `sha256-${hash.digest('hex')}`
 }

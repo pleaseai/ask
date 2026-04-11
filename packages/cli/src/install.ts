@@ -462,16 +462,10 @@ async function materializeIntent(
 function readFilesFromStore(storeDir: string): DocFile[] {
   const files: DocFile[] = []
   const walk = (dir: string, prefix: string): void => {
-    let entries: fs.Dirent[]
-    try {
-      entries = fs.readdirSync(dir, { withFileTypes: true })
-    }
-    catch {
-      return
-    }
+    const entries = fs.readdirSync(dir, { withFileTypes: true })
     for (const entry of entries) {
       const name = entry.name
-      if (name === '.ask-hash' || name === 'INDEX.md')
+      if (name === '.ask-hash' || (prefix === '' && name === 'INDEX.md'))
         continue
       const rel = prefix ? `${prefix}/${name}` : name
       if (entry.isDirectory()) {
