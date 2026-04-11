@@ -1,0 +1,25 @@
+.please/docs/references/opensrc.md
+  d80a058c93c1e416 1-209
+CLAUDE.md
+  d80a058c93c1e416 19
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "82afb4ab401cfa5d279a6723edee823144830a79",
+  "prompts": {
+    "d80a058c93c1e416": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6bbb5509-534b-4f30-9e43-6e520f2cc1fd",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 812,
+      "total_deletions": 0,
+      "accepted_lines": 812,
+      "overriden_lines": 0
+    }
+  }
+}
