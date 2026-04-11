@@ -133,6 +133,22 @@ export interface StandaloneGithubLibrary {
 export const StoreModeSchema = z.enum(['copy', 'link', 'ref'])
 export type StoreMode = z.infer<typeof StoreModeSchema>
 
+export const AskJsonSchema = z.object({
+  libraries: z.array(LibraryEntrySchema),
+  emitSkill: z.boolean().optional(),
+  storeMode: StoreModeSchema.optional(),
+  inPlace: z.boolean().optional(),
+}).strict()
+
+export const LaxAskJsonSchema = z.object({
+  libraries: z.array(LaxLibraryEntrySchema),
+  emitSkill: z.boolean().optional(),
+  storeMode: StoreModeSchema.optional(),
+  inPlace: z.boolean().optional(),
+}).strict()
+
+export type AskJson = z.infer<typeof AskJsonSchema>
+
 /**
  * Factory for the top-level `ask.json` schema. The `strictRefs` option
  * toggles whether standalone github entries enforce the tag-like ref
@@ -147,17 +163,7 @@ export interface CreateAskJsonSchemaOptions {
 
 export function createAskJsonSchema(
   options: CreateAskJsonSchemaOptions = {},
-): z.ZodTypeAny {
+): typeof AskJsonSchema | typeof LaxAskJsonSchema {
   const strictRefs = options.strictRefs ?? true
-  return z.object({
-    libraries: z.array(strictRefs ? LibraryEntrySchema : LaxLibraryEntrySchema),
-    emitSkill: z.boolean().optional(),
-    storeMode: StoreModeSchema.optional(),
-    inPlace: z.boolean().optional(),
-  }).strict()
+  return strictRefs ? AskJsonSchema : LaxAskJsonSchema
 }
-
-export const AskJsonSchema = createAskJsonSchema({ strictRefs: true })
-export const LaxAskJsonSchema = createAskJsonSchema({ strictRefs: false })
-
-export type AskJson = z.infer<typeof AskJsonSchema>

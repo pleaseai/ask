@@ -7,22 +7,22 @@ import type {
 } from './index.js'
 import { Buffer } from 'node:buffer'
 import { execFileSync, spawnSync } from 'node:child_process'
+import crypto from 'node:crypto'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { consola } from 'consola'
-import { withBareClone } from '../store/github-bare.js'
 import {
   acquireEntryLock,
   cpDirAtomic,
-  githubCheckoutPath,
+  githubStorePath,
   resolveAskHome,
   stampEntry,
+  verifyEntry,
 } from '../store/index.js'
 
 const RE_LEADING_V = /^v/
 const RE_SHA40 = /^[0-9a-f]{40}$/
-const RE_WHITESPACE = /\s+/
 /**
  * Safe `owner/repo` pattern. Allows only alphanumerics, dots, underscores,
  * and hyphens in each segment — matches GitHub's own repo-name rules and
@@ -35,6 +35,135 @@ const RE_SAFE_REPO = /^[\w.-]+\/[\w.-]+$/
  */
 const RE_SAFE_REF = /^[\w./-]+$/
 
+const DEFAULT_GITHUB_HOST = 'github.com'
+
+const RE_TIMESTAMP_PUNCT = /[:.]/g
+
+/**
+ * Check whether `git` is available on the system PATH.
+ */
+function hasGit(): boolean {
+  try {
+    execFileSync('git', ['--version'], { stdio: 'ignore' })
+    return true
+  }
+  catch {
+    return false
+  }
+}
+
+/**
+ * Build the candidate ref fallback chain. Tries the ref as-is first;
+ * if it does not already start with `v`, also tries `v<ref>`. Never
+ * emits `vv1.2.3` for already-prefixed inputs.
+ */
+function refCandidates(ref: string): string[] {
+  if (ref.startsWith('v'))
+    return [ref]
+  return [ref, `v${ref}`]
+}
+
+/**
+ * Clean the contents of a directory (keep the dir itself) so a failed
+ * clone attempt can be retried with a different ref candidate.
+ */
+function clearDirContents(dir: string): void {
+  if (!fs.existsSync(dir))
+    return
+  for (const entry of fs.readdirSync(dir)) {
+    fs.rmSync(path.join(dir, entry), { recursive: true, force: true })
+  }
+}
+
+/**
+ * Shallow-clone a single tag into a temp directory, strip `.git/`,
+ * and return the commit SHA that the tag resolved to. Implements the
+ * ref fallback chain via `refCandidates`. Throws if none succeed.
+ *
+ * Returns the winning candidate so callers can use it as the store
+ * key (e.g. if the user asked for `1.0.0` but only `v1.0.0` exists,
+ * the store lands under `.../v1.0.0/`).
+ */
+function cloneAtTag(
+  remoteUrl: string,
+  ref: string,
+  tmpDir: string,
+): { commit: string, winningCandidate: string } {
+  const candidates = refCandidates(ref)
+  let lastErr: unknown
+  for (const candidate of candidates) {
+    try {
+      clearDirContents(tmpDir)
+      execFileSync('git', [
+        'clone',
+        '--depth',
+        '1',
+        '--branch',
+        candidate,
+        '--single-branch',
+        remoteUrl,
+        tmpDir,
+      ], { stdio: ['ignore', 'ignore', 'pipe'] })
+
+      // Capture the commit SHA before we strip `.git/`.
+      const commit = execFileSync(
+        'git',
+        ['-C', tmpDir, 'rev-parse', 'HEAD'],
+        { encoding: 'utf-8', stdio: ['ignore', 'pipe', 'ignore'] },
+      ).trim()
+      if (!RE_SHA40.test(commit)) {
+        throw new Error(`git rev-parse returned invalid SHA '${commit}'`)
+      }
+
+      // Remove `.git/` so the store entry contains only the working
+      // tree — matches the opensrc convention and prevents downstream
+      // callers from accidentally treating the entry as a live repo.
+      fs.rmSync(path.join(tmpDir, '.git'), { recursive: true, force: true })
+      return { commit, winningCandidate: candidate }
+    }
+    catch (err) {
+      lastErr = err
+      // Fall through to the next candidate
+    }
+  }
+  throw new Error(
+    `Failed to clone ${remoteUrl} at ${ref} (tried: ${candidates.join(', ')}): `
+    + `${lastErr instanceof Error ? lastErr.message : String(lastErr)}`,
+  )
+}
+
+/**
+ * Move a corrupted store entry to the quarantine directory so a fresh
+ * fetch can replace it. Quarantine is a timestamped directory under
+ * `<askHome>/.quarantine/` so a human can inspect (or delete) the bad
+ * entry later.
+ */
+function quarantineEntry(askHome: string, storeDir: string): void {
+  const ts = new Date().toISOString().replace(RE_TIMESTAMP_PUNCT, '-')
+  const uuid = crypto.randomUUID().slice(0, 8)
+  const quarantineDir = path.join(askHome, '.quarantine', `${ts}-${uuid}`)
+  fs.mkdirSync(path.dirname(quarantineDir), { recursive: true })
+  try {
+    fs.renameSync(storeDir, quarantineDir)
+    consola.warn(
+      `Corrupted store entry at ${storeDir} quarantined to ${quarantineDir}. `
+      + 'A fresh fetch will replace it.',
+    )
+  }
+  catch (err) {
+    consola.warn(
+      `Could not quarantine corrupted entry at ${storeDir}: `
+      + `${err instanceof Error ? err.message : String(err)}. Removing in place.`,
+    )
+    try {
+      fs.rmSync(storeDir, { recursive: true, force: true })
+    }
+    catch {
+      // best-effort
+    }
+  }
+}
+
 export class GithubSource implements DocSource {
   async fetch(options: SourceConfig): Promise<FetchResult> {
     const opts = options as GithubSourceOptions
@@ -42,44 +171,9 @@ export class GithubSource implements DocSource {
     const ref = opts.tag ?? opts.branch ?? 'main'
     const [owner, repoName] = repo.split('/')
 
-    // Resolve the ref to get the actual version (strip leading "v" from tags)
-    const tagVersion = opts.tag?.replace(RE_LEADING_V, '')
-    const resolvedVersion = tagVersion ?? opts.version
-
-    // Try bare clone first (reuses shared git object store across refs)
-    const askHome = resolveAskHome()
-    const storeCheckoutDir = githubCheckoutPath(askHome, owner, repoName, ref)
-
-    // Check store hit
-    if (fs.existsSync(storeCheckoutDir)) {
-      const files = this.extractDocsFromDir(storeCheckoutDir, repo, ref, docsPath)
-      const commit = this.resolveCommit(repo, ref)
-      return { files, resolvedVersion, storePath: storeCheckoutDir, meta: { commit, ref } }
-    }
-
-    // Try bare clone path
-    const bareResult = withBareClone(askHome, owner, repoName, ref)
-    if (bareResult) {
-      const files = this.extractDocsFromDir(bareResult, repo, ref, docsPath)
-      const commit = this.resolveCommit(repo, ref)
-      return { files, resolvedVersion, storePath: bareResult, meta: { commit, ref } }
-    }
-
-    // Fallback: tar.gz download
-    return this.fetchFromTarGz(opts, repo, ref, resolvedVersion, docsPath)
-  }
-
-  private async fetchFromTarGz(
-    opts: GithubSourceOptions,
-    repo: string,
-    ref: string,
-    resolvedVersion: string,
-    docsPath?: string,
-  ): Promise<FetchResult> {
-    // Validate repo + ref as defense-in-depth against path-traversal and
-    // shell-injection attacks. Both are already validated at the schema
-    // layer for `ask.json` entries, but source adapters can be called
-    // from other contexts (add command, tests).
+    // Defense-in-depth validation. Both fields are also validated at
+    // the schema layer, but sources can be invoked from other
+    // contexts (add command, tests).
     if (!RE_SAFE_REPO.test(repo)) {
       throw new Error(`Invalid repo '${repo}': must be owner/repo with safe characters`)
     }
@@ -87,15 +181,116 @@ export class GithubSource implements DocSource {
       throw new Error(`Invalid ref '${ref}': must contain only [A-Za-z0-9._/-]`)
     }
 
-    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ask-gh-'))
+    const tagVersion = opts.tag?.replace(RE_LEADING_V, '')
+    const resolvedVersion = tagVersion ?? opts.version
+    const askHome = resolveAskHome()
+
+    // Store-hit path: for each candidate key, check the new nested
+    // layout and verify integrity before trusting it. Callers may have
+    // given us `1.0.0` while the store holds `v1.0.0`, or vice versa.
+    for (const candidate of refCandidates(ref)) {
+      const storeDir = githubStorePath(askHome, DEFAULT_GITHUB_HOST, owner, repoName, candidate)
+      if (!fs.existsSync(storeDir))
+        continue
+      if (verifyEntry(storeDir)) {
+        const files = this.extractDocsFromDir(storeDir, repo, ref, docsPath)
+        return {
+          files,
+          resolvedVersion,
+          storePath: storeDir,
+          storeSubpath: docsPath,
+          meta: { ref },
+        }
+      }
+      quarantineEntry(askHome, storeDir)
+    }
+
+    // Fresh fetch. Prefer shallow clone; fall back to tar.gz if git is
+    // unavailable or the clone itself fails for a non-fatal reason.
+    const remoteUrl = opts.remoteUrl ?? `https://github.com/${repo}.git`
+    if (hasGit()) {
+      try {
+        return await this.fetchViaShallowClone(
+          opts,
+          repo,
+          owner,
+          repoName,
+          ref,
+          resolvedVersion,
+          docsPath,
+          remoteUrl,
+          askHome,
+        )
+      }
+      catch (err) {
+        consola.warn(
+          `git clone failed for ${repo}@${ref}: `
+          + `${err instanceof Error ? err.message : err}. `
+          + 'Falling back to tar.gz download.',
+        )
+      }
+    }
+
+    return this.fetchFromTarGz(opts, repo, owner, repoName, ref, resolvedVersion, docsPath, askHome)
+  }
+
+  private async fetchViaShallowClone(
+    opts: GithubSourceOptions,
+    repo: string,
+    owner: string,
+    repoName: string,
+    ref: string,
+    resolvedVersion: string,
+    docsPath: string | undefined,
+    remoteUrl: string,
+    askHome: string,
+  ): Promise<FetchResult> {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ask-gh-clone-'))
+    try {
+      const { commit, winningCandidate } = cloneAtTag(remoteUrl, ref, tmpDir)
+      const storeDir = githubStorePath(askHome, DEFAULT_GITHUB_HOST, owner, repoName, winningCandidate)
+
+      const lock = await acquireEntryLock(storeDir)
+      if (lock) {
+        try {
+          fs.mkdirSync(path.dirname(storeDir), { recursive: true })
+          cpDirAtomic(tmpDir, storeDir)
+          stampEntry(storeDir)
+        }
+        finally {
+          lock.release()
+        }
+      }
+
+      const files = this.extractDocsFromDir(storeDir, repo, ref, docsPath)
+      return {
+        files,
+        resolvedVersion,
+        storePath: storeDir,
+        storeSubpath: docsPath,
+        meta: { commit, ref: winningCandidate },
+      }
+    }
+    finally {
+      fs.rmSync(tmpDir, { recursive: true, force: true })
+    }
+  }
+
+  private async fetchFromTarGz(
+    opts: GithubSourceOptions,
+    repo: string,
+    owner: string,
+    repoName: string,
+    ref: string,
+    resolvedVersion: string,
+    docsPath: string | undefined,
+    askHome: string,
+  ): Promise<FetchResult> {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ask-gh-tar-'))
 
     try {
       const archiveUrl = `https://github.com/${repo}/archive/refs/${opts.tag ? 'tags' : 'heads'}/${ref}.tar.gz`
 
-      // Download via Node fetch (no shell), pipe body to `tar -xz` via
-      // spawnSync with discrete arguments. This eliminates the shell
-      // pipeline that previously interpolated `repo`/`ref` into a
-      // command string.
       const response = await fetch(archiveUrl)
       if (!response.ok) {
         throw new Error(
@@ -120,19 +315,12 @@ export class GithubSource implements DocSource {
       }
       const extractedDir = path.join(tmpDir, extractedDirs[0])
 
-      // Write the FULL extracted repo root to the store so subsequent
-      // store-hit reads can re-parse with different docsPath. The
-      // previous implementation wrote only flat docs files, which broke
-      // the store-hit fast path on git-less machines.
-      const [owner, repoName] = repo.split('/')
-      const askHome = resolveAskHome()
-      const storeDir = githubCheckoutPath(askHome, owner, repoName, ref)
+      // Write to the new nested layout. We use the ref as given because
+      // the tar.gz fallback has no fallback chain of its own.
+      const storeDir = githubStorePath(askHome, DEFAULT_GITHUB_HOST, owner, repoName, ref)
       const lock = await acquireEntryLock(storeDir)
       if (lock) {
         try {
-          // Atomically copy the extracted repo into the store so that a
-          // crash between the copy and the stamp never leaves a corrupt
-          // entry that passes the fs.existsSync hit check.
           fs.mkdirSync(path.dirname(storeDir), { recursive: true })
           cpDirAtomic(extractedDir, storeDir)
           stampEntry(storeDir)
@@ -142,11 +330,14 @@ export class GithubSource implements DocSource {
         }
       }
 
-      // Parse docs from the extracted tree (same shape as the store
-      // will hold, so subsequent store hits parse identically).
-      const files = this.extractDocsFromDir(extractedDir, repo, ref, docsPath)
-      const commit = this.resolveCommit(repo, ref)
-      return { files, resolvedVersion, storePath: storeDir, meta: { commit, ref } }
+      const files = this.extractDocsFromDir(storeDir, repo, ref, docsPath)
+      return {
+        files,
+        resolvedVersion,
+        storePath: storeDir,
+        storeSubpath: docsPath,
+        meta: { ref },
+      }
     }
     finally {
       fs.rmSync(tmpDir, { recursive: true, force: true })
@@ -206,37 +397,6 @@ export class GithubSource implements DocSource {
     }
 
     return files
-  }
-
-  /**
-   * Resolve a ref (tag or branch) to a full commit sha via `git ls-remote`.
-   * Returns undefined when git is unavailable or the ref cannot be resolved
-   * — the lockfile leaves `commit` undefined rather than guessing.
-   */
-  private resolveCommit(repo: string, ref: string): string | undefined {
-    try {
-      // execFileSync (not execSync) to bypass the shell — `ref` originates
-      // from user-supplied tag/branch and must not be interpolated into a
-      // shell command line.
-      const out = execFileSync(
-        'git',
-        ['ls-remote', `https://github.com/${repo}.git`, ref],
-        { encoding: 'utf-8', stdio: ['ignore', 'pipe', 'ignore'] },
-      ).trim()
-      // ls-remote may return multiple lines (e.g. tag + ^{} dereference).
-      // Prefer the dereferenced commit if present.
-      const lines = out.split('\n').filter(Boolean)
-      const dereferenced = lines.find(l => l.includes(`refs/tags/${ref}^{}`))
-      const sha = (dereferenced ?? lines[0])?.split(RE_WHITESPACE)[0]
-      return sha && RE_SHA40.test(sha) ? sha : undefined
-    }
-    catch (err) {
-      consola.warn(
-        `Could not resolve commit for ${repo}@${ref}: ${err instanceof Error ? err.message : err}. `
-        + 'Lockfile will not pin a commit sha for this entry.',
-      )
-      return undefined
-    }
   }
 
   private isDocFile(filename: string): boolean {

@@ -26,6 +26,12 @@ export interface GithubSourceOptions {
   branch?: string
   tag?: string
   docsPath?: string
+  /**
+   * Remote git URL override. Defaults to `https://github.com/<repo>.git`.
+   * Primarily used by tests to point at a local bare clone (`file://`
+   * URL or path); production code should leave this unset.
+   */
+  remoteUrl?: string
 }
 
 export interface WebSourceOptions {
