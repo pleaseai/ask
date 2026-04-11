@@ -46,6 +46,7 @@ node packages/cli/dist/index.js docs add <spec> -s <source> [options]
 
 ## Gotchas
 
+- Always use `bun run test` (not `bun test`) to run tests — `bun test` may be blocked by hooks or workspace configuration.
 - bun workspace uses `.bun/` symlink structure — native Node modules (e.g. better-sqlite3) may fail to load. Prefer native alternatives (e.g. `node:sqlite`)
 - Docus (Nuxt docs theme) is incompatible with bun workspace (nuxt-content/docus#1279)
 - Nuxt Content v3 requires SQLite at build time even when deploying to D1. Use `experimental.sqliteConnector: 'native'` (requires Node 22.5+)

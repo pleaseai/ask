@@ -66,9 +66,13 @@ export type LibraryEntry = z.infer<typeof LibraryEntrySchema>
 export type PmDrivenLibrary = z.infer<typeof PmDrivenLibraryEntry>
 export type StandaloneGithubLibrary = z.infer<typeof StandaloneGithubLibraryEntry>
 
+export const StoreModeSchema = z.enum(['copy', 'link', 'ref'])
+export type StoreMode = z.infer<typeof StoreModeSchema>
+
 export const AskJsonSchema = z.object({
   libraries: z.array(LibraryEntrySchema),
   emitSkill: z.boolean().optional(),
+  storeMode: StoreModeSchema.optional(),
 }).strict()
 
 export type AskJson = z.infer<typeof AskJsonSchema>

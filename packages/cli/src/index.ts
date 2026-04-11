@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import type { LibraryEntry } from './schemas.js'
+import type { LibraryEntry, StoreMode } from './schemas.js'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
@@ -17,6 +17,8 @@ import { renderList } from './list/render.js'
 import { removeSkill } from './skill.js'
 import { libraryNameFromSpec, parseSpec } from './spec.js'
 import { listDocs, removeDocs } from './storage.js'
+import { cacheGc, cacheLs, formatBytes, parseDuration } from './store/cache.js'
+import { resolveAskHome } from './store/index.js'
 
 /**
  * Validate the spec passed to `ask add`. Bare names (no ecosystem
@@ -24,6 +26,17 @@ import { listDocs, removeDocs } from './storage.js'
  * `github:owner/repo` so the install pipeline knows which path to
  * take.
  */
+const VALID_STORE_MODES = new Set<StoreMode>(['copy', 'link', 'ref'])
+
+function parseStoreMode(value: string | undefined): StoreMode | undefined {
+  if (!value)
+    return undefined
+  if (VALID_STORE_MODES.has(value as StoreMode))
+    return value as StoreMode
+  consola.error(`Invalid --store-mode '${value}'. Must be one of: copy, link, ref`)
+  process.exit(1)
+}
+
 const OWNER_REPO_RE = /^[^/]+\/[^/]+$/
 
 function normalizeAddSpec(input: string): string {
@@ -55,10 +68,15 @@ const installCmd = defineCommand({
       type: 'boolean',
       description: 'Emit a .claude/skills/<name>-docs/SKILL.md file for each installed library',
     },
+    'store-mode': {
+      type: 'string',
+      description: 'How to materialize store entries: copy (default), link (symlink), ref (no project-local files)',
+    },
   },
   async run({ args }) {
     const emitSkill = args['emit-skill'] ? true : undefined
-    await runInstall(process.cwd(), { force: Boolean(args.force), emitSkill })
+    const storeMode = parseStoreMode(args['store-mode'])
+    await runInstall(process.cwd(), { force: Boolean(args.force), emitSkill, storeMode })
   },
 })
 
@@ -84,6 +102,10 @@ const addCmd = defineCommand({
     'emit-skill': {
       type: 'boolean',
       description: 'Emit a .claude/skills/<name>-docs/SKILL.md file for each installed library',
+    },
+    'store-mode': {
+      type: 'string',
+      description: 'How to materialize store entries: copy (default), link (symlink), ref (no project-local files)',
     },
   },
   async run({ args }) {
@@ -128,7 +150,8 @@ const addCmd = defineCommand({
     writeAskJson(projectDir, askJson)
 
     const emitSkill = args['emit-skill'] ? true : undefined
-    await runInstall(projectDir, { onlySpecs: [spec], emitSkill })
+    const storeMode = parseStoreMode(args['store-mode'])
+    await runInstall(projectDir, { onlySpecs: [spec], emitSkill, storeMode })
   },
 })
 
@@ -225,6 +248,104 @@ const listCmd = defineCommand({
   },
 })
 
+const cacheLsCmd = defineCommand({
+  meta: {
+    name: 'ls',
+    description: 'List entries in the global ASK store',
+  },
+  args: {
+    kind: {
+      type: 'string',
+      description: 'Filter by kind: npm, github, web, llms-txt',
+    },
+  },
+  run({ args }) {
+    const askHome = resolveAskHome()
+    const kind = args.kind
+    if (kind && !['npm', 'github', 'web', 'llms-txt'].includes(kind)) {
+      consola.error(`Invalid --kind '${kind}'. Must be one of: npm, github, web, llms-txt`)
+      process.exit(1)
+    }
+    const entries = cacheLs(askHome, kind ? { kind: kind as 'npm' | 'github' | 'web' | 'llms-txt' } : undefined)
+
+    if (entries.length === 0) {
+      consola.info(`No entries in store at ${askHome}`)
+      return
+    }
+
+    consola.info(`Store: ${askHome}`)
+    consola.info(`${entries.length} entr${entries.length === 1 ? 'y' : 'ies'}:\n`)
+    for (const entry of entries) {
+      consola.log(`  ${entry.kind}/${entry.key}  ${formatBytes(entry.sizeBytes)}`)
+    }
+
+    const totalBytes = entries.reduce((sum, e) => sum + e.sizeBytes, 0)
+    consola.info(`\nTotal: ${formatBytes(totalBytes)}`)
+  },
+})
+
+const cacheGcCmd = defineCommand({
+  meta: {
+    name: 'gc',
+    description: 'Remove unreferenced entries from the global ASK store',
+  },
+  args: {
+    'dry-run': {
+      type: 'boolean',
+      description: 'Show what would be removed without deleting',
+    },
+    'older-than': {
+      type: 'string',
+      description: 'Only remove entries older than this duration (e.g. 30d, 12h, 90m, 60s)',
+    },
+  },
+  run({ args }) {
+    const askHome = resolveAskHome()
+    const dryRun = Boolean(args['dry-run'])
+    const scanRoots = process.env.ASK_GC_SCAN_ROOTS
+      ? process.env.ASK_GC_SCAN_ROOTS.split(':')
+      : undefined
+
+    let olderThan: number | undefined
+    if (args['older-than']) {
+      const parsed = parseDuration(args['older-than'])
+      if (parsed === null) {
+        consola.error(`Invalid --older-than value '${args['older-than']}'. Use format like 30d, 12h, 90m, 60s.`)
+        process.exit(1)
+      }
+      olderThan = parsed
+    }
+
+    const result = cacheGc(askHome, { dryRun, scanRoots, olderThan })
+
+    if (result.removed.length === 0) {
+      consola.success('Store is clean — no unreferenced entries.')
+      return
+    }
+
+    if (dryRun) {
+      consola.info(`Would remove ${result.removed.length} entr${result.removed.length === 1 ? 'y' : 'ies'} (${formatBytes(result.freedBytes)}):`)
+      for (const entry of result.removed) {
+        consola.log(`  ${entry.kind}/${entry.key}  ${formatBytes(entry.sizeBytes)}`)
+      }
+    }
+    else {
+      consola.success(`Removed ${result.removed.length} entr${result.removed.length === 1 ? 'y' : 'ies'}, freed ${formatBytes(result.freedBytes)}.`)
+    }
+  },
+})
+
+const cacheCmd = defineCommand({
+  meta: {
+    name: 'cache',
+    description: 'Manage the global ASK documentation store',
+  },
+  subCommands: {
+    ls: cacheLsCmd,
+    gc: cacheGcCmd,
+  },
+})
+
 // Read version from package.json at runtime so release-please bumps
 // automatically propagate to `--version` output. `import.meta.url`
 // resolves relative to the compiled file location (`dist/index.js` →
@@ -245,6 +366,7 @@ export const main = defineCommand({
     add: addCmd,
     remove: removeCmd,
     list: listCmd,
+    cache: cacheCmd,
   },
 })
 

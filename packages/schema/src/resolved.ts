@@ -28,6 +28,10 @@ export const ResolvedEntrySchema = z.object({
   fileCount: z.number().int().nonnegative(),
   /** Tracks intent-skills entries separately from materialized docs. */
   format: z.enum(['docs', 'intent-skills']).optional(),
+  /** Absolute path to the finalized store entry (when global store is active). */
+  storePath: z.string().optional(),
+  /** How the project-local `.ask/docs/<pkg>@<v>/` was materialized from the store. */
+  materialization: z.enum(['copy', 'link', 'ref']).optional(),
 }).strict()
 
 export type ResolvedEntry = z.infer<typeof ResolvedEntrySchema>

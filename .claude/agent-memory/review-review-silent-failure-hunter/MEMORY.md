@@ -1,0 +1,2 @@
+- [Global store atomicity patterns](project_store_atomicity.md) — writeEntryAtomic/acquireEntryLock have known race windows; check before touching
+- [Shell pipe stderr loss pattern](feedback_shell_pipe_errors.md) — curl|tar execSync strings erase real errors; require -fsSL or execFileSync

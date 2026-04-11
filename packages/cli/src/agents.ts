@@ -1,5 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import { readResolvedJson } from './io.js'
 import { getLibraryDocsDir, listDocs } from './storage.js'
 
 const BEGIN_MARKER = '<!-- BEGIN:ask-docs-auto-generated -->'
@@ -11,11 +12,14 @@ export function generateAgentsMd(projectDir: string): string {
   if (docs.length === 0)
     return ''
 
+  const resolved = readResolvedJson(projectDir)
+
   const sections = docs.map(({ name, version }) => {
-    const docsRelPath = path.relative(
-      projectDir,
-      getLibraryDocsDir(projectDir, name, version),
-    )
+    // For ref mode, use the storePath directly instead of project-local path
+    const resolvedEntry = resolved.entries[name]
+    const docsRelPath = resolvedEntry?.materialization === 'ref' && resolvedEntry.storePath
+      ? resolvedEntry.storePath
+      : path.relative(projectDir, getLibraryDocsDir(projectDir, name, version))
 
     const major = version.split('.')[0]
 

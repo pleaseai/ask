@@ -84,6 +84,30 @@ describe('AskJsonSchema', () => {
     const result = AskJsonSchema.parse({ libraries: [] })
     expect((result as { emitSkill?: boolean }).emitSkill).toBeUndefined()
   })
+
+  it('accepts storeMode: copy', () => {
+    const result = AskJsonSchema.parse({ libraries: [], storeMode: 'copy' })
+    expect(result.storeMode).toBe('copy')
+  })
+
+  it('accepts storeMode: link', () => {
+    const result = AskJsonSchema.parse({ libraries: [], storeMode: 'link' })
+    expect(result.storeMode).toBe('link')
+  })
+
+  it('accepts storeMode: ref', () => {
+    const result = AskJsonSchema.parse({ libraries: [], storeMode: 'ref' })
+    expect(result.storeMode).toBe('ref')
+  })
+
+  it('accepts absence of storeMode (optional field)', () => {
+    const result = AskJsonSchema.parse({ libraries: [] })
+    expect(result.storeMode).toBeUndefined()
+  })
+
+  it('rejects invalid storeMode value', () => {
+    expect(() => AskJsonSchema.parse({ libraries: [], storeMode: 'invalid' })).toThrow()
+  })
 })
 
 describe('ResolvedJsonSchema', () => {
@@ -146,6 +170,96 @@ describe('ResolvedJsonSchema', () => {
       schemaVersion: 2,
       generatedAt: validIso,
       entries: {},
+    })).toThrow()
+  })
+
+  it('accepts optional storePath and materialization fields', () => {
+    const result = ResolvedJsonSchema.parse({
+      schemaVersion: 1,
+      generatedAt: validIso,
+      entries: {
+        next: {
+          spec: 'npm:next',
+          resolvedVersion: '16.2.3',
+          contentHash: validHash,
+          fetchedAt: validIso,
+          fileCount: 5,
+          storePath: '/home/user/.ask/npm/next@16.2.3',
+          materialization: 'copy',
+        },
+      },
+    })
+    expect(result.entries.next!.storePath).toBe('/home/user/.ask/npm/next@16.2.3')
+    expect(result.entries.next!.materialization).toBe('copy')
+  })
+
+  it('accepts materialization: link', () => {
+    const result = ResolvedJsonSchema.parse({
+      schemaVersion: 1,
+      generatedAt: validIso,
+      entries: {
+        next: {
+          spec: 'npm:next',
+          resolvedVersion: '16.2.3',
+          contentHash: validHash,
+          fetchedAt: validIso,
+          fileCount: 5,
+          materialization: 'link',
+        },
+      },
+    })
+    expect(result.entries.next!.materialization).toBe('link')
+  })
+
+  it('accepts materialization: ref', () => {
+    const result = ResolvedJsonSchema.parse({
+      schemaVersion: 1,
+      generatedAt: validIso,
+      entries: {
+        next: {
+          spec: 'npm:next',
+          resolvedVersion: '16.2.3',
+          contentHash: validHash,
+          fetchedAt: validIso,
+          fileCount: 5,
+          materialization: 'ref',
+        },
+      },
+    })
+    expect(result.entries.next!.materialization).toBe('ref')
+  })
+
+  it('rejects invalid materialization value', () => {
+    expect(() => ResolvedJsonSchema.parse({
+      schemaVersion: 1,
+      generatedAt: validIso,
+      entries: {
+        next: {
+          spec: 'npm:next',
+          resolvedVersion: '16.2.3',
+          contentHash: validHash,
+          fetchedAt: validIso,
+          fileCount: 5,
+          materialization: 'invalid',
+        },
+      },
+    })).toThrow()
+  })
+
+  it('rejects unknown fields on ResolvedEntry (strict)', () => {
+    expect(() => ResolvedJsonSchema.parse({
+      schemaVersion: 1,
+      generatedAt: validIso,
+      entries: {
+        next: {
+          spec: 'npm:next',
+          resolvedVersion: '16.2.3',
+          contentHash: validHash,
+          fetchedAt: validIso,
+          fileCount: 5,
+          unknownField: true,
+        },
+      },
     })).toThrow()
   })
 })

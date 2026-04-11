@@ -2,6 +2,22 @@
 
 ## [Unreleased]
 
+### Features
+
+* **store:** Introduce global ASK docs store at `~/.ask/` for cross-project dedup.
+  - All source adapters (npm, github, web, llms-txt) now write fetched docs into `<ASK_HOME>/<kind>/<key>/` before materializing into the project.
+  - Three materialization modes via `--store-mode` or `ask.json.storeMode`:
+    - `copy` (default): write files into `.ask/docs/<pkg>@<v>/` as before.
+    - `link`: symlink from `.ask/docs/<pkg>@<v>/` → store entry. Falls back to `copy` on `EPERM`/`EACCES`.
+    - `ref`: no project-local files; AGENTS.md points at the store path directly.
+  - `ASK_HOME` env var overrides the default `~/.ask/` location.
+  - GitHub source uses bare clone + `git archive` for multi-ref efficiency (Cargo-style).
+  - Per-entry `.lock` file prevents concurrent installs from corrupting the store.
+  - Content hash validation via `.ask-hash` files.
+* **cache:** New `ask cache ls [--kind]` and `ask cache gc [--dry-run]` commands for store introspection and cleanup.
+  - `gc` scans `$HOME` (or `ASK_GC_SCAN_ROOTS`) for `.ask/resolved.json` files to build the referenced-keys set before deleting.
+* **schema:** `ask.json` gains optional `storeMode` field; `resolved.json` entries gain `storePath` and `materialization` fields.
+
 ### ⚠ BREAKING CHANGES
 
 * **install:** Claude Code skill emission is now **off by default**. Running `ask install` no longer writes `.claude/skills/<name>-docs/SKILL.md`. Only `.ask/docs/`, `AGENTS.md`, and `CLAUDE.md` are created by default.
