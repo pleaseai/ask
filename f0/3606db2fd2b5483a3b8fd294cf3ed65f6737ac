@@ -1,0 +1,35 @@
+.please/docs/tracks/completed/lazy-ask-src-docs-20260411/spec.md
+  74a2e7a6401ed388 1-133
+.please/docs/product-specs/index.md
+  74a2e7a6401ed388 9
+.please/docs/tracks/completed/lazy-ask-src-docs-20260411/metadata.json
+  74a2e7a6401ed388 4,6,8
+.please/docs/tracks.jsonl
+  74a2e7a6401ed388 19
+.please/docs/product-specs/cli/spec.md
+  74a2e7a6401ed388 1-146
+README.md
+  74a2e7a6401ed388 119-181
+.please/docs/tracks/completed/lazy-ask-src-docs-20260411/plan.md
+  74a2e7a6401ed388 205-244
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "f03606db2fd2b5483a3b8fd294cf3ed65f6737ac",
+  "prompts": {
+    "74a2e7a6401ed388": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d319e5fd-e178-4adb-9d0b-ec62e3fe1a92",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 634,
+      "total_deletions": 252,
+      "accepted_lines": 595,
+      "overriden_lines": 0
+    }
+  }
+}
