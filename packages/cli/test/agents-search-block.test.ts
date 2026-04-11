@@ -71,7 +71,7 @@ describe('generateAgentsMd — search subsection (FR-10)', () => {
     generateAgentsMd(tmpDir)
     const md = readAgentsMd()
     expect(md).toContain('rg "pattern" $(ask src <package>)')
-    expect(md).toContain('cat $(ask docs <package>)/api.md')
+    expect(md).toContain('cat "$(ask src <package>)/README.md"')
     expect(md).toContain('fd "\\.md$" $(ask docs <package>)')
   })
 

@@ -32,12 +32,12 @@ This is the first registry-free entry point in ASK — a deliberate departure fr
   - Skips: `node_modules`, `.git`, `.next`, `.nuxt`, `dist`, `build`, `coverage`, all dotdirs
   - Depth-limited to 4 levels
   - Matches directory basename against `/doc/i` (case-insensitive substring match)
-  - Always includes the source root as the first output line, even if no `*doc*` subdir is found
+  - Always includes each scanned root at the start of its section; overall output order is node_modules paths first (when present), then cached checkout paths.
 - [ ] **FR-9**: Both commands support a `--no-fetch` flag — when set, return cache hit only and exit 1 if cache is empty. Useful for CI guards.
 - [ ] **FR-10**: `agents.ts:generateAgentsMd` auto-block (`<!-- BEGIN:ask-docs-auto-generated -->`) gets a new "Searching across cached libraries" subsection at the end of the block, showing substitution patterns:
   ```
   rg "pattern" $(ask src <package>)
-  cat $(ask docs <package>)/api.md
+  cat "$(ask src <package>)/README.md"
   fd "\.md$" $(ask docs <package>)
   ```
   The existing per-library file listing block above is preserved unchanged.

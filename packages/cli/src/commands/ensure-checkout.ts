@@ -65,9 +65,10 @@ export class NoCacheError extends Error {
 /**
  * Split a trailing `@version` suffix from a user-supplied spec.
  *
- * The version separator is the LAST `@` in the input. If any `/` appears
- * AFTER that `@`, it's a scoped npm name marker (e.g. `@vercel/ai`), not
- * a version separator.
+ * The version separator is the LAST `@` in the input. The last `@` is treated
+ * as a scope marker (not a version separator) when it is either at position 0
+ * (bare scoped name) or immediately follows a `:` (ecosystem-prefix scoped
+ * name like `npm:@vercel/ai`).
  *
  * Examples:
  *   - `react`                       → { spec: 'react' }
@@ -75,16 +76,18 @@ export class NoCacheError extends Error {
  *   - `@vercel/ai`                  → { spec: '@vercel/ai' }
  *   - `@vercel/ai@5.0.0`            → { spec: '@vercel/ai', version: '5.0.0' }
  *   - `npm:react@18.2.0`            → { spec: 'npm:react', version: '18.2.0' }
- *   - `github:facebook/react@v18.2` → { spec: 'github:facebook/react', version: 'v18.2' }
+ *   - `github:facebook/react@v18.2`           → { spec: 'github:facebook/react', version: 'v18.2' }
+ *   - `github:facebook/react@release/v1.2.3` → { spec: 'github:facebook/react', version: 'release/v1.2.3' }
  */
 export function splitExplicitVersion(input: string): { spec: string, version?: string } {
   const lastAt = input.lastIndexOf('@')
   if (lastAt < 0) {
     return { spec: input }
   }
-  const afterAt = input.slice(lastAt)
-  if (afterAt.includes('/')) {
-    // The last `@` is the start of a scoped name, not a version separator.
+  if (lastAt === 0 || input[lastAt - 1] === ':') {
+    // The `@` is either the very first character (bare scoped name, e.g. `@vercel/ai`)
+    // or immediately follows an ecosystem prefix colon (e.g. `npm:@vercel/ai`).
+    // In both cases it is a scope marker, not a version separator.
     return { spec: input }
   }
   return { spec: input.slice(0, lastAt), version: input.slice(lastAt + 1) }

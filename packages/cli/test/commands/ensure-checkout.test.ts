@@ -92,6 +92,13 @@ describe('splitExplicitVersion', () => {
       version: 'v18.2.0',
     })
   })
+
+  it('splits @version containing slashes (git ref with path component)', () => {
+    expect(splitExplicitVersion('github:facebook/react@release/v1.2.3')).toEqual({
+      spec: 'github:facebook/react',
+      version: 'release/v1.2.3',
+    })
+  })
 })
 
 // ── ensureCheckout ─────────────────────────────────────────────

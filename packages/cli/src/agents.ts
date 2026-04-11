@@ -21,7 +21,7 @@ Both commands work with shell substitution:
 
 \`\`\`bash
 rg "pattern" $(ask src <package>)
-cat $(ask docs <package>)/api.md
+cat "$(ask src <package>)/README.md"
 fd "\\.md$" $(ask docs <package>)
 \`\`\`
 
