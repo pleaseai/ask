@@ -1,0 +1,25 @@
+packages/cli/src/index.ts
+  74a2e7a6401ed388 11-12,381-382
+packages/cli/test/cli/src-docs-registration.test.ts
+  74a2e7a6401ed388 1-70
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "a704fe6bd9c57c871f8d496915adc91180be91ba",
+  "prompts": {
+    "74a2e7a6401ed388": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d319e5fd-e178-4adb-9d0b-ec62e3fe1a92",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 76,
+      "total_deletions": 2,
+      "accepted_lines": 85,
+      "overriden_lines": 0
+    }
+  }
+}
