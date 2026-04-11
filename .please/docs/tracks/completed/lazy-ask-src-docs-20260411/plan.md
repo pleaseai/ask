@@ -202,4 +202,43 @@ All 10 acceptance criteria (AC-1 through AC-10) must be confirmed before merge.
 
 ## Surprises & Discoveries
 
-_To be filled in during implementation._
+- The full extracted tree at `~/.ask/github/checkouts/<o>__<r>/<ref>/` was already in place from a previous track — this collapsed the implementation from "build a new cache layer" to "expose the existing one as two new commands". Verified by direct read of `sources/github.ts:123-129` before the spec was finalized.
+- `tsserver` diagnostic warnings on the test files (`Cannot find module 'node:fs'`, etc.) are stale and not from the actual `bun run --cwd packages/cli build`. The diagnostics surface in the editor but real `bun run lint` and `bun run test` are clean. Pre-existing tsc errors in `install.ts`/`storage.ts`/`agents.ts` (around `materialization`/`inPlacePath`/`StoreMode`) are NOT from this track and reproduce on `main` — verified via `git stash` test.
+- Repo label naming is inconsistent: `status/draft` uses `/` but `status:in-progress` uses `:` (and the `status:review` / `status/review` variants are both missing). Issue label sync failed during finalize and was treated as non-blocking.
+
+## Outcomes & Retrospective
+
+### What Was Shipped
+
+Two new lazy CLI commands (`ask src <spec>` and `ask docs <spec>`) plus their shared infrastructure:
+
+- `commands/ensure-checkout.ts` — `ensureCheckout` helper + `splitExplicitVersion` parser + `NoCacheError` class
+- `commands/find-doc-paths.ts` — depth-4 walker with skip set and `/doc/i` matcher
+- `commands/src.ts` — `runSrc` + citty wrapper
+- `commands/docs.ts` — `runDocs` + citty wrapper
+- `agents.ts` — extended with "Searching across cached libraries" subsection
+- `index.ts` — wired both commands into the root `subCommands` map
+- README.md — added "Lazy commands for ad-hoc exploration" section under Usage
+- product.md — updated Core Value Proposition with the lazy escape hatch
+
+10 commits, 65 new tests (129 expect() calls), all green. Lint clean. Spec compliance review and code review both pass with all Important issues fixed in iteration 1.
+
+### What Went Well
+
+- **Direct code reading before spec finalization** caught the "full tree already at the right path" surprise, which collapsed scope from a multi-PR track to a single ~150 LOC commit. The 12-turn design discussion was front-loaded into spec quality, not implementation rework.
+- **Dependency injection seam pattern** (`*Deps` interfaces) made every test a unit test — no network, no real `~/.ask/`, no subprocess spawning. The test suite runs in 200ms.
+- **Atomic TDD task pacing** (RED → GREEN → REFACTOR → COMMIT per task) produced clean commit history that maps 1:1 to plan.md tasks. Each commit passes lint and tests in isolation.
+- **Cache-sharing pin (T007)** was added as a structural test against `githubCheckoutPath()` rather than an end-to-end install/src sequence — this caught the actual invariant ("eager and lazy share the same path key") at the right abstraction layer.
+
+### What Could Improve
+
+- **Pre-existing tsc errors** in `install.ts`/`storage.ts`/`agents.ts` blocked the `bun run build` step. Verifying they were pre-existing required a `git stash` cycle — a faster check (e.g. `git log -p` of the offending files) would have been less disruptive.
+- **First commit on the branch lost files** when `gh issue develop --checkout` cut the branch from `origin/main` instead of local `main`. Recovery via `git checkout main -- <file>` worked, but the workflow should warn before re-creating a branch from remote when local has unpushed commits.
+- **Repo label naming inconsistency** (`status/draft` vs `status:in-progress`) caused two label sync failures during the workflow. Worth normalizing in a follow-up.
+- **The first review iteration found 3 Important issues** that would have been caught earlier with a "is the test discriminating between the two cases I think it tests?" pre-commit check. Specifically, `docs.test.ts:113` tested an ambiguous condition. Adding a "test must distinguish from its sibling" review heuristic to the TDD checklist would help.
+
+### Tech Debt Created
+
+- **EC-6 (corrupted cache entry → re-fetch)** is documented in the spec but not implemented in `ensureCheckout`. The current behavior matches the existing `GithubSource.fetch` cache check (bare `fs.existsSync`), so this is consistent with the repo state — but it's a known limitation. Worth a follow-up track that adds `verifyEntry` to the cache-hit path here AND in install.ts symmetrically.
+- **`EnsureCheckoutResult.npmPackageName` could be a discriminated union** to express the "present iff npm ecosystem" invariant at the type level. Current shape is `string | undefined`, which works but allows callers to forget the undefined check. Type-analyzer flagged at confidence 85 — deferred as a non-blocking design refinement.
+- **Pre-existing tsc errors** in `install.ts`/`storage.ts`/`agents.ts` (around `materialization`, `inPlacePath`, `storePath`, `StoreMode`) need a separate cleanup track. They're from the in-place npm docs feature merged in `d05025f` and reproduce on `main`.
