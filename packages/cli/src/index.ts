@@ -78,12 +78,23 @@ const installCmd = defineCommand({
       type: 'boolean',
       description: 'Force copy of discovery-detected npm docs into .ask/docs/ instead of referencing node_modules in place',
     },
+    'allow-mutable-ref': {
+      type: 'boolean',
+      description: 'Accept mutable refs (main/master/HEAD/latest) in standalone github entries. Intended for CI and test fixtures only.',
+    },
   },
   async run({ args }) {
     const emitSkill = args['emit-skill'] ? true : undefined
     const storeMode = parseStoreMode(args['store-mode'])
     const inPlace = args['no-in-place'] ? false : undefined
-    await runInstall(process.cwd(), { force: Boolean(args.force), emitSkill, storeMode, inPlace })
+    const allowMutableRef = Boolean(args['allow-mutable-ref'])
+    await runInstall(process.cwd(), {
+      force: Boolean(args.force),
+      emitSkill,
+      storeMode,
+      inPlace,
+      allowMutableRef,
+    })
   },
 })
 
@@ -118,11 +129,16 @@ const addCmd = defineCommand({
       type: 'boolean',
       description: 'Force copy of discovery-detected npm docs into .ask/docs/ instead of referencing node_modules in place',
     },
+    'allow-mutable-ref': {
+      type: 'boolean',
+      description: 'Accept mutable refs (main/master/HEAD/latest). Intended for CI and test fixtures only.',
+    },
   },
   async run({ args }) {
     const projectDir = process.cwd()
     const spec = normalizeAddSpec(args.spec)
     const parsed = parseSpec(spec)
+    const allowMutableRef = Boolean(args['allow-mutable-ref'])
 
     if (parsed.kind === 'github' && !args.ref) {
       consola.error(
@@ -163,7 +179,13 @@ const addCmd = defineCommand({
     const emitSkill = args['emit-skill'] ? true : undefined
     const storeMode = parseStoreMode(args['store-mode'])
     const inPlace = args['no-in-place'] ? false : undefined
-    await runInstall(projectDir, { onlySpecs: [spec], emitSkill, storeMode, inPlace })
+    await runInstall(projectDir, {
+      onlySpecs: [spec],
+      emitSkill,
+      storeMode,
+      inPlace,
+      allowMutableRef,
+    })
   },
 })
 

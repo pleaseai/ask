@@ -84,6 +84,31 @@ describe('ask CLI surface (install/add/remove/list)', () => {
     ])
   })
 
+  it('ask add github:<owner>/<repo> --ref main --allow-mutable-ref writes the entry', async () => {
+    // Pre-create an empty ask.json so the CLI path doesn't bootstrap
+    // inside runInstall (which could interact with the flag plumbing
+    // in subtle ways). We only care here that the schema accepts a
+    // mutable ref when the lax variant is selected.
+    fs.writeFileSync(path.join(tmpDir, 'ask.json'), '{"libraries": []}\n')
+
+    try {
+      await runCli(tmpDir, [
+        'add',
+        'github:pleaseai/this-does-not-exist',
+        '--ref',
+        'main',
+        '--allow-mutable-ref',
+      ])
+    }
+    catch {
+      // install step may fail (network), but ask.json mutation should land
+    }
+    const askJson = readAskJson(tmpDir, { allowMutableRef: true })
+    expect(askJson?.libraries).toEqual([
+      { spec: 'github:pleaseai/this-does-not-exist', ref: 'main' },
+    ])
+  })
+
   it('ask remove deletes a matching entry from ask.json (AC-7)', async () => {
     fs.writeFileSync(
       path.join(tmpDir, 'ask.json'),

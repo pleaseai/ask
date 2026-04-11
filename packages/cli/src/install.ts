@@ -16,6 +16,7 @@ import {
   readResolvedJson,
   removeResolvedEntries,
   upsertResolvedEntry,
+  validateAskJsonStrict,
   writeAskJson,
   writeResolvedJson,
 } from './io.js'
@@ -51,6 +52,12 @@ export interface RunInstallOptions {
    * `ask.json`. Precedence: CLI flag > ask.json `inPlace` > default true.
    */
   inPlace?: boolean
+  /**
+   * When true, accept mutable refs (main/master/HEAD/latest) in
+   * `ask.json`. Switches the schema parser from strict to lax for
+   * this install cycle. CLI flag: `--allow-mutable-ref`.
+   */
+  allowMutableRef?: boolean
 }
 
 export interface InstallSummary {
@@ -85,6 +92,23 @@ export async function runInstall(
       + 'Add libraries with `ask add npm:<package>` or `ask add github:<owner>/<repo>`.',
     )
     return { installed: 0, unchanged: 0, skipped: 0, failed: 0 }
+  }
+
+  // Strict ref validation — enforced here at the CLI boundary rather
+  // than inside readAskJson so that internal readers (listDocs,
+  // generateAgentsMd, manageIgnoreFiles, etc.) never need to know
+  // about the escape hatch. When --allow-mutable-ref is set we skip
+  // the strict pass entirely.
+  if (!options.allowMutableRef) {
+    try {
+      validateAskJsonStrict(askJson)
+    }
+    catch (err) {
+      consola.error(
+        `ask.json contains invalid entries: ${err instanceof Error ? err.message : err}`,
+      )
+      throw err
+    }
   }
 
   // Resolve emitSkill: CLI flag (options.emitSkill) > ask.json emitSkill > false.
