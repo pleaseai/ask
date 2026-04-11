@@ -6,6 +6,29 @@ import { getLibraryDocsDir, listDocs } from './storage.js'
 const BEGIN_MARKER = '<!-- BEGIN:ask-docs-auto-generated -->'
 const END_MARKER = '<!-- END:ask-docs-auto-generated -->'
 
+/**
+ * Search subsection appended to the auto-generated block. Documents the
+ * lazy `ask src` and `ask docs` commands so coding agents know how to
+ * grep across cached library sources without needing entries in
+ * `ask.json`. See FR-10 of the lazy-ask-src-docs track.
+ */
+const SEARCH_SUBSECTION = `## Searching across cached libraries
+
+For libraries NOT in this list, use the lazy commands \`ask src <package>\`
+and \`ask docs <package>\`. They print absolute paths to the cached source
+tree (and any \`*doc*\` directories), with on-demand fetch on cache miss.
+Both commands work with shell substitution:
+
+\`\`\`bash
+rg "pattern" $(ask src <package>)
+cat $(ask docs <package>)/api.md
+fd "\\.md$" $(ask docs <package>)
+\`\`\`
+
+\`ask src\` outputs a single line (the source root); \`ask docs\` outputs
+multiple lines (every \`*doc*\` directory plus the root). Decide which
+path is the real documentation by reading the contents.`
+
 export function generateAgentsMd(projectDir: string): string {
   const docs = listDocs(projectDir).filter(e => e.format === 'docs')
 
@@ -67,6 +90,8 @@ Treat it as **read-only**: AI context should reference these files, but they are
 performed via \`ask install\`.
 
 ${sections.join('\n\n')}
+
+${SEARCH_SUBSECTION}
 ${END_MARKER}`
 
   // Read existing AGENTS.md and update or create
