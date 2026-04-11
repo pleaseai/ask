@@ -8,6 +8,17 @@ const ContentHashField = z.string().regex(
 const IsoDateTimeField = z.string().datetime({ offset: true })
 
 /**
+ * Git commit SHA. 40-char lowercase hex — the canonical form returned
+ * by `git rev-parse HEAD` and `git ls-remote`. Stored optionally on
+ * resolved entries so `ask` can later detect upstream retags without
+ * cloning: compare the recorded SHA against a fresh `git ls-remote`.
+ */
+const GitCommitShaField = z.string().regex(
+  /^[0-9a-f]{40}$/,
+  'commit must be a 40-char lowercase hex SHA',
+)
+
+/**
  * One row in `.ask/resolved.json` — the cache that lets `ask install`
  * short-circuit when nothing has changed (NFR-1, FR-11).
  *
@@ -38,6 +49,13 @@ export const ResolvedEntrySchema = z.object({
   materialization: z.enum(['copy', 'link', 'ref', 'in-place']).optional(),
   /** Project-relative path to docs when materialization is 'in-place' (e.g. node_modules/next/dist/docs). */
   inPlacePath: z.string().optional(),
+  /**
+   * Git commit SHA that a `github` entry's ref resolved to at install
+   * time. Populated from `FetchResult.meta.commit` (already captured via
+   * `git ls-remote` or `git rev-parse HEAD` in the github source).
+   * Omitted for npm/web/llms-txt entries.
+   */
+  commit: GitCommitShaField.optional(),
 }).strict().superRefine((val, ctx) => {
   if (val.materialization === 'in-place' && !val.inPlacePath) {
     ctx.addIssue({

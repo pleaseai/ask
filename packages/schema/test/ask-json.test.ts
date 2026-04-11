@@ -323,6 +323,76 @@ describe('ResolvedJsonSchema', () => {
     })).toThrow()
   })
 
+  it('accepts optional commit field (40-char hex SHA)', () => {
+    const sha = 'a'.repeat(40)
+    const result = ResolvedJsonSchema.parse({
+      schemaVersion: 1,
+      generatedAt: validIso,
+      entries: {
+        next: {
+          spec: 'github:vercel/next.js',
+          resolvedVersion: '14.2.3',
+          contentHash: validHash,
+          fetchedAt: validIso,
+          fileCount: 5,
+          commit: sha,
+        },
+      },
+    })
+    expect(result.entries.next!.commit).toBe(sha)
+  })
+
+  it('accepts absence of commit field (optional)', () => {
+    const result = ResolvedJsonSchema.parse({
+      schemaVersion: 1,
+      generatedAt: validIso,
+      entries: {
+        next: {
+          spec: 'github:vercel/next.js',
+          resolvedVersion: '14.2.3',
+          contentHash: validHash,
+          fetchedAt: validIso,
+          fileCount: 5,
+        },
+      },
+    })
+    expect(result.entries.next!.commit).toBeUndefined()
+  })
+
+  it('rejects commit with non-40-hex format', () => {
+    expect(() => ResolvedJsonSchema.parse({
+      schemaVersion: 1,
+      generatedAt: validIso,
+      entries: {
+        next: {
+          spec: 'github:vercel/next.js',
+          resolvedVersion: '14.2.3',
+          contentHash: validHash,
+          fetchedAt: validIso,
+          fileCount: 5,
+          commit: 'not-a-sha',
+        },
+      },
+    })).toThrow()
+  })
+
+  it('rejects commit shorter than 40 chars', () => {
+    expect(() => ResolvedJsonSchema.parse({
+      schemaVersion: 1,
+      generatedAt: validIso,
+      entries: {
+        next: {
+          spec: 'github:vercel/next.js',
+          resolvedVersion: '14.2.3',
+          contentHash: validHash,
+          fetchedAt: validIso,
+          fileCount: 5,
+          commit: 'a'.repeat(7),
+        },
+      },
+    })).toThrow()
+  })
+
   it('rejects unknown fields on ResolvedEntry (strict)', () => {
     expect(() => ResolvedJsonSchema.parse({
       schemaVersion: 1,
