@@ -1,0 +1,23 @@
+.please/docs/tracks/active/lazy-ask-src-docs-20260411/plan.md
+  74a2e7a6401ed388 195
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "1413616a8aabca31953e40d320509c8472c26bc7",
+  "prompts": {
+    "74a2e7a6401ed388": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d319e5fd-e178-4adb-9d0b-ec62e3fe1a92",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 1,
+      "total_deletions": 0,
+      "accepted_lines": 2,
+      "overriden_lines": 0
+    }
+  }
+}
