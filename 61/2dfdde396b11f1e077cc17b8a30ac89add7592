@@ -1,0 +1,42 @@
+.please/docs/tracks/active/github-store-pm-unified-20260411/plan.md
+  25617ee857940675 1-115
+.please/docs/tracks.jsonl
+  25617ee857940675 20
+.please/docs/tracks/active/github-store-pm-unified-20260411/metadata.json
+  25617ee857940675 1-11
+.please/docs/tracks/active/github-store-pm-unified-20260411/spec.md
+  25617ee857940675 1-118
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "612dfdde396b11f1e077cc17b8a30ac89add7592",
+  "prompts": {
+    "25617ee857940675": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "bdc50ebe-3a8e-4624-adb8-451ba7c54e11",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 249,
+      "total_deletions": 4,
+      "accepted_lines": 245,
+      "overriden_lines": 0
+    },
+    "d6cf5587ddaac39a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b4118b28-ab27-4508-b350-cc452b23b66c",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 1,
+      "total_deletions": 0,
+      "accepted_lines": 1,
+      "overriden_lines": 0
+    }
+  }
+}
