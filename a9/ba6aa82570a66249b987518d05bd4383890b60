@@ -1,0 +1,38 @@
+packages/cli/src/store/index.ts
+  25617ee857940675 69-112
+packages/cli/test/store/index.test.ts
+  25617ee857940675 9,77-101
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "a9ba6aa82570a66249b987518d05bd4383890b60",
+  "prompts": {
+    "25617ee857940675": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "bdc50ebe-3a8e-4624-adb8-451ba7c54e11",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 77,
+      "total_deletions": 7,
+      "accepted_lines": 70,
+      "overriden_lines": 0
+    },
+    "d6cf5587ddaac39a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b4118b28-ab27-4508-b350-cc452b23b66c",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 1,
+      "overriden_lines": 0
+    }
+  }
+}
