@@ -2,7 +2,14 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
-import { cacheGc, cacheLs, formatBytes } from '../../src/store/cache.js'
+import {
+  cacheCleanLegacy,
+  cacheGc,
+  cacheLs,
+  detectLegacyLayout,
+  formatBytes,
+} from '../../src/store/cache.js'
+import { readStoreVersion, writeStoreVersion } from '../../src/store/index.js'
 
 let tmpDir: string
 
@@ -15,8 +22,13 @@ afterEach(() => {
 })
 
 function createStoreEntry(askHome: string, kind: string, key: string, content: string): string {
+  // For kind === 'github', `key` is either:
+  //   - new layout: "github.com/<owner>/<repo>/<tag>" (4 segments)
+  //   - legacy layout: "<owner>__<repo>/<ref>" (2 segments) — dropped under github/checkouts/
   const dir = kind === 'github'
-    ? path.join(askHome, 'github', 'checkouts', ...key.split('/'))
+    ? (key.split('/').length === 4
+        ? path.join(askHome, 'github', ...key.split('/'))
+        : path.join(askHome, 'github', 'checkouts', ...key.split('/')))
     : path.join(askHome, kind, key)
   fs.mkdirSync(dir, { recursive: true })
   fs.writeFileSync(path.join(dir, 'doc.md'), content, 'utf-8')
@@ -58,13 +70,35 @@ describe('cacheLs', () => {
     expect(entries[0].kind).toBe('npm')
   })
 
-  it('lists github checkouts', () => {
+  it('lists github entries in the new nested layout', () => {
+    createStoreEntry(tmpDir, 'github', 'github.com/vercel/next.js/v16.2.3', '# Next.js docs')
+
+    const entries = cacheLs(tmpDir, { kind: 'github' })
+    expect(entries).toHaveLength(1)
+    expect(entries[0].key).toBe('github.com/vercel/next.js/v16.2.3')
+    expect(entries[0].kind).toBe('github')
+    expect(entries[0].legacy).toBeFalsy()
+  })
+
+  it('lists legacy github checkouts with (legacy) prefix', () => {
     createStoreEntry(tmpDir, 'github', 'vercel__next.js/v16.2.3', '# Next.js docs')
 
     const entries = cacheLs(tmpDir, { kind: 'github' })
     expect(entries).toHaveLength(1)
-    expect(entries[0].key).toBe('vercel__next.js/v16.2.3')
-    expect(entries[0].kind).toBe('github')
+    expect(entries[0].key).toBe('(legacy) vercel__next.js/v16.2.3')
+    expect(entries[0].legacy).toBe(true)
+  })
+
+  it('lists new and legacy github entries side by side', () => {
+    createStoreEntry(tmpDir, 'github', 'github.com/vercel/next.js/v16.2.3', '# new')
+    createStoreEntry(tmpDir, 'github', 'colinhacks__zod/v3.22.4', '# legacy')
+
+    const entries = cacheLs(tmpDir, { kind: 'github' })
+    expect(entries).toHaveLength(2)
+    const newEntry = entries.find(e => !e.legacy)
+    const legacyEntry = entries.find(e => e.legacy)
+    expect(newEntry?.key).toBe('github.com/vercel/next.js/v16.2.3')
+    expect(legacyEntry?.key).toBe('(legacy) colinhacks__zod/v3.22.4')
   })
 
   it('filters by kind', () => {
@@ -123,6 +157,53 @@ describe('cacheGc', () => {
     expect(result.removed).toHaveLength(0)
     expect(result.kept).toHaveLength(0)
     expect(result.freedBytes).toBe(0)
+  })
+})
+
+describe('detectLegacyLayout + cacheCleanLegacy', () => {
+  it('returns false for a fresh askHome', () => {
+    expect(detectLegacyLayout(tmpDir)).toBe(false)
+  })
+
+  it('detects github/db', () => {
+    fs.mkdirSync(path.join(tmpDir, 'github', 'db'), { recursive: true })
+    expect(detectLegacyLayout(tmpDir)).toBe(true)
+  })
+
+  it('detects github/checkouts', () => {
+    fs.mkdirSync(path.join(tmpDir, 'github', 'checkouts'), { recursive: true })
+    expect(detectLegacyLayout(tmpDir)).toBe(true)
+  })
+
+  it('cacheCleanLegacy removes both legacy dirs idempotently', () => {
+    fs.mkdirSync(path.join(tmpDir, 'github', 'db', 'foo__bar.git'), { recursive: true })
+    fs.mkdirSync(path.join(tmpDir, 'github', 'checkouts', 'foo__bar', 'v1'), { recursive: true })
+
+    const first = cacheCleanLegacy(tmpDir)
+    expect(first.removed).toHaveLength(2)
+    expect(fs.existsSync(path.join(tmpDir, 'github', 'db'))).toBe(false)
+    expect(fs.existsSync(path.join(tmpDir, 'github', 'checkouts'))).toBe(false)
+
+    // Idempotent — a second run removes nothing
+    const second = cacheCleanLegacy(tmpDir)
+    expect(second.removed).toHaveLength(0)
+  })
+})
+
+describe('STORE_VERSION', () => {
+  it('writes "2" on first touch', () => {
+    writeStoreVersion(tmpDir)
+    expect(readStoreVersion(tmpDir)).toBe('2')
+  })
+
+  it('is idempotent', () => {
+    writeStoreVersion(tmpDir)
+    writeStoreVersion(tmpDir)
+    expect(readStoreVersion(tmpDir)).toBe('2')
+  })
+
+  it('returns null for a fresh askHome', () => {
+    expect(readStoreVersion(tmpDir)).toBeNull()
   })
 })
 

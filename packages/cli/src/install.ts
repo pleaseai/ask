@@ -26,7 +26,14 @@ import { generateSkill, getSkillDir } from './skill.js'
 import { getSource } from './sources/index.js'
 import { parseSpec } from './spec.js'
 import { removeDocs, saveDocs } from './storage.js'
-import { npmStorePath, quarantineEntry, resolveAskHome, verifyEntry } from './store/index.js'
+import { detectLegacyLayout } from './store/cache.js'
+import {
+  npmStorePath,
+  quarantineEntry,
+  resolveAskHome,
+  verifyEntry,
+  writeStoreVersion,
+} from './store/index.js'
 
 const RE_LEADING_V = /^v/
 
@@ -131,6 +138,18 @@ export async function runInstall(
     consola.info('No libraries to install.')
     return { installed: 0, unchanged: 0, skipped: 0, failed: 0 }
   }
+
+  // Legacy layout warning + STORE_VERSION marker. Both run before the
+  // actual install work so the output shows the warning above any
+  // install logs and the marker lands on first touch.
+  const askHome = resolveAskHome()
+  if (detectLegacyLayout(askHome)) {
+    consola.warn(
+      `Legacy github store detected at ${askHome}/github/{db,checkouts}. `
+      + 'Run \`ask cache clean --legacy\` to reclaim space.',
+    )
+  }
+  writeStoreVersion(askHome)
 
   consola.start(`Installing ${targets.length} librar${targets.length === 1 ? 'y' : 'ies'}...`)
 

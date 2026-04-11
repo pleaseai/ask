@@ -352,6 +352,45 @@ function hashDir(dir: string): string {
   return `sha256-${hash.digest('hex')}`
 }
 
+// ── Store version ──────────────────────────────────────────────────
+
+const STORE_VERSION_FILE = 'STORE_VERSION'
+const CURRENT_STORE_VERSION = '2'
+
+/**
+ * Write `<askHome>/STORE_VERSION` if absent or out of date. Called on
+ * install start so every upgraded ASK_HOME is tagged with the v2
+ * layout marker. A human can cat this file to understand what the
+ * directory structure should look like.
+ */
+export function writeStoreVersion(askHome: string): void {
+  const file = path.join(askHome, STORE_VERSION_FILE)
+  try {
+    fs.mkdirSync(askHome, { recursive: true })
+    const existing = fs.existsSync(file) ? fs.readFileSync(file, 'utf-8').trim() : null
+    if (existing !== CURRENT_STORE_VERSION) {
+      fs.writeFileSync(file, `${CURRENT_STORE_VERSION}\n`, 'utf-8')
+    }
+  }
+  catch {
+    // best-effort
+  }
+}
+
+/**
+ * Read `<askHome>/STORE_VERSION`. Returns `null` when the file does
+ * not exist (fresh store, or pre-v2 layout).
+ */
+export function readStoreVersion(askHome: string): string | null {
+  const file = path.join(askHome, STORE_VERSION_FILE)
+  try {
+    return fs.readFileSync(file, 'utf-8').trim()
+  }
+  catch {
+    return null
+  }
+}
+
 // ── Quarantine ─────────────────────────────────────────────────────
 
 const RE_TIMESTAMP_PUNCT = /[:.]/g
