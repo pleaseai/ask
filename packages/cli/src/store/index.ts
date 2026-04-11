@@ -66,6 +66,50 @@ export function githubCheckoutPath(
   return assertContained(askHome, candidate)
 }
 
+/**
+ * Resolve the nested per-entry directory for a github-kind store entry.
+ *
+ * Layout: `<askHome>/github/<host>/<owner>/<repo>/<tag>/`
+ *
+ * Mirrors the PM-style `<kind>/<identity>@<version>/` convention shared
+ * by npm / web / llms-txt sources (and by cargo / bun / go / pnpm).
+ * `host` is a reserved path segment — `github.com` is the only value
+ * shipped, but the nesting leaves room for `gitlab.com` /
+ * `bitbucket.org` without a layout migration.
+ *
+ * All four segments run through `assertContained` so `..` / absolute
+ * paths from user-controlled inputs (repo names, tags) cannot escape
+ * the store root.
+ */
+/**
+ * Reject path-segment values that contain `..`, `/`, `\`, or are empty.
+ * Used by `githubStorePath` to keep host/owner/repo/tag inputs from
+ * escaping the github subdirectory via segment-level traversal —
+ * which `assertContained` alone cannot catch because `../foo` inside
+ * a deeper segment may still resolve inside the containment root.
+ */
+function assertSafeSegment(name: string, value: string): void {
+  if (!value || value.includes('..') || value.includes('/') || value.includes('\\')) {
+    throw new Error(`Unsafe path: ${name} '${value}' contains path traversal characters`)
+  }
+}
+
+export function githubStorePath(
+  askHome: string,
+  host: string,
+  owner: string,
+  repo: string,
+  tag: string,
+): string {
+  assertSafeSegment('host', host)
+  assertSafeSegment('owner', owner)
+  assertSafeSegment('repo', repo)
+  assertSafeSegment('tag', tag)
+  const githubRoot = path.join(askHome, 'github')
+  const candidate = path.join(githubRoot, host, owner, repo, tag)
+  return assertContained(githubRoot, candidate)
+}
+
 export function webStorePath(askHome: string, url: string): string {
   const hash = crypto.createHash('sha256').update(normalizeUrl(url)).digest('hex')
   return path.join(askHome, 'web', hash)

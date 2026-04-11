@@ -6,6 +6,7 @@ import {
   acquireEntryLock,
   githubCheckoutPath,
   githubDbPath,
+  githubStorePath,
   llmsTxtStorePath,
   npmStorePath,
   resolveAskHome,
@@ -71,6 +72,31 @@ describe('path helpers', () => {
   it('githubCheckoutPath includes ref', () => {
     expect(githubCheckoutPath(home, 'vercel', 'next.js', 'v16.2.3'))
       .toBe('/home/user/.ask/github/checkouts/vercel__next.js/v16.2.3')
+  })
+
+  it('githubStorePath resolves to host/owner/repo/tag nested layout', () => {
+    expect(githubStorePath(home, 'github.com', 'facebook', 'react', 'v18.2.0'))
+      .toBe('/home/user/.ask/github/github.com/facebook/react/v18.2.0')
+  })
+
+  it('githubStorePath handles scoped-style repo names', () => {
+    expect(githubStorePath(home, 'github.com', 'vercel', 'next.js', 'v15.0.0'))
+      .toBe('/home/user/.ask/github/github.com/vercel/next.js/v15.0.0')
+  })
+
+  it('githubStorePath rejects path traversal via owner', () => {
+    expect(() => githubStorePath(home, 'github.com', '../etc', 'passwd', 'v1.0.0'))
+      .toThrow(/Unsafe path/)
+  })
+
+  it('githubStorePath rejects path traversal via tag', () => {
+    expect(() => githubStorePath(home, 'github.com', 'foo', 'bar', '../../../etc'))
+      .toThrow(/Unsafe path/)
+  })
+
+  it('githubStorePath rejects path traversal via host', () => {
+    expect(() => githubStorePath(home, '../malicious', 'foo', 'bar', 'v1.0.0'))
+      .toThrow(/Unsafe path/)
   })
 
   it('webStorePath uses sha256 of normalized URL', () => {
