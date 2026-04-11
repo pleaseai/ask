@@ -17,13 +17,13 @@ afterEach(() => {
 
 /**
  * Create a local git repo that can serve as a "remote" for testing
- * without hitting the network. Returns the repo path.
+ * without hitting the network. Returns the bare repo path (serves as
+ * the remoteUrl for withBareClone).
  */
-function createLocalRepo(): string {
+function createLocalRemote(): string {
   const repoDir = path.join(tmpDir, 'local-remote.git')
   const workDir = path.join(tmpDir, 'work')
 
-  // Create a non-bare repo with a commit and tag
   fs.mkdirSync(workDir, { recursive: true })
   execFileSync('git', ['init', workDir], { stdio: 'ignore' })
   execFileSync('git', ['-C', workDir, 'config', 'user.email', 'test@test.com'], { stdio: 'ignore' })
@@ -43,97 +43,89 @@ function createLocalRepo(): string {
   execFileSync('git', ['-C', workDir, 'commit', '-m', 'update'], { stdio: 'ignore' })
   execFileSync('git', ['-C', workDir, 'tag', 'v2.0.0'], { stdio: 'ignore' })
 
-  // Clone as bare to serve as our "remote"
+  // Clone as bare — serves as our "remote"
   execFileSync('git', ['clone', '--bare', workDir, repoDir], { stdio: 'ignore' })
 
   return repoDir
 }
 
 describe('withBareClone', () => {
-  it('returns null when git is not available', () => {
-    // We can't easily remove git from PATH in test, so we test the
-    // positive path instead. This test documents the expected behavior.
-    // In practice, the function checks `git --version`.
-    const result = withBareClone(tmpDir, 'nonexistent', 'repo', 'v1.0.0')
-    // Either null (no network/no repo) or a path — both are valid
-    // since git IS on the test machine's PATH.
-    expect(result === null || typeof result === 'string').toBe(true)
-  })
-
-  it('creates bare clone and checkout for a local repo', () => {
-    const remoteDir = createLocalRepo()
+  it('creates bare db + checkout directory from a local remote', () => {
+    const remoteUrl = createLocalRemote()
     const askHome = path.join(tmpDir, 'ask-home')
 
-    // Patch the origin URL to point to local bare repo
-    // We need to call withBareClone but with a local path as the "remote"
-    // Since withBareClone hardcodes github.com, we test the building blocks
-    // directly via a manual bare clone sequence
-    fs.mkdirSync(path.join(askHome, 'github', 'db'), { recursive: true })
+    const result = withBareClone(askHome, 'test', 'repo', 'v1.0.0', { remoteUrl })
+
+    expect(result).not.toBeNull()
+    expect(result).toBe(path.join(askHome, 'github', 'checkouts', 'test__repo', 'v1.0.0'))
+
+    // bare db was created
+    expect(fs.existsSync(path.join(askHome, 'github', 'db', 'test__repo.git'))).toBe(true)
+
+    // checkout contains the v1.0.0 content
+    expect(fs.existsSync(path.join(result!, 'README.md'))).toBe(true)
+    expect(fs.readFileSync(path.join(result!, 'docs', 'guide.md'), 'utf-8')).toBe('# Guide v1\n')
+  })
+
+  it('reuses existing bare clone when fetching a second ref', () => {
+    const remoteUrl = createLocalRemote()
+    const askHome = path.join(tmpDir, 'ask-home')
+
+    const result1 = withBareClone(askHome, 'test', 'repo', 'v1.0.0', { remoteUrl })
+    expect(result1).not.toBeNull()
+
+    // Capture the bare db mtime before second call
     const dbPath = path.join(askHome, 'github', 'db', 'test__repo.git')
-    const checkoutDir = path.join(askHome, 'github', 'checkouts', 'test__repo', 'v1.0.0')
+    const statBefore = fs.statSync(dbPath)
 
-    // Init bare + add local remote
-    execFileSync('git', ['clone', '--bare', remoteDir, dbPath], { stdio: 'ignore' })
+    const result2 = withBareClone(askHome, 'test', 'repo', 'v2.0.0', { remoteUrl })
+    expect(result2).not.toBeNull()
+    expect(result2).toBe(path.join(askHome, 'github', 'checkouts', 'test__repo', 'v2.0.0'))
 
-    // Extract via git archive
-    fs.mkdirSync(checkoutDir, { recursive: true })
-    const archiveBuffer = execFileSync(
-      'git',
-      ['archive', '--format=tar', 'v1.0.0'],
-      { cwd: dbPath, maxBuffer: 100 * 1024 * 1024 },
-    )
-    execFileSync('tar', ['xf', '-'], {
-      cwd: checkoutDir,
-      input: archiveBuffer,
-      stdio: ['pipe', 'ignore', 'ignore'],
+    // Same bare clone should still exist (reused, not recreated)
+    const statAfter = fs.statSync(dbPath)
+    expect(statAfter.ino).toBe(statBefore.ino)
+
+    // Both checkouts have the correct content
+    expect(fs.readFileSync(path.join(result1!, 'docs', 'guide.md'), 'utf-8')).toBe('# Guide v1\n')
+    expect(fs.readFileSync(path.join(result2!, 'docs', 'guide.md'), 'utf-8')).toBe('# Guide v2\n')
+  })
+
+  it('returns existing checkout path without re-fetching', () => {
+    const remoteUrl = createLocalRemote()
+    const askHome = path.join(tmpDir, 'ask-home')
+
+    // First call creates the checkout
+    const result1 = withBareClone(askHome, 'test', 'repo', 'v1.0.0', { remoteUrl })
+    expect(result1).not.toBeNull()
+
+    // Manually tamper with checkout — add a marker file
+    fs.writeFileSync(path.join(result1!, 'marker.txt'), 'do not overwrite')
+
+    // Second call should return the same path WITHOUT re-fetching (marker preserved)
+    const result2 = withBareClone(askHome, 'test', 'repo', 'v1.0.0', { remoteUrl })
+    expect(result2).toBe(result1)
+    expect(fs.readFileSync(path.join(result2!, 'marker.txt'), 'utf-8')).toBe('do not overwrite')
+  })
+
+  it('returns null when ref does not exist in remote', () => {
+    const remoteUrl = createLocalRemote()
+    const askHome = path.join(tmpDir, 'ask-home')
+
+    const result = withBareClone(askHome, 'test', 'repo', 'v99.99.99', { remoteUrl })
+    expect(result).toBeNull()
+
+    // Checkout directory should be cleaned up on failure
+    expect(fs.existsSync(path.join(askHome, 'github', 'checkouts', 'test__repo', 'v99.99.99'))).toBe(false)
+  })
+
+  it('falls back to null on invalid remote URL', () => {
+    const askHome = path.join(tmpDir, 'ask-home')
+
+    // Use a bogus local path that doesn't exist
+    const result = withBareClone(askHome, 'test', 'repo', 'v1.0.0', {
+      remoteUrl: path.join(tmpDir, 'nonexistent.git'),
     })
-
-    // Verify checkout contents
-    expect(fs.existsSync(path.join(checkoutDir, 'README.md'))).toBe(true)
-    expect(fs.existsSync(path.join(checkoutDir, 'docs', 'guide.md'))).toBe(true)
-    expect(fs.readFileSync(path.join(checkoutDir, 'docs', 'guide.md'), 'utf-8')).toBe('# Guide v1\n')
-  })
-
-  it('reuses bare clone for second ref', () => {
-    const remoteDir = createLocalRepo()
-    const askHome = path.join(tmpDir, 'ask-home')
-    const dbPath = path.join(askHome, 'github', 'db', 'test__repo.git')
-
-    // Clone the bare repo once
-    fs.mkdirSync(path.dirname(dbPath), { recursive: true })
-    execFileSync('git', ['clone', '--bare', remoteDir, dbPath], { stdio: 'ignore' })
-
-    // Extract v1.0.0
-    const checkout1 = path.join(askHome, 'github', 'checkouts', 'test__repo', 'v1.0.0')
-    fs.mkdirSync(checkout1, { recursive: true })
-    const buf1 = execFileSync('git', ['archive', '--format=tar', 'v1.0.0'], { cwd: dbPath, maxBuffer: 100 * 1024 * 1024 })
-    execFileSync('tar', ['xf', '-'], { cwd: checkout1, input: buf1, stdio: ['pipe', 'ignore', 'ignore'] })
-
-    // Extract v2.0.0 — same bare clone, different checkout
-    const checkout2 = path.join(askHome, 'github', 'checkouts', 'test__repo', 'v2.0.0')
-    fs.mkdirSync(checkout2, { recursive: true })
-    const buf2 = execFileSync('git', ['archive', '--format=tar', 'v2.0.0'], { cwd: dbPath, maxBuffer: 100 * 1024 * 1024 })
-    execFileSync('tar', ['xf', '-'], { cwd: checkout2, input: buf2, stdio: ['pipe', 'ignore', 'ignore'] })
-
-    // One bare clone, two checkouts
-    expect(fs.existsSync(dbPath)).toBe(true)
-    expect(fs.readFileSync(path.join(checkout1, 'docs', 'guide.md'), 'utf-8')).toBe('# Guide v1\n')
-    expect(fs.readFileSync(path.join(checkout2, 'docs', 'guide.md'), 'utf-8')).toBe('# Guide v2\n')
-  })
-
-  it('skips checkout when it already exists', () => {
-    const askHome = path.join(tmpDir, 'ask-home')
-    const checkoutDir = path.join(askHome, 'github', 'checkouts', 'test__repo', 'v1.0.0')
-
-    // Pre-create the checkout directory with marker file
-    fs.mkdirSync(checkoutDir, { recursive: true })
-    fs.writeFileSync(path.join(checkoutDir, 'existing.md'), 'pre-existing')
-
-    // withBareClone should return the path without touching it
-    // (it short-circuits on existsSync)
-    const result = withBareClone(askHome, 'test', 'repo', 'v1.0.0')
-    expect(result).toBe(checkoutDir)
-    // Pre-existing file should still be there (not overwritten)
-    expect(fs.readFileSync(path.join(checkoutDir, 'existing.md'), 'utf-8')).toBe('pre-existing')
+    expect(result).toBeNull()
   })
 })

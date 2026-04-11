@@ -1,6 +1,6 @@
 import type { LocalDiscoveryAdapter } from './discovery/types.js'
 import type { LibraryEntry, ResolvedEntry, StoreMode } from './schemas.js'
-import type { GithubSourceOptions, NpmSourceOptions, SourceConfig } from './sources/index.js'
+import type { DocFile, GithubSourceOptions, NpmSourceOptions, SourceConfig } from './sources/index.js'
 import fs from 'node:fs'
 import path from 'node:path'
 import { consola } from 'consola'
@@ -24,6 +24,7 @@ import { generateSkill, getSkillDir } from './skill.js'
 import { getSource } from './sources/index.js'
 import { parseSpec } from './spec.js'
 import { saveDocs } from './storage.js'
+import { npmStorePath, resolveAskHome } from './store/index.js'
 
 const RE_LEADING_V = /^v/
 
@@ -221,6 +222,41 @@ async function installOne(
     }
   }
 
+  // Global store hit: if a previous install on this machine already
+  // populated the store for this (pkg, version), materialize directly
+  // from the store without touching the source adapter. Applies only
+  // to npm for now — github entries are keyed on ref (which we have)
+  // but reading the store entry requires re-parsing with the right
+  // docsPath, handled by the source adapter's store-hit branch.
+  if (!options.force && parsed.kind === 'npm' && sourceConfig.source === 'npm') {
+    const askHome = resolveAskHome()
+    const storeDir = npmStorePath(askHome, parsed.pkg, resolvedVersion)
+    if (fs.existsSync(storeDir)) {
+      const files = readFilesFromStore(storeDir)
+      if (files.length > 0) {
+        consola.info(`  ${lib.spec}: store hit ${libName}@${resolvedVersion}`)
+        saveDocs(projectDir, libName, resolvedVersion, files, {
+          storeMode,
+          storePath: storeDir,
+        })
+        if (emitSkill) {
+          generateSkill(projectDir, libName, resolvedVersion, files.map(f => f.path))
+        }
+        upsertResolvedEntry(projectDir, libName, {
+          spec: lib.spec,
+          resolvedVersion,
+          contentHash: contentHash(files.map(f => ({ relpath: f.path, content: f.content }))),
+          fetchedAt: new Date().toISOString(),
+          fileCount: files.length,
+          format: 'docs',
+          storePath: storeDir,
+          materialization: storeMode,
+        })
+        return 'installed'
+      }
+    }
+  }
+
   consola.info(`  ${lib.spec}: fetching ${libName}@${resolvedVersion}...`)
   const source = getSource(sourceConfig.source)
   const result = await source.fetch(sourceConfig)
@@ -415,6 +451,45 @@ async function materializeIntent(
     `  ${lib.spec}: installed (intent-skills, ${skills.length} skill${skills.length === 1 ? '' : 's'})`,
   )
   return 'installed'
+}
+
+/**
+ * Read all markdown/doc files from a store entry directory, returning
+ * them as `DocFile[]` for materialization into a project. Skips the
+ * internal `.ask-hash` and `INDEX.md` files so the materialization
+ * pipeline can regenerate them.
+ */
+function readFilesFromStore(storeDir: string): DocFile[] {
+  const files: DocFile[] = []
+  const walk = (dir: string, prefix: string): void => {
+    let entries: fs.Dirent[]
+    try {
+      entries = fs.readdirSync(dir, { withFileTypes: true })
+    }
+    catch {
+      return
+    }
+    for (const entry of entries) {
+      const name = entry.name
+      if (name === '.ask-hash' || name === 'INDEX.md')
+        continue
+      const rel = prefix ? `${prefix}/${name}` : name
+      if (entry.isDirectory()) {
+        walk(path.join(dir, name), rel)
+      }
+      else if (entry.isFile()) {
+        try {
+          const content = fs.readFileSync(path.join(dir, name), 'utf-8')
+          files.push({ path: rel, content })
+        }
+        catch {
+          // unreadable file — skip
+        }
+      }
+    }
+  }
+  walk(storeDir, '')
+  return files
 }
 
 /**

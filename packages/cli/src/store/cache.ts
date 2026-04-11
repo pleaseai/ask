@@ -84,46 +84,87 @@ export function cacheLs(
 
 // ── cacheGc ────────────────────────────────────────────────────────
 
+const RE_DURATION = /^(\d+)\s*([smhd])$/
+
+/**
+ * Parse a duration string like `30d`, `12h`, `90m` into milliseconds.
+ * Returns `null` for invalid input.
+ */
+export function parseDuration(input: string): number | null {
+  const match = input.trim().match(RE_DURATION)
+  if (!match)
+    return null
+  const n = Number.parseInt(match[1]!, 10)
+  const unit = match[2]
+  switch (unit) {
+    case 's': return n * 1000
+    case 'm': return n * 60 * 1000
+    case 'h': return n * 60 * 60 * 1000
+    case 'd': return n * 24 * 60 * 60 * 1000
+    default: return null
+  }
+}
+
 /**
  * Remove store entries not referenced by any `.ask/resolved.json`
  * found under `scanRoots`.
+ *
+ * When `olderThan` (ms) is provided, only entries whose last-modified
+ * time is older than `Date.now() - olderThan` are candidates for
+ * removal. Entries newer than the threshold are always kept even when
+ * unreferenced.
  */
 export function cacheGc(
   askHome: string,
   options: {
     dryRun?: boolean
     scanRoots?: string[]
+    olderThan?: number
   } = {},
 ): CacheGcResult {
-  const { dryRun = false } = options
+  const { dryRun = false, olderThan } = options
   const scanRoots = options.scanRoots ?? [process.env.HOME ?? '']
 
-  const referencedPaths = collectReferencedStorePaths(scanRoots)
+  const referencedPaths = collectReferencedStorePaths(scanRoots, askHome)
   const allEntries = cacheLs(askHome)
 
   const removed: CacheEntry[] = []
   const kept: CacheEntry[] = []
   let freedBytes = 0
 
+  const cutoffMs = olderThan !== undefined ? Date.now() - olderThan : null
+
   for (const entry of allEntries) {
     if (referencedPaths.has(entry.path)) {
       kept.push(entry)
+      continue
     }
-    else {
-      if (!dryRun) {
-        try {
-          fs.rmSync(entry.path, { recursive: true, force: true })
-          consola.info(`  Removed: ${entry.kind}/${entry.key} (${formatBytes(entry.sizeBytes)})`)
-        }
-        catch (err) {
-          consola.warn(`  Failed to remove ${entry.path}: ${err}`)
+    // Age gate: if --older-than is set, keep entries newer than the cutoff.
+    if (cutoffMs !== null) {
+      try {
+        const mtimeMs = fs.statSync(entry.path).mtimeMs
+        if (mtimeMs > cutoffMs) {
           kept.push(entry)
           continue
         }
       }
-      removed.push(entry)
-      freedBytes += entry.sizeBytes
+      catch {
+        // Cannot stat → assume stale, fall through to removal
+      }
     }
+    if (!dryRun) {
+      try {
+        fs.rmSync(entry.path, { recursive: true, force: true })
+        consola.info(`  Removed: ${entry.kind}/${entry.key} (${formatBytes(entry.sizeBytes)})`)
+      }
+      catch (err) {
+        consola.warn(`  Failed to remove ${entry.path}: ${err}`)
+        kept.push(entry)
+        continue
+      }
+    }
+    removed.push(entry)
+    freedBytes += entry.sizeBytes
   }
 
   return { removed, kept, freedBytes }
@@ -131,13 +172,17 @@ export function cacheGc(
 
 // ── Helpers ────────────────────────────────────────────────────────
 
-function collectReferencedStorePaths(scanRoots: string[]): Set<string> {
+function collectReferencedStorePaths(
+  scanRoots: string[],
+  askHome: string,
+): Set<string> {
   const referenced = new Set<string>()
+  const resolvedAskHome = path.resolve(askHome) + path.sep
 
   for (const root of scanRoots) {
     if (!root || !fs.existsSync(root))
       continue
-    findResolvedJsonFiles(root, referenced, 0, 8)
+    findResolvedJsonFiles(root, referenced, resolvedAskHome, 0, 8)
   }
 
   return referenced
@@ -146,6 +191,7 @@ function collectReferencedStorePaths(scanRoots: string[]): Set<string> {
 function findResolvedJsonFiles(
   dir: string,
   referenced: Set<string>,
+  askHomePrefix: string,
   depth: number,
   maxDepth: number,
 ): void {
@@ -160,7 +206,13 @@ function findResolvedJsonFiles(
         for (const entry of Object.values(data.entries)) {
           const e = entry as { storePath?: string }
           if (e.storePath) {
-            referenced.add(e.storePath)
+            // Only trust storePath values that point inside askHome.
+            // Malicious or stale resolved.json files cannot force us
+            // to keep entries outside the store.
+            const resolvedStorePath = path.resolve(e.storePath)
+            if (resolvedStorePath.startsWith(askHomePrefix) || resolvedStorePath + path.sep === askHomePrefix) {
+              referenced.add(resolvedStorePath)
+            }
           }
         }
       }
@@ -173,12 +225,21 @@ function findResolvedJsonFiles(
   try {
     const entries = fs.readdirSync(dir, { withFileTypes: true })
     for (const entry of entries) {
+      // entry.isDirectory() returns false for symlinks, so symlinks
+      // are naturally excluded from the walk — preventing cycle traps
+      // and scope escape via symlinked directories.
       if (!entry.isDirectory())
         continue
       // Skip hidden dirs, node_modules, .git
       if (entry.name.startsWith('.') || entry.name === 'node_modules')
         continue
-      findResolvedJsonFiles(path.join(dir, entry.name), referenced, depth + 1, maxDepth)
+      findResolvedJsonFiles(
+        path.join(dir, entry.name),
+        referenced,
+        askHomePrefix,
+        depth + 1,
+        maxDepth,
+      )
     }
   }
   catch {

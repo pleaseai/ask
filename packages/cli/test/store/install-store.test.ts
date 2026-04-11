@@ -3,7 +3,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
 import { saveDocs } from '../../src/storage.js'
-import { npmStorePath, resolveAskHome, writeEntryAtomic } from '../../src/store/index.js'
+import { acquireEntryLock, npmStorePath, resolveAskHome, writeEntryAtomic } from '../../src/store/index.js'
 
 let tmpDir: string
 let origAskHome: string | undefined
@@ -135,25 +135,115 @@ describe('T023: ref mode', () => {
   })
 })
 
-describe('T025: concurrency', () => {
-  it('two concurrent writes to same store entry — one wins, both see result', async () => {
+describe('T025: concurrency via acquireEntryLock', () => {
+  it('two concurrent lock acquisitions — one succeeds, other waits and sees store hit', async () => {
     const askHome = resolveAskHome()
     const storeDir = npmStorePath(askHome, 'concurrent-pkg', '1.0.0')
     const files = [{ path: 'doc.md', content: '# Concurrent test' }]
 
-    // Run two writes concurrently
-    const [r1, r2] = await Promise.all([
-      writeAndRead(storeDir, files),
-      writeAndRead(storeDir, files),
-    ])
+    // Simulate two concurrent workers: both call acquireEntryLock.
+    // Worker A acquires first and writes the entry. Worker B waits,
+    // then finds the entry exists and returns null (store hit).
+    const workerA = async (): Promise<string> => {
+      const lock = await acquireEntryLock(storeDir)
+      expect(lock).not.toBeNull()
+      try {
+        writeEntryAtomic(storeDir, files)
+      }
+      finally {
+        lock!.release()
+      }
+      return 'A-wrote'
+    }
 
-    // Both should see the same content
-    expect(r1).toBe('# Concurrent test')
-    expect(r2).toBe('# Concurrent test')
+    const workerB = async (): Promise<string> => {
+      // Small delay to ensure A wins the race
+      await new Promise(resolve => setTimeout(resolve, 50))
+      const lock = await acquireEntryLock(storeDir)
+      // B should see null (A's entry already exists) OR get a fresh lock
+      // if the race was lost. Either way, the store should be intact.
+      if (lock === null) {
+        return 'B-store-hit'
+      }
+      lock.release()
+      return 'B-acquired'
+    }
+
+    const [resultA, resultB] = await Promise.all([workerA(), workerB()])
+    expect(resultA).toBe('A-wrote')
+    // B either saw the store hit or acquired fresh after A released
+    expect(['B-store-hit', 'B-acquired']).toContain(resultB)
+    // Store content is intact
+    expect(fs.readFileSync(path.join(storeDir, 'doc.md'), 'utf-8')).toBe('# Concurrent test')
+  })
+
+  it('acquireEntryLock returns null when entry appears while waiting on held lock', async () => {
+    const askHome = resolveAskHome()
+    const storeDir = npmStorePath(askHome, 'race-pkg', '1.0.0')
+
+    // Hold the lock manually — simulates another process mid-write
+    const lockPath = `${storeDir}.lock`
+    fs.mkdirSync(path.dirname(lockPath), { recursive: true })
+    const fd = fs.openSync(lockPath, 'wx')
+    fs.closeSync(fd)
+
+    // Start a second acquisition that will block on the existing lock
+    const waiterPromise = acquireEntryLock(storeDir)
+
+    // Simulate the first worker finishing its write — create the entry
+    // but leave the lock held so the waiter's next retry sees both
+    // EEXIST (lock) and existsSync(entryDir) → returns null (store hit).
+    await new Promise(resolve => setTimeout(resolve, 200))
+    fs.mkdirSync(storeDir, { recursive: true })
+    fs.writeFileSync(path.join(storeDir, 'doc.md'), '# Winner')
+
+    const result = await waiterPromise
+    expect(result).toBeNull()
+
+    // Clean up the held lock
+    fs.unlinkSync(lockPath)
   })
 })
 
-async function writeAndRead(storeDir: string, files: { path: string, content: string }[]): Promise<string> {
-  writeEntryAtomic(storeDir, files)
-  return fs.readFileSync(path.join(storeDir, 'doc.md'), 'utf-8')
-}
+describe('link-mode EPERM fallback', () => {
+  it('falls back to copy when symlinkSync throws EPERM', () => {
+    const askHome = resolveAskHome()
+    const projectDir = path.join(tmpDir, 'project-eperm')
+    fs.mkdirSync(projectDir, { recursive: true })
+
+    const storeDir = npmStorePath(askHome, 'next', '16.2.3')
+    writeEntryAtomic(storeDir, testFiles)
+
+    // Mock fs.symlinkSync to throw EPERM
+    const origSymlink = fs.symlinkSync
+    let symlinkAttempted = false
+    ;(fs as { symlinkSync: typeof fs.symlinkSync }).symlinkSync = () => {
+      symlinkAttempted = true
+      const err = new Error('Operation not permitted') as NodeJS.ErrnoException
+      err.code = 'EPERM'
+      throw err
+    }
+
+    try {
+      const docsDir = saveDocs(projectDir, 'next', '16.2.3', testFiles, {
+        storeMode: 'link',
+        storePath: storeDir,
+      })
+
+      // Symlink was attempted, then fell back to copy
+      expect(symlinkAttempted).toBe(true)
+
+      // docsDir exists as a real directory (not a symlink)
+      const stats = fs.lstatSync(docsDir)
+      expect(stats.isSymbolicLink()).toBe(false)
+      expect(stats.isDirectory()).toBe(true)
+
+      // Files are present (copy succeeded)
+      expect(fs.existsSync(path.join(docsDir, 'getting-started.md'))).toBe(true)
+      expect(fs.existsSync(path.join(docsDir, 'INDEX.md'))).toBe(true)
+    }
+    finally {
+      ;(fs as { symlinkSync: typeof fs.symlinkSync }).symlinkSync = origSymlink
+    }
+  })
+})

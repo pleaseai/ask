@@ -112,17 +112,29 @@ describe('writeEntryAtomic', () => {
     expect(fs.readFileSync(path.join(target, 'b.md'), 'utf-8')).toBe('v2')
   })
 
-  it('cleans up temp dir on failure', () => {
+  it('rejects file paths that escape the target directory', () => {
     const target = path.join(tmpDir, 'entry')
-    // Simulate write failure with an unwritable parent
-    const _files = [{ path: '../../../escape.txt', content: 'bad' }]
-    // This should still create the file (path traversal is allowed in temp dirs)
-    // but let's test the normal path works
-    writeEntryAtomic(target, [{ path: 'ok.md', content: 'ok' }])
-    expect(fs.existsSync(path.join(target, 'ok.md'))).toBe(true)
-    // No leftover .tmp-* directories
-    const siblings = fs.readdirSync(tmpDir)
-    expect(siblings.filter(s => s.includes('.tmp-'))).toHaveLength(0)
+    // Path traversal attempt via `..` should fail
+    expect(() => writeEntryAtomic(target, [
+      { path: '../../../escape.txt', content: 'bad' },
+    ])).toThrow(/Unsafe path/)
+  })
+
+  it('cleans up temp dir on write failure', () => {
+    const target = path.join(tmpDir, 'entry')
+    // Attempt a write with a path that will fail containment check.
+    // The temp dir is created first, so after the throw we expect no
+    // leftover .tmp-* siblings.
+    try {
+      writeEntryAtomic(target, [
+        { path: '../escape.txt', content: 'bad' },
+      ])
+    }
+    catch {
+      // expected
+    }
+    const siblings = fs.readdirSync(tmpDir).filter(s => s.includes('.tmp-'))
+    expect(siblings).toHaveLength(0)
   })
 })
 

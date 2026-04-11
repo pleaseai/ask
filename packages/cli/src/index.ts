@@ -17,7 +17,7 @@ import { renderList } from './list/render.js'
 import { removeSkill } from './skill.js'
 import { libraryNameFromSpec, parseSpec } from './spec.js'
 import { listDocs, removeDocs } from './storage.js'
-import { cacheGc, cacheLs, formatBytes } from './store/cache.js'
+import { cacheGc, cacheLs, formatBytes, parseDuration } from './store/cache.js'
 import { resolveAskHome } from './store/index.js'
 
 /**
@@ -290,6 +290,10 @@ const cacheGcCmd = defineCommand({
       type: 'boolean',
       description: 'Show what would be removed without deleting',
     },
+    'older-than': {
+      type: 'string',
+      description: 'Only remove entries older than this duration (e.g. 30d, 12h, 90m, 60s)',
+    },
   },
   run({ args }) {
     const askHome = resolveAskHome()
@@ -298,7 +302,17 @@ const cacheGcCmd = defineCommand({
       ? process.env.ASK_GC_SCAN_ROOTS.split(':')
       : undefined
 
-    const result = cacheGc(askHome, { dryRun, scanRoots })
+    let olderThan: number | undefined
+    if (args['older-than']) {
+      const parsed = parseDuration(args['older-than'])
+      if (parsed === null) {
+        consola.error(`Invalid --older-than value '${args['older-than']}'. Use format like 30d, 12h, 90m, 60s.`)
+        process.exit(1)
+      }
+      olderThan = parsed
+    }
+
+    const result = cacheGc(askHome, { dryRun, scanRoots, olderThan })
 
     if (result.removed.length === 0) {
       consola.success('Store is clean — no unreferenced entries.')

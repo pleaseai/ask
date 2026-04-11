@@ -54,12 +54,25 @@ export function saveDocs(
     }
     catch (err: unknown) {
       const code = (err as NodeJS.ErrnoException).code
+      // Clean up any partial symlink state before falling through
+      // or rethrowing. symlinkSync may leave nothing, a broken
+      // symlink, or (on some platforms) a zero-length file behind.
+      try {
+        if (fs.existsSync(docsDir) || fs.lstatSync(docsDir).isSymbolicLink()) {
+          fs.rmSync(docsDir, { recursive: true, force: true })
+        }
+      }
+      catch {
+        // lstat may throw ENOENT if there's nothing to clean up
+      }
       if (code === 'EPERM' || code === 'EACCES') {
         consola.warn(`  Symlink creation failed (${code}), falling back to copy mode`)
         // Fall through to copy mode below
       }
       else {
-        throw err
+        throw new Error(
+          `Failed to create symlink at ${docsDir}: ${err instanceof Error ? err.message : String(err)}`,
+        )
       }
     }
   }

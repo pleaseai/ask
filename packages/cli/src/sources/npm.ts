@@ -93,7 +93,13 @@ export class NpmSource implements DocSource {
       }
       installedVersion = meta.version
     }
-    catch {
+    catch (err) {
+      // Malformed package.json — warn so the user can debug, then
+      // fall through to the network path. Silent failure here masked
+      // broken node_modules installs in prior versions.
+      consola.debug(
+        `  ${pkg}: failed to parse ${pkgJsonPath}: ${err instanceof Error ? err.message : String(err)} — falling back to tarball`,
+      )
       return null
     }
 

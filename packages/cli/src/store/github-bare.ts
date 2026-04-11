@@ -16,6 +16,14 @@ function hasGit(): boolean {
   }
 }
 
+export interface BareCloneOptions {
+  /**
+   * Override the remote URL — used by tests to point at a local
+   * file:// URL or file path instead of github.com.
+   */
+  remoteUrl?: string
+}
+
 /**
  * Use a shared bare clone to materialize a specific ref into a checkout
  * directory. Returns the checkout path on success, `null` when `git` is
@@ -33,6 +41,7 @@ export function withBareClone(
   owner: string,
   repo: string,
   ref: string,
+  opts: BareCloneOptions = {},
 ): string | null {
   if (!hasGit()) {
     consola.debug('git not found on PATH — falling back to tar.gz download')
@@ -41,6 +50,7 @@ export function withBareClone(
 
   const dbPath = githubDbPath(askHome, owner, repo)
   const checkoutDir = githubCheckoutPath(askHome, owner, repo, ref)
+  const remoteUrl = opts.remoteUrl ?? `https://github.com/${owner}/${repo}.git`
 
   // If checkout already exists, skip (immutable entries).
   if (fs.existsSync(checkoutDir)) {
@@ -57,7 +67,7 @@ export function withBareClone(
       })
       execFileSync(
         'git',
-        ['remote', 'add', 'origin', `https://github.com/${owner}/${repo}.git`],
+        ['remote', 'add', 'origin', remoteUrl],
         { cwd: dbPath, stdio: 'ignore' },
       )
     }
@@ -85,9 +95,18 @@ export function withBareClone(
     return checkoutDir
   }
   catch (err) {
+    const errMsg = err instanceof Error ? err.message : String(err)
+    const errCode = (err as NodeJS.ErrnoException).code
+    // Disk-space and permission errors are fatal — don't silently fall
+    // through to tar.gz because that path will hit the same problem.
+    if (errCode === 'ENOSPC' || errCode === 'EACCES' || errCode === 'EPERM') {
+      throw new Error(
+        `Bare clone failed for ${owner}/${repo}@${ref} with ${errCode}: ${errMsg}. `
+        + 'This is a filesystem-level error; tar.gz fallback will not help.',
+      )
+    }
     consola.warn(
-      `Bare clone failed for ${owner}/${repo}@${ref}: `
-      + `${err instanceof Error ? err.message : String(err)}. `
+      `Bare clone failed for ${owner}/${repo}@${ref}: ${errMsg}. `
       + 'Falling back to tar.gz download.',
     )
     // Clean up partial checkout
