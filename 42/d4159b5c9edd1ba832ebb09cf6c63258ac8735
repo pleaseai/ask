@@ -1,0 +1,40 @@
+packages/cli/test/resolvers/npm.test.ts
+  b4c31c1bccd4dede 132-183
+packages/cli/src/resolvers/npm.ts
+  b4c31c1bccd4dede 12,85-93,97
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "42d4159b5c9edd1ba832ebb09cf6c63258ac8735",
+  "prompts": {
+    "89d3fc5e3652d615": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "30315ad1-fcfb-4bd2-ad64-aa212b62e4bc",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 12,
+      "overriden_lines": 0,
+      "messages_url": "https://usegitai.com/cas/4d26d25160f21c0143d922b6c4740d6e1d1b294c009a78e27af30d905df4d295"
+    },
+    "b4c31c1bccd4dede": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dd4b4440-f224-4d0c-994b-9d2237194712",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 12,
+      "total_deletions": 3,
+      "accepted_lines": 65,
+      "overriden_lines": 0,
+      "messages_url": "https://usegitai.com/cas/eac57a73d6a4512cc15bf8be73174fd13763365f82d4f4d0db4685218e6a728c"
+    }
+  }
+}
