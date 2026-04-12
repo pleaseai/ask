@@ -80,8 +80,13 @@ jobs:
           needs.release-please.outputs.schema_release_created == 'true'
         working-directory: packages/schema
         run: |
-          bun pm pack
-          npm publish pleaseai-ask-schema-*.tgz --provenance --access public
+          VERSION=$(node -p "require('./package.json').version")
+          if npm view "@pleaseai/ask-schema@$VERSION" version 2>/dev/null; then
+            echo "⚠ @pleaseai/ask-schema@$VERSION already published, skipping"
+          else
+            bun pm pack
+            npm publish pleaseai-ask-schema-*.tgz --provenance --access public
+          fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
@@ -91,7 +96,12 @@ jobs:
           needs.release-please.outputs.cli_release_created == 'true'
         working-directory: packages/cli
         run: |
-          bun pm pack
-          npm publish pleaseai-ask-*.tgz --provenance --access public
+          VERSION=$(node -p "require('./package.json').version")
+          if npm view "@pleaseai/ask@$VERSION" version 2>/dev/null; then
+            echo "⚠ @pleaseai/ask@$VERSION already published, skipping"
+          else
+            bun pm pack
+            npm publish pleaseai-ask-*.tgz --provenance --access public
+          fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
