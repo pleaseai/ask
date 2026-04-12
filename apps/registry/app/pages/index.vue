@@ -51,9 +51,6 @@ const filtered = computed(() => {
             <h3 class="font-semibold text-lg">
               {{ entry.name }}
             </h3>
-            <UBadge variant="subtle">
-              {{ entry.ecosystem }}
-            </UBadge>
           </div>
         </template>
 
@@ -73,7 +70,7 @@ const filtered = computed(() => {
         </div>
 
         <template #footer>
-          <code class="text-xs">ask add {{ entry.ecosystem }}:{{ entry.name }}</code>
+          <code class="text-xs">ask add {{ entry.repo }}</code>
         </template>
       </UCard>
       </NuxtLink>

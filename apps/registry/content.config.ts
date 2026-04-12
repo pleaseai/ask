@@ -11,8 +11,8 @@ export default defineContentConfig({
       },
     }),
     registry: defineCollection({
-      type: 'page',
-      source: 'registry/**/*.md',
+      type: 'data',
+      source: 'registry/**/*.json',
       schema: registryEntrySchema,
     }),
   },
