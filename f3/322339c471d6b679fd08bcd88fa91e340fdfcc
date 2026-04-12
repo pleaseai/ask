@@ -1,0 +1,38 @@
+packages/cli/src/sources/github.ts
+  b4c31c1bccd4dede 96,112-113,210-211,215,241,384,387-388
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "f3322339c471d6b679fd08bcd88fa91e340fdfcc",
+  "prompts": {
+    "89d3fc5e3652d615": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "30315ad1-fcfb-4bd2-ad64-aa212b62e4bc",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 12,
+      "overriden_lines": 0,
+      "messages_url": "https://usegitai.com/cas/4d26d25160f21c0143d922b6c4740d6e1d1b294c009a78e27af30d905df4d295"
+    },
+    "b4c31c1bccd4dede": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dd4b4440-f224-4d0c-994b-9d2237194712",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 10,
+      "total_deletions": 6,
+      "accepted_lines": 10,
+      "overriden_lines": 0,
+      "messages_url": "https://usegitai.com/cas/e1e4b52eefd38122221f416c030a90fddab9388c8213e2de04e8afe52a131a6a"
+    }
+  }
+}
