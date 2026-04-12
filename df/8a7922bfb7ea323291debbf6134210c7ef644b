@@ -1,0 +1,29 @@
+README.md
+  270c30d6b89b9069 82-83
+packages/cli/src/install.ts
+  270c30d6b89b9069 12-13,99-100
+packages/cli/src/agents.ts
+  270c30d6b89b9069 49
+packages/cli/src/index.ts
+  270c30d6b89b9069 9,116-117,119,130-131
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "df8a7922bfb7ea323291debbf6134210c7ef644b",
+  "prompts": {
+    "270c30d6b89b9069": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a59f4ab3-0873-49c7-8176-3338c6ac6155",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 15,
+      "total_deletions": 9,
+      "accepted_lines": 13,
+      "overriden_lines": 0
+    }
+  }
+}
