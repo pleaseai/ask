@@ -23,6 +23,7 @@ This feature adds monorepo-aware tag discovery using a cascade strategy: first i
 - [ ] FR-5: When all static ref candidates fail, `cloneAtTag()` falls back to `git ls-remote --tags <repo> '*<version>*'` to discover matching tags before giving up
 - [ ] FR-6: `ask install` (runInstall) github source path also benefits from the expanded ref candidates via the shared `GithubSource`
 - [ ] FR-7: tar.gz fallback path in `fetchFromTarGz` also tries the expanded ref candidates (not just the original ref)
+- [ ] FR-8: When all resolution strategies fail, the error message includes the list of version-matching tags discovered via `git ls-remote` (if any) and a hint to pass the exact tag name via `--ref <tag>`. This enables both human users and LLM agents to read the tag list, identify the correct tag, and retry with an explicit ref
 
 ### Non-functional Requirements
 
@@ -37,6 +38,7 @@ This feature adds monorepo-aware tag discovery using a cascade strategy: first i
 - [ ] AC-3: `ask src github:vercel/ai@ai@6.0.158` works with explicit monorepo tag ref
 - [ ] AC-4: Packages without `repository.directory` (single-repo packages) are unaffected
 - [ ] AC-5: When git is unavailable, tar.gz fallback also tries monorepo tag patterns
+- [ ] AC-7: When all strategies fail, error output lists matching tags and suggests `--ref <exact-tag>`
 - [ ] AC-6: `git ls-remote` fallback discovers the correct tag when npm metadata is insufficient
 
 ## Out of Scope

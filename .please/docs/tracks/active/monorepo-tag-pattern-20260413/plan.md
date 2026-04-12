@@ -58,11 +58,13 @@ This approach minimizes network overhead (metadata is already fetched; ls-remote
   - Acceptance: GithubSource tries ai@6.0.158 before giving up
   - Tests: packages/cli/test/sources/github.test.ts
 
-- [ ] T005 Add git ls-remote fallback probe (file: packages/cli/src/sources/github.ts) (depends on T004)
+- [ ] T005 Add git ls-remote fallback probe with actionable error (file: packages/cli/src/sources/github.ts) (depends on T004)
   - When all static candidates fail in cloneAtTag(), run `git ls-remote --tags <repo>` filtered by version
   - Parse output to find matching tag (prefer exact `*@<version>` match)
+  - If a match is found, use it to clone
+  - If no match, include the discovered tag list in the error message with a hint: `"Available tags matching '<version>': <list>. Retry with --ref <exact-tag>"`
   - Single network call, gated by `hasGit()`
-  - Acceptance: discovers `ai@6.0.158` tag when static candidates miss
+  - Acceptance: discovers `ai@6.0.158` tag when static candidates miss; on total failure, error shows matching tags so LLM agents or users can pick the right one
   - Tests: packages/cli/test/sources/github.test.ts
 
 - [ ] T006 Integration test with real monorepo package (file: packages/cli/test/sources/github-monorepo.test.ts) (depends on T001, T003, T004, T005)
@@ -96,7 +98,7 @@ This approach minimizes network overhead (metadata is already fetched; ls-remote
 | T002 GithubSourceOptions type | ⬜ pending |
 | T003 ensure-checkout plumbing | ⬜ pending |
 | T004 refCandidates expansion | ⬜ pending |
-| T005 git ls-remote fallback | ⬜ pending |
+| T005 git ls-remote fallback + actionable error | ⬜ pending |
 | T006 Integration test | ⬜ pending |
 
 ## Decision Log
