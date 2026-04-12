@@ -1,0 +1,28 @@
+apps/registry/app/pages/registry/[...slug].vue
+  db0b8176a5b7e5d5 48,51,53,56,58,61-62,64-65
+apps/registry/app/pages/index.vue
+  db0b8176a5b7e5d5 73
+apps/registry/content.config.ts
+  db0b8176a5b7e5d5 14-15
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "143d818bc61925d0e622e5823a752867de0e5eb7",
+  "prompts": {
+    "db0b8176a5b7e5d5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "32f656c4-09b8-48dd-ac9a-68bfa939b6c9",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 12,
+      "total_deletions": 22,
+      "accepted_lines": 107,
+      "overriden_lines": 0,
+      "messages_url": "https://usegitai.com/cas/2c7fbac887d112ab118b438da906eff28d50e162b580afeaf13e7a5786f3461c"
+    }
+  }
+}
