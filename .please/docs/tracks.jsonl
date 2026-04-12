@@ -20,3 +20,4 @@
 {"id":"github-store-pm-unified-20260411","type":"refactor","status":"implemented","phase":"review","issue":"#68","created":"2026-04-11","section":"active"}
 {"id":"lazy-first-architecture-20260412","type":"refactor","status":"planned","phase":"spec","issue":"#69","created":"2026-04-12","section":"active"}
 {"id":"interactive-add-20260412","type":"feature","status":"in_progress","phase":"implement","issue":"#71","created":"2026-04-12","section":"active"}
+{"id":"monorepo-tag-pattern-20260413","type":"feature","status":"planned","phase":"spec","issue":"#77","created":"2026-04-13","section":"active"}
