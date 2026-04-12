@@ -1,0 +1,24 @@
+.github/workflows/release.yml
+  89d3fc5e3652d615 83-89,99-105
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "b039b2928cac4bad10d89b17ba5bf0ec275f4633",
+  "prompts": {
+    "89d3fc5e3652d615": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "30315ad1-fcfb-4bd2-ad64-aa212b62e4bc",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 342,
+      "total_deletions": 4,
+      "accepted_lines": 342,
+      "overriden_lines": 0,
+      "messages_url": "https://usegitai.com/cas/59fa2c49626deae885e764521b3a42624f09bb08d7a2219f050b541131439283"
+    }
+  }
+}
