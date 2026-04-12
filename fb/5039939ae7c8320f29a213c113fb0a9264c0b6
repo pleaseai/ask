@@ -1,0 +1,24 @@
+packages/cli/package.json
+  89d3fc5e3652d615 37
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "fb5039939ae7c8320f29a213c113fb0a9264c0b6",
+  "prompts": {
+    "89d3fc5e3652d615": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "30315ad1-fcfb-4bd2-ad64-aa212b62e4bc",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 137,
+      "total_deletions": 1,
+      "accepted_lines": 137,
+      "overriden_lines": 0,
+      "messages_url": "https://usegitai.com/cas/3564fa2ba31e2a5063cd5901d78a6a9a00943cdf9fc11a9c323ad23920333bef"
+    }
+  }
+}
