@@ -1,0 +1,26 @@
+.please/docs/tracks/active/interactive-add-20260412/metadata.json
+  f5e90962c1e10851 8
+.please/docs/tracks/active/interactive-add-20260412/plan.md
+  f5e90962c1e10851 69-74
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "edff31eeaa27d8d74e970798c8ce6b1434b160bb",
+  "prompts": {
+    "f5e90962c1e10851": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ca354ec5-c36f-403e-8264-47740b35d1c9",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 1,
+      "total_deletions": 1,
+      "accepted_lines": 7,
+      "overriden_lines": 0,
+      "messages_url": "https://usegitai.com/cas/a34df39f1743d8755437a9eef6c7a086c73b1cc3c307b88718e577127f90a0e3"
+    }
+  }
+}
