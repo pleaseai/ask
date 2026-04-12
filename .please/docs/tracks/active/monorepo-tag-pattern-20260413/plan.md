@@ -45,12 +45,12 @@ This approach minimizes network overhead (metadata is already fetched; ls-remote
   - Acceptance: Type compiles, no runtime behavior change yet
   - Tests: type-level only
 
-- [ ] T003 Thread fallbackRefs from ensure-checkout to GithubSource (file: packages/cli/src/commands/ensure-checkout.ts) (depends on T002)
+- [x] (2026-04-13 10:30 KST) T003 Thread fallbackRefs from ensure-checkout to GithubSource (file: packages/cli/src/commands/ensure-checkout.ts) (depends on T002)
   - Pass `result.fallbackRefs` from resolver result into `GithubSourceOptions`
   - Acceptance: ensureCheckout passes fallbackRefs through to fetcher.fetch()
   - Tests: packages/cli/test/commands/ensure-checkout.test.ts
 
-- [ ] T004 Expand refCandidates() and cloneAtTag() to use fallbackRefs (file: packages/cli/src/sources/github.ts) (depends on T002)
+- [x] (2026-04-13 04:25 KST) T004 Expand refCandidates() and cloneAtTag() to use fallbackRefs (file: packages/cli/src/sources/github.ts) (depends on T002)
   - Modify `refCandidates()` to accept optional extra candidates
   - `GithubSource.fetch()` reads `opts.fallbackRefs` and passes them through
   - Store-hit loop also checks fallbackRef candidates
@@ -96,8 +96,8 @@ This approach minimizes network overhead (metadata is already fetched; ls-remote
 |-------|--------|
 | T001 NpmResolver monorepo detection | ✅ 2026-04-13 |
 | T002 GithubSourceOptions type | ✅ 2026-04-13 |
-| T003 ensure-checkout plumbing | ⬜ pending |
-| T004 refCandidates expansion | ⬜ pending |
+| T003 ensure-checkout plumbing | ✅ 2026-04-13 |
+| T004 refCandidates expansion | ✅ 2026-04-13 |
 | T005 git ls-remote fallback + actionable error | ⬜ pending |
 | T006 Integration test | ⬜ pending |
 

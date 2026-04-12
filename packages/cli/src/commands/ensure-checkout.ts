@@ -123,6 +123,7 @@ export async function ensureCheckout(
   let ref: string
   let resolvedVersion: string
   let npmPackageName: string | undefined
+  let fallbackRefs: string[] | undefined
   let isFromBranch = false
 
   if (parsed.kind === 'github') {
@@ -182,6 +183,7 @@ export async function ensureCheckout(
     repo = result.repo.slice(slashIdx + 1)
     ref = result.ref
     resolvedVersion = result.resolvedVersion
+    fallbackRefs = result.fallbackRefs
   }
 
   // 4. Compute the cache directory
@@ -204,6 +206,7 @@ export async function ensureCheckout(
     version: resolvedVersion,
     repo: `${owner}/${repo}`,
     ...(isFromBranch ? { branch: ref } : { tag: ref }),
+    ...(fallbackRefs?.length ? { fallbackRefs } : {}),
   }
   await fetcher.fetch(fetchOpts)
 
