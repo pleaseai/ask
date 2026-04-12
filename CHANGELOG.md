@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.4](https://github.com/pleaseai/ask/compare/ask-plugin-v0.3.3...ask-plugin-v0.3.4) (2026-04-12)
+
+
+### Bug Fixes
+
+* **cli:** use workspace:^ for ask-schema dependency ([fb50399](https://github.com/pleaseai/ask/commit/fb5039939ae7c8320f29a213c113fb0a9264c0b6))
+
 ## [0.3.3](https://github.com/pleaseai/ask/compare/ask-plugin-v0.3.2...ask-plugin-v0.3.3) (2026-04-12)
 
 
