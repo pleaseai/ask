@@ -58,7 +58,7 @@ This approach minimizes network overhead (metadata is already fetched; ls-remote
   - Acceptance: GithubSource tries ai@6.0.158 before giving up
   - Tests: packages/cli/test/sources/github.test.ts
 
-- [ ] T005 Add git ls-remote fallback probe with actionable error (file: packages/cli/src/sources/github.ts) (depends on T004)
+- [x] (2026-04-13 04:35 KST) T005 Add git ls-remote fallback probe with actionable error (file: packages/cli/src/sources/github.ts) (depends on T004)
   - When all static candidates fail in cloneAtTag(), run `git ls-remote --tags <repo>` filtered by version
   - Parse output to find matching tag (prefer exact `*@<version>` match)
   - If a match is found, use it to clone
@@ -98,7 +98,7 @@ This approach minimizes network overhead (metadata is already fetched; ls-remote
 | T002 GithubSourceOptions type | ✅ 2026-04-13 |
 | T003 ensure-checkout plumbing | ✅ 2026-04-13 |
 | T004 refCandidates expansion | ✅ 2026-04-13 |
-| T005 git ls-remote fallback + actionable error | ⬜ pending |
+| T005 git ls-remote fallback + actionable error | ✅ 2026-04-13 |
 | T006 Integration test | ⬜ pending |
 
 ## Decision Log
