@@ -1,0 +1,40 @@
+.please/docs/tracks/completed/monorepo-tag-pattern-20260413/metadata.json
+  b4c31c1bccd4dede 4,6,8
+.please/docs/tracks.jsonl
+  b4c31c1bccd4dede 23
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "6cd0ee1cbd52b9a1fc57ad0fc37919713f399361",
+  "prompts": {
+    "89d3fc5e3652d615": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "30315ad1-fcfb-4bd2-ad64-aa212b62e4bc",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 12,
+      "overriden_lines": 0,
+      "messages_url": "https://usegitai.com/cas/4d26d25160f21c0143d922b6c4740d6e1d1b294c009a78e27af30d905df4d295"
+    },
+    "b4c31c1bccd4dede": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dd4b4440-f224-4d0c-994b-9d2237194712",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 26,
+      "total_deletions": 140,
+      "accepted_lines": 7,
+      "overriden_lines": 0,
+      "messages_url": "https://usegitai.com/cas/f2b8ae3c411839ed188b506b1d12b599f2137a6b1cd0dce2870027214ef8f313"
+    }
+  }
+}
