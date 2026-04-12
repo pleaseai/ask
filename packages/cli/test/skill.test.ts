@@ -1,62 +1,86 @@
 import fs from 'node:fs'
-import os from 'node:os'
 import path from 'node:path'
-import { afterEach, describe, expect, it } from 'bun:test'
-import { generateSkill } from '../src/skill.js'
+import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
+import { generateSkill, getSkillDir, removeSkill } from '../src/skill.js'
 
-/**
- * Tests for SKILL.md generation. The "When the docs cannot be found"
- * fallback section is required (added in npm-tarball-docs-20260408 / T-12)
- * so that agents can recover docs from `node_modules` when the .ask/docs
- * directory is missing.
- */
+describe('generateSkill (lazy-first)', () => {
+  let tmpDir: string
 
-describe('generateSkill', () => {
-  let projectDir: string | null = null
+  beforeEach(() => {
+    tmpDir = fs.mkdtempSync('/tmp/ask-skill-test-')
+  })
 
   afterEach(() => {
-    if (projectDir) {
-      fs.rmSync(projectDir, { recursive: true, force: true })
-      projectDir = null
-    }
+    fs.rmSync(tmpDir, { recursive: true, force: true })
   })
 
-  it('emits a fallback "When the docs cannot be found" section that points at node_modules', () => {
-    projectDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ask-skill-'))
-    const skillPath = generateSkill(projectDir, 'ai', '5.1.0', ['index.md', 'guides/agents.md'])
+  it('creates SKILL.md with ask src and ask docs references', () => {
+    generateSkill(tmpDir, 'next', '16.2.3')
+
+    const skillPath = path.join(getSkillDir(tmpDir, 'next'), 'SKILL.md')
+    expect(fs.existsSync(skillPath)).toBe(true)
+
     const content = fs.readFileSync(skillPath, 'utf-8')
-
-    // Section header
-    expect(content).toContain('## When the docs cannot be found')
-
-    // Mentions the curated dist/docs path first
-    expect(content).toContain('node_modules/ai/dist/docs/')
-
-    // Mentions the fallback `docs/` and root `*.md` locations
-    expect(content).toContain('node_modules/ai/docs/')
-    expect(content).toContain('node_modules/ai/*.md')
-
-    // Mentions scoped package guidance so agents know how to handle @scope/pkg
-    expect(content).toContain('@scope/pkg')
-
-    // Mentions the registration suggestion command
-    expect(content).toContain('ask add npm:ai')
+    expect(content).toContain('ask src next')
+    expect(content).toContain('ask docs next')
+    expect(content).toContain('v16.2.3')
+    expect(content).toContain('"^16"')
   })
 
-  it('emits the available-guides table of contents above the fallback section', () => {
-    projectDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ask-skill-'))
-    const skillPath = generateSkill(projectDir, 'zod', '3.22.0', ['INDEX.md', 'guide.md'])
-    const content = fs.readFileSync(skillPath, 'utf-8')
+  it('emits shell substitution examples', () => {
+    generateSkill(tmpDir, 'zod', '3.22.0')
 
-    const tocIdx = content.indexOf('## Available Guides')
-    const fallbackIdx = content.indexOf('## When the docs cannot be found')
-    expect(tocIdx).toBeGreaterThan(0)
-    expect(fallbackIdx).toBeGreaterThan(tocIdx)
+    const content = fs.readFileSync(
+      path.join(getSkillDir(tmpDir, 'zod'), 'SKILL.md'),
+      'utf-8',
+    )
+    expect(content).toContain('rg "pattern" $(ask src zod)')
+    expect(content).toContain('$(ask docs zod)')
+  })
 
-    // INDEX.md should be filtered out of the TOC (existing behavior we
-    // shouldn't regress on).
-    const tocSlice = content.slice(tocIdx, fallbackIdx)
-    expect(tocSlice).not.toContain('INDEX.md')
-    expect(tocSlice).toContain('guide.md')
+  it('emits frontmatter with trigger description', () => {
+    generateSkill(tmpDir, 'next', '16.2.3')
+
+    const content = fs.readFileSync(
+      path.join(getSkillDir(tmpDir, 'next'), 'SKILL.md'),
+      'utf-8',
+    )
+    expect(content).toContain('name: next-docs')
+    expect(content).toContain('TRIGGER when writing or modifying code that imports or uses next')
+  })
+
+  it('does NOT reference .ask/docs/ paths', () => {
+    generateSkill(tmpDir, 'next', '16.2.3')
+
+    const content = fs.readFileSync(
+      path.join(getSkillDir(tmpDir, 'next'), 'SKILL.md'),
+      'utf-8',
+    )
+    expect(content).not.toContain('.ask/docs/')
+  })
+})
+
+describe('removeSkill', () => {
+  let tmpDir: string
+
+  beforeEach(() => {
+    tmpDir = fs.mkdtempSync('/tmp/ask-skill-test-')
+  })
+
+  afterEach(() => {
+    fs.rmSync(tmpDir, { recursive: true, force: true })
+  })
+
+  it('removes skill directory', () => {
+    generateSkill(tmpDir, 'next', '16.2.3')
+    const skillDir = getSkillDir(tmpDir, 'next')
+    expect(fs.existsSync(skillDir)).toBe(true)
+
+    removeSkill(tmpDir, 'next')
+    expect(fs.existsSync(skillDir)).toBe(false)
+  })
+
+  it('is a no-op when skill does not exist', () => {
+    expect(() => removeSkill(tmpDir, 'nonexistent')).not.toThrow()
   })
 })

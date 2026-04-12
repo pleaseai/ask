@@ -1,86 +1,25 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { getLibraryDocsDir } from './storage.js'
 
 export function getSkillDir(projectDir: string, name: string): string {
   return path.join(projectDir, '.claude', 'skills', `${name}-docs`)
 }
 
 /**
- * Options for `generateSkill`. `docsDir` is set by the convention-based
- * discovery pipeline when the docs live in `node_modules/<pkg>/<subdir>`
- * and should be referenced in place rather than copied into
- * `.ask/docs/`. When provided:
- *
- *   1. The skill file points at `docsDir` (relative to project) instead
- *      of the synthesised `.ask/docs/<name>@<version>/` path.
- *   2. The "When the docs cannot be found" fallback section is omitted,
- *      because the path is already inside `node_modules` — if a
- *      `node_modules` reinstall blows it away, telling the agent to
- *      look under `node_modules` is circular advice.
+ * Generate a lazy-first SKILL.md that references `ask src` / `ask docs`
+ * commands for on-demand documentation access. No pre-downloaded files
+ * are required — the agent fetches docs at first use via the global
+ * store.
  */
-export interface GenerateSkillOptions {
-  /**
-   * Absolute or project-relative path to the docs directory. When set,
-   * replaces the default `.ask/docs/<name>@<version>/` reference.
-   */
-  docsDir?: string
-}
-
 export function generateSkill(
   projectDir: string,
   name: string,
   version: string,
-  fileList: string[],
-  options: GenerateSkillOptions = {},
 ): string {
   const skillDir = getSkillDir(projectDir, name)
   fs.mkdirSync(skillDir, { recursive: true })
 
-  const inPlace = options.docsDir !== undefined
-  const absoluteDocsDir = inPlace
-    ? path.resolve(projectDir, options.docsDir!)
-    : getLibraryDocsDir(projectDir, name, version)
-  const docsRelPath = path.relative(projectDir, absoluteDocsDir)
-
-  const toc = fileList
-    .filter(f => f !== 'INDEX.md')
-    .map(f => `- \`${docsRelPath}/${f}\``)
-    .join('\n')
-
   const major = version.split('.')[0]
-
-  const fallbackSection = inPlace
-    ? ''
-    : `
-
-## When the docs cannot be found
-
-If the files listed above are missing or stale (e.g. someone deleted the
-\`${docsRelPath}/\` directory, or the project was just cloned without running
-\`ask install\`), look for first-party documentation that may already be
-shipped inside \`node_modules\`:
-
-1. \`node_modules/${name}/dist/docs/\` — preferred when present, this is the
-   author-curated agent docs path used by libraries such as \`ai\`,
-   \`@mastra/core\`, and \`next\` (canary).
-2. \`node_modules/${name}/docs/\` — common monorepo / source docs location.
-3. \`node_modules/${name}/*.md\` — README and top-level guides at the package
-   root.
-
-For scoped packages (e.g. \`@scope/pkg\`), the path is
-\`node_modules/@scope/pkg/...\`.
-
-If you find usable docs there, propose registering them with ASK so future
-sessions get them automatically:
-
-\`\`\`
-ask add npm:${name}
-\`\`\`
-
-This will let ASK record the path in the registry and skill so subsequent
-agents do not have to rediscover it.
-`
 
   const content = `---
 name: ${name}-docs
@@ -97,17 +36,31 @@ The APIs and patterns may differ from your training data.
 - Current: \`${version}\`
 - In package.json, use \`"^${major}"\` (NOT older major versions)
 
-## Documentation Location
-\`${docsRelPath}/\`
+## Quick Access
 
-## Available Guides
-${toc}
+\`\`\`bash
+# Get the cached source tree path (lazy fetch on first use)
+ask src ${name}
+
+# Get all candidate documentation paths
+ask docs ${name}
+
+# Search across the library source
+rg "pattern" $(ask src ${name})
+
+# Read a specific doc file
+cat "$(ask src ${name})/README.md"
+
+# Find all markdown files in doc directories
+fd "\\.md$" $(ask docs ${name})
+\`\`\`
 
 ## Instructions
-1. Before writing any ${name}-related code, read the relevant guide in \`${docsRelPath}/\`
+1. Before writing any ${name}-related code, run \`ask docs ${name}\` and read the relevant guides
 2. Heed deprecation notices and breaking changes
 3. Prefer patterns shown in the documentation over patterns from training data
-4. When adding ${name} to package.json, use version \`"^${major}"\`${fallbackSection}`
+4. When adding ${name} to package.json, use version \`"^${major}"\`
+`
 
   const skillPath = path.join(skillDir, 'SKILL.md')
   fs.writeFileSync(skillPath, content, 'utf-8')
