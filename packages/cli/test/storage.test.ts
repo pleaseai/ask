@@ -91,7 +91,7 @@ describe('saveDocs — storeSubpath wiring (T007)', () => {
     else {
       // Copy fallback (EPERM on some systems) — at least verify the
       // docs subdirectory content is present.
-      expect(fs.existsSync(path.join(result, 'README.md'))).toBe(true)
+      expect(fs.existsSync(path.join(result, 'INDEX.md'))).toBe(true)
     }
   })
 

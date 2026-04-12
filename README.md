@@ -303,10 +303,12 @@ ASK maintains a global docs store at `~/.ask/` so identical `<pkg>@<version>` en
     └── <sha256>@<version>/
 ```
 
-All four source kinds (`npm`, `github`, `web`, `llms-txt`) follow the
-same `<kind>/<identity>@<version>/` mental model. Each github entry is
-an independent shallow clone into a nested path — there is no shared
-bare repo, no `FETCH_HEAD` race, and no `owner__repo` flattening.
+All four source kinds use a `<kind>/` prefix. `npm` and `llms-txt` entries
+use `<identity>@<version>/` sub-paths; `github` entries use a nested
+`<host>/<owner>/<repo>/<tag>/` path (one independent shallow clone per
+tag, `.git/` stripped); `web` entries use a `<sha256>/` snapshot path.
+There is no shared bare repo, no `FETCH_HEAD` race, and no `owner__repo`
+flattening.
 
 ### Legacy layout migration
 

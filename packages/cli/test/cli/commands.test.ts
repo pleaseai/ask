@@ -100,8 +100,15 @@ describe('ask CLI surface (install/add/remove/list)', () => {
         '--allow-mutable-ref',
       ])
     }
-    catch {
-      // install step may fail (network), but ask.json mutation should land
+    catch (err) {
+      // Network failures are acceptable — the ask.json write must have
+      // landed before the fetch step. Re-throw validation errors so a
+      // regression in --allow-mutable-ref flag handling is not silently
+      // swallowed.
+      const msg = err instanceof Error ? err.message : String(err)
+      if (msg.includes('mutable') || msg.includes('ref') || msg.includes('schema')) {
+        throw err
+      }
     }
     const askJson = readAskJson(tmpDir, { allowMutableRef: true })
     expect(askJson?.libraries).toEqual([
