@@ -1,0 +1,26 @@
+.please/docs/knowledge/gotchas.md
+  89d3fc5e3652d615 1-29
+CLAUDE.md
+  89d3fc5e3652d615 84
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "d39822d758a2bba3bcc4db70ade4ef4a9bed97ce",
+  "prompts": {
+    "89d3fc5e3652d615": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "30315ad1-fcfb-4bd2-ad64-aa212b62e4bc",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 37,
+      "total_deletions": 2,
+      "accepted_lines": 438,
+      "overriden_lines": 2,
+      "messages_url": "https://usegitai.com/cas/d658eed4db14698e0e71dab5e5046367e4abdcf59eb6df8ff1edea103fba0564"
+    }
+  }
+}
