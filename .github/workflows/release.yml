@@ -73,10 +73,24 @@ jobs:
       # Workaround: bun pm pack resolves workspace:* from bun.lock, not
       # package.json (oven-sh/bun#20477). release-please bumps versions in
       # package.json but bun install won't propagate them to the lockfile
-      # (oven-sh/bun#18906). Regenerate the lockfile so pack embeds the
-      # correct workspace dependency versions.
+      # (oven-sh/bun#18906). Patch only the workspace package versions in
+      # the lockfile — avoids a full re-resolve that could drift third-party
+      # dependencies.
       - name: Sync lockfile with workspace versions
-        run: rm bun.lock && bun install
+        run: |
+          node -e "
+            const fs = require('fs');
+            const lock = fs.readFileSync('bun.lock', 'utf8');
+            const pkgs = ['packages/cli', 'packages/schema'];
+            let patched = lock;
+            for (const dir of pkgs) {
+              const { name, version } = JSON.parse(fs.readFileSync(dir + '/package.json', 'utf8'));
+              // Match: \"name\": \"<name>\",\n      \"version\": \"<old>\",
+              const re = new RegExp('(\"name\":\\s*\"' + name.replace(/[/]/g, '\\\\/') + '\",\\n\\s*\"version\":\\s*\")([^\"]+)(\")');
+              patched = patched.replace(re, '$1' + version + '$3');
+            }
+            fs.writeFileSync('bun.lock', patched);
+          "
 
       - name: Publish @pleaseai/ask-schema
         if: |
