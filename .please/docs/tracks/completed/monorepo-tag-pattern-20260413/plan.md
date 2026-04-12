@@ -112,3 +112,22 @@ This approach minimizes network overhead (metadata is already fetched; ls-remote
 - `fallbackRefs` was already defined in `ResolveResult` but never plumbed through to GithubSource
 - NpmResolver already fetches full registry metadata but ignores `repository.directory`
 - tar.gz fallback path in `fetchFromTarGz` only tries the original ref, not even the `v{ref}` fallback
+
+## Outcomes & Retrospective
+
+### What Was Shipped
+- Monorepo tag pattern support (`<pkg>@<version>`) across both `ask src` and `ask install` paths
+- 4-layer cascade: npm metadata → static candidates → git ls-remote → actionable error
+- 12 new tests (unit + integration), all passing
+
+### What Went Well
+- T001/T002 parallelized cleanly — no conflicts
+- `ResolveResult.fallbackRefs` already existed, so plumbing was additive (no breaking changes)
+- Code review caught 5 real issues (timeout, error messages, fallback asymmetry) — all fixed before PR
+
+### What Could Improve
+- `fetchFromTarGz` had asymmetric error handling (tar failure threw vs network error continued) — should have caught in initial implementation
+- opensrc reference showed that even established tools have the same gap (default branch fallback instead of accurate tags)
+
+### Tech Debt Created
+- None
