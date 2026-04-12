@@ -1,0 +1,40 @@
+packages/cli/test/sources/github.test.ts
+  b4c31c1bccd4dede 347-465
+packages/cli/src/sources/github.ts
+  b4c31c1bccd4dede 35-36,38,59-63,65-77,105,107,170,175-176,208,220,233,237,275,278-279,282-283,285-298,300-310,312-314,316-328,331-338,340-344
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "dabe690b528159c1c231551bb3d20fa98f712220",
+  "prompts": {
+    "89d3fc5e3652d615": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "30315ad1-fcfb-4bd2-ad64-aa212b62e4bc",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 12,
+      "overriden_lines": 0,
+      "messages_url": "https://usegitai.com/cas/4d26d25160f21c0143d922b6c4740d6e1d1b294c009a78e27af30d905df4d295"
+    },
+    "b4c31c1bccd4dede": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dd4b4440-f224-4d0c-994b-9d2237194712",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 820,
+      "total_deletions": 631,
+      "accepted_lines": 246,
+      "overriden_lines": 0,
+      "messages_url": "https://usegitai.com/cas/d3ff21920d9a8aaf93986d5ad0f03861303d49e692c926292698b0e0ddccd671"
+    }
+  }
+}
