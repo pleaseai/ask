@@ -92,3 +92,25 @@ For JSON Schema generation, `zod-to-json-schema` converts the existing Zod schem
 - Decision: Remove ContentRenderer and dead fields rather than migrating body to JSON field
   Rationale: Body content is never consumed by CLI; ecosystem and strategies are dead code not in schema
   Date/Author: 2026-04-13 / Claude
+
+## Outcomes & Retrospective
+
+### What Was Shipped
+- 50 registry entries converted from Markdown to JSON
+- Nuxt Content collection type switched from `page` to `data`
+- JSON Schema generation via `zod-to-json-schema` for IDE autocomplete
+- Dead Vue code removed (ecosystem, strategies, ContentRenderer)
+- API route and Vue pages fixed to use `stem` instead of `path`
+
+### What Went Well
+- Code review caught a critical bug: `type: 'data'` collections don't have a `path` field — would have broken all registry pages at runtime
+- Migration script was clean and reusable (pure function extraction for testability)
+- Existing `registryEntrySchema` required zero changes — schema is format-agnostic
+
+### What Could Improve
+- Should have checked Nuxt Content v3 `DataCollectionItemBase` type signature before writing Vue page queries — the `path` vs `stem` distinction is documented but easy to miss
+- E2E tests are gated behind a dev server and don't run in CI — this bug would have been caught earlier with automated E2E
+
+### Tech Debt Created
+- `vitest` import in `scripts/migrate-registry-to-json.test.ts` — should be `bun:test` for consistency
+- JSON Schema test coverage is structural only — no Ajv-based validation test
