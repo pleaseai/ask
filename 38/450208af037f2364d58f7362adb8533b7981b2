@@ -1,0 +1,24 @@
+packages/cli/src/registry.ts
+  f5e90962c1e10851 123
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "38450208af037f2364d58f7362adb8533b7981b2",
+  "prompts": {
+    "f5e90962c1e10851": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ca354ec5-c36f-403e-8264-47740b35d1c9",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 2,
+      "total_deletions": 2,
+      "accepted_lines": 2,
+      "overriden_lines": 0,
+      "messages_url": "https://usegitai.com/cas/bc55767692ef9f50bd45e25dfb72c6e724549f2e3453846741d305e5ab338782"
+    }
+  }
+}
