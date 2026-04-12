@@ -1,5 +1,17 @@
-import { describe, expect, it } from 'bun:test'
-import { readProjectDeps } from '../src/interactive.js'
+import { describe, expect, it, mock } from 'bun:test'
+import { checkRegistryBatch, readProjectDeps } from '../src/interactive.js'
+
+// Mock fetchRegistryEntry for checkRegistryBatch tests
+mock.module('../src/registry.js', () => ({
+  detectEcosystem: () => 'npm',
+  fetchRegistryEntry: async (_eco: string, name: string) => {
+    if (name === 'next')
+      return { name: 'next' }
+    if (name === 'fail-pkg')
+      throw new Error('network timeout')
+    return null
+  },
+}))
 
 describe('readProjectDeps', () => {
   it('returns dep names from dependencies and devDependencies', () => {
@@ -43,5 +55,19 @@ describe('readProjectDeps', () => {
     const existing = ['github:vercel/next.js@v14.2.3']
     const result = readProjectDeps(packageJson, existing)
     expect(result).toEqual(['next', 'react'])
+  })
+})
+
+describe('checkRegistryBatch', () => {
+  it('separates registered and unregistered deps', async () => {
+    const result = await checkRegistryBatch('npm', ['next', 'lodash'])
+    expect(result.registered).toEqual(['next'])
+    expect(result.unregistered).toEqual(['lodash'])
+  })
+
+  it('recovers dep name on fetch rejection (not "unknown")', async () => {
+    const result = await checkRegistryBatch('npm', ['fail-pkg', 'lodash'])
+    expect(result.unregistered).toContain('fail-pkg')
+    expect(result.unregistered).not.toContain('unknown')
   })
 })

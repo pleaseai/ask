@@ -62,7 +62,8 @@ export async function checkRegistryBatch(
   const registered: string[] = []
   const unregistered: string[] = []
 
-  for (const result of results) {
+  for (let i = 0; i < results.length; i++) {
+    const result = results[i]!
     if (result.status === 'fulfilled') {
       if (result.value.found) {
         registered.push(result.value.name)
@@ -72,8 +73,8 @@ export async function checkRegistryBatch(
       }
     }
     else {
-      // On failure, treat as unregistered
-      unregistered.push('unknown')
+      // On failure, recover dep name from parallel index
+      unregistered.push(deps[i]!)
     }
   }
 
@@ -84,6 +85,10 @@ const OWNER_REPO_RE = /^[^/]+\/[^/]+$/
 
 function normalizeAddSpec(input: string): string {
   if (!input.includes(':')) {
+    // Scoped npm packages (@scope/pkg) look like owner/repo but start with @
+    if (input.startsWith('@')) {
+      return `npm:${input}`
+    }
     if (OWNER_REPO_RE.test(input)) {
       return `github:${input}`
     }
@@ -116,7 +121,14 @@ export async function runInteractiveAdd(projectDir: string): Promise<void> {
     return
   }
 
-  const packageJson = JSON.parse(fs.readFileSync(pkgPath, 'utf8')) as Record<string, unknown>
+  let packageJson: Record<string, unknown>
+  try {
+    packageJson = JSON.parse(fs.readFileSync(pkgPath, 'utf8')) as Record<string, unknown>
+  }
+  catch {
+    consola.error('Failed to parse package.json. Check for syntax errors.')
+    return
+  }
   const askJson: AskJson = readAskJson(projectDir) ?? { libraries: [] }
   const deps = readProjectDeps(packageJson, askJson.libraries)
 
@@ -176,8 +188,8 @@ export async function runInteractiveAdd(projectDir: string): Promise<void> {
     return
   }
 
-  // Convert selected names to specs
-  const specs = selected.map(name => `${ecosystem}:${name}`)
+  // Convert selected names to specs — always npm since deps come from package.json
+  const specs = selected.map(name => `npm:${name}`)
 
   // Ask for additional manual input
   const manual = await consola.prompt(
