@@ -5,7 +5,6 @@ import path from 'node:path'
 import process from 'node:process'
 import { defineCommand } from 'citty'
 import { consola } from 'consola'
-import { generateAgentsMd } from './agents.js'
 import { docsCmd } from './commands/docs.js'
 import { srcCmd } from './commands/src.js'
 import { manageIgnoreFiles } from './ignore-files.js'
@@ -101,7 +100,7 @@ const removeCmd = defineCommand({
       required: true,
     },
   },
-  run({ args }) {
+  async run({ args }) {
     const projectDir = process.cwd()
     const askJson = readAskJson(projectDir)
     if (!askJson) {
@@ -132,11 +131,8 @@ const removeCmd = defineCommand({
 
     removeSkill(projectDir, libName)
 
-    // Regenerate AGENTS.md without the removed library
-    // Import resolveAll lazily to avoid circular deps
-    generateAgentsMd(projectDir, [])
     // Re-run install to regenerate AGENTS.md with remaining libraries
-    runInstall(projectDir)
+    await runInstall(projectDir)
 
     const remaining = askJson.libraries
     manageIgnoreFiles(projectDir, remaining.length === 0 ? 'remove' : 'install')

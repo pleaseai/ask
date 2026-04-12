@@ -68,8 +68,10 @@ export async function runInstall(
     }
   }
 
-  // Generate AGENTS.md from all resolved libraries (not just this batch)
-  const allResolved = resolveAll(projectDir)
+  // Generate AGENTS.md from all resolved libraries (not just this batch).
+  // When installing all specs, reuse the already-resolved list to avoid
+  // duplicate console output from a second resolveOne pass.
+  const allResolved = options.onlySpecs ? resolveAll(projectDir) : resolved
   generateAgentsMd(projectDir, allResolved)
   manageIgnoreFiles(projectDir, 'install')
 
