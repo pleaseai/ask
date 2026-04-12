@@ -23,6 +23,8 @@ import {
 
 const RE_LEADING_V = /^v/
 const RE_SHA40 = /^[0-9a-f]{40}$/
+const RE_TAG_LINE = /.*refs\/tags\//
+const RE_PEELED = /\^\{\}$/
 /**
  * Safe `owner/repo` pattern. Allows only alphanumerics, dots, underscores,
  * and hyphens in each segment — matches GitHub's own repo-name rules and
@@ -78,6 +80,41 @@ function refCandidates(ref: string, extraCandidates?: string[]): string[] {
 }
 
 /**
+ * Probe remote tags via `git ls-remote --tags` to discover a tag
+ * matching the given version string. Returns the best match or null.
+ * Prefers exact `<name>@<version>` matches over partial matches.
+ */
+function probeRemoteTag(
+  remoteUrl: string,
+  version: string,
+): { tag: string, allMatching: string[] } | null {
+  try {
+    const output = execFileSync('git', [
+      'ls-remote',
+      '--tags',
+      remoteUrl,
+    ], { encoding: 'utf-8', stdio: ['ignore', 'pipe', 'ignore'] })
+
+    // Parse refs/tags/<tagname> lines, filter by version
+    const allTags = output.split('\n')
+      .map(line => line.replace(RE_TAG_LINE, '').replace(RE_PEELED, ''))
+      .filter(Boolean)
+
+    // Filter tags containing the version string
+    const matching = [...new Set(allTags.filter(t => t.includes(version)))]
+    if (matching.length === 0)
+      return null
+
+    // Prefer exact <name>@<version> pattern (changesets convention)
+    const exact = matching.find(t => t.endsWith(`@${version}`) || t.endsWith(`@v${version}`))
+    return { tag: exact ?? matching[0], allMatching: matching }
+  }
+  catch {
+    return null
+  }
+}
+
+/**
  * Clean the contents of a directory (keep the dir itself) so a failed
  * clone attempt can be retried with a different ref candidate.
  */
@@ -90,6 +127,44 @@ function clearDirContents(dir: string): void {
 }
 
 /**
+ * Perform a shallow clone of a single ref into `tmpDir`, capture the commit
+ * SHA, and strip `.git/`. Returns the commit SHA on success or throws.
+ */
+function shallowCloneRef(
+  remoteUrl: string,
+  candidate: string,
+  tmpDir: string,
+): string {
+  clearDirContents(tmpDir)
+  execFileSync('git', [
+    'clone',
+    '--depth',
+    '1',
+    '--branch',
+    candidate,
+    '--single-branch',
+    remoteUrl,
+    tmpDir,
+  ], { stdio: ['ignore', 'ignore', 'pipe'] })
+
+  // Capture the commit SHA before we strip `.git/`.
+  const commit = execFileSync(
+    'git',
+    ['-C', tmpDir, 'rev-parse', 'HEAD'],
+    { encoding: 'utf-8', stdio: ['ignore', 'pipe', 'ignore'] },
+  ).trim()
+  if (!RE_SHA40.test(commit)) {
+    throw new Error(`git rev-parse returned invalid SHA '${commit}'`)
+  }
+
+  // Remove `.git/` so the store entry contains only the working
+  // tree — matches the opensrc convention and prevents downstream
+  // callers from accidentally treating the entry as a live repo.
+  fs.rmSync(path.join(tmpDir, '.git'), { recursive: true, force: true })
+  return commit
+}
+
+/**
  * Shallow-clone a single tag into a temp directory, strip `.git/`,
  * and return the commit SHA that the tag resolved to. Implements the
  * ref fallback chain via `refCandidates`. Throws if none succeed.
@@ -97,6 +172,11 @@ function clearDirContents(dir: string): void {
  * Returns the winning candidate so callers can use it as the store
  * key (e.g. if the user asked for `1.0.0` but only `v1.0.0` exists,
  * the store lands under `.../v1.0.0/`).
+ *
+ * When all static candidates fail, probes remote tags via `git ls-remote`
+ * for a matching tag. On discovery the clone is retried with that tag.
+ * If everything fails, throws with an actionable error listing matching
+ * tags and a `--ref` retry hint when applicable.
  */
 function cloneAtTag(
   remoteUrl: string,
@@ -108,32 +188,7 @@ function cloneAtTag(
   let lastErr: unknown
   for (const candidate of candidates) {
     try {
-      clearDirContents(tmpDir)
-      execFileSync('git', [
-        'clone',
-        '--depth',
-        '1',
-        '--branch',
-        candidate,
-        '--single-branch',
-        remoteUrl,
-        tmpDir,
-      ], { stdio: ['ignore', 'ignore', 'pipe'] })
-
-      // Capture the commit SHA before we strip `.git/`.
-      const commit = execFileSync(
-        'git',
-        ['-C', tmpDir, 'rev-parse', 'HEAD'],
-        { encoding: 'utf-8', stdio: ['ignore', 'pipe', 'ignore'] },
-      ).trim()
-      if (!RE_SHA40.test(commit)) {
-        throw new Error(`git rev-parse returned invalid SHA '${commit}'`)
-      }
-
-      // Remove `.git/` so the store entry contains only the working
-      // tree — matches the opensrc convention and prevents downstream
-      // callers from accidentally treating the entry as a live repo.
-      fs.rmSync(path.join(tmpDir, '.git'), { recursive: true, force: true })
+      const commit = shallowCloneRef(remoteUrl, candidate, tmpDir)
       return { commit, winningCandidate: candidate }
     }
     catch (err) {
@@ -141,6 +196,26 @@ function cloneAtTag(
       // Fall through to the next candidate
     }
   }
+
+  // All static candidates failed — probe remote tags via ls-remote
+  const versionForProbe = ref.replace(RE_LEADING_V, '')
+  const probeResult = probeRemoteTag(remoteUrl, versionForProbe)
+  if (probeResult) {
+    const { tag: discoveredTag, allMatching } = probeResult
+    try {
+      const commit = shallowCloneRef(remoteUrl, discoveredTag, tmpDir)
+      return { commit, winningCandidate: discoveredTag }
+    }
+    catch {
+      // Probe found tags but clone still failed — include helpful hint
+      throw new Error(
+        `Failed to clone ${remoteUrl} at ${ref} (tried: ${candidates.join(', ')}). `
+        + `Available tags matching '${versionForProbe}': ${allMatching.join(', ')}. `
+        + `Retry with: ask src github:<repo>@${discoveredTag}`,
+      )
+    }
+  }
+
   throw new Error(
     `Failed to clone ${remoteUrl} at ${ref} (tried: ${candidates.join(', ')}): `
     + `${lastErr instanceof Error ? lastErr.message : String(lastErr)}`,
