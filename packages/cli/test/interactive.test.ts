@@ -28,7 +28,7 @@ describe('readProjectDeps', () => {
 
   it('excludes scoped packages already registered', () => {
     const packageJson = {
-      dependencies: { '@vercel/ai': '^3.0.0', lodash: '^4.0.0' },
+      dependencies: { '@vercel/ai': '^3.0.0', 'lodash': '^4.0.0' },
     }
     const existing = ['npm:@vercel/ai']
     const result = readProjectDeps(packageJson, existing)

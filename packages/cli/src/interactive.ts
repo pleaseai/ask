@@ -3,8 +3,8 @@ import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { consola } from 'consola'
-import { readAskJson, writeAskJson } from './io.js'
 import { runInstall } from './install.js'
+import { readAskJson, writeAskJson } from './io.js'
 import { detectEcosystem, fetchRegistryEntry } from './registry.js'
 import { parseSpec } from './spec.js'
 
@@ -80,9 +80,10 @@ export async function checkRegistryBatch(
   return { registered, unregistered }
 }
 
+const OWNER_REPO_RE = /^[^/]+\/[^/]+$/
+
 function normalizeAddSpec(input: string): string {
   if (!input.includes(':')) {
-    const OWNER_REPO_RE = /^[^/]+\/[^/]+$/
     if (OWNER_REPO_RE.test(input)) {
       return `github:${input}`
     }
@@ -116,7 +117,7 @@ export async function runInteractiveAdd(projectDir: string): Promise<void> {
   }
 
   const packageJson = JSON.parse(fs.readFileSync(pkgPath, 'utf8')) as Record<string, unknown>
-  let askJson: AskJson = readAskJson(projectDir) ?? { libraries: [] }
+  const askJson: AskJson = readAskJson(projectDir) ?? { libraries: [] }
   const deps = readProjectDeps(packageJson, askJson.libraries)
 
   if (deps.length === 0) {
