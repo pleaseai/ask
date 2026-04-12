@@ -10,6 +10,7 @@ import { splitExplicitVersion } from './commands/ensure-checkout.js'
 import { srcCmd } from './commands/src.js'
 import { manageIgnoreFiles } from './ignore-files.js'
 import { runInstall } from './install.js'
+import { runInteractiveAdd } from './interactive.js'
 import { readAskJson, writeAskJson } from './io.js'
 import { buildListModel } from './list/aggregate.js'
 import { ListModelSchema } from './list/model.js'
@@ -54,12 +55,18 @@ const addCmd = defineCommand({
   args: {
     spec: {
       type: 'positional',
-      description: 'Library spec (e.g. npm:next, github:vercel/next.js@v14.2.3)',
-      required: true,
+      description: 'Library spec (e.g. npm:next, github:vercel/next.js@v14.2.3). Omit for interactive mode.',
+      required: false,
     },
   },
   async run({ args }) {
     const projectDir = process.cwd()
+
+    if (!args.spec) {
+      await runInteractiveAdd(projectDir)
+      return
+    }
+
     const spec = normalizeAddSpec(args.spec)
 
     // Validate the spec parses correctly
