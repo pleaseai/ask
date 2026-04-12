@@ -34,7 +34,7 @@ This approach minimizes network overhead (metadata is already fetched; ls-remote
 
 ## Tasks
 
-- [ ] T001 [P] Extend NpmResolver to detect monorepo and generate pkg-name fallbackRefs (file: packages/cli/src/resolvers/npm.ts)
+- [x] (2026-04-13 04:13 KST) T001 [P] Extend NpmResolver to detect monorepo and generate pkg-name fallbackRefs (file: packages/cli/src/resolvers/npm.ts)
   - Read `repository.directory` from npm metadata
   - If present, add `<pkgName>@<version>` and `<pkgName>@v<version>` to `fallbackRefs`
   - Acceptance: NpmResolver.resolve('ai', '6.0.158') returns fallbackRefs containing 'ai@6.0.158'
@@ -94,8 +94,8 @@ This approach minimizes network overhead (metadata is already fetched; ls-remote
 
 | Phase | Status |
 |-------|--------|
-| T001 NpmResolver monorepo detection | ⬜ pending |
-| T002 GithubSourceOptions type | ⬜ pending |
+| T001 NpmResolver monorepo detection | ✅ 2026-04-13 |
+| T002 GithubSourceOptions type | ✅ 2026-04-13 |
 | T003 ensure-checkout plumbing | ⬜ pending |
 | T004 refCandidates expansion | ⬜ pending |
 | T005 git ls-remote fallback + actionable error | ⬜ pending |
