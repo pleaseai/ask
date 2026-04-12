@@ -67,7 +67,7 @@ This approach minimizes network overhead (metadata is already fetched; ls-remote
   - Acceptance: discovers `ai@6.0.158` tag when static candidates miss; on total failure, error shows matching tags so LLM agents or users can pick the right one
   - Tests: packages/cli/test/sources/github.test.ts
 
-- [ ] T006 Integration test with real monorepo package (file: packages/cli/test/sources/github-monorepo.test.ts) (depends on T001, T003, T004, T005)
+- [x] (2026-04-13 04:45 KST) T006 Integration test with real monorepo package (file: packages/cli/test/sources/github-monorepo.test.ts) (depends on T001, T003, T004, T005)
   - End-to-end test: NpmResolver + GithubSource for a monorepo package
   - Verify no regression for standard v-prefixed repos
   - Tests: new test file
@@ -99,7 +99,7 @@ This approach minimizes network overhead (metadata is already fetched; ls-remote
 | T003 ensure-checkout plumbing | ✅ 2026-04-13 |
 | T004 refCandidates expansion | ✅ 2026-04-13 |
 | T005 git ls-remote fallback + actionable error | ✅ 2026-04-13 |
-| T006 Integration test | ⬜ pending |
+| T006 Integration test | ✅ 2026-04-13 |
 
 ## Decision Log
 
