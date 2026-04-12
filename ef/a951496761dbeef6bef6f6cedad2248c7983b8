@@ -1,0 +1,26 @@
+.please/docs/tracks.jsonl
+  db0b8176a5b7e5d5 6,12,15,21,23
+.please/docs/tracks/active/telemetry-driven-registry-20260413/metadata.json
+  db0b8176a5b7e5d5 4,6
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "efa951496761dbeef6bef6f6cedad2248c7983b8",
+  "prompts": {
+    "db0b8176a5b7e5d5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "32f656c4-09b8-48dd-ac9a-68bfa939b6c9",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 7,
+      "total_deletions": 7,
+      "accepted_lines": 7,
+      "overriden_lines": 0,
+      "messages_url": "https://usegitai.com/cas/03490f239fc3a72cf020bf93434846857d4c163f671c620f5fc919fdcc8a1062"
+    }
+  }
+}
