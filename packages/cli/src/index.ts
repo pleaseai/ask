@@ -6,6 +6,7 @@ import process from 'node:process'
 import { defineCommand } from 'citty'
 import { consola } from 'consola'
 import { docsCmd } from './commands/docs.js'
+import { splitExplicitVersion } from './commands/ensure-checkout.js'
 import { srcCmd } from './commands/src.js'
 import { manageIgnoreFiles } from './ignore-files.js'
 import { runInstall } from './install.js'
@@ -112,9 +113,10 @@ const removeCmd = defineCommand({
     const idx = askJson.libraries.findIndex((spec) => {
       if (spec === target)
         return true
-      if (libraryNameFromSpec(spec) === target)
+      const { spec: body } = splitExplicitVersion(spec)
+      if (libraryNameFromSpec(body) === target)
         return true
-      const parsed = parseSpec(spec)
+      const parsed = parseSpec(body)
       if (parsed.kind === 'npm' && parsed.pkg === target)
         return true
       return false
@@ -125,7 +127,8 @@ const removeCmd = defineCommand({
     }
 
     const removed = askJson.libraries[idx]!
-    const libName = libraryNameFromSpec(removed)
+    const { spec: specBody } = splitExplicitVersion(removed)
+    const libName = libraryNameFromSpec(specBody)
     askJson.libraries.splice(idx, 1)
     writeAskJson(projectDir, askJson)
 

@@ -9,6 +9,8 @@ import { npmEcosystemReader } from './lockfiles/index.js'
 import { generateSkill } from './skill.js'
 import { parseSpec } from './spec.js'
 
+const RE_LEADING_V = /^v/
+
 export interface RunInstallOptions {
   /** Subset of libraries to install (by spec). When omitted, install all. */
   onlySpecs?: string[]
@@ -94,7 +96,8 @@ function resolveOne(
 
   if (parsed.kind === 'github') {
     // github specs encode version in the spec string: github:owner/repo@v1.2.3
-    const version = explicitVersion ?? 'latest'
+    // Strip leading 'v' so generated output uses "^14" not "^v14".
+    const version = (explicitVersion ?? 'latest').replace(RE_LEADING_V, '')
     consola.info(`  ${spec}: ${parsed.name}@${version}`)
     return { name: parsed.name, version, spec }
   }

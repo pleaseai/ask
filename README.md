@@ -79,8 +79,8 @@ install for that single entry.
 ask install            # Resolve versions + generate AGENTS.md/SKILL.md
 ```
 
-`ask install` reads `ask.json`, resolves each entry's version from the
-lockfile, and generates `AGENTS.md` and `.claude/skills/<name>-docs/SKILL.md`
+`ask install` reads `ask.json`, resolves each entry's version
+(lockfile for `npm:`, inline `@ref` for `github:`), and generates `AGENTS.md` and `.claude/skills/<name>-docs/SKILL.md`
 with lazy references (`ask src` / `ask docs`). No documentation is
 downloaded — agents fetch docs on-demand.
 

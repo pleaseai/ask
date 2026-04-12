@@ -46,7 +46,7 @@ documentation on-demand. They print absolute paths to the cached source tree
 \`\`\`bash
 rg "pattern" $(ask src <package>)
 cat "$(ask src <package>)/README.md"
-fd "\\.md$" $(ask docs <package>)
+fd "\\.md$" "$(ask docs <package> | head -n 1)"
 \`\`\`
 
 ${sections.join('\n\n')}
