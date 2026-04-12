@@ -34,7 +34,7 @@
     "test": "bun test"
   },
   "dependencies": {
-    "@pleaseai/ask-schema": "workspace:*",
+    "@pleaseai/ask-schema": "workspace:^",
     "@tanstack/intent": "0.0.29",
     "citty": "^0.2.2",
     "consola": "^3.4.2",
