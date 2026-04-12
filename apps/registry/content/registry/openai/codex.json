@@ -1,0 +1,31 @@
+{
+  "name": "Codex",
+  "description": "Lightweight AI coding agent from OpenAI",
+  "repo": "openai/codex",
+  "license": "Apache-2.0",
+  "tags": [
+    "ai",
+    "coding",
+    "agent",
+    "openai",
+    "cli"
+  ],
+  "packages": [
+    {
+      "name": "codex",
+      "aliases": [
+        {
+          "ecosystem": "npm",
+          "name": "codex"
+        }
+      ],
+      "sources": [
+        {
+          "type": "github",
+          "repo": "openai/codex",
+          "path": "docs"
+        }
+      ]
+    }
+  ]
+}

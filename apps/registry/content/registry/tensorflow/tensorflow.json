@@ -1,0 +1,32 @@
+{
+  "name": "TensorFlow",
+  "description": "Open source platform for machine learning",
+  "repo": "tensorflow/tensorflow",
+  "homepage": "https://www.tensorflow.org",
+  "license": "Apache-2.0",
+  "tags": [
+    "ai",
+    "deep-learning",
+    "ml",
+    "google",
+    "python"
+  ],
+  "packages": [
+    {
+      "name": "tensorflow",
+      "aliases": [
+        {
+          "ecosystem": "pypi",
+          "name": "tensorflow"
+        }
+      ],
+      "sources": [
+        {
+          "type": "github",
+          "repo": "tensorflow/tensorflow",
+          "path": "tensorflow/docs"
+        }
+      ]
+    }
+  ]
+}
