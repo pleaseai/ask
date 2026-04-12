@@ -130,3 +130,22 @@ Alternative considered: embedding all logic directly in the `addCmd` handler. Re
 - Decision: Use `Promise.allSettled` for parallel registry checks rather than sequential
   Rationale: N individual fetches with 10s timeout each; parallel keeps total time bounded by slowest single call
   Date/Author: 2026-04-12 / Claude
+
+## Outcomes & Retrospective
+
+### What Was Shipped
+- Interactive `ask add` mode with project dependency scanning, ASK Registry batch-checking, multi-select prompt, and manual text input
+- Non-TTY guard for CI environments
+- `detectEcosystem()` exported for reuse
+
+### What Went Well
+- Clean module separation (`interactive.ts`) enabled focused unit testing
+- Existing infrastructure reuse (detectEcosystem, fetchRegistryEntry, consola.prompt) minimized new code
+- Code review caught 3 real bugs before merge: lost dep name on rejection, wrong ecosystem prefix, scoped package misparse
+
+### What Could Improve
+- Test coverage for `runInteractiveAdd` orchestrator (consola.prompt mocking is non-trivial)
+- Could add integration test with a real package.json fixture
+
+### Tech Debt Created
+- Non-npm ecosystem dependency scanning deferred (pypi, go, cargo) — tracked in spec Out of Scope

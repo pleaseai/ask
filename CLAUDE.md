@@ -83,6 +83,10 @@ node packages/cli/dist/index.js docs add <spec> -s <source> [options]
 - Store-hit short-circuits in both `packages/cli/src/install.ts:274` (npm) and `packages/cli/src/sources/github.ts` (github) run `verifyEntry(storeDir)` before trusting a cached entry. Failures move the entry to `<askHome>/.quarantine/<ts>-<uuid>/` via `quarantineEntry` (in `store/index.ts`) and fall through to a fresh fetch. Never reintroduce a bare `fs.existsSync(storeDir)` check without the guard.
 - `<askHome>/STORE_VERSION` is written on every `ask install` start (`writeStoreVersion` in `store/index.ts`). Current value is `"2"`. A legacy `github/db` or `github/checkouts` directory triggers a one-line warning and points at `ask cache clean --legacy`. `cacheLs` walks BOTH layouts and tags legacy entries with `legacy: true` + a `(legacy) ` key prefix.
 
+- `consola.prompt()` supports `multiselect`, `text`, `confirm`, `select` types (v3.4.2+). The multiselect return type needs `as unknown as string[]` cast because TS infers the options object type, not the value type.
+- When disambiguating bare names (no `:` prefix): check `input.startsWith('@')` before `OWNER_REPO_RE` — scoped npm packages like `@vercel/ai` match the `owner/repo` regex pattern and get misrouted to `github:`.
+- `detectEcosystem()` in `registry.ts` is exported and reusable. It returns the ecosystem string based on project files (package.json→npm, pyproject.toml→pypi, etc.) with `'npm'` fallback.
+
 ## CLI Architecture (packages/cli/)
 
 **CLI framework**: citty (unjs) with consola for structured logging. Commands defined via `defineCommand` in `src/index.ts`.
