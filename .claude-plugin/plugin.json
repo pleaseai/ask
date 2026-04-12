@@ -1,6 +1,6 @@
 {
   "name": "ask",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "description": "ASK (Agent Skills Kit) — AI agent skills for managing library documentation registry entries",
   "author": {
     "name": "Minsu Lee",
