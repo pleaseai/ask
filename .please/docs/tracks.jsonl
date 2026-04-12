@@ -19,3 +19,4 @@
 {"id":"lazy-ask-src-docs-20260411","type":"feature","status":"review","phase":"finalize","issue":"#62","pr":"#63","created":"2026-04-11","section":"completed"}
 {"id":"github-store-pm-unified-20260411","type":"refactor","status":"implemented","phase":"review","issue":"#68","created":"2026-04-11","section":"active"}
 {"id":"lazy-first-architecture-20260412","type":"refactor","status":"planned","phase":"spec","issue":"#69","created":"2026-04-12","section":"active"}
+{"id":"interactive-add-20260412","type":"feature","status":"planned","phase":"spec","issue":"#71","created":"2026-04-12","section":"active"}
