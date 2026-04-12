@@ -1,0 +1,26 @@
+packages/cli/src/interactive.ts
+  f5e90962c1e10851 65-66,76-77,88-91,124-131,191-192
+packages/cli/test/interactive.test.ts
+  f5e90962c1e10851 1-2,4-14,60-71
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "9d45e235e2d11e6ce4d93a2fb69607527fa45270",
+  "prompts": {
+    "f5e90962c1e10851": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ca354ec5-c36f-403e-8264-47740b35d1c9",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 46,
+      "total_deletions": 8,
+      "accepted_lines": 46,
+      "overriden_lines": 0,
+      "messages_url": "https://usegitai.com/cas/5163f64d476090d935519f5fd1753077336c2e82fd025b5d6762793551004dc9"
+    }
+  }
+}
