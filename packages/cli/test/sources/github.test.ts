@@ -344,6 +344,125 @@ describe('GithubSource — nested store layout', () => {
   })
 })
 
+describe('refCandidates via fetch behavior — fallbackRefs', () => {
+  /**
+   * Create a local remote with monorepo-style tags (e.g. `ai@6.0.158`).
+   */
+  function createMonorepoRemote(): string {
+    const repoDir = path.join(tmpDir, 'mono-remote.git')
+    const workDir = path.join(tmpDir, 'mono-work')
+
+    fs.mkdirSync(workDir, { recursive: true })
+    execFileSync('git', ['init', '-b', 'main', workDir], { stdio: 'ignore' })
+    execFileSync('git', ['-C', workDir, 'config', 'user.email', 'test@test.com'], { stdio: 'ignore' })
+    execFileSync('git', ['-C', workDir, 'config', 'user.name', 'Test'], { stdio: 'ignore' })
+
+    fs.writeFileSync(path.join(workDir, 'README.md'), '# Monorepo\n')
+    fs.mkdirSync(path.join(workDir, 'docs'))
+    fs.writeFileSync(path.join(workDir, 'docs', 'intro.md'), '# AI Docs\n')
+
+    execFileSync('git', ['-C', workDir, 'add', '-A'], { stdio: 'ignore' })
+    execFileSync('git', ['-C', workDir, 'commit', '-m', 'initial'], { stdio: 'ignore' })
+    // monorepo-style tag with `@` separator
+    execFileSync('git', ['-C', workDir, 'tag', 'ai@6.0.158'], { stdio: 'ignore' })
+
+    execFileSync('git', ['clone', '--bare', workDir, repoDir], { stdio: 'ignore' })
+    return repoDir
+  }
+
+  it('fallbackRefs: resolves monorepo tag "ai@6.0.158" when primary ref "v6.0.158" is absent', async () => {
+    const remoteUrl = createMonorepoRemote()
+    const source = new GithubSource()
+
+    const result = await source.fetch({
+      source: 'github',
+      name: 'ai',
+      version: '6.0.158',
+      repo: 'test/monorepo',
+      tag: 'v6.0.158',
+      docsPath: 'docs',
+      fallbackRefs: ['ai@6.0.158'],
+      remoteUrl,
+    } as any)
+
+    // Should land under the monorepo tag in the store
+    expect(result.storePath).toContain('ai@6.0.158')
+    expect(result.resolvedVersion).toBe('6.0.158')
+  })
+
+  it('fallbackRefs: resolves monorepo tag when bare version "6.0.158" and "v6.0.158" are both absent', async () => {
+    const remoteUrl = createMonorepoRemote()
+    const source = new GithubSource()
+
+    // tag is bare without v-prefix, so refCandidates base = ['6.0.158', 'v6.0.158']
+    // fallbackRefs = ['ai@6.0.158'] should be tried first
+    const result = await source.fetch({
+      source: 'github',
+      name: 'ai',
+      version: '6.0.158',
+      repo: 'test/monorepo',
+      tag: '6.0.158',
+      docsPath: 'docs',
+      fallbackRefs: ['ai@6.0.158'],
+      remoteUrl,
+    } as any)
+
+    expect(result.storePath).toContain('ai@6.0.158')
+    expect(result.resolvedVersion).toBe('6.0.158')
+  })
+
+  it('fallbackRefs: fetch fails with error listing all tried candidates including fallbackRefs', async () => {
+    const remoteUrl = createMonorepoRemote()
+    const source = new GithubSource()
+
+    let capturedError: Error | null = null
+    try {
+      await source.fetch({
+        source: 'github',
+        name: 'ai',
+        version: '99.99.99',
+        repo: 'test/monorepo',
+        tag: 'v99.99.99',
+        docsPath: 'docs',
+        fallbackRefs: ['ai@99.99.99'],
+        remoteUrl,
+      } as any)
+    }
+    catch (err) {
+      capturedError = err as Error
+    }
+
+    expect(capturedError).not.toBeNull()
+    const message = capturedError!.message
+    // Error should mention the fallback ref that was tried
+    expect(message).toContain('ai@99.99.99')
+  })
+
+  it('RE_SAFE_REF: allows @ in ref (monorepo tags like ai@6.0.158)', async () => {
+    const source = new GithubSource()
+    // If RE_SAFE_REF does not allow @, this will throw before any git operation
+    // We test this by passing a ref containing @ and expecting no validation error
+    // (a network/clone error is OK — we just want no "Invalid ref" error)
+    let error: Error | null = null
+    try {
+      await source.fetch({
+        source: 'github',
+        name: 'ai',
+        version: '6.0.158',
+        repo: 'test/repo',
+        tag: 'ai@6.0.158',
+        docsPath: 'docs',
+        // No remoteUrl — will fail trying to reach github.com, but AFTER validation
+      } as any)
+    }
+    catch (err) {
+      error = err as Error
+    }
+    // Must not throw an "Invalid ref" validation error
+    expect(error?.message).not.toContain('Invalid ref')
+  })
+})
+
 /**
  * A3 — `.git/` dependency audit: after the shallow clone strips
  * `.git/`, the only consumer of `.git/` metadata inside the CLI

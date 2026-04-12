@@ -32,8 +32,10 @@ const RE_SAFE_REPO = /^[\w.-]+\/[\w.-]+$/
 /**
  * Safe git ref pattern. Allows tags, branches, and SHAs but rejects
  * shell metacharacters, whitespace, and path traversal sequences.
+ * The `@` character is allowed to support monorepo-style tags like
+ * `ai@6.0.158` (package-name + version separator).
  */
-const RE_SAFE_REF = /^[\w./-]+$/
+const RE_SAFE_REF = /^[\w./@-]+$/
 
 const DEFAULT_GITHUB_HOST = 'github.com'
 
@@ -54,11 +56,25 @@ function hasGit(): boolean {
  * Build the candidate ref fallback chain. Tries the ref as-is first;
  * if it does not already start with `v`, also tries `v<ref>`. Never
  * emits `vv1.2.3` for already-prefixed inputs.
+ *
+ * When `extraCandidates` are provided (e.g. monorepo tags like
+ * `ai@6.0.158` from ecosystem resolvers), they are prepended in order
+ * (more specific first). Duplicates are removed — the first occurrence
+ * wins.
  */
-function refCandidates(ref: string): string[] {
-  if (ref.startsWith('v'))
-    return [ref]
-  return [ref, `v${ref}`]
+function refCandidates(ref: string, extraCandidates?: string[]): string[] {
+  const base = ref.startsWith('v') ? [ref] : [ref, `v${ref}`]
+  if (!extraCandidates?.length)
+    return base
+  const seen = new Set<string>()
+  const result: string[] = []
+  for (const c of [...extraCandidates, ...base]) {
+    if (!seen.has(c)) {
+      seen.add(c)
+      result.push(c)
+    }
+  }
+  return result
 }
 
 /**
@@ -86,8 +102,9 @@ function cloneAtTag(
   remoteUrl: string,
   ref: string,
   tmpDir: string,
+  extraCandidates?: string[],
 ): { commit: string, winningCandidate: string } {
-  const candidates = refCandidates(ref)
+  const candidates = refCandidates(ref, extraCandidates)
   let lastErr: unknown
   for (const candidate of candidates) {
     try {
@@ -150,11 +167,13 @@ export class GithubSource implements DocSource {
     const tagVersion = opts.tag?.replace(RE_LEADING_V, '')
     const resolvedVersion = tagVersion ?? opts.version
     const askHome = resolveAskHome()
+    const fallbackRefs = opts.fallbackRefs
 
     // Store-hit path: for each candidate key, check the new nested
     // layout and verify integrity before trusting it. Callers may have
     // given us `1.0.0` while the store holds `v1.0.0`, or vice versa.
-    for (const candidate of refCandidates(ref)) {
+    // Also check any fallbackRefs (e.g. monorepo tags like `ai@6.0.158`).
+    for (const candidate of refCandidates(ref, fallbackRefs)) {
       const storeDir = githubStorePath(askHome, DEFAULT_GITHUB_HOST, owner, repoName, candidate)
       if (!fs.existsSync(storeDir))
         continue
@@ -186,6 +205,7 @@ export class GithubSource implements DocSource {
           docsPath,
           remoteUrl,
           askHome,
+          fallbackRefs,
         )
       }
       catch (err) {
@@ -197,7 +217,7 @@ export class GithubSource implements DocSource {
       }
     }
 
-    return this.fetchFromTarGz(opts, repo, owner, repoName, ref, resolvedVersion, docsPath, askHome)
+    return this.fetchFromTarGz(opts, repo, owner, repoName, ref, resolvedVersion, docsPath, askHome, fallbackRefs)
   }
 
   private async fetchViaShallowClone(
@@ -210,10 +230,11 @@ export class GithubSource implements DocSource {
     docsPath: string | undefined,
     remoteUrl: string,
     askHome: string,
+    fallbackRefs?: string[],
   ): Promise<FetchResult> {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ask-gh-clone-'))
     try {
-      const { commit, winningCandidate } = cloneAtTag(remoteUrl, ref, tmpDir)
+      const { commit, winningCandidate } = cloneAtTag(remoteUrl, ref, tmpDir, fallbackRefs)
       const storeDir = githubStorePath(askHome, DEFAULT_GITHUB_HOST, owner, repoName, winningCandidate)
 
       const lock = await acquireEntryLock(storeDir)
@@ -251,59 +272,76 @@ export class GithubSource implements DocSource {
     resolvedVersion: string,
     docsPath: string | undefined,
     askHome: string,
+    fallbackRefs?: string[],
   ): Promise<FetchResult> {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ask-gh-tar-'))
+    const candidates = refCandidates(ref, fallbackRefs)
+    let lastErr: unknown
 
     try {
-      const archiveUrl = `https://github.com/${repo}/archive/refs/${opts.tag ? 'tags' : 'heads'}/${ref}.tar.gz`
+      for (const candidate of candidates) {
+        const archiveUrl = `https://github.com/${repo}/archive/refs/${opts.tag ? 'tags' : 'heads'}/${candidate}.tar.gz`
 
-      const response = await fetch(archiveUrl)
-      if (!response.ok) {
-        throw new Error(
-          `Failed to download ${archiveUrl}: HTTP ${response.status} ${response.statusText}`,
-        )
-      }
-      const archiveBuffer = Buffer.from(await response.arrayBuffer())
-      const tarResult = spawnSync('tar', ['xz', '-C', tmpDir], {
-        input: archiveBuffer,
-        stdio: ['pipe', 'ignore', 'pipe'],
-      })
-      if (tarResult.status !== 0) {
-        const stderr = tarResult.stderr?.toString() ?? ''
-        throw new Error(
-          `tar extraction failed for ${repo}@${ref}: ${stderr.trim() || `exit code ${tarResult.status}`}`,
-        )
-      }
-
-      const extractedDirs = fs.readdirSync(tmpDir)
-      if (extractedDirs.length === 0) {
-        throw new Error(`Failed to extract archive from ${repo}@${ref}`)
-      }
-      const extractedDir = path.join(tmpDir, extractedDirs[0])
-
-      // Write to the new nested layout. We use the ref as given because
-      // the tar.gz fallback has no fallback chain of its own.
-      const storeDir = githubStorePath(askHome, DEFAULT_GITHUB_HOST, owner, repoName, ref)
-      const lock = await acquireEntryLock(storeDir)
-      if (lock) {
+        let response: Response
         try {
-          fs.mkdirSync(path.dirname(storeDir), { recursive: true })
-          cpDirAtomic(extractedDir, storeDir)
-          stampEntry(storeDir)
+          response = await fetch(archiveUrl)
         }
-        finally {
-          lock.release()
+        catch (err) {
+          lastErr = err
+          continue
+        }
+        if (!response.ok) {
+          lastErr = new Error(
+            `Failed to download ${archiveUrl}: HTTP ${response.status} ${response.statusText}`,
+          )
+          continue
+        }
+
+        const archiveBuffer = Buffer.from(await response.arrayBuffer())
+        const tarResult = spawnSync('tar', ['xz', '-C', tmpDir], {
+          input: archiveBuffer,
+          stdio: ['pipe', 'ignore', 'pipe'],
+        })
+        if (tarResult.status !== 0) {
+          const stderr = tarResult.stderr?.toString() ?? ''
+          throw new Error(
+            `tar extraction failed for ${repo}@${candidate}: ${stderr.trim() || `exit code ${tarResult.status}`}`,
+          )
+        }
+
+        const extractedDirs = fs.readdirSync(tmpDir)
+        if (extractedDirs.length === 0) {
+          throw new Error(`Failed to extract archive from ${repo}@${candidate}`)
+        }
+        const extractedDir = path.join(tmpDir, extractedDirs[0])
+
+        const storeDir = githubStorePath(askHome, DEFAULT_GITHUB_HOST, owner, repoName, candidate)
+        const lock = await acquireEntryLock(storeDir)
+        if (lock) {
+          try {
+            fs.mkdirSync(path.dirname(storeDir), { recursive: true })
+            cpDirAtomic(extractedDir, storeDir)
+            stampEntry(storeDir)
+          }
+          finally {
+            lock.release()
+          }
+        }
+
+        const files = this.extractDocsFromDir(storeDir, repo, candidate, docsPath)
+        return {
+          files,
+          resolvedVersion,
+          storePath: storeDir,
+          storeSubpath: docsPath,
+          meta: { ref: candidate },
         }
       }
 
-      const files = this.extractDocsFromDir(storeDir, repo, ref, docsPath)
-      return {
-        files,
-        resolvedVersion,
-        storePath: storeDir,
-        storeSubpath: docsPath,
-        meta: { ref },
-      }
+      throw new Error(
+        `Failed to download tar.gz for ${repo}@${ref} (tried: ${candidates.join(', ')}): `
+        + `${lastErr instanceof Error ? lastErr.message : String(lastErr)}`,
+      )
     }
     finally {
       fs.rmSync(tmpDir, { recursive: true, force: true })
