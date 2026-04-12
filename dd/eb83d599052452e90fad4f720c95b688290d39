@@ -1,0 +1,29 @@
+.please/docs/tracks/active/lazy-first-architecture-20260412/plan.md
+  270c30d6b89b9069 1-123
+.please/docs/tracks/active/lazy-first-architecture-20260412/spec.md
+  270c30d6b89b9069 1-57
+.please/docs/tracks/active/lazy-first-architecture-20260412/metadata.json
+  270c30d6b89b9069 1-10
+.please/docs/tracks.jsonl
+  270c30d6b89b9069 21
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "ddeb83d599052452e90fad4f720c95b688290d39",
+  "prompts": {
+    "270c30d6b89b9069": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a59f4ab3-0873-49c7-8176-3338c6ac6155",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 194,
+      "total_deletions": 3,
+      "accepted_lines": 191,
+      "overriden_lines": 0
+    }
+  }
+}
