@@ -1,9 +1,9 @@
 <script setup lang="ts">
 const route = useRoute()
-const path = `/registry/${(route.params.slug as string[]).join('/')}`
+const stem = `registry/${(route.params.slug as string[]).join('/')}`
 
-const { data: entry } = await useAsyncData(`registry-${path}`, () =>
-  queryCollection('registry').path(path).first(),
+const { data: entry } = await useAsyncData(`registry-${stem}`, () =>
+  queryCollection('registry').where('stem', '=', stem).first(),
 )
 
 if (!entry.value) {

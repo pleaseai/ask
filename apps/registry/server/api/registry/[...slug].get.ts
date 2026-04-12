@@ -146,15 +146,15 @@ export default defineEventHandler(async (event): Promise<RegistryApiResponse> =>
 
   const [first, second] = segments as [string, string]
 
-  // 1. Direct path lookup (owner/repo). Unambiguous for single-package
+  // 1. Direct stem lookup (owner/repo). Unambiguous for single-package
   //    entries; a monorepo entry cannot be resolved without a package
   //    selector, so return 409.
-  const directPath = `/registry/${first}/${second}`
+  const directStem = `registry/${first}/${second}`
   // @ts-expect-error — Nuxt Content v3 types expect queryCollection(name)
   // but the runtime accepts queryCollection(event, name). Pre-existing
   // project-wide quirk, not part of this refactor.
   const directEntries = await queryCollection(event, 'registry')
-    .where('path', '=', directPath)
+    .where('stem', '=', directStem)
     .all()
 
   if (directEntries.length > 0) {

@@ -41,8 +41,8 @@ const filtered = computed(() => {
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       <NuxtLink
         v-for="entry in filtered"
-        :key="entry.path"
-        :to="entry.path"
+        :key="entry.stem"
+        :to="`/${entry.stem}`"
         class="block"
       >
       <UCard>
