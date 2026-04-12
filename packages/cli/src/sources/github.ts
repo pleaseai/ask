@@ -93,7 +93,7 @@ function probeRemoteTag(
       'ls-remote',
       '--tags',
       remoteUrl,
-    ], { encoding: 'utf-8', stdio: ['ignore', 'pipe', 'ignore'] })
+    ], { encoding: 'utf-8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 10_000 })
 
     // Parse refs/tags/<tagname> lines, filter by version
     const allTags = output.split('\n')
@@ -109,7 +109,8 @@ function probeRemoteTag(
     const exact = matching.find(t => t.endsWith(`@${version}`) || t.endsWith(`@v${version}`))
     return { tag: exact ?? matching[0], allMatching: matching }
   }
-  catch {
+  catch (err) {
+    consola.debug(`probeRemoteTag: ls-remote failed for ${remoteUrl}: ${err instanceof Error ? err.message : err}`)
     return null
   }
 }
@@ -206,11 +207,12 @@ function cloneAtTag(
       const commit = shallowCloneRef(remoteUrl, discoveredTag, tmpDir)
       return { commit, winningCandidate: discoveredTag }
     }
-    catch {
-      // Probe found tags but clone still failed — include helpful hint
+    catch (cloneErr) {
+      // Probe found tags but clone still failed — include cause and helpful hint
       throw new Error(
         `Failed to clone ${remoteUrl} at ${ref} (tried: ${candidates.join(', ')}). `
         + `Available tags matching '${versionForProbe}': ${allMatching.join(', ')}. `
+        + `Clone error: ${cloneErr instanceof Error ? cloneErr.message : cloneErr}. `
         + `Retry with: ask src github:<repo>@${discoveredTag}`,
       )
     }
@@ -236,7 +238,7 @@ export class GithubSource implements DocSource {
       throw new Error(`Invalid repo '${repo}': must be owner/repo with safe characters`)
     }
     if (!RE_SAFE_REF.test(ref)) {
-      throw new Error(`Invalid ref '${ref}': must contain only [A-Za-z0-9._/-]`)
+      throw new Error(`Invalid ref '${ref}': must contain only [A-Za-z0-9._/@-]`)
     }
 
     const tagVersion = opts.tag?.replace(RE_LEADING_V, '')
@@ -379,9 +381,11 @@ export class GithubSource implements DocSource {
         })
         if (tarResult.status !== 0) {
           const stderr = tarResult.stderr?.toString() ?? ''
-          throw new Error(
+          lastErr = new Error(
             `tar extraction failed for ${repo}@${candidate}: ${stderr.trim() || `exit code ${tarResult.status}`}`,
           )
+          clearDirContents(tmpDir)
+          continue
         }
 
         const extractedDirs = fs.readdirSync(tmpDir)
