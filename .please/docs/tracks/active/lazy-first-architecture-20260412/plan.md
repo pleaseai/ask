@@ -60,15 +60,15 @@ Agent needs docs:
 
 ## Tasks
 
-- [ ] T001 Simplify ask.json schema to string array (file: packages/schema/src/ask-json.ts)
-- [ ] T002 Update io.ts for new ask.json format (file: packages/cli/src/io.ts, depends on T001)
-- [ ] T003 Create lazy SKILL.md generator (file: packages/cli/src/skill.ts, depends on T002)
-- [ ] T004 Create lazy AGENTS.md generator (file: packages/cli/src/agents.ts, depends on T002)
-- [ ] T005 Refactor install.ts to lazy-first with --fetch gate (file: packages/cli/src/install.ts, depends on T003, T004)
-- [ ] T006 Update CLI commands: add/remove/install/list (file: packages/cli/src/index.ts, depends on T005)
-- [ ] T007 [P] Update ignore-files.ts for simplified ask.json (file: packages/cli/src/ignore-files.ts, depends on T002)
-- [ ] T008 [P] Update storage.ts listDocs for new format (file: packages/cli/src/storage.ts, depends on T002)
-- [ ] T009 Update tests for new architecture (depends on T005, T006, T007, T008)
+- [x] T001 Simplify ask.json schema to string array (file: packages/schema/src/ask-json.ts)
+- [x] T002 Update io.ts for new ask.json format (file: packages/cli/src/io.ts, depends on T001)
+- [x] T003 Create lazy SKILL.md generator (file: packages/cli/src/skill.ts, depends on T002)
+- [x] T004 Create lazy AGENTS.md generator (file: packages/cli/src/agents.ts, depends on T002)
+- [x] T005 Refactor install.ts to lazy-first with --fetch gate (file: packages/cli/src/install.ts, depends on T003, T004)
+- [x] T006 Update CLI commands: add/remove/install/list (file: packages/cli/src/index.ts, depends on T005)
+- [x] T007 [P] Update ignore-files.ts for simplified ask.json (file: packages/cli/src/ignore-files.ts, depends on T002)
+- [x] T008 [P] Update storage.ts listDocs for new format (file: packages/cli/src/storage.ts, depends on T002)
+- [x] T009 Update tests for new architecture (depends on T005, T006, T007, T008)
 
 ## Key Files
 
