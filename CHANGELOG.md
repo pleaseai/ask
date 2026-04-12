@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.1](https://github.com/pleaseai/ask/compare/ask-plugin-v0.4.0...ask-plugin-v0.4.1) (2026-04-12)
+
+
+### Bug Fixes
+
+* **ci:** add concurrency control to release workflow ([b03197f](https://github.com/pleaseai/ask/commit/b03197f35804f3324e56b947af38e4dc41d88f8e))
+* **ci:** patch lockfile workspace versions instead of full re-resolve ([93e97d8](https://github.com/pleaseai/ask/commit/93e97d861dc395377ea4b26ddf4733abcbfcb5a7))
+
 ## [0.4.0](https://github.com/pleaseai/ask/compare/ask-plugin-v0.3.4...ask-plugin-v0.4.0) (2026-04-12)
 
 
