@@ -16,6 +16,7 @@ import {
   readResolvedJson,
   removeResolvedEntries,
   upsertResolvedEntry,
+  validateAskJsonStrict,
   writeAskJson,
   writeResolvedJson,
 } from './io.js'
@@ -25,7 +26,14 @@ import { generateSkill, getSkillDir } from './skill.js'
 import { getSource } from './sources/index.js'
 import { parseSpec } from './spec.js'
 import { removeDocs, saveDocs } from './storage.js'
-import { npmStorePath, resolveAskHome } from './store/index.js'
+import { detectLegacyLayout } from './store/cache.js'
+import {
+  npmStorePath,
+  quarantineEntry,
+  resolveAskHome,
+  verifyEntry,
+  writeStoreVersion,
+} from './store/index.js'
 
 const RE_LEADING_V = /^v/
 
@@ -51,6 +59,12 @@ export interface RunInstallOptions {
    * `ask.json`. Precedence: CLI flag > ask.json `inPlace` > default true.
    */
   inPlace?: boolean
+  /**
+   * When true, accept mutable refs (main/master/HEAD/latest) in
+   * `ask.json`. Switches the schema parser from strict to lax for
+   * this install cycle. CLI flag: `--allow-mutable-ref`.
+   */
+  allowMutableRef?: boolean
 }
 
 export interface InstallSummary {
@@ -87,6 +101,23 @@ export async function runInstall(
     return { installed: 0, unchanged: 0, skipped: 0, failed: 0 }
   }
 
+  // Strict ref validation — enforced here at the CLI boundary rather
+  // than inside readAskJson so that internal readers (listDocs,
+  // generateAgentsMd, manageIgnoreFiles, etc.) never need to know
+  // about the escape hatch. When --allow-mutable-ref is set we skip
+  // the strict pass entirely.
+  if (!options.allowMutableRef) {
+    try {
+      validateAskJsonStrict(askJson)
+    }
+    catch (err) {
+      consola.error(
+        `ask.json contains invalid entries: ${err instanceof Error ? err.message : err}`,
+      )
+      throw err
+    }
+  }
+
   // Resolve emitSkill: CLI flag (options.emitSkill) > ask.json emitSkill > false.
   // The CLI flag wins when explicitly supplied (true or false).
   // When absent (undefined), fall through to the ask.json field, then default false.
@@ -107,6 +138,18 @@ export async function runInstall(
     consola.info('No libraries to install.')
     return { installed: 0, unchanged: 0, skipped: 0, failed: 0 }
   }
+
+  // Legacy layout warning + STORE_VERSION marker. Both run before the
+  // actual install work so the output shows the warning above any
+  // install logs and the marker lands on first touch.
+  const askHome = resolveAskHome()
+  if (detectLegacyLayout(askHome)) {
+    consola.warn(
+      `Legacy github store detected at ${askHome}/github/{db,checkouts}. `
+      + 'Run \`ask cache clean --legacy\` to reclaim space.',
+    )
+  }
+  writeStoreVersion(askHome)
 
   consola.start(`Installing ${targets.length} librar${targets.length === 1 ? 'y' : 'ies'}...`)
 
@@ -271,7 +314,11 @@ async function installOne(
   if (!options.force && parsed.kind === 'npm' && sourceConfig.source === 'npm') {
     const askHome = resolveAskHome()
     const storeDir = npmStorePath(askHome, parsed.pkg, resolvedVersion)
-    if (fs.existsSync(storeDir)) {
+    // verifyEntry guard: never short-circuit on a store entry whose
+    // stamp is missing or whose content hash does not match. A
+    // corrupted entry is quarantined and the install falls through to
+    // a fresh fetch via the source adapter.
+    if (fs.existsSync(storeDir) && verifyEntry(storeDir)) {
       const files = readFilesFromStore(storeDir)
       if (files.length > 0) {
         consola.info(`  ${lib.spec}: store hit ${libName}@${resolvedVersion}`)
@@ -295,6 +342,11 @@ async function installOne(
         return 'installed'
       }
     }
+    else if (fs.existsSync(storeDir)) {
+      // Entry exists but failed verification — quarantine and
+      // continue to the fresh-fetch path below.
+      quarantineEntry(askHome, storeDir)
+    }
   }
 
   consola.info(`  ${lib.spec}: fetching ${libName}@${resolvedVersion}...`)
@@ -309,6 +361,7 @@ async function installOne(
   saveDocs(projectDir, libName, result.resolvedVersion, result.files, {
     storeMode: effectiveMode,
     storePath: result.storePath,
+    storeSubpath: result.storeSubpath,
   })
   if (emitSkill) {
     generateSkill(
@@ -327,7 +380,12 @@ async function installOne(
     fileCount: result.files.length,
     format: 'docs',
     storePath: result.storePath,
+    storeSubpath: result.storeSubpath,
     materialization: effectiveMode,
+    // Propagate the github commit SHA (captured via git rev-parse HEAD
+    // in the github source). For npm/web/llms-txt `meta.commit` is
+    // unset so this is a no-op.
+    commit: result.meta?.commit,
   }
   upsertResolvedEntry(projectDir, libName, entry)
 

@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'bun:test'
 import {
   AskJsonSchema,
+  createAskJsonSchema,
+  LaxAskJsonSchema,
   LibraryEntrySchema,
   ResolvedJsonSchema,
 } from '../src/index.js'
@@ -42,6 +44,95 @@ describe('LibraryEntrySchema', () => {
     expect(() => LibraryEntrySchema.parse({
       spec: 'github:foo/bar',
       ref: 'v1; rm -rf /',
+    })).toThrow()
+  })
+})
+
+describe('AskJsonSchema — mutable-ref refinement (strict default)', () => {
+  const acceptedRefs = [
+    'a'.repeat(40), // 40-char hex SHA
+    '1234567890abcdef1234567890abcdef12345678', // 40-char hex SHA
+    'v1.2.3', // semver with v-prefix
+    '1.2.3', // bare semver
+    'v0.0.0-beta.1', // pre-release
+    'v2.0.0-rc.42', // rc tag
+    'release-2024.01', // tag-like with dot
+    'r12345', // tag-like with digit
+    '14.2.3-canary.3', // canary tag
+  ] as const
+
+  const rejectedRefs = [
+    'main',
+    'master',
+    'develop',
+    'trunk',
+    'HEAD',
+    'latest',
+  ] as const
+
+  for (const ref of acceptedRefs) {
+    it(`accepts tag-like ref "${ref}"`, () => {
+      const result = AskJsonSchema.parse({
+        libraries: [{ spec: 'github:facebook/react', ref }],
+      })
+      expect(result.libraries).toHaveLength(1)
+    })
+  }
+
+  for (const ref of rejectedRefs) {
+    it(`rejects mutable ref "${ref}" with --allow-mutable-ref hint`, () => {
+      expect(() => AskJsonSchema.parse({
+        libraries: [{ spec: 'github:facebook/react', ref }],
+      })).toThrow(/--allow-mutable-ref/)
+    })
+  }
+
+  it('rejects a single-word ref with no dot or digit', () => {
+    expect(() => AskJsonSchema.parse({
+      libraries: [{ spec: 'github:facebook/react', ref: 'canary' }],
+    })).toThrow(/--allow-mutable-ref/)
+  })
+})
+
+describe('LaxAskJsonSchema — escape hatch', () => {
+  const refs = ['main', 'master', 'HEAD', 'latest', 'canary', 'develop']
+
+  for (const ref of refs) {
+    it(`accepts mutable ref "${ref}"`, () => {
+      const result = LaxAskJsonSchema.parse({
+        libraries: [{ spec: 'github:facebook/react', ref }],
+      })
+      expect(result.libraries).toHaveLength(1)
+    })
+  }
+
+  it('still rejects shell-mischief characters', () => {
+    expect(() => LaxAskJsonSchema.parse({
+      libraries: [{ spec: 'github:foo/bar', ref: 'v1; rm -rf /' }],
+    })).toThrow()
+  })
+})
+
+describe('createAskJsonSchema factory', () => {
+  it('strictRefs: true rejects "main"', () => {
+    const schema = createAskJsonSchema({ strictRefs: true })
+    expect(() => schema.parse({
+      libraries: [{ spec: 'github:facebook/react', ref: 'main' }],
+    })).toThrow()
+  })
+
+  it('strictRefs: false accepts "main"', () => {
+    const schema = createAskJsonSchema({ strictRefs: false })
+    const result = schema.parse({
+      libraries: [{ spec: 'github:facebook/react', ref: 'main' }],
+    })
+    expect(result.libraries).toHaveLength(1)
+  })
+
+  it('defaults to strict (no arg)', () => {
+    const schema = createAskJsonSchema()
+    expect(() => schema.parse({
+      libraries: [{ spec: 'github:facebook/react', ref: 'main' }],
     })).toThrow()
   })
 })
@@ -318,6 +409,76 @@ describe('ResolvedJsonSchema', () => {
           fetchedAt: validIso,
           fileCount: 5,
           materialization: 'invalid',
+        },
+      },
+    })).toThrow()
+  })
+
+  it('accepts optional commit field (40-char hex SHA)', () => {
+    const sha = 'a'.repeat(40)
+    const result = ResolvedJsonSchema.parse({
+      schemaVersion: 1,
+      generatedAt: validIso,
+      entries: {
+        next: {
+          spec: 'github:vercel/next.js',
+          resolvedVersion: '14.2.3',
+          contentHash: validHash,
+          fetchedAt: validIso,
+          fileCount: 5,
+          commit: sha,
+        },
+      },
+    })
+    expect(result.entries.next!.commit).toBe(sha)
+  })
+
+  it('accepts absence of commit field (optional)', () => {
+    const result = ResolvedJsonSchema.parse({
+      schemaVersion: 1,
+      generatedAt: validIso,
+      entries: {
+        next: {
+          spec: 'github:vercel/next.js',
+          resolvedVersion: '14.2.3',
+          contentHash: validHash,
+          fetchedAt: validIso,
+          fileCount: 5,
+        },
+      },
+    })
+    expect(result.entries.next!.commit).toBeUndefined()
+  })
+
+  it('rejects commit with non-40-hex format', () => {
+    expect(() => ResolvedJsonSchema.parse({
+      schemaVersion: 1,
+      generatedAt: validIso,
+      entries: {
+        next: {
+          spec: 'github:vercel/next.js',
+          resolvedVersion: '14.2.3',
+          contentHash: validHash,
+          fetchedAt: validIso,
+          fileCount: 5,
+          commit: 'not-a-sha',
+        },
+      },
+    })).toThrow()
+  })
+
+  it('rejects commit shorter than 40 chars', () => {
+    expect(() => ResolvedJsonSchema.parse({
+      schemaVersion: 1,
+      generatedAt: validIso,
+      entries: {
+        next: {
+          spec: 'github:vercel/next.js',
+          resolvedVersion: '14.2.3',
+          contentHash: validHash,
+          fetchedAt: validIso,
+          fileCount: 5,
+          commit: 'a'.repeat(7),
         },
       },
     })).toThrow()

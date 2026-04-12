@@ -121,6 +121,44 @@ tags: [react, framework, ssr]
 
 **Content API**: Nuxt Content v3 exposes registry entries as JSON via `/api/registry/{owner}/{name}`. The CLI fetches this during `ask add` / `ask install` when `--source` is omitted, passing either `{ecosystem}/{name}` (for ecosystem-prefixed specs) or `{owner}/{repo}` (for github shorthand specs).
 
+## Global Store (`~/.ask/`)
+
+ASK maintains a per-machine docs store at `ASK_HOME` (default `~/.ask/`) so identical entries are fetched once and reused across projects. All four source kinds follow the PM-style `<kind>/<identity>@<version>/` mental model:
+
+```
+~/.ask/                                          # ASK_HOME
+├── STORE_VERSION                                # always "2"
+├── npm/
+│   └── next@16.2.3/                             # immutable entry
+├── github/
+│   └── github.com/                              # host (reserved — gitlab/bitbucket later)
+│       └── vercel/next.js/v16.2.3/              # per-tag shallow clone, .git/ stripped
+├── web/
+│   └── <sha256>/                                # crawled snapshots
+├── llms-txt/
+│   └── <sha256>@<version>/
+└── .quarantine/                                 # corrupted entries (verifyEntry fail)
+    └── <ts>-<uuid>/
+```
+
+Each github entry is an **independent shallow clone** (`git clone --depth 1 --branch <tag> --single-branch`) into a nested path — there is no shared bare repo, no `FETCH_HEAD` race, and no `owner__repo` flattening. The commit SHA is captured via `git rev-parse HEAD` before the clone strip and persisted on `ResolvedEntry.commit`.
+
+**Integrity**: every entry is stamped by `stampEntry` on write and checked by `verifyEntry` on every store-hit short-circuit (both npm and github). A corrupt entry is moved to `<askHome>/.quarantine/<ts>-<uuid>/` and replaced by a fresh fetch on the next install.
+
+**Store-mode materialization** (`storage.ts:saveDocs`):
+
+| Mode   | Behavior                                                            |
+|--------|---------------------------------------------------------------------|
+| `copy` | Default. Full copy into `.ask/docs/<pkg>@<v>/`.                     |
+| `link` | Symlink → `path.join(storePath, storeSubpath ?? '')` (copy fallback on EPERM). |
+| `ref`  | No project files; AGENTS.md points at the store path directly.      |
+
+`FetchResult.storeSubpath` carries the docs subdirectory (e.g. `docs`) from the github source through to the link/ref materialization so symlinks target the docs tree, not the repo root.
+
+**Ref validation**: `ask.json` github entries must use tag-like refs (40-char SHA, `v?<semver>`, or strings containing a `.` or digit). `main`/`master`/`HEAD`/`latest` and bare single-word refs are rejected by `validateAskJsonStrict` at the CLI boundary. The escape hatch is `--allow-mutable-ref` on `ask install`/`ask add`, which skips the strict validation call for CI and test fixtures. See `packages/schema/src/ask-json.ts` for the schema pair (`AskJsonSchema` strict, `LaxAskJsonSchema`).
+
+**Legacy cleanup**: pre-v2 layouts (`github/db/` + `github/checkouts/`) are detected on install start and surface a one-line warning pointing at `ask cache clean --legacy`. The legacy paths are listed by `cacheLs` with a `(legacy)` tag alongside new entries.
+
 ## Key Types
 
 ```typescript

@@ -73,12 +73,44 @@ describe('ask CLI surface (install/add/remove/list)', () => {
     // Note: install will fail (network), but the ask.json mutation
     // should land before the install runs.
     try {
-      await runCli(tmpDir, ['add', 'github:pleaseai/this-does-not-exist', '--ref', 'main'])
+      await runCli(tmpDir, ['add', 'github:pleaseai/this-does-not-exist', '--ref', 'v1.0.0'])
     }
     catch {
       // ignore install failure
     }
     const askJson = readAskJson(tmpDir)
+    expect(askJson?.libraries).toEqual([
+      { spec: 'github:pleaseai/this-does-not-exist', ref: 'v1.0.0' },
+    ])
+  })
+
+  it('ask add github:<owner>/<repo> --ref main --allow-mutable-ref writes the entry', async () => {
+    // Pre-create an empty ask.json so the CLI path doesn't bootstrap
+    // inside runInstall (which could interact with the flag plumbing
+    // in subtle ways). We only care here that the schema accepts a
+    // mutable ref when the lax variant is selected.
+    fs.writeFileSync(path.join(tmpDir, 'ask.json'), '{"libraries": []}\n')
+
+    try {
+      await runCli(tmpDir, [
+        'add',
+        'github:pleaseai/this-does-not-exist',
+        '--ref',
+        'main',
+        '--allow-mutable-ref',
+      ])
+    }
+    catch (err) {
+      // Network failures are acceptable — the ask.json write must have
+      // landed before the fetch step. Re-throw validation errors so a
+      // regression in --allow-mutable-ref flag handling is not silently
+      // swallowed.
+      const msg = err instanceof Error ? err.message : String(err)
+      if (msg.includes('mutable') || msg.includes('ref') || msg.includes('schema')) {
+        throw err
+      }
+    }
+    const askJson = readAskJson(tmpDir, { allowMutableRef: true })
     expect(askJson?.libraries).toEqual([
       { spec: 'github:pleaseai/this-does-not-exist', ref: 'main' },
     ])

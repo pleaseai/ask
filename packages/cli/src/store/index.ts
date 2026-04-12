@@ -3,6 +3,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
+import { consola } from 'consola'
 
 // ── ASK_HOME resolution ────────────────────────────────────────────
 
@@ -64,6 +65,50 @@ export function githubCheckoutPath(
 ): string {
   const candidate = path.join(askHome, 'github', 'checkouts', `${owner}__${repo}`, ref)
   return assertContained(askHome, candidate)
+}
+
+/**
+ * Resolve the nested per-entry directory for a github-kind store entry.
+ *
+ * Layout: `<askHome>/github/<host>/<owner>/<repo>/<tag>/`
+ *
+ * Mirrors the PM-style `<kind>/<identity>@<version>/` convention shared
+ * by npm / web / llms-txt sources (and by cargo / bun / go / pnpm).
+ * `host` is a reserved path segment — `github.com` is the only value
+ * shipped, but the nesting leaves room for `gitlab.com` /
+ * `bitbucket.org` without a layout migration.
+ *
+ * All four segments run through `assertContained` so `..` / absolute
+ * paths from user-controlled inputs (repo names, tags) cannot escape
+ * the store root.
+ */
+/**
+ * Reject path-segment values that contain `..`, `/`, `\`, or are empty.
+ * Used by `githubStorePath` to keep host/owner/repo/tag inputs from
+ * escaping the github subdirectory via segment-level traversal —
+ * which `assertContained` alone cannot catch because `../foo` inside
+ * a deeper segment may still resolve inside the containment root.
+ */
+function assertSafeSegment(name: string, value: string): void {
+  if (!value || value.includes('..') || value.includes('/') || value.includes('\\')) {
+    throw new Error(`Unsafe path: ${name} '${value}' contains path traversal characters`)
+  }
+}
+
+export function githubStorePath(
+  askHome: string,
+  host: string,
+  owner: string,
+  repo: string,
+  tag: string,
+): string {
+  assertSafeSegment('host', host)
+  assertSafeSegment('owner', owner)
+  assertSafeSegment('repo', repo)
+  assertSafeSegment('tag', tag)
+  const githubRoot = path.join(askHome, 'github')
+  const candidate = path.join(githubRoot, host, owner, repo, tag)
+  return assertContained(githubRoot, candidate)
 }
 
 export function webStorePath(askHome: string, url: string): string {
@@ -305,6 +350,86 @@ function hashDir(dir: string): string {
     hash.update('\0')
   }
   return `sha256-${hash.digest('hex')}`
+}
+
+// ── Store version ──────────────────────────────────────────────────
+
+const STORE_VERSION_FILE = 'STORE_VERSION'
+const CURRENT_STORE_VERSION = '2'
+
+/**
+ * Write `<askHome>/STORE_VERSION` if absent or out of date. Called on
+ * install start so every upgraded ASK_HOME is tagged with the v2
+ * layout marker. A human can cat this file to understand what the
+ * directory structure should look like.
+ */
+export function writeStoreVersion(askHome: string): void {
+  const file = path.join(askHome, STORE_VERSION_FILE)
+  try {
+    fs.mkdirSync(askHome, { recursive: true })
+    const existing = fs.existsSync(file) ? fs.readFileSync(file, 'utf-8').trim() : null
+    if (existing !== CURRENT_STORE_VERSION) {
+      fs.writeFileSync(file, `${CURRENT_STORE_VERSION}\n`, 'utf-8')
+    }
+  }
+  catch {
+    // best-effort
+  }
+}
+
+/**
+ * Read `<askHome>/STORE_VERSION`. Returns `null` when the file does
+ * not exist (fresh store, or pre-v2 layout).
+ */
+export function readStoreVersion(askHome: string): string | null {
+  const file = path.join(askHome, STORE_VERSION_FILE)
+  try {
+    return fs.readFileSync(file, 'utf-8').trim()
+  }
+  catch {
+    return null
+  }
+}
+
+// ── Quarantine ─────────────────────────────────────────────────────
+
+const RE_TIMESTAMP_PUNCT = /[:.]/g
+
+/**
+ * Move a corrupted store entry (one that fails `verifyEntry`) to the
+ * quarantine directory at `<askHome>/.quarantine/<ts>-<uuid>/`. Used
+ * by both the install orchestrator and the github source when a
+ * store-hit short-circuit detects tampering or a missing stamp — the
+ * corrupt entry is preserved for human inspection rather than deleted
+ * outright, and a fresh fetch replaces it on the next run.
+ *
+ * Failures to rename (cross-device, permissions) fall through to a
+ * best-effort `rm -rf` so the caller can always continue.
+ */
+export function quarantineEntry(askHome: string, storeDir: string): void {
+  const ts = new Date().toISOString().replace(RE_TIMESTAMP_PUNCT, '-')
+  const uuid = crypto.randomUUID().slice(0, 8)
+  const quarantineDir = path.join(askHome, '.quarantine', `${ts}-${uuid}`)
+  fs.mkdirSync(path.dirname(quarantineDir), { recursive: true })
+  try {
+    fs.renameSync(storeDir, quarantineDir)
+    consola.warn(
+      `Corrupted store entry at ${storeDir} quarantined to ${quarantineDir}. `
+      + 'A fresh fetch will replace it.',
+    )
+  }
+  catch (err) {
+    consola.warn(
+      `Could not quarantine corrupted entry at ${storeDir}: `
+      + `${err instanceof Error ? err.message : String(err)}. Removing in place.`,
+    )
+    try {
+      fs.rmSync(storeDir, { recursive: true, force: true })
+    }
+    catch {
+      // best-effort
+    }
+  }
 }
 
 function collectFiles(dir: string, prefix = ''): string[] {

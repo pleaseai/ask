@@ -26,6 +26,12 @@ export interface GithubSourceOptions {
   branch?: string
   tag?: string
   docsPath?: string
+  /**
+   * Remote git URL override. Defaults to `https://github.com/<repo>.git`.
+   * Primarily used by tests to point at a local bare clone (`file://`
+   * URL or path); production code should leave this unset.
+   */
+  remoteUrl?: string
 }
 
 export interface WebSourceOptions {
@@ -60,6 +66,14 @@ export interface FetchResult {
   resolvedVersion: string
   /** Absolute path to the finalized store entry (when global store is active). */
   storePath?: string
+  /**
+   * Relative subpath inside `storePath` that contains the actual docs
+   * tree. For github entries with a `docsPath`, this is that path; for
+   * npm/web/llms-txt it is the empty string. Downstream materialization
+   * (link/ref mode) joins this onto `storePath` so the symlink target
+   * points at the docs directory, not the repo root.
+   */
+  storeSubpath?: string
   /** Source-specific metadata propagated to ask.lock */
   meta?: {
     /** GitHub commit sha (40 hex chars) */

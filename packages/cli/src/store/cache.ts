@@ -10,6 +10,12 @@ export interface CacheEntry {
   key: string
   path: string
   sizeBytes: number
+  /**
+   * True when the entry lives in the legacy `github/db` or
+   * `github/checkouts` layout. Consumers render these with a
+   * `(legacy)` tag so users can spot them without a separate flag.
+   */
+  legacy?: boolean
 }
 
 export interface CacheGcResult {
@@ -34,40 +40,71 @@ export function cacheLs(
     : ['npm', 'github', 'web', 'llms-txt'] as const
 
   for (const kind of kinds) {
-    const kindDir = kind === 'github'
-      ? path.join(askHome, 'github', 'checkouts')
-      : path.join(askHome, kind)
-
-    if (!fs.existsSync(kindDir))
-      continue
-
     if (kind === 'github') {
-      // github checkouts: <owner>__<repo>/<ref>/
-      const repoDirs = safeReaddir(kindDir)
-      for (const repoDir of repoDirs) {
-        const repoPath = path.join(kindDir, repoDir)
-        if (!fs.statSync(repoPath).isDirectory())
-          continue
-        const refs = safeReaddir(repoPath)
-        for (const ref of refs) {
-          const refPath = path.join(repoPath, ref)
-          if (!fs.statSync(refPath).isDirectory())
+      // Walk the new nested layout: github/<host>/<owner>/<repo>/<tag>/
+      const githubDir = path.join(askHome, 'github')
+      if (fs.existsSync(githubDir)) {
+        for (const host of safeReaddir(githubDir)) {
+          // Skip legacy subdirectories — they're handled separately below
+          if (host === 'db' || host === 'checkouts')
             continue
-          entries.push({
-            kind: 'github',
-            key: `${repoDir}/${ref}`,
-            path: refPath,
-            sizeBytes: dirSize(refPath),
-          })
+          const hostPath = path.join(githubDir, host)
+          if (!safeIsDirectory(hostPath))
+            continue
+          for (const owner of safeReaddir(hostPath)) {
+            const ownerPath = path.join(hostPath, owner)
+            if (!safeIsDirectory(ownerPath))
+              continue
+            for (const repo of safeReaddir(ownerPath)) {
+              const repoPath = path.join(ownerPath, repo)
+              if (!safeIsDirectory(repoPath))
+                continue
+              for (const tag of safeReaddir(repoPath)) {
+                const tagPath = path.join(repoPath, tag)
+                if (!safeIsDirectory(tagPath))
+                  continue
+                entries.push({
+                  kind: 'github',
+                  key: `${host}/${owner}/${repo}/${tag}`,
+                  path: tagPath,
+                  sizeBytes: dirSize(tagPath),
+                })
+              }
+            }
+          }
+        }
+      }
+
+      // Legacy layout: github/checkouts/<owner>__<repo>/<ref>/
+      const legacyCheckoutDir = path.join(askHome, 'github', 'checkouts')
+      if (fs.existsSync(legacyCheckoutDir)) {
+        for (const repoDir of safeReaddir(legacyCheckoutDir)) {
+          const repoPath = path.join(legacyCheckoutDir, repoDir)
+          if (!safeIsDirectory(repoPath))
+            continue
+          for (const ref of safeReaddir(repoPath)) {
+            const refPath = path.join(repoPath, ref)
+            if (!safeIsDirectory(refPath))
+              continue
+            entries.push({
+              kind: 'github',
+              key: `(legacy) ${repoDir}/${ref}`,
+              path: refPath,
+              sizeBytes: dirSize(refPath),
+              legacy: true,
+            })
+          }
         }
       }
     }
     else {
-      // npm/web/llms-txt: direct subdirectories
+      const kindDir = path.join(askHome, kind)
+      if (!fs.existsSync(kindDir))
+        continue
       const subdirs = safeReaddir(kindDir)
       for (const subdir of subdirs) {
         const entryPath = path.join(kindDir, subdir)
-        if (!fs.statSync(entryPath).isDirectory())
+        if (!safeIsDirectory(entryPath))
           continue
         entries.push({
           kind,
@@ -80,6 +117,58 @@ export function cacheLs(
   }
 
   return entries
+}
+
+// ── Legacy detection + cleanup ────────────────────────────────────
+
+/**
+ * Paths under `<askHome>` that belong to the pre-store-v2 layout.
+ * `github/db` held shared bare clones; `github/checkouts` held the
+ * flattened `owner__repo/ref` working trees. Both are superseded by
+ * the nested `github/<host>/<owner>/<repo>/<tag>/` layout.
+ */
+export function legacyLayoutPaths(askHome: string): string[] {
+  return [
+    path.join(askHome, 'github', 'db'),
+    path.join(askHome, 'github', 'checkouts'),
+  ]
+}
+
+/**
+ * True iff any legacy github path exists under `<askHome>`. Used on
+ * install start to emit a one-line warning pointing at
+ * `ask cache clean --legacy`.
+ */
+export function detectLegacyLayout(askHome: string): boolean {
+  return legacyLayoutPaths(askHome).some(p => fs.existsSync(p))
+}
+
+/**
+ * Remove all legacy github store paths under `<askHome>`. Idempotent:
+ * running against a clean tree is a no-op.
+ */
+export function cacheCleanLegacy(askHome: string): { removed: string[] } {
+  const removed: string[] = []
+  for (const p of legacyLayoutPaths(askHome)) {
+    if (fs.existsSync(p)) {
+      fs.rmSync(p, { recursive: true, force: true })
+      removed.push(p)
+    }
+  }
+  return { removed }
+}
+
+function safeIsDirectory(p: string): boolean {
+  try {
+    return fs.statSync(p).isDirectory()
+  }
+  catch (err) {
+    const code = (err as NodeJS.ErrnoException).code
+    if (code !== 'ENOENT') {
+      consola.warn(`  Could not stat ${p}: ${err instanceof Error ? err.message : err}`)
+    }
+    return false
+  }
 }
 
 // ── cacheGc ────────────────────────────────────────────────────────
@@ -148,8 +237,10 @@ export function cacheGc(
           continue
         }
       }
-      catch {
-        // Cannot stat → assume stale, fall through to removal
+      catch (err) {
+        consola.warn(`  Could not stat ${entry.path}: ${err instanceof Error ? err.message : err}. Keeping entry to avoid accidental removal.`)
+        kept.push(entry)
+        continue
       }
     }
     if (!dryRun) {
@@ -217,8 +308,8 @@ function findResolvedJsonFiles(
         }
       }
     }
-    catch {
-      // malformed resolved.json, skip
+    catch (err) {
+      consola.warn(`  Malformed ${resolvedPath}: ${err instanceof Error ? err.message : err}. Skipping — referenced entries in this project may be GC'd.`)
     }
   }
 
@@ -242,8 +333,12 @@ function findResolvedJsonFiles(
       )
     }
   }
-  catch {
-    // permission denied, etc
+  catch (err) {
+    const code = (err as NodeJS.ErrnoException).code
+    if (code !== 'ENOENT' && code !== 'EACCES') {
+      consola.warn(`  Could not walk ${dir}: ${err instanceof Error ? err.message : err}`)
+    }
+    // EACCES is common on system dirs during scan — stay quiet on those to avoid noise.
   }
 }
 
@@ -261,8 +356,11 @@ function dirSize(dir: string): number {
       }
     }
   }
-  catch {
-    // permission denied, etc
+  catch (err) {
+    const code = (err as NodeJS.ErrnoException).code
+    if (code !== 'ENOENT') {
+      consola.warn(`  Could not measure ${dir}: ${err instanceof Error ? err.message : err}`)
+    }
   }
   return size
 }
@@ -271,7 +369,11 @@ function safeReaddir(dir: string): string[] {
   try {
     return fs.readdirSync(dir)
   }
-  catch {
+  catch (err) {
+    const code = (err as NodeJS.ErrnoException).code
+    if (code !== 'ENOENT') {
+      consola.warn(`  Could not read ${dir}: ${err instanceof Error ? err.message : err}`)
+    }
     return []
   }
 }

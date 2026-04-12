@@ -19,7 +19,7 @@ import { renderList } from './list/render.js'
 import { removeSkill } from './skill.js'
 import { libraryNameFromSpec, parseSpec } from './spec.js'
 import { listDocs, removeDocs } from './storage.js'
-import { cacheGc, cacheLs, formatBytes, parseDuration } from './store/cache.js'
+import { cacheCleanLegacy, cacheGc, cacheLs, detectLegacyLayout, formatBytes, parseDuration } from './store/cache.js'
 import { resolveAskHome } from './store/index.js'
 
 /**
@@ -78,12 +78,23 @@ const installCmd = defineCommand({
       type: 'boolean',
       description: 'Force copy of discovery-detected npm docs into .ask/docs/ instead of referencing node_modules in place',
     },
+    'allow-mutable-ref': {
+      type: 'boolean',
+      description: 'Accept mutable refs (main/master/HEAD/latest) in standalone github entries. Intended for CI and test fixtures only.',
+    },
   },
   async run({ args }) {
     const emitSkill = args['emit-skill'] ? true : undefined
     const storeMode = parseStoreMode(args['store-mode'])
     const inPlace = args['no-in-place'] ? false : undefined
-    await runInstall(process.cwd(), { force: Boolean(args.force), emitSkill, storeMode, inPlace })
+    const allowMutableRef = Boolean(args['allow-mutable-ref'])
+    await runInstall(process.cwd(), {
+      force: Boolean(args.force),
+      emitSkill,
+      storeMode,
+      inPlace,
+      allowMutableRef,
+    })
   },
 })
 
@@ -118,11 +129,16 @@ const addCmd = defineCommand({
       type: 'boolean',
       description: 'Force copy of discovery-detected npm docs into .ask/docs/ instead of referencing node_modules in place',
     },
+    'allow-mutable-ref': {
+      type: 'boolean',
+      description: 'Accept mutable refs (main/master/HEAD/latest). Intended for CI and test fixtures only.',
+    },
   },
   async run({ args }) {
     const projectDir = process.cwd()
     const spec = normalizeAddSpec(args.spec)
     const parsed = parseSpec(spec)
+    const allowMutableRef = Boolean(args['allow-mutable-ref'])
 
     if (parsed.kind === 'github' && !args.ref) {
       consola.error(
@@ -163,7 +179,13 @@ const addCmd = defineCommand({
     const emitSkill = args['emit-skill'] ? true : undefined
     const storeMode = parseStoreMode(args['store-mode'])
     const inPlace = args['no-in-place'] ? false : undefined
-    await runInstall(projectDir, { onlySpecs: [spec], emitSkill, storeMode, inPlace })
+    await runInstall(projectDir, {
+      onlySpecs: [spec],
+      emitSkill,
+      storeMode,
+      inPlace,
+      allowMutableRef,
+    })
   },
 })
 
@@ -347,6 +369,39 @@ const cacheGcCmd = defineCommand({
   },
 })
 
+const cacheCleanCmd = defineCommand({
+  meta: {
+    name: 'clean',
+    description: 'Remove legacy store layout directories (pre-v2)',
+  },
+  args: {
+    legacy: {
+      type: 'boolean',
+      description: 'Remove github/db and github/checkouts left behind by the pre-v2 store layout',
+    },
+  },
+  run({ args }) {
+    const askHome = resolveAskHome()
+    if (!args.legacy) {
+      consola.error('ask cache clean requires a mode. Pass --legacy to remove pre-v2 github store dirs.')
+      process.exit(1)
+    }
+    if (!detectLegacyLayout(askHome)) {
+      consola.info(`No legacy github store detected at ${askHome}. Nothing to clean.`)
+      return
+    }
+    const { removed } = cacheCleanLegacy(askHome)
+    if (removed.length === 0) {
+      consola.info('No legacy paths removed.')
+      return
+    }
+    consola.success(`Removed ${removed.length} legacy path${removed.length === 1 ? '' : 's'}:`)
+    for (const p of removed) {
+      consola.log(`  ${p}`)
+    }
+  },
+})
+
 const cacheCmd = defineCommand({
   meta: {
     name: 'cache',
@@ -355,6 +410,7 @@ const cacheCmd = defineCommand({
   subCommands: {
     ls: cacheLsCmd,
     gc: cacheGcCmd,
+    clean: cacheCleanCmd,
   },
 })
 

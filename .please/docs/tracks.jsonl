@@ -17,3 +17,4 @@
 {"id":"in-place-npm-docs-20260410","type":"refactor","status":"review","phase":"finalize","issue":"#56","pr":"#59","created":"2026-04-10","section":"completed"}
 {"id":"skill-emission-opt-in-20260410","type":"refactor","status":"review","phase":"finalize","issue":"#53","pr":"#54","created":"2026-04-10","section":"completed"}
 {"id":"lazy-ask-src-docs-20260411","type":"feature","status":"review","phase":"finalize","issue":"#62","pr":"#63","created":"2026-04-11","section":"completed"}
+{"id":"github-store-pm-unified-20260411","type":"refactor","status":"implemented","phase":"review","issue":"#68","created":"2026-04-11","section":"active"}

@@ -23,6 +23,24 @@ export function getLibraryDocsDir(
 export interface SaveDocsOptions {
   storeMode?: StoreMode
   storePath?: string
+  /**
+   * Relative subpath inside `storePath` that contains the actual docs
+   * tree. For github entries with a `docsPath`, link/ref modes need
+   * to resolve `path.join(storePath, storeSubpath)` so the symlink
+   * target points at the docs directory, not the repo root. For
+   * npm/web/llms-txt entries this is undefined and the behaviour is
+   * identical to the pre-storeSubpath contract.
+   */
+  storeSubpath?: string
+}
+
+/**
+ * Join `storeSubpath` onto `storePath`. Returns `storePath` unchanged
+ * when `storeSubpath` is undefined or the empty string so npm/web/
+ * llms-txt entries keep the pre-T007 contract.
+ */
+function effectiveStorePath(storePath: string, storeSubpath: string | undefined): string {
+  return storeSubpath ? path.join(storePath, storeSubpath) : storePath
 }
 
 export function saveDocs(
@@ -35,13 +53,20 @@ export function saveDocs(
   const docsDir = getLibraryDocsDir(projectDir, name, version)
   const mode = options.storeMode ?? 'copy'
 
-  // ref mode: no project-local materialization at all
+  // ref mode: no project-local materialization at all. Return the
+  // joined path so AGENTS.md (and any downstream consumer) points at
+  // the docs subdirectory, not the repo root.
   if (mode === 'ref') {
-    return options.storePath ?? docsDir
+    if (options.storePath) {
+      return effectiveStorePath(options.storePath, options.storeSubpath)
+    }
+    return docsDir
   }
 
-  // link mode: create a symlink from project-local to store
+  // link mode: create a symlink from project-local to store. The
+  // symlink target is the docs subdirectory when storeSubpath is set.
   if (mode === 'link' && options.storePath) {
+    const linkTarget = effectiveStorePath(options.storePath, options.storeSubpath)
     // Clean existing docs for this library version
     if (fs.existsSync(docsDir)) {
       fs.rmSync(docsDir, { recursive: true })
@@ -49,7 +74,7 @@ export function saveDocs(
     fs.mkdirSync(path.dirname(docsDir), { recursive: true })
 
     try {
-      fs.symlinkSync(options.storePath, docsDir, 'dir')
+      fs.symlinkSync(linkTarget, docsDir, 'dir')
       return docsDir
     }
     catch (err: unknown) {
