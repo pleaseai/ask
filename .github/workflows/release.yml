@@ -66,6 +66,14 @@ jobs:
       - name: Build all
         run: bun run build
 
+      # Workaround: bun pm pack resolves workspace:* from bun.lock, not
+      # package.json (oven-sh/bun#20477). release-please bumps versions in
+      # package.json but bun install won't propagate them to the lockfile
+      # (oven-sh/bun#18906). Regenerate the lockfile so pack embeds the
+      # correct workspace dependency versions.
+      - name: Sync lockfile with workspace versions
+        run: rm bun.lock && bun install
+
       - name: Publish @pleaseai/ask-schema
         if: |
           github.event_name == 'workflow_dispatch' ||
