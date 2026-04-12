@@ -66,12 +66,12 @@ Alternative considered: embedding all logic directly in the `addCmd` handler. Re
 
 ## Tasks
 
-- [ ] T001 Export `detectEcosystem()` from registry.ts (file: packages/cli/src/registry.ts)
-- [ ] T002 Create `readProjectDeps()` for npm ecosystem (file: packages/cli/src/interactive.ts) (depends on T001)
-- [ ] T003 Create `checkRegistryBatch()` to check multiple deps against registry (file: packages/cli/src/interactive.ts) (depends on T002)
-- [ ] T004 Implement `runInteractiveAdd()` with consola prompts (file: packages/cli/src/interactive.ts) (depends on T003)
-- [ ] T005 Wire interactive mode into addCmd when spec is absent (file: packages/cli/src/index.ts) (depends on T004)
-- [ ] T006 [P] Add non-TTY guard and error handling (file: packages/cli/src/interactive.ts)
+- [x] T001 Export `detectEcosystem()` from registry.ts (file: packages/cli/src/registry.ts)
+- [x] T002 Create `readProjectDeps()` for npm ecosystem (file: packages/cli/src/interactive.ts) (depends on T001)
+- [x] T003 Create `checkRegistryBatch()` to check multiple deps against registry (file: packages/cli/src/interactive.ts) (depends on T002)
+- [x] T004 Implement `runInteractiveAdd()` with consola prompts (file: packages/cli/src/interactive.ts) (depends on T003)
+- [x] T005 Wire interactive mode into addCmd when spec is absent (file: packages/cli/src/index.ts) (depends on T004)
+- [x] T006 [P] Add non-TTY guard and error handling (file: packages/cli/src/interactive.ts)
 
 ## Key Files
 
