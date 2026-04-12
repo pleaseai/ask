@@ -129,4 +129,56 @@ describe('NpmResolver', () => {
     })
     await expect(resolver.resolve('pkg', '^99')).rejects.toThrow(/No version matching/)
   })
+
+  describe('monorepo pkg-name fallbackRefs', () => {
+    it('adds pkg-name fallbackRefs when repository.directory is present', async () => {
+      mockFetchJson({
+        'repository': {
+          type: 'git',
+          url: 'git+https://github.com/vercel/ai.git',
+          directory: 'packages/ai',
+        },
+        'dist-tags': { latest: '6.0.158' },
+        'versions': { '6.0.158': {} },
+      })
+
+      const result = await resolver.resolve('ai', '6.0.158')
+      expect(result.fallbackRefs).toContain('ai@6.0.158')
+      expect(result.fallbackRefs).toContain('ai@v6.0.158')
+      // pkg-name refs should come before the bare version
+      expect(result.fallbackRefs!.indexOf('ai@6.0.158')).toBeLessThan(
+        result.fallbackRefs!.indexOf('6.0.158'),
+      )
+    })
+
+    it('does NOT add pkg-name fallbackRefs when repository.directory is absent', async () => {
+      mockFetchJson({
+        'repository': { type: 'git', url: 'git+https://github.com/lodash/lodash.git' },
+        'dist-tags': { latest: '4.17.21' },
+        'versions': { '4.17.21': {} },
+      })
+
+      const result = await resolver.resolve('lodash', 'latest')
+      expect(result.fallbackRefs).toEqual(['4.17.21'])
+    })
+
+    it('uses unscoped name for scoped packages like @vercel/ai', async () => {
+      mockFetchJson({
+        'repository': {
+          type: 'git',
+          url: 'git+https://github.com/vercel/ai.git',
+          directory: 'packages/ai',
+        },
+        'dist-tags': { latest: '6.0.158' },
+        'versions': { '6.0.158': {} },
+      })
+
+      const result = await resolver.resolve('@vercel/ai', '6.0.158')
+      // unscoped name is 'ai'
+      expect(result.fallbackRefs).toContain('ai@6.0.158')
+      expect(result.fallbackRefs).toContain('ai@v6.0.158')
+      // scoped form should NOT appear
+      expect(result.fallbackRefs!.every(r => !r.startsWith('@'))).toBe(true)
+    })
+  })
 })
