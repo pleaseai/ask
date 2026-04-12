@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.3](https://github.com/pleaseai/ask/compare/ask-plugin-v0.3.2...ask-plugin-v0.3.3) (2026-04-12)
+
+
+### Bug Fixes
+
+* **ci:** sync lockfile workspace versions before npm publish ([7330564](https://github.com/pleaseai/ask/commit/7330564796cba7173842b636fca9d8a33e7c0d3d))
+
 ## [0.3.2](https://github.com/pleaseai/ask/compare/ask-plugin-v0.3.1...ask-plugin-v0.3.2) (2026-04-12)
 
 
