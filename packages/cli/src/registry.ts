@@ -120,7 +120,7 @@ export function parseDocSpec(input: string): ParsedDocSpec {
 /**
  * Detect ecosystem from project files in cwd.
  */
-function detectEcosystem(projectDir: string): string {
+export function detectEcosystem(projectDir: string): string {
   const checks: [string, string][] = [
     ['package.json', 'npm'],
     ['pubspec.yaml', 'pub'],
