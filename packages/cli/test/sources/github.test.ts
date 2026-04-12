@@ -538,22 +538,70 @@ describe('git ls-remote fallback probe (T005)', () => {
     expect(capturedError!.message).toContain('v99.99.99')
   })
 
-  it('error includes available tags and retry hint when ls-remote finds tags but clone still fails', async () => {
-    // This tests the path where ls-remote finds a match but the clone of
-    // the discovered tag itself fails (e.g. the tag was deleted between probe
-    // and clone). We simulate this by creating a remote that has a tag returned
-    // by ls-remote, then making the tag unavailable (delete it after ls-remote
-    // would see it). Since we can't easily intercept ls-remote, we instead
-    // test the error message format by using a scenario where the discovered tag
-    // does exist but is wrong format. The error message format is tested via
-    // the case where ls-remote succeeds but no exact clone candidate is found.
-    //
-    // More directly: if we supply a version like "1.0.0" that matches
-    // "ai@1.0.0", the probe succeeds and clone succeeds. Error path with
-    // matching tags only occurs when the discovered tag's clone also fails.
-    // We test the error message indirectly via the no-match case above.
-    // This test documents the design contract.
-    expect(true).toBe(true) // documented contract, see comment above
+  it('branch requests do not fall through to tag probe', async () => {
+    // A branch-only request (no `tag` field) must fail with a plain clone
+    // error and must NOT probe remote tags — otherwise a branch named
+    // `feature/1.0.0` could silently resolve to an unrelated `v1.0.0` tag.
+    const remoteUrl = createLsRemoteRemote()
+    const source = new GithubSource()
+
+    let capturedError: Error | null = null
+    try {
+      await source.fetch({
+        source: 'github',
+        name: 'ai',
+        version: '1.0.0',
+        repo: 'test/lsremote',
+        branch: 'nonexistent-branch',
+        docsPath: 'docs',
+        remoteUrl,
+      } as any)
+    }
+    catch (err) {
+      capturedError = err as Error
+    }
+
+    expect(capturedError).not.toBeNull()
+    // Must NOT contain the tag-probe hint — branch fetches skip probeRemoteTag
+    expect(capturedError!.message).not.toContain('Available tags matching')
+    expect(capturedError!.message).not.toContain('Retry with')
+  })
+
+  it('probeRemoteTag is skipped for branch fetches even when matching tags exist', async () => {
+    // Regression guard for the tagOnly fix: a fetch with only `branch` set
+    // must fail without running probeRemoteTag, even when the remote has a
+    // tag that matches the version string. Without the fix, a branch request
+    // for `nonexistent-branch` could silently resolve to the `ai@1.0.0` tag.
+    const remoteUrl = createLsRemoteRemote()
+    const source = new GithubSource()
+
+    // Confirm the remote really does have the `ai@1.0.0` tag (so probe
+    // would succeed if it ran).
+    const lsOutput = execFileSync('git', ['ls-remote', '--tags', remoteUrl], { encoding: 'utf-8' })
+    expect(lsOutput).toContain('ai@1.0.0')
+
+    let capturedError: Error | null = null
+    try {
+      await source.fetch({
+        source: 'github',
+        name: 'ai',
+        version: '1.0.0',
+        repo: 'test/lsremote',
+        branch: '1.0.0', // version string that would match the tag via probe
+        docsPath: 'docs',
+        remoteUrl,
+      } as any)
+    }
+    catch (err) {
+      capturedError = err as Error
+    }
+
+    // The request must fail — probeRemoteTag is not called for branch fetches
+    // so the `ai@1.0.0` tag is never discovered and used as a substitute.
+    expect(capturedError).not.toBeNull()
+    // The error comes from tar.gz (git falls back), not from a successful
+    // clone of the tag — verifying the probe was never entered.
+    expect(capturedError!.message).not.toContain('ai@1.0.0')
   })
 })
 

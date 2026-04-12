@@ -184,6 +184,7 @@ function cloneAtTag(
   ref: string,
   tmpDir: string,
   extraCandidates?: string[],
+  tagOnly?: boolean,
 ): { commit: string, winningCandidate: string } {
   const candidates = refCandidates(ref, extraCandidates)
   let lastErr: unknown
@@ -198,7 +199,16 @@ function cloneAtTag(
     }
   }
 
-  // All static candidates failed — probe remote tags via ls-remote
+  // All static candidates failed — probe remote tags via ls-remote.
+  // Only probe for tag-based fetches; branch requests must not silently
+  // fall through to a tag checkout.
+  if (!tagOnly) {
+    throw new Error(
+      `Failed to clone ${remoteUrl} at ${ref} (tried: ${candidates.join(', ')}): `
+      + `${lastErr instanceof Error ? lastErr.message : String(lastErr)}`,
+    )
+  }
+
   const versionForProbe = ref.replace(RE_LEADING_V, '')
   const probeResult = probeRemoteTag(remoteUrl, versionForProbe)
   if (probeResult) {
@@ -311,7 +321,7 @@ export class GithubSource implements DocSource {
   ): Promise<FetchResult> {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ask-gh-clone-'))
     try {
-      const { commit, winningCandidate } = cloneAtTag(remoteUrl, ref, tmpDir, fallbackRefs)
+      const { commit, winningCandidate } = cloneAtTag(remoteUrl, ref, tmpDir, fallbackRefs, opts.tag !== undefined)
       const storeDir = githubStorePath(askHome, DEFAULT_GITHUB_HOST, owner, repoName, winningCandidate)
 
       const lock = await acquireEntryLock(storeDir)
