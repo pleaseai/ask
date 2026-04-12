@@ -1,56 +1,35 @@
 #!/usr/bin/env node
 
-import type { LibraryEntry, StoreMode } from './schemas.js'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { defineCommand } from 'citty'
 import { consola } from 'consola'
-import { removeFromIntentSkillsBlock } from './agents-intent.js'
 import { generateAgentsMd } from './agents.js'
 import { docsCmd } from './commands/docs.js'
 import { srcCmd } from './commands/src.js'
 import { manageIgnoreFiles } from './ignore-files.js'
-import { dropResolvedEntry, runInstall } from './install.js'
+import { runInstall } from './install.js'
 import { readAskJson, writeAskJson } from './io.js'
 import { buildListModel } from './list/aggregate.js'
 import { ListModelSchema } from './list/model.js'
 import { renderList } from './list/render.js'
 import { removeSkill } from './skill.js'
 import { libraryNameFromSpec, parseSpec } from './spec.js'
-import { listDocs, removeDocs } from './storage.js'
 import { cacheCleanLegacy, cacheGc, cacheLs, detectLegacyLayout, formatBytes, parseDuration } from './store/cache.js'
 import { resolveAskHome } from './store/index.js'
-
-/**
- * Validate the spec passed to `ask add`. Bare names (no ecosystem
- * prefix) are rejected — the user must use `npm:next` or
- * `github:owner/repo` so the install pipeline knows which path to
- * take.
- */
-const VALID_STORE_MODES = new Set<StoreMode>(['copy', 'link', 'ref'])
-
-function parseStoreMode(value: string | undefined): StoreMode | undefined {
-  if (!value)
-    return undefined
-  if (VALID_STORE_MODES.has(value as StoreMode))
-    return value as StoreMode
-  consola.error(`Invalid --store-mode '${value}'. Must be one of: copy, link, ref`)
-  process.exit(1)
-}
 
 const OWNER_REPO_RE = /^[^/]+\/[^/]+$/
 
 function normalizeAddSpec(input: string): string {
   if (!input.includes(':')) {
-    // Allow `owner/repo` shorthand for github specs.
     if (OWNER_REPO_RE.test(input)) {
       return `github:${input}`
     }
     throw new Error(
       `Ambiguous spec '${input}'. Use:\n`
       + `  • npm:<name>           (e.g. npm:next, npm:@mastra/client-js)\n`
-      + `  • github:<owner>/<repo>  (e.g. github:vercel/next.js)`,
+      + `  • github:<owner>/<repo>@<ref>  (e.g. github:vercel/next.js@v14.2.3)`,
     )
   }
   return input
@@ -59,92 +38,34 @@ function normalizeAddSpec(input: string): string {
 const installCmd = defineCommand({
   meta: {
     name: 'install',
-    description: 'Install documentation for all libraries declared in ask.json',
+    description: 'Resolve versions and generate AGENTS.md + SKILL.md for all libraries in ask.json',
   },
-  args: {
-    'force': {
-      type: 'boolean',
-      description: 'Re-fetch every entry, ignoring the .ask/resolved.json cache',
-    },
-    'emit-skill': {
-      type: 'boolean',
-      description: 'Emit a .claude/skills/<name>-docs/SKILL.md file for each installed library',
-    },
-    'store-mode': {
-      type: 'string',
-      description: 'How to materialize store entries: copy (default), link (symlink), ref (no project-local files)',
-    },
-    'no-in-place': {
-      type: 'boolean',
-      description: 'Force copy of discovery-detected npm docs into .ask/docs/ instead of referencing node_modules in place',
-    },
-    'allow-mutable-ref': {
-      type: 'boolean',
-      description: 'Accept mutable refs (main/master/HEAD/latest) in standalone github entries. Intended for CI and test fixtures only.',
-    },
-  },
-  async run({ args }) {
-    const emitSkill = args['emit-skill'] ? true : undefined
-    const storeMode = parseStoreMode(args['store-mode'])
-    const inPlace = args['no-in-place'] ? false : undefined
-    const allowMutableRef = Boolean(args['allow-mutable-ref'])
-    await runInstall(process.cwd(), {
-      force: Boolean(args.force),
-      emitSkill,
-      storeMode,
-      inPlace,
-      allowMutableRef,
-    })
+  args: {},
+  async run() {
+    await runInstall(process.cwd())
   },
 })
 
 const addCmd = defineCommand({
   meta: {
     name: 'add',
-    description: 'Add a library entry to ask.json and install it',
+    description: 'Add a library spec to ask.json and generate docs references',
   },
   args: {
-    'spec': {
+    spec: {
       type: 'positional',
-      description: 'Library spec (e.g. npm:next, github:vercel/next.js)',
+      description: 'Library spec (e.g. npm:next, github:vercel/next.js@v14.2.3)',
       required: true,
-    },
-    'ref': {
-      type: 'string',
-      description: 'Git ref for github specs (tag/branch/sha)',
-    },
-    'docsPath': {
-      type: 'string',
-      description: 'Path to docs within the package/repo',
-    },
-    'emit-skill': {
-      type: 'boolean',
-      description: 'Emit a .claude/skills/<name>-docs/SKILL.md file for each installed library',
-    },
-    'store-mode': {
-      type: 'string',
-      description: 'How to materialize store entries: copy (default), link (symlink), ref (no project-local files)',
-    },
-    'no-in-place': {
-      type: 'boolean',
-      description: 'Force copy of discovery-detected npm docs into .ask/docs/ instead of referencing node_modules in place',
-    },
-    'allow-mutable-ref': {
-      type: 'boolean',
-      description: 'Accept mutable refs (main/master/HEAD/latest). Intended for CI and test fixtures only.',
     },
   },
   async run({ args }) {
     const projectDir = process.cwd()
     const spec = normalizeAddSpec(args.spec)
-    const parsed = parseSpec(spec)
-    const allowMutableRef = Boolean(args['allow-mutable-ref'])
 
-    if (parsed.kind === 'github' && !args.ref) {
-      consola.error(
-        `github specs require --ref. Example:\n`
-        + `  ask add ${spec} --ref v1.2.3 [--docs-path docs]`,
-      )
+    // Validate the spec parses correctly
+    const parsed = parseSpec(spec)
+    if (parsed.kind === 'unknown') {
+      consola.error(`Invalid spec: ${spec}`)
       process.exit(1)
     }
 
@@ -154,50 +75,29 @@ const addCmd = defineCommand({
     }
 
     // Replace any existing entry with the same spec; otherwise append.
-    const newEntry: LibraryEntry = parsed.kind === 'github'
-      ? {
-          spec,
-          ref: args.ref!,
-          ...(args.docsPath ? { docsPath: args.docsPath } : {}),
-        }
-      : {
-          spec,
-          ...(args.docsPath ? { docsPath: args.docsPath } : {}),
-        }
-
-    const existingIdx = askJson.libraries.findIndex(l => l.spec === spec)
+    const existingIdx = askJson.libraries.indexOf(spec)
     if (existingIdx >= 0) {
-      askJson.libraries[existingIdx] = newEntry
-      consola.info(`Updated existing entry for ${spec}`)
+      consola.info(`${spec} already in ask.json`)
     }
     else {
-      askJson.libraries.push(newEntry)
+      askJson.libraries.push(spec)
       consola.info(`Added ${spec} to ask.json`)
     }
     writeAskJson(projectDir, askJson)
 
-    const emitSkill = args['emit-skill'] ? true : undefined
-    const storeMode = parseStoreMode(args['store-mode'])
-    const inPlace = args['no-in-place'] ? false : undefined
-    await runInstall(projectDir, {
-      onlySpecs: [spec],
-      emitSkill,
-      storeMode,
-      inPlace,
-      allowMutableRef,
-    })
+    await runInstall(projectDir, { onlySpecs: [spec] })
   },
 })
 
 const removeCmd = defineCommand({
   meta: {
     name: 'remove',
-    description: 'Remove a library entry from ask.json and delete its materialized files',
+    description: 'Remove a library entry from ask.json and delete its skill file',
   },
   args: {
     name: {
       type: 'positional',
-      description: 'Library name (e.g. next, @mastra/client-js, vercel/next.js) or full spec',
+      description: 'Library name (e.g. next, @mastra/client-js) or full spec',
       required: true,
     },
   },
@@ -209,21 +109,12 @@ const removeCmd = defineCommand({
       return
     }
 
-    // Match against either the full spec or the slugged library name.
     const target = args.name
-    const idx = askJson.libraries.findIndex((l) => {
-      if (l.spec === target) {
-        return true
-      }
-      // Allow `npm:<name>` to be matched by `<name>` or by the slug.
-      if (libraryNameFromSpec(l.spec) === target) {
-        return true
-      }
-      // Allow npm package name match (e.g. `@mastra/client-js`).
-      const parsed = parseSpec(l.spec)
-      if (parsed.kind === 'npm' && parsed.pkg === target) {
-        return true
-      }
+    const idx = askJson.libraries.findIndex((spec) => {
+      if (spec === target) return true
+      if (libraryNameFromSpec(spec) === target) return true
+      const parsed = parseSpec(spec)
+      if (parsed.kind === 'npm' && parsed.pkg === target) return true
       return false
     })
     if (idx < 0) {
@@ -232,27 +123,22 @@ const removeCmd = defineCommand({
     }
 
     const removed = askJson.libraries[idx]!
-    const libName = libraryNameFromSpec(removed.spec)
+    const libName = libraryNameFromSpec(removed)
     askJson.libraries.splice(idx, 1)
     writeAskJson(projectDir, askJson)
 
-    // Tear down the per-library artifacts. The intent-skills branch
-    // strips its AGENTS.md marker entry; the docs branch deletes the
-    // materialized directory and the skill file.
-    const parsed = parseSpec(removed.spec)
-    const pkgForIntent = parsed.kind === 'npm' ? parsed.pkg : libName
-    const intentRemoved = removeFromIntentSkillsBlock(projectDir, pkgForIntent)
-    if (!intentRemoved) {
-      removeDocs(projectDir, libName)
-      removeSkill(projectDir, libName)
-    }
-    dropResolvedEntry(projectDir, libName)
-    generateAgentsMd(projectDir)
+    removeSkill(projectDir, libName)
 
-    const remaining = listDocs(projectDir)
+    // Regenerate AGENTS.md without the removed library
+    // Import resolveAll lazily to avoid circular deps
+    generateAgentsMd(projectDir, [])
+    // Re-run install to regenerate AGENTS.md with remaining libraries
+    runInstall(projectDir)
+
+    const remaining = askJson.libraries
     manageIgnoreFiles(projectDir, remaining.length === 0 ? 'remove' : 'install')
 
-    consola.success(`Removed ${removed.spec}`)
+    consola.success(`Removed ${removed}`)
   },
 })
 
@@ -414,11 +300,6 @@ const cacheCmd = defineCommand({
   },
 })
 
-// Read version from package.json at runtime so release-please bumps
-// automatically propagate to `--version` output. `import.meta.url`
-// resolves relative to the compiled file location (`dist/index.js` →
-// `../package.json`), which works for both the published tarball and
-// local dev builds.
 const pkg = JSON.parse(
   readFileSync(new URL('../package.json', import.meta.url), 'utf8'),
 ) as { version: string }
@@ -440,11 +321,7 @@ export const main = defineCommand({
   },
 })
 
-// Re-export the install orchestrator and a few helpers for tests.
 export { runInstall } from './install.js'
 export { libraryNameFromSpec, parseSpec } from './spec.js'
 
-// Suppress unused-import noise from `path` — it's referenced indirectly
-// by jest fixtures. Kept here so future use sites don't need a
-// re-import.
 void path

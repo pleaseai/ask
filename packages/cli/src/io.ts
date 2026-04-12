@@ -2,32 +2,7 @@ import type { AskJson, ResolvedEntry, ResolvedJson } from './schemas.js'
 import { createHash } from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
-import { AskJsonSchema, LaxAskJsonSchema, ResolvedJsonSchema } from './schemas.js'
-
-/**
- * Options for read/write ask.json operations. Legacy fields (kept for
- * API stability) — the runtime behaviour no longer branches on these.
- *
- * readAskJson and writeAskJson always use `LaxAskJsonSchema` because
- * they have to stay callable from internal read paths that don't know
- * or care about the CLI's `--allow-mutable-ref` flag (listDocs,
- * generateAgentsMd, manageIgnoreFiles, etc.). Strict validation is
- * performed by CLI entry points (install / add) via
- * `validateAskJsonStrict` before any internal read runs.
- */
-export interface AskJsonIoOptions {
-  allowMutableRef?: boolean
-}
-
-/**
- * Explicit strict-parse helper used by CLI entry points to reject
- * mutable refs before the rest of the pipeline sees the data.
- * Returns the validated AskJson on success; throws on violation so
- * the CLI can surface the error.
- */
-export function validateAskJsonStrict(askJson: AskJson): AskJson {
-  return AskJsonSchema.parse(askJson) as AskJson
-}
+import { AskJsonSchema, ResolvedJsonSchema } from './schemas.js'
 
 /**
  * Recursively sort object keys for deterministic JSON serialization.
@@ -110,7 +85,7 @@ export function getResolvedJsonPath(projectDir: string): string {
  * exist (so the install orchestrator can bootstrap an empty file per
  * FR-8). Throws on invalid JSON or schema violations.
  */
-export function readAskJson(projectDir: string, _options?: AskJsonIoOptions): AskJson | null {
+export function readAskJson(projectDir: string): AskJson | null {
   const file = getAskJsonPath(projectDir)
   if (!fs.existsSync(file)) {
     return null
@@ -125,22 +100,19 @@ export function readAskJson(projectDir: string, _options?: AskJsonIoOptions): As
       `Failed to parse ${file}: ${err instanceof Error ? err.message : err}.`,
     )
   }
-  return LaxAskJsonSchema.parse(parsed) as AskJson
+  return AskJsonSchema.parse(parsed) as AskJson
 }
 
 /**
- * Validate and write `ask.json`. Library entries are NOT reordered —
- * users may care about declaration order, and `ask add` always
- * appends. Uses the lax schema so internal writes don't need to know
- * about `--allow-mutable-ref`; strict validation is performed by CLI
- * entry points via `validateAskJsonStrict`.
+ * Validate and write `ask.json`. Library entries (spec strings) are
+ * NOT reordered — users may care about declaration order, and `ask add`
+ * always appends.
  */
 export function writeAskJson(
   projectDir: string,
   askJson: AskJson,
-  _options?: AskJsonIoOptions,
 ): void {
-  const validated = LaxAskJsonSchema.parse(askJson)
+  const validated = AskJsonSchema.parse(askJson)
   const file = getAskJsonPath(projectDir)
   fs.mkdirSync(path.dirname(file), { recursive: true })
   fs.writeFileSync(file, sortedJSON(validated), 'utf-8')

@@ -1,5 +1,5 @@
 import type { IntentSkillEntry } from './discovery/types.js'
-import type { LibraryEntry, StoreMode } from './schemas.js'
+import type { StoreMode } from './schemas.js'
 import type { DocFile } from './sources/index.js'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -188,10 +188,10 @@ export function listDocs(projectDir: string): ListDocsEntry[] {
   }
 
   const out: ListDocsEntry[] = []
-  for (const lib of askJson.libraries) {
-    const name = libraryNameFromSpec(lib.spec)
+  for (const spec of askJson.libraries) {
+    const name = libraryNameFromSpec(spec)
     const cached = resolved.entries[name]
-    const sourceKind: ListDocsEntry['source'] = lib.spec.startsWith('github:')
+    const sourceKind: ListDocsEntry['source'] = spec.startsWith('github:')
       ? 'github'
       : 'pm-driven'
 
@@ -201,7 +201,7 @@ export function listDocs(projectDir: string): ListDocsEntry[] {
         version: 'unresolved',
         format: 'docs',
         source: 'unresolved',
-        spec: lib.spec,
+        spec,
         location: '(not installed — run `ask install`)',
         fileCount: 0,
       })
@@ -215,8 +215,8 @@ export function listDocs(projectDir: string): ListDocsEntry[] {
         version: cached.resolvedVersion,
         format: 'intent-skills',
         source: sourceKind,
-        spec: lib.spec,
-        location: `node_modules/${pkgFromSpec(lib)}`,
+        spec,
+        location: `node_modules/${pkgFromSpec(spec)}`,
         fileCount: skills.length,
         skills,
       })
@@ -229,7 +229,7 @@ export function listDocs(projectDir: string): ListDocsEntry[] {
         version: cached.resolvedVersion,
         format: 'docs',
         source: sourceKind,
-        spec: lib.spec,
+        spec,
         location: cached.inPlacePath,
         fileCount: cached.fileCount,
       })
@@ -243,7 +243,7 @@ export function listDocs(projectDir: string): ListDocsEntry[] {
       version: cached.resolvedVersion,
       format: 'docs',
       source: sourceKind,
-      spec: lib.spec,
+      spec,
       location: path.relative(projectDir, docsDir) || docsDir,
       fileCount,
     })
@@ -251,11 +251,9 @@ export function listDocs(projectDir: string): ListDocsEntry[] {
   return out.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0))
 }
 
-function pkgFromSpec(lib: LibraryEntry): string {
-  // For npm: prefix, return the package name (no slug). For github,
-  // return owner/repo for display.
-  const colonIdx = lib.spec.indexOf(':')
-  return colonIdx >= 0 ? lib.spec.slice(colonIdx + 1) : lib.spec
+function pkgFromSpec(spec: string): string {
+  const colonIdx = spec.indexOf(':')
+  return colonIdx >= 0 ? spec.slice(colonIdx + 1) : spec
 }
 
 function countFiles(dir: string): number {
