@@ -34,7 +34,7 @@ For JSON Schema generation, `zod-to-json-schema` converts the existing Zod schem
 
 ## Tasks
 
-- [ ] T001 [P] Create md-to-json migration script (file: scripts/migrate-registry-to-json.ts)
+- [x] (2026-04-13 04:51 KST) T001 [P] Create md-to-json migration script (file: scripts/migrate-registry-to-json.ts)
 - [x] (2026-04-13 15:00 KST) T002 [P] Add JSON Schema generation to schema package (file: packages/schema/src/json-schema.ts)
 - [ ] T003 Convert registry entries from md to json (file: apps/registry/content/registry/) (depends on T001)
 - [ ] T004 Update content.config.ts for JSON data collection (file: apps/registry/content.config.ts) (depends on T003)
