@@ -2,12 +2,12 @@ import type { LazyLibraryInfo } from './agents.js'
 import path from 'node:path'
 import { consola } from 'consola'
 import { generateAgentsMd } from './agents.js'
+import { splitExplicitVersion } from './commands/ensure-checkout.js'
 import { manageIgnoreFiles } from './ignore-files.js'
 import { getAskJsonPath, readAskJson, writeAskJson } from './io.js'
 import { npmEcosystemReader } from './lockfiles/index.js'
 import { generateSkill } from './skill.js'
 import { parseSpec } from './spec.js'
-import { splitExplicitVersion } from './commands/ensure-checkout.js'
 
 export interface RunInstallOptions {
   /** Subset of libraries to install (by spec). When omitted, install all. */
@@ -123,12 +123,14 @@ function resolveOne(
  */
 function resolveAll(projectDir: string): LazyLibraryInfo[] {
   const askJson = readAskJson(projectDir)
-  if (!askJson) return []
+  if (!askJson)
+    return []
 
   const results: LazyLibraryInfo[] = []
   for (const spec of askJson.libraries) {
     const result = resolveOne(projectDir, spec)
-    if (result) results.push(result)
+    if (result)
+      results.push(result)
   }
   return results
 }

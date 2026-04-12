@@ -111,10 +111,13 @@ const removeCmd = defineCommand({
 
     const target = args.name
     const idx = askJson.libraries.findIndex((spec) => {
-      if (spec === target) return true
-      if (libraryNameFromSpec(spec) === target) return true
+      if (spec === target)
+        return true
+      if (libraryNameFromSpec(spec) === target)
+        return true
       const parsed = parseSpec(spec)
-      if (parsed.kind === 'npm' && parsed.pkg === target) return true
+      if (parsed.kind === 'npm' && parsed.pkg === target)
+        return true
       return false
     })
     if (idx < 0) {
