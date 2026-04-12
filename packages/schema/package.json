@@ -1,7 +1,7 @@
 {
   "name": "@pleaseai/ask-schema",
   "type": "module",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Shared registry types, Zod schemas, and utilities for ASK",
   "license": "MIT",
   "homepage": "https://github.com/pleaseai/ask#readme",
