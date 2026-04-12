@@ -1,0 +1,32 @@
+.please/docs/ideas/telemetry-driven-registry.md
+  db0b8176a5b7e5d5 1-167
+.please/docs/tracks/active/telemetry-driven-registry-20260413/spec.md
+  db0b8176a5b7e5d5 1-56
+.please/docs/tracks/active/telemetry-driven-registry-20260413/metadata.json
+  db0b8176a5b7e5d5 1-10
+.please/docs/tracks/active/telemetry-driven-registry-20260413/plan.md
+  db0b8176a5b7e5d5 1-94
+.please/docs/tracks.jsonl
+  db0b8176a5b7e5d5 23
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "109c3e97d5653627f48daaec36a1b9be88be21b1",
+  "prompts": {
+    "db0b8176a5b7e5d5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "32f656c4-09b8-48dd-ac9a-68bfa939b6c9",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 333,
+      "total_deletions": 5,
+      "accepted_lines": 328,
+      "overriden_lines": 0,
+      "messages_url": "https://usegitai.com/cas/f7fcccfde8377fe29a60f475de0579f254cbc53e9aefb9c9a8573dac5ada1317"
+    }
+  }
+}
