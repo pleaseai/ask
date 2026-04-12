@@ -1,0 +1,68 @@
+packages/cli/src/sources/github.ts
+  0a48a066354a71dd 327-328
+packages/cli/test/storage.test.ts
+  0a48a066354a71dd 94
+README.md
+  0a48a066354a71dd 306-311
+packages/cli/test/cli/commands.test.ts
+  0a48a066354a71dd 103-111
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "bf8f1dfda34d09ee90ec4ec8ccf3529a13f22f80",
+  "prompts": {
+    "0a48a066354a71dd": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "97ebc3fa-44f5-4681-ab00-3c346779e01a",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 18,
+      "total_deletions": 9,
+      "accepted_lines": 18,
+      "overriden_lines": 0
+    },
+    "25617ee857940675": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "bdc50ebe-3a8e-4624-adb8-451ba7c54e11",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 1,
+      "overriden_lines": 0
+    },
+    "68d02c7b6f110c5a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "abd44628-76b9-4f53-8cf3-ad3b6b33e474",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 0,
+      "overriden_lines": 0
+    },
+    "d6cf5587ddaac39a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b4118b28-ab27-4508-b350-cc452b23b66c",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 1,
+      "overriden_lines": 0
+    }
+  }
+}
