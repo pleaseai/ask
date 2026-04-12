@@ -1,0 +1,23 @@
+.please/docs/tracks/active/lazy-first-architecture-20260412/metadata.json
+  270c30d6b89b9069 4
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "41aab1cc52d779a54f4578c06915b36ce1e7fd45",
+  "prompts": {
+    "270c30d6b89b9069": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a59f4ab3-0873-49c7-8176-3338c6ac6155",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 1,
+      "total_deletions": 1,
+      "accepted_lines": 1,
+      "overriden_lines": 0
+    }
+  }
+}
