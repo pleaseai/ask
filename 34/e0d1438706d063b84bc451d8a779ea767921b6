@@ -1,0 +1,24 @@
+.please/docs/tracks/active/telemetry-driven-registry-20260413/plan.md
+  db0b8176a5b7e5d5 37
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "34e0d1438706d063b84bc451d8a779ea767921b6",
+  "prompts": {
+    "db0b8176a5b7e5d5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "32f656c4-09b8-48dd-ac9a-68bfa939b6c9",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 95,
+      "overriden_lines": 0,
+      "messages_url": "https://usegitai.com/cas/0b6094c80d4d4ba7226a02d01eece08cf81581edf03fc7c2c4731fa3fde9491a"
+    }
+  }
+}
