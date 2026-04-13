@@ -1,0 +1,22 @@
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "24f8e6c4f09d1aad8f4d0b56249f6cd2ab3ea7c0",
+  "prompts": {
+    "db0b8176a5b7e5d5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "32f656c4-09b8-48dd-ac9a-68bfa939b6c9",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 97,
+      "overriden_lines": 0,
+      "messages_url": "https://usegitai.com/cas/fba48802e6c30cb614617530dcefff972f18b58e88f33208c5c096dc42335e95"
+    }
+  }
+}
