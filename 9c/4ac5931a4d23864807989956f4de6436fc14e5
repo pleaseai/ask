@@ -1,0 +1,38 @@
+packages/schema/package.json
+  4e9ae48f9ab27c06 23-24
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "9c4ac5931a4d23864807989956f4de6436fc14e5",
+  "prompts": {
+    "4e9ae48f9ab27c06": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4dfba75c-79b2-4a6f-8476-cce998ae46c4",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 17,
+      "total_deletions": 4,
+      "accepted_lines": 2,
+      "overriden_lines": 0,
+      "messages_url": "https://usegitai.com/cas/955bf5a2a5ade0f0aaee0fc87449319693a4923e03c38fd6e20d2faf24b767cb"
+    },
+    "db0b8176a5b7e5d5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "32f656c4-09b8-48dd-ac9a-68bfa939b6c9",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 97,
+      "overriden_lines": 0,
+      "messages_url": "https://usegitai.com/cas/fba48802e6c30cb614617530dcefff972f18b58e88f33208c5c096dc42335e95"
+    }
+  }
+}
