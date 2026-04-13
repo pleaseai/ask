@@ -18,6 +18,10 @@
         {
           "ecosystem": "npm",
           "name": "@nuxt/ui"
+        },
+        {
+          "ecosystem": "npm",
+          "name": "nuxt-ui"
         }
       ],
       "sources": [

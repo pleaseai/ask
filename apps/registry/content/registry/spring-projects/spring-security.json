@@ -13,8 +13,12 @@
   ],
   "packages": [
     {
-      "name": "org.springframework.security:spring-security-core",
+      "name": "spring-security",
       "aliases": [
+        {
+          "ecosystem": "maven",
+          "name": "spring-security"
+        },
         {
           "ecosystem": "maven",
           "name": "org.springframework.security:spring-security-core"

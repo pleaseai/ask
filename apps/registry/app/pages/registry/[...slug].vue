@@ -44,7 +44,7 @@ if (!entry.value) {
           Quick Start
         </h2>
       </template>
-      <code class="text-sm">ask add {{ entry.packages?.[0]?.aliases?.[0] ? `${entry.packages[0].aliases[0].ecosystem}:${entry.packages[0].aliases[0].name}` : entry.repo }}</code>
+      <code class="text-sm">ask add {{ entry.packages?.length === 1 && entry.packages[0]?.aliases?.[0] ? `${entry.packages[0].aliases[0].ecosystem}:${entry.packages[0].aliases[0].name}` : entry.repo }}</code>
     </UCard>
 
     <div v-if="entry.packages?.length" class="mb-8">
