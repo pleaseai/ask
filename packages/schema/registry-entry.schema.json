@@ -120,9 +120,6 @@
                     "type",
                     "repo"
                   ],
-                  "not": {
-                    "required": ["branch", "tag"]
-                  },
                   "additionalProperties": false
                 },
                 {
