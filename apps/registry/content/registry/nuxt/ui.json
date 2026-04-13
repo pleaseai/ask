@@ -13,11 +13,11 @@
   ],
   "packages": [
     {
-      "name": "nuxt-ui",
+      "name": "@nuxt/ui",
       "aliases": [
         {
           "ecosystem": "npm",
-          "name": "nuxt-ui"
+          "name": "@nuxt/ui"
         }
       ],
       "sources": [

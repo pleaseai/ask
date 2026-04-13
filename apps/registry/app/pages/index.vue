@@ -1,7 +1,6 @@
 <script setup lang="ts">
 const { data: entries } = await useAsyncData('registry', () =>
-  queryCollection('registry').all(),
-)
+  queryCollection('registry').all())
 
 const search = ref('')
 
@@ -45,34 +44,34 @@ const filtered = computed(() => {
         :to="`/${entry.stem}`"
         class="block"
       >
-      <UCard>
-        <template #header>
-          <div class="flex items-center justify-between">
-            <h3 class="font-semibold text-lg">
-              {{ entry.name }}
-            </h3>
+        <UCard>
+          <template #header>
+            <div class="flex items-center justify-between">
+              <h3 class="font-semibold text-lg">
+                {{ entry.name }}
+              </h3>
+            </div>
+          </template>
+
+          <p class="text-sm text-gray-500 dark:text-gray-400">
+            {{ entry.description }}
+          </p>
+
+          <div v-if="entry.tags?.length" class="mt-3 flex flex-wrap gap-1">
+            <UBadge
+              v-for="tag in entry.tags"
+              :key="tag"
+              variant="outline"
+              size="xs"
+            >
+              {{ tag }}
+            </UBadge>
           </div>
-        </template>
 
-        <p class="text-sm text-gray-500 dark:text-gray-400">
-          {{ entry.description }}
-        </p>
-
-        <div v-if="entry.tags?.length" class="mt-3 flex flex-wrap gap-1">
-          <UBadge
-            v-for="tag in entry.tags"
-            :key="tag"
-            variant="outline"
-            size="xs"
-          >
-            {{ tag }}
-          </UBadge>
-        </div>
-
-        <template #footer>
-          <code class="text-xs">ask add {{ entry.repo }}</code>
-        </template>
-      </UCard>
+          <template #footer>
+            <code class="text-xs">ask add {{ entry.packages?.[0]?.aliases?.[0] ? `${entry.packages[0].aliases[0].ecosystem}:${entry.packages[0].aliases[0].name}` : entry.repo }}</code>
+          </template>
+        </UCard>
       </NuxtLink>
     </div>
 

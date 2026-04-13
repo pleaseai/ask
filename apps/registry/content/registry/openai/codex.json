@@ -16,7 +16,7 @@
       "aliases": [
         {
           "ecosystem": "npm",
-          "name": "codex"
+          "name": "@openai/codex"
         }
       ],
       "sources": [

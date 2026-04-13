@@ -11,11 +11,11 @@
   ],
   "packages": [
     {
-      "name": "agent-framework",
+      "name": "Microsoft.Agents.AI",
       "aliases": [
         {
           "ecosystem": "nuget",
-          "name": "agent-framework"
+          "name": "Microsoft.Agents.AI"
         }
       ],
       "sources": [

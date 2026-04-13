@@ -8,6 +8,6 @@ import { defineConfig } from 'vitest/config'
 // follows the `.bun/` symlinks).
 export default defineConfig({
   test: {
-    include: ['test/**/*.{test,spec}.ts'],
+    include: ['test/**/*.{test,spec}.ts', '../../scripts/**/*.{test,spec}.ts'],
   },
 })

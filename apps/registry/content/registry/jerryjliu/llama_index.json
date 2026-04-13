@@ -24,7 +24,7 @@
         {
           "type": "github",
           "repo": "jerryjliu/llama_index",
-          "path": "docs/docs"
+          "path": "docs"
         }
       ]
     }

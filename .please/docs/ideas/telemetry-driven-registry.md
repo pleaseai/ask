@@ -52,7 +52,7 @@ The registry stores **location and pattern information**, not version-specific s
 - `docsPath` — where docs are within the repo
 - `tagPattern` — how to map npm/pypi versions to git tags (e.g., `v{version}`, `@tanstack/query@{version}`)
 
-The CLI resolves the **version** at runtime from the project's lockfile, applies the `tagPattern` to derive the git tag, and fetches docs at that tag. No per-version registration needed.
+For npm/pypi entries, the CLI resolves the **version** at runtime from the project's lockfile, applies the `tagPattern` to derive the git tag, and fetches docs at that tag. For GitHub entries, the version comes from the inline `@ref` specified in `ask.json`. No per-version registration needed.
 
 ```
 Registry (version-agnostic, registered once):

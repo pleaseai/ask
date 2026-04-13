@@ -23,7 +23,7 @@ Current registry entries are Markdown files with YAML frontmatter (`content/regi
 - [ ] FR-3: Export a JSON Schema file from `registryEntrySchema` (zod-to-json-schema) for IDE autocomplete and validation
 - [ ] FR-4: All existing API routes (`/api/registry/:owner/:repo`, ecosystem alias lookups) must continue to work identically
 - [ ] FR-5: Create an automated migration script to convert `.md` → `.json` (extract YAML frontmatter, discard body)
-- [ ] FR-6: Update the `ask-registry` skill in the CLI (`skills/ask-registry/`) if it references the markdown format
+- [ ] FR-6: Update the `ask-registry` skill in the CLI (`.claude/skills/ask-registry/`) if it references the markdown format
 
 ### Non-functional Requirements
 
@@ -51,6 +51,6 @@ Current registry entries are Markdown files with YAML frontmatter (`content/regi
 
 ## Assumptions
 
-- Nuxt Content v3 `type: 'data'` collection with `queryCollection` behaves identically to `type: 'page'` for structured data queries (no body rendering needed)
+- Nuxt Content v3 `type: 'data'` collection uses `stem` (not `path`) as the primary routing field; `queryCollection` API is the same but callers must use `.where('stem', '=', ...)` instead of `.path(...)` or `.where('path', '=', ...)`
 - The `registryEntrySchema` zod schema can be converted to JSON Schema without loss
 - No downstream consumers depend on the markdown body content of registry entries

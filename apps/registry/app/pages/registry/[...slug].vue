@@ -3,8 +3,7 @@ const route = useRoute()
 const stem = `registry/${(route.params.slug as string[]).join('/')}`
 
 const { data: entry } = await useAsyncData(`registry-${stem}`, () =>
-  queryCollection('registry').where('stem', '=', stem).first(),
-)
+  queryCollection('registry').where('stem', '=', stem).first())
 
 if (!entry.value) {
   throw createError({ statusCode: 404, message: 'Library not found' })
@@ -45,7 +44,7 @@ if (!entry.value) {
           Quick Start
         </h2>
       </template>
-      <code class="text-sm">ask add {{ entry.repo }}</code>
+      <code class="text-sm">ask add {{ entry.packages?.[0]?.aliases?.[0] ? `${entry.packages[0].aliases[0].ecosystem}:${entry.packages[0].aliases[0].name}` : entry.repo }}</code>
     </UCard>
 
     <div v-if="entry.packages?.length" class="mb-8">

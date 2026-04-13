@@ -24,7 +24,7 @@
         {
           "type": "npm",
           "package": "ai",
-          "path": "dist/docs"
+          "path": "docs"
         },
         {
           "type": "github",
