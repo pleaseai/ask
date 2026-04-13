@@ -69,7 +69,7 @@ const filtered = computed(() => {
           </div>
 
           <template #footer>
-            <code class="text-xs">ask add {{ entry.packages?.length === 1 && entry.packages[0]?.aliases?.[0] ? `${entry.packages[0].aliases[0].ecosystem}:${entry.packages[0].aliases[0].name}` : entry.repo }}</code>
+            <code class="text-xs">ask add {{ entry.packages?.[0]?.aliases?.[0] ? `${entry.packages[0].aliases[0].ecosystem}:${entry.packages[0].aliases[0].name}` : entry.repo }}</code>
           </template>
         </UCard>
       </NuxtLink>
