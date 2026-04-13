@@ -34,5 +34,8 @@
       "database_name": "ask-registry-db",
       "database_id": "2fc2053b-8dda-49f8-9945-4650a5e5f4a1"
     }
-  ]
+  ],
+  "vars": {
+    "SKIP_DEPENDENCY_INSTALL": "1"
+  }
 }
