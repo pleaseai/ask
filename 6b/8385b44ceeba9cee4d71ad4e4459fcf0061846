@@ -1,0 +1,32 @@
+packages/cli/test/commands/src.test.ts
+  301fec399f794039 34,43
+packages/cli/test/commands/ensure-checkout.integration.test.ts
+  301fec399f794039 1-109
+packages/cli/src/commands/ensure-checkout.ts
+  301fec399f794039 8-10,27,191-194
+packages/cli/test/commands/ensure-checkout.test.ts
+  301fec399f794039 109,139,168,193,217,238,262,309,367,388,406
+packages/cli/test/commands/cache-sharing.test.ts
+  301fec399f794039 7,9,13-15,17-20,22,49,51,92,130-136
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "6b8385b44ceeba9cee4d71ad4e4459fcf0061846",
+  "prompts": {
+    "301fec399f794039": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "bab546c2-14c5-4114-bced-e1c39dcc1f0c",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 151,
+      "total_deletions": 37,
+      "accepted_lines": 151,
+      "overriden_lines": 0,
+      "messages_url": "https://usegitai.com/cas/a621de250e5a2ceba814a67c10ab1bf4deaf90586836ff71184b938b90645c46"
+    }
+  }
+}
