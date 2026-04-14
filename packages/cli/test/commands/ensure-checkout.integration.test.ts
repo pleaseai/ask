@@ -63,6 +63,50 @@ describe('ensureCheckout ↔ GithubSource.fetch layout contract', () => {
     expect(fs.existsSync(result.checkoutDir)).toBe(true)
   })
 
+  it('returns the winning candidate path when fetch falls back from ref to a fallbackRef', async () => {
+    // Guards against a second silent-failure vector: when the resolver
+    // provides `fallbackRefs` (monorepo tags) or `cloneAtTag` rescues a
+    // non-`v` ref via `v<ref>`, `GithubSource.fetch` writes to the
+    // *winning* candidate's path — which may differ from the primary
+    // `ref`. `ensureCheckout` MUST surface that path (via
+    // `FetchResult.storePath`), otherwise `ask docs` / `ask src` walk a
+    // directory that does not exist and print nothing.
+    const winningRef = 'ai@6.0.158' // the fallback
+    const fetcher = {
+      fetch: async (opts: SourceConfig) => {
+        const gh = opts as GithubSourceOptions
+        const [owner, repo] = gh.repo.split('/')
+        const storeDir = githubStorePath(askHome, 'github.com', owner, repo, winningRef)
+        fs.mkdirSync(storeDir, { recursive: true })
+        fs.writeFileSync(path.join(storeDir, 'README.md'), '# test')
+        // The primary tag is NOT created — only the fallback wins.
+        return { files: [], resolvedVersion: winningRef, storePath: storeDir }
+      },
+    }
+    const resolver = {
+      resolve: async () => ({
+        repo: 'vercel/ai',
+        ref: 'ai@6.0.159',
+        resolvedVersion: '6.0.159',
+        fallbackRefs: ['ai@6.0.158'],
+      }),
+    }
+
+    const result = await ensureCheckout(
+      { spec: 'npm:@vercel/ai@6.0.159', projectDir },
+      {
+        askHome,
+        fetcher,
+        resolverFor: () => resolver,
+        lockfileReader: { read: () => null },
+      },
+    )
+
+    const expectedDir = githubStorePath(askHome, 'github.com', 'vercel', 'ai', winningRef)
+    expect(result.checkoutDir).toBe(expectedDir)
+    expect(fs.existsSync(result.checkoutDir)).toBe(true)
+  })
+
   it('runDocs emits the PM-unified checkout path so output is not empty after fetch', async () => {
     // End-to-end guard for the bug where `ask docs github:foo/bar` exited 0
     // with no output: ensureCheckout returned a legacy path that did not
