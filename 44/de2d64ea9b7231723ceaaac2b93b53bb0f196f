@@ -1,0 +1,26 @@
+packages/cli/src/ignore-files.ts
+  2b96e672dfe3ffc6 25-37,229-234
+packages/cli/test/commands/skills-integration.test.ts
+  2b96e672dfe3ffc6 121-138
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "44de2d64ea9b7231723ceaaac2b93b53bb0f196f",
+  "prompts": {
+    "2b96e672dfe3ffc6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b79b6277-ce20-4a9e-8669-70a998e33f91",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 37,
+      "total_deletions": 5,
+      "accepted_lines": 37,
+      "overriden_lines": 0,
+      "messages_url": "https://usegitai.com/cas/951ec6cff5ff0aa84b426fc0b8506ef9437ff378fba6b29c47e483ccc8eb60ff"
+    }
+  }
+}
