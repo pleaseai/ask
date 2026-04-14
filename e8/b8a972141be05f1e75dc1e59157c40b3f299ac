@@ -1,0 +1,30 @@
+apps/registry/app/pages/index.vue
+  db0b8176a5b7e5d5 44-45
+apps/registry/app/pages/registry/[...slug].vue
+  db0b8176a5b7e5d5 51,53,56,58,61-62,64-65
+apps/registry/server/api/registry/[...slug].get.ts
+  db0b8176a5b7e5d5 149,152,157
+packages/schema/scripts/generate-json-schema.ts
+  db0b8176a5b7e5d5 1-11,13-20
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "e8b8a972141be05f1e75dc1e59157c40b3f299ac",
+  "prompts": {
+    "db0b8176a5b7e5d5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "32f656c4-09b8-48dd-ac9a-68bfa939b6c9",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 11,
+      "total_deletions": 10,
+      "accepted_lines": 9,
+      "overriden_lines": 0,
+      "messages_url": "https://usegitai.com/cas/a68ac8829c4ab5c56e58e6440406e10426f4c36cb587b5f9eeca19994d9c45e8"
+    }
+  }
+}

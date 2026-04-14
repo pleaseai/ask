@@ -1,0 +1,24 @@
+.please/docs/tracks.jsonl
+  db0b8176a5b7e5d5 6,12,15,21,24
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "879ed96b0d93900bf213661af927b4cdc2aacfb6",
+  "prompts": {
+    "db0b8176a5b7e5d5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "32f656c4-09b8-48dd-ac9a-68bfa939b6c9",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 7,
+      "total_deletions": 7,
+      "accepted_lines": 5,
+      "overriden_lines": 0,
+      "messages_url": "https://usegitai.com/cas/03490f239fc3a72cf020bf93434846857d4c163f671c620f5fc919fdcc8a1062"
+    }
+  }
+}

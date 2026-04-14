@@ -1,0 +1,28 @@
+package.json
+  db0b8176a5b7e5d5 17-19
+scripts/migrate-registry-to-json.test.ts
+  db0b8176a5b7e5d5 1-132
+scripts/migrate-registry-to-json.ts
+  db0b8176a5b7e5d5 1-75
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "6371b8e46f5d4df6a0a33e2a582e4bb4e059d52e",
+  "prompts": {
+    "db0b8176a5b7e5d5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "32f656c4-09b8-48dd-ac9a-68bfa939b6c9",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 76,
+      "total_deletions": 0,
+      "accepted_lines": 210,
+      "overriden_lines": 0,
+      "messages_url": "https://usegitai.com/cas/c5f8cb0cd47391a39e0b48cdb7082df5e786e70e28929245dee4cc9308abed11"
+    }
+  }
+}

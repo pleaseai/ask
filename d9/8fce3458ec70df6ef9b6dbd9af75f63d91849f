@@ -1,0 +1,71 @@
+apps/registry/content/registry/microsoft/agent-framework.json
+  db0b8176a5b7e5d5 1-13,15-17,19-29
+  4e9ae48f9ab27c06 14,18
+apps/registry/content/registry/nuxt/ui.json
+  db0b8176a5b7e5d5 1-15,17,21-40
+  4e9ae48f9ab27c06 18-19,16,20
+apps/registry/content/registry/spring-projects/spring-security.json
+  db0b8176a5b7e5d5 1-15,17,21-31
+  4e9ae48f9ab27c06 18-19,20
+apps/registry/app/pages/index.vue
+  db0b8176a5b7e5d5 43-44
+  4e9ae48f9ab27c06 3,47-54,56-58,60-68,71-74
+.please/docs/tracks/completed/telemetry-driven-registry-20260413/spec.md
+  4e9ae48f9ab27c06 26,54
+apps/registry/package.json
+  4e9ae48f9ab27c06 4
+apps/registry/content/registry/vercel/ai.json
+  db0b8176a5b7e5d5 1-26,28-37
+  4e9ae48f9ab27c06 27
+apps/registry/vitest.config.ts
+  4e9ae48f9ab27c06 11
+packages/schema/registry-entry.schema.json
+  db0b8176a5b7e5d5 1-122,126-197
+apps/registry/app/pages/registry/[...slug].vue
+  db0b8176a5b7e5d5 50,52,55,57,60-61,63-64
+  4e9ae48f9ab27c06 6,47
+.please/docs/ideas/telemetry-driven-registry.md
+  db0b8176a5b7e5d5 1-54,56-167
+  4e9ae48f9ab27c06 55
+apps/registry/content/registry/openai/codex.json
+  db0b8176a5b7e5d5 1-18,20-31
+  4e9ae48f9ab27c06 19
+apps/registry/content/registry/jerryjliu/llama_index.json
+  db0b8176a5b7e5d5 1-26,28-32
+  4e9ae48f9ab27c06 27
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "d98fce3458ec70df6ef9b6dbd9af75f63d91849f",
+  "prompts": {
+    "4e9ae48f9ab27c06": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4dfba75c-79b2-4a6f-8476-cce998ae46c4",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 48,
+      "total_deletions": 47,
+      "accepted_lines": 40,
+      "overriden_lines": 0,
+      "messages_url": "https://usegitai.com/cas/4512c805cc2d5c1d1c1e59cf1ea62bfd170002ff79d37fda606d7e0cfcb3afb2"
+    },
+    "db0b8176a5b7e5d5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "32f656c4-09b8-48dd-ac9a-68bfa939b6c9",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 1,
+      "overriden_lines": 0,
+      "messages_url": "https://usegitai.com/cas/fba48802e6c30cb614617530dcefff972f18b58e88f33208c5c096dc42335e95"
+    }
+  }
+}

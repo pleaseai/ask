@@ -1,0 +1,48 @@
+apps/registry/content/registry/nuxt/ui.json
+  db0b8176a5b7e5d5 1-15,17,25-44,21-22
+  4e9ae48f9ab27c06 18-19,16,20,23-24
+apps/registry/app/pages/registry/[...slug].vue
+  db0b8176a5b7e5d5 50,52,55,57,60-61,63-64
+  4e9ae48f9ab27c06 6
+apps/registry/app/pages/index.vue
+  db0b8176a5b7e5d5 43-44
+  4e9ae48f9ab27c06 3,47-54,56-58,60-68,71,73-74
+apps/registry/content/registry/spring-projects/spring-security.json
+  db0b8176a5b7e5d5 1-15,17,25-35,18-19
+  4e9ae48f9ab27c06 22-23,24,20-21
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "874a24e2063c088c23a31a7b1c6801bf7fb394c8",
+  "prompts": {
+    "4e9ae48f9ab27c06": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4dfba75c-79b2-4a6f-8476-cce998ae46c4",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 11,
+      "total_deletions": 3,
+      "accepted_lines": 5,
+      "overriden_lines": 0,
+      "messages_url": "https://usegitai.com/cas/4512c805cc2d5c1d1c1e59cf1ea62bfd170002ff79d37fda606d7e0cfcb3afb2"
+    },
+    "db0b8176a5b7e5d5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "32f656c4-09b8-48dd-ac9a-68bfa939b6c9",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 4,
+      "overriden_lines": 0,
+      "messages_url": "https://usegitai.com/cas/fba48802e6c30cb614617530dcefff972f18b58e88f33208c5c096dc42335e95"
+    }
+  }
+}

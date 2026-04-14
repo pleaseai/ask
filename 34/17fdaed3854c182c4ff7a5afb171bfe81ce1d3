@@ -1,0 +1,34 @@
+packages/schema/src/index.ts
+  db0b8176a5b7e5d5 2
+packages/schema/package.json
+  db0b8176a5b7e5d5 27-28,31,33,41-42
+packages/schema/src/json-schema.ts
+  db0b8176a5b7e5d5 1-14
+packages/schema/test/json-schema.test.ts
+  db0b8176a5b7e5d5 1-26
+packages/schema/scripts/generate-json-schema.ts
+  db0b8176a5b7e5d5 1-18
+packages/schema/registry-entry.schema.json
+  db0b8176a5b7e5d5 1-194
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "3417fdaed3854c182c4ff7a5afb171bfe81ce1d3",
+  "prompts": {
+    "db0b8176a5b7e5d5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "32f656c4-09b8-48dd-ac9a-68bfa939b6c9",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 562,
+      "total_deletions": 18,
+      "accepted_lines": 259,
+      "overriden_lines": 0,
+      "messages_url": "https://usegitai.com/cas/c5f8cb0cd47391a39e0b48cdb7082df5e786e70e28929245dee4cc9308abed11"
+    }
+  }
+}

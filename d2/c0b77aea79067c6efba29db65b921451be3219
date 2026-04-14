@@ -1,0 +1,138 @@
+apps/registry/content/registry/modelcontextprotocol/python-sdk.json
+  db0b8176a5b7e5d5 1-32
+apps/registry/content/registry/axios/axios.json
+  db0b8176a5b7e5d5 1-32
+apps/registry/content/registry/spring-projects/spring-boot.json
+  db0b8176a5b7e5d5 1-30
+apps/registry/content/registry/tailwindlabs/tailwindcss.json
+  db0b8176a5b7e5d5 1-37
+apps/registry/content/registry/opencv/opencv.json
+  db0b8176a5b7e5d5 1-32
+apps/registry/content/registry/stanfordnlp/stanza.json
+  db0b8176a5b7e5d5 1-31
+apps/registry/content/registry/pytorch/pytorch.json
+  db0b8176a5b7e5d5 1-32
+apps/registry/content/registry/mastra-ai/mastra.json
+  db0b8176a5b7e5d5 1-58
+apps/registry/content/registry/nuxt/nuxt.json
+  db0b8176a5b7e5d5 1-35
+apps/registry/content/registry/expressjs/express.json
+  db0b8176a5b7e5d5 1-30
+apps/registry/content/registry/pallets/flask.json
+  db0b8176a5b7e5d5 1-31
+apps/registry/content/registry/langchain-ai/langchain.json
+  db0b8176a5b7e5d5 1-32
+apps/registry/content/registry/modelcontextprotocol/go-sdk.json
+  db0b8176a5b7e5d5 1-31
+apps/registry/content/registry/spring-projects/spring-framework.json
+  db0b8176a5b7e5d5 1-31
+apps/registry/content/registry/HKUDS/LightRAG.json
+  db0b8176a5b7e5d5 1-31
+apps/registry/content/registry/spring-projects/spring-security.json
+  db0b8176a5b7e5d5 1-15,17,21-31
+  4e9ae48f9ab27c06 16,18-20
+apps/registry/content/registry/numpy/numpy.json
+  db0b8176a5b7e5d5 1-31
+apps/registry/content/registry/fastapi/fastapi.json
+  db0b8176a5b7e5d5 1-39
+apps/registry/content/registry/ansible/ansible.json
+  db0b8176a5b7e5d5 1-31
+apps/registry/content/registry/jquery/jquery.json
+  db0b8176a5b7e5d5 1-30
+apps/registry/content/registry/jlowin/fastmcp.json
+  db0b8176a5b7e5d5 1-31
+apps/registry/content/registry/kubernetes/kubernetes.json
+  db0b8176a5b7e5d5 1-31
+apps/registry/content/registry/microsoft/agent-framework.json
+  db0b8176a5b7e5d5 1-13,15-17,19-29
+apps/registry/content/registry/jestjs/jest.json
+  db0b8176a5b7e5d5 1-31
+apps/registry/content/registry/vuejs/core.json
+  db0b8176a5b7e5d5 1-38
+apps/registry/content/registry/facebook/react.json
+  db0b8176a5b7e5d5 1-38
+apps/registry/content/registry/spring-projects/spring-integration.json
+  db0b8176a5b7e5d5 1-31
+apps/registry/content/registry/deepset-ai/haystack.json
+  db0b8176a5b7e5d5 1-32
+apps/registry/content/registry/BerriAI/litellm.json
+  db0b8176a5b7e5d5 1-32
+apps/registry/content/registry/colinhacks/zod.json
+  db0b8176a5b7e5d5 1-29
+apps/registry/content/registry/Fizzadar/pyinfra.json
+  db0b8176a5b7e5d5 1-31
+apps/registry/content/registry/angular/angular.json
+  db0b8176a5b7e5d5 1-47
+apps/registry/content/registry/spring-projects/spring-modulith.json
+  db0b8176a5b7e5d5 1-31
+apps/registry/content/registry/webpack/webpack.json
+  db0b8176a5b7e5d5 1-30
+apps/registry/content/registry/openai/codex.json
+  db0b8176a5b7e5d5 1-18,20-31
+apps/registry/content/registry/huggingface/transformers.json
+  db0b8176a5b7e5d5 1-32
+apps/registry/content/registry/nuxt/ui.json
+  db0b8176a5b7e5d5 1-15,17,21-40
+  4e9ae48f9ab27c06 18-20
+apps/registry/content/registry/langchain-ai/langgraphjs.json
+  db0b8176a5b7e5d5 1-36
+apps/registry/content/registry/pandas-dev/pandas.json
+  db0b8176a5b7e5d5 1-31
+apps/registry/content/registry/tensorflow/tensorflow.json
+  db0b8176a5b7e5d5 1-32
+apps/registry/content/registry/vercel/next.js.json
+  db0b8176a5b7e5d5 1-36
+apps/registry/content/registry/lodash/lodash.json
+  db0b8176a5b7e5d5 1-30
+apps/registry/content/registry/psf/requests.json
+  db0b8176a5b7e5d5 1-30
+apps/registry/content/registry/qodo-ai/pr-agent.json
+  db0b8176a5b7e5d5 1-30
+apps/registry/content/registry/vercel/ai.json
+  db0b8176a5b7e5d5 1-26,28-37
+apps/registry/content/registry/modelcontextprotocol/typescript-sdk.json
+  db0b8176a5b7e5d5 1-32
+apps/registry/content/registry/langchain-ai/langgraph.json
+  db0b8176a5b7e5d5 1-32
+apps/registry/content/registry/jerryjliu/llama_index.json
+  db0b8176a5b7e5d5 1-26,28-32
+apps/registry/content/registry/microsoft/semantic-kernel.json
+  db0b8176a5b7e5d5 1-40
+apps/registry/content/registry/spring-projects/spring-ai.json
+  db0b8176a5b7e5d5 1-30
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "d2c0b77aea79067c6efba29db65b921451be3219",
+  "prompts": {
+    "4e9ae48f9ab27c06": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4dfba75c-79b2-4a6f-8476-cce998ae46c4",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 2,
+      "total_deletions": 2,
+      "accepted_lines": 7,
+      "overriden_lines": 0,
+      "messages_url": "https://usegitai.com/cas/f42b2ffc4b9ac512b2bbb2911481082dd14a6b6ff4778b1bb1f777311e77115b"
+    },
+    "db0b8176a5b7e5d5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "32f656c4-09b8-48dd-ac9a-68bfa939b6c9",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 1753,
+      "total_deletions": 1418,
+      "accepted_lines": 1646,
+      "overriden_lines": 0,
+      "messages_url": "https://usegitai.com/cas/33e2e8c713b4b7468b9d837baa35a91e9d1fc2892c64abb9b15285629d928d57"
+    }
+  }
+}
