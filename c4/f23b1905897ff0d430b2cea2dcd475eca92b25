@@ -1,0 +1,44 @@
+packages/cli/test/commands/ensure-checkout.integration.test.ts
+  2b96e672dfe3ffc6 7
+packages/cli/src/commands/skills/index.ts
+  2b96e672dfe3ffc6 1-40
+packages/cli/test/skills/vendor.test.ts
+  2b96e672dfe3ffc6 5
+README.md
+  2b96e672dfe3ffc6 172-203
+packages/cli/test/cli/skills-registration.test.ts
+  2b96e672dfe3ffc6 1-60
+.please/docs/tracks/active/ask-skills-command-20260414/plan.md
+  2b96e672dfe3ffc6 72-76,117-120,130-132
+packages/cli/src/skills/spec-key.ts
+  2b96e672dfe3ffc6 48
+packages/cli/test/commands/skills-integration.test.ts
+  2b96e672dfe3ffc6 1-121
+packages/cli/src/commands/skills/install.ts
+  2b96e672dfe3ffc6 1-221
+packages/cli/src/commands/skills/remove.ts
+  2b96e672dfe3ffc6 1-86
+packages/cli/src/index.ts
+  2b96e672dfe3ffc6 10,330
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "c4f23b1905897ff0d430b2cea2dcd475eca92b25",
+  "prompts": {
+    "2b96e672dfe3ffc6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b79b6277-ce20-4a9e-8669-70a998e33f91",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 593,
+      "total_deletions": 29,
+      "accepted_lines": 577,
+      "overriden_lines": 0,
+      "messages_url": "https://usegitai.com/cas/dc7d09218b00b0bb984b7629d3c6e55a4825f44fbc755e9e2f6a03eb3d920f0b"
+    }
+  }
+}
