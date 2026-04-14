@@ -400,4 +400,33 @@ describe('ensureCheckout', () => {
 
     expect(result.npmPackageName).toBeUndefined()
   })
+
+  it('passes fallbackRefs from resolver result to fetcher options', async () => {
+    const { fetcher, calls } = makeFetcher((opts) => {
+      const expectedDir = path.join(askHome, 'github', 'checkouts', 'vercel__ai', 'ai@6.0.159')
+      fs.mkdirSync(expectedDir, { recursive: true })
+      void opts
+    })
+    const resolver = {
+      resolve: mock(async (_name: string, _version: string) => ({
+        repo: 'vercel/ai',
+        ref: 'ai@6.0.159',
+        resolvedVersion: '6.0.159',
+        fallbackRefs: ['ai@6.0.158'],
+      })),
+    }
+
+    await ensureCheckout(
+      { spec: 'npm:@vercel/ai@6.0.159', projectDir },
+      {
+        askHome,
+        fetcher,
+        resolverFor: () => resolver,
+        lockfileReader: { read: () => null },
+      },
+    )
+
+    expect(calls).toHaveLength(1)
+    expect(calls[0].opts.fallbackRefs).toEqual(['ai@6.0.158'])
+  })
 })

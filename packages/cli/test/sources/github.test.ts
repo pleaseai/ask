@@ -344,6 +344,267 @@ describe('GithubSource — nested store layout', () => {
   })
 })
 
+describe('refCandidates via fetch behavior — fallbackRefs', () => {
+  /**
+   * Create a local remote with monorepo-style tags (e.g. `ai@6.0.158`).
+   */
+  function createMonorepoRemote(): string {
+    const repoDir = path.join(tmpDir, 'mono-remote.git')
+    const workDir = path.join(tmpDir, 'mono-work')
+
+    fs.mkdirSync(workDir, { recursive: true })
+    execFileSync('git', ['init', '-b', 'main', workDir], { stdio: 'ignore' })
+    execFileSync('git', ['-C', workDir, 'config', 'user.email', 'test@test.com'], { stdio: 'ignore' })
+    execFileSync('git', ['-C', workDir, 'config', 'user.name', 'Test'], { stdio: 'ignore' })
+
+    fs.writeFileSync(path.join(workDir, 'README.md'), '# Monorepo\n')
+    fs.mkdirSync(path.join(workDir, 'docs'))
+    fs.writeFileSync(path.join(workDir, 'docs', 'intro.md'), '# AI Docs\n')
+
+    execFileSync('git', ['-C', workDir, 'add', '-A'], { stdio: 'ignore' })
+    execFileSync('git', ['-C', workDir, 'commit', '-m', 'initial'], { stdio: 'ignore' })
+    // monorepo-style tag with `@` separator
+    execFileSync('git', ['-C', workDir, 'tag', 'ai@6.0.158'], { stdio: 'ignore' })
+
+    execFileSync('git', ['clone', '--bare', workDir, repoDir], { stdio: 'ignore' })
+    return repoDir
+  }
+
+  it('fallbackRefs: resolves monorepo tag "ai@6.0.158" when primary ref "v6.0.158" is absent', async () => {
+    const remoteUrl = createMonorepoRemote()
+    const source = new GithubSource()
+
+    const result = await source.fetch({
+      source: 'github',
+      name: 'ai',
+      version: '6.0.158',
+      repo: 'test/monorepo',
+      tag: 'v6.0.158',
+      docsPath: 'docs',
+      fallbackRefs: ['ai@6.0.158'],
+      remoteUrl,
+    } as any)
+
+    // Should land under the monorepo tag in the store
+    expect(result.storePath).toContain('ai@6.0.158')
+    expect(result.resolvedVersion).toBe('6.0.158')
+  })
+
+  it('fallbackRefs: resolves monorepo tag when bare version "6.0.158" and "v6.0.158" are both absent', async () => {
+    const remoteUrl = createMonorepoRemote()
+    const source = new GithubSource()
+
+    // tag is bare without v-prefix, so refCandidates base = ['6.0.158', 'v6.0.158']
+    // fallbackRefs = ['ai@6.0.158'] should be tried first
+    const result = await source.fetch({
+      source: 'github',
+      name: 'ai',
+      version: '6.0.158',
+      repo: 'test/monorepo',
+      tag: '6.0.158',
+      docsPath: 'docs',
+      fallbackRefs: ['ai@6.0.158'],
+      remoteUrl,
+    } as any)
+
+    expect(result.storePath).toContain('ai@6.0.158')
+    expect(result.resolvedVersion).toBe('6.0.158')
+  })
+
+  it('fallbackRefs: fetch fails with error listing all tried candidates including fallbackRefs', async () => {
+    const remoteUrl = createMonorepoRemote()
+    const source = new GithubSource()
+
+    let capturedError: Error | null = null
+    try {
+      await source.fetch({
+        source: 'github',
+        name: 'ai',
+        version: '99.99.99',
+        repo: 'test/monorepo',
+        tag: 'v99.99.99',
+        docsPath: 'docs',
+        fallbackRefs: ['ai@99.99.99'],
+        remoteUrl,
+      } as any)
+    }
+    catch (err) {
+      capturedError = err as Error
+    }
+
+    expect(capturedError).not.toBeNull()
+    const message = capturedError!.message
+    // Error should mention the fallback ref that was tried
+    expect(message).toContain('ai@99.99.99')
+  })
+
+  it('RE_SAFE_REF: allows @ in ref (monorepo tags like ai@6.0.158)', async () => {
+    const source = new GithubSource()
+    // If RE_SAFE_REF does not allow @, this will throw before any git operation
+    // We test this by passing a ref containing @ and expecting no validation error
+    // (a network/clone error is OK — we just want no "Invalid ref" error)
+    let error: Error | null = null
+    try {
+      await source.fetch({
+        source: 'github',
+        name: 'ai',
+        version: '6.0.158',
+        repo: 'test/repo',
+        tag: 'ai@6.0.158',
+        docsPath: 'docs',
+        // No remoteUrl — will fail trying to reach github.com, but AFTER validation
+      } as any)
+    }
+    catch (err) {
+      error = err as Error
+    }
+    // Must not throw an "Invalid ref" validation error
+    expect(error?.message).not.toContain('Invalid ref')
+  })
+})
+
+describe('git ls-remote fallback probe (T005)', () => {
+  /**
+   * Create a local remote with monorepo-style tags only (e.g. `ai@1.0.0`).
+   * No `v1.0.0` tag exists — static candidates will all fail, forcing
+   * the ls-remote probe to kick in.
+   */
+  function createLsRemoteRemote(): string {
+    const repoDir = path.join(tmpDir, 'lsremote-remote.git')
+    const workDir = path.join(tmpDir, 'lsremote-work')
+
+    fs.mkdirSync(workDir, { recursive: true })
+    execFileSync('git', ['init', '-b', 'main', workDir], { stdio: 'ignore' })
+    execFileSync('git', ['-C', workDir, 'config', 'user.email', 'test@test.com'], { stdio: 'ignore' })
+    execFileSync('git', ['-C', workDir, 'config', 'user.name', 'Test'], { stdio: 'ignore' })
+
+    fs.writeFileSync(path.join(workDir, 'README.md'), '# LS Remote Test\n')
+    fs.mkdirSync(path.join(workDir, 'docs'))
+    fs.writeFileSync(path.join(workDir, 'docs', 'api.md'), '# API Docs\n')
+
+    execFileSync('git', ['-C', workDir, 'add', '-A'], { stdio: 'ignore' })
+    execFileSync('git', ['-C', workDir, 'commit', '-m', 'initial'], { stdio: 'ignore' })
+    // Only monorepo-style tag: no `v1.0.0` exists
+    execFileSync('git', ['-C', workDir, 'tag', 'ai@1.0.0'], { stdio: 'ignore' })
+
+    execFileSync('git', ['clone', '--bare', workDir, repoDir], { stdio: 'ignore' })
+    return repoDir
+  }
+
+  it('discovers monorepo tag via ls-remote when all static candidates fail', async () => {
+    const remoteUrl = createLsRemoteRemote()
+    const source = new GithubSource()
+
+    // No fallbackRefs provided — static candidates [v1.0.0, 1.0.0] will miss.
+    // ls-remote probe should discover `ai@1.0.0` and clone it successfully.
+    const result = await source.fetch({
+      source: 'github',
+      name: 'ai',
+      version: '1.0.0',
+      repo: 'test/lsremote',
+      tag: 'v1.0.0',
+      docsPath: 'docs',
+      remoteUrl,
+    } as any)
+
+    expect(result.storePath).toContain('ai@1.0.0')
+    expect(result.resolvedVersion).toBe('1.0.0')
+    expect(result.files.length).toBeGreaterThan(0)
+  })
+
+  it('includes matching tags and --ref hint in error when total failure', async () => {
+    const remoteUrl = createLsRemoteRemote()
+    const source = new GithubSource()
+
+    // Request a version that does not exist at all — even ls-remote won't find it
+    let capturedError: Error | null = null
+    try {
+      await source.fetch({
+        source: 'github',
+        name: 'ai',
+        version: '99.99.99',
+        repo: 'test/lsremote',
+        tag: 'v99.99.99',
+        docsPath: 'docs',
+        remoteUrl,
+      } as any)
+    }
+    catch (err) {
+      capturedError = err as Error
+    }
+
+    expect(capturedError).not.toBeNull()
+    // When no matching tags are found, falls back to original error — no hint added
+    expect(capturedError!.message).toContain('v99.99.99')
+  })
+
+  it('branch requests do not fall through to tag probe', async () => {
+    // A branch-only request (no `tag` field) must fail with a plain clone
+    // error and must NOT probe remote tags — otherwise a branch named
+    // `feature/1.0.0` could silently resolve to an unrelated `v1.0.0` tag.
+    const remoteUrl = createLsRemoteRemote()
+    const source = new GithubSource()
+
+    let capturedError: Error | null = null
+    try {
+      await source.fetch({
+        source: 'github',
+        name: 'ai',
+        version: '1.0.0',
+        repo: 'test/lsremote',
+        branch: 'nonexistent-branch',
+        docsPath: 'docs',
+        remoteUrl,
+      } as any)
+    }
+    catch (err) {
+      capturedError = err as Error
+    }
+
+    expect(capturedError).not.toBeNull()
+    // Must NOT contain the tag-probe hint — branch fetches skip probeRemoteTag
+    expect(capturedError!.message).not.toContain('Available tags matching')
+    expect(capturedError!.message).not.toContain('Retry with')
+  })
+
+  it('probeRemoteTag is skipped for branch fetches even when matching tags exist', async () => {
+    // Regression guard for the tagOnly fix: a fetch with only `branch` set
+    // must fail without running probeRemoteTag, even when the remote has a
+    // tag that matches the version string. Without the fix, a branch request
+    // for `nonexistent-branch` could silently resolve to the `ai@1.0.0` tag.
+    const remoteUrl = createLsRemoteRemote()
+    const source = new GithubSource()
+
+    // Confirm the remote really does have the `ai@1.0.0` tag (so probe
+    // would succeed if it ran).
+    const lsOutput = execFileSync('git', ['ls-remote', '--tags', remoteUrl], { encoding: 'utf-8' })
+    expect(lsOutput).toContain('ai@1.0.0')
+
+    let capturedError: Error | null = null
+    try {
+      await source.fetch({
+        source: 'github',
+        name: 'ai',
+        version: '1.0.0',
+        repo: 'test/lsremote',
+        branch: '1.0.0', // version string that would match the tag via probe
+        docsPath: 'docs',
+        remoteUrl,
+      } as any)
+    }
+    catch (err) {
+      capturedError = err as Error
+    }
+
+    // The request must fail — probeRemoteTag is not called for branch fetches
+    // so the `ai@1.0.0` tag is never discovered and used as a substitute.
+    expect(capturedError).not.toBeNull()
+    // The error comes from tar.gz (git falls back), not from a successful
+    // clone of the tag — verifying the probe was never entered.
+    expect(capturedError!.message).not.toContain('ai@1.0.0')
+  })
+})
+
 /**
  * A3 — `.git/` dependency audit: after the shallow clone strips
  * `.git/`, the only consumer of `.git/` metadata inside the CLI

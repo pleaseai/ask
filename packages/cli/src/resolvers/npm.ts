@@ -9,7 +9,7 @@ const RE_SEMVER_RANGE_CHARS = /[~^>=<|]/g
  * npm registry API response (partial — only fields we need).
  */
 interface NpmPackageMeta {
-  'repository'?: { type?: string, url?: string } | string
+  'repository'?: { type?: string, url?: string, directory?: string } | string
   'dist-tags'?: Record<string, string>
   'versions'?: Record<string, unknown>
 }
@@ -82,10 +82,19 @@ export class NpmResolver implements EcosystemResolver {
 
     consola.debug(`npm: ${name}@${version} → ${repo}@${resolvedVersion}`)
 
+    // For monorepo packages (those with repository.directory), prepend pkg-name@version tags.
+    // Changesets convention uses `<pkgName>@<version>` and `<pkgName>@v<version>`.
+    // Scoped packages like `@vercel/ai` use only the unscoped part (e.g. `ai`).
+    const monorepoFallbacks: string[] = []
+    if (typeof repoField === 'object' && repoField?.directory) {
+      const unscopedName = name.startsWith('@') ? name.split('/')[1] : name
+      monorepoFallbacks.push(`${unscopedName}@${resolvedVersion}`, `${unscopedName}@v${resolvedVersion}`)
+    }
+
     return {
       repo,
       ref: `v${resolvedVersion}`,
-      fallbackRefs: [resolvedVersion],
+      fallbackRefs: [...monorepoFallbacks, resolvedVersion],
       resolvedVersion,
     }
   }
