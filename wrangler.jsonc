@@ -2,7 +2,7 @@
 //
 // This file serves two purposes:
 //
-//   1. `wrangler pages dev .output/public` (local preview) reads it to
+//   1. `wrangler pages dev` (local preview, via `bun run --cwd apps/registry preview:cf`) reads it to
 //      mount the D1 binding `DB` against the real Cloudflare database
 //      used by production. That is the only way to exercise the
 //      `content.database = { type: 'd1', bindingName: 'DB' }` branch of
@@ -23,11 +23,14 @@
 // dashboard UI. The values here should match what the dashboard sets so
 // both entry points agree.
 {
-  "$schema": "node_modules/wrangler/config-schema.json",
+  "$schema": "apps/registry/node_modules/wrangler/config-schema.json",
   "name": "ask-registry",
   "compatibility_date": "2026-04-03",
-  // Nitro's `cloudflare_pages` preset emits to `dist/` (not `.output/public`).
-  "pages_build_output_dir": "dist",
+  // Nitro's `cloudflare_pages` preset emits registry assets to
+  // `apps/registry/dist/`. Cloudflare Pages runs with the repo root as
+  // its Root directory so turbo can build the schema workspace dep
+  // before Nuxt; the output path is relative to that root.
+  "pages_build_output_dir": "apps/registry/dist",
   "d1_databases": [
     {
       "binding": "DB",
