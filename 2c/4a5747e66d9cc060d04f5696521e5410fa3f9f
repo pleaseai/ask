@@ -1,0 +1,30 @@
+.please/docs/tracks/active/ask-skills-command-20260414/metadata.json
+  2b96e672dfe3ffc6 1-11
+.please/docs/tracks.jsonl
+  2b96e672dfe3ffc6 25
+.please/docs/tracks/active/ask-skills-command-20260414/spec.md
+  2b96e672dfe3ffc6 1-77
+.please/docs/tracks/active/ask-skills-command-20260414/plan.md
+  2b96e672dfe3ffc6 1-130
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "2c4a5747e66d9cc060d04f5696521e5410fa3f9f",
+  "prompts": {
+    "2b96e672dfe3ffc6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b79b6277-ce20-4a9e-8669-70a998e33f91",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 219,
+      "total_deletions": 0,
+      "accepted_lines": 219,
+      "overriden_lines": 0,
+      "messages_url": "https://usegitai.com/cas/3d4bf521941ef556c827d0960ba46fa7cc2d8fb13693535780b3f09dcd0ac211"
+    }
+  }
+}
