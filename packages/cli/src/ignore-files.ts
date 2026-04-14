@@ -84,23 +84,23 @@ const ROOT_PATCHES: RootPatch[] = [
   {
     file: '.prettierignore',
     syntax: 'hash',
-    payload: '# Vendored docs — managed by ASK\n.ask/docs/\n.ask/resolved.json',
+    payload: '# Vendored by ASK\n.ask/docs/\n.ask/skills/\n.ask/resolved.json\n.ask/skills-lock.json',
   },
   {
     file: 'sonar-project.properties',
     syntax: 'hash',
-    payload: '# Vendored docs — managed by ASK\nsonar.exclusions=.ask/docs/**',
+    payload: '# Vendored by ASK\nsonar.exclusions=.ask/docs/**,.ask/skills/**',
   },
   {
     file: '.markdownlintignore',
     syntax: 'hash',
-    payload: '# Vendored docs — managed by ASK\n.ask/docs/',
+    payload: '# Vendored by ASK\n.ask/docs/\n.ask/skills/',
     warn: 'Legacy .markdownlintignore detected. Consider migrating to markdownlint-cli2, which supports nested config inside .ask/docs/ automatically.',
   },
   {
     file: '.gitignore',
     syntax: 'hash',
-    payload: '# Vendored docs — managed by ASK\n.ask/docs/\n.ask/resolved.json',
+    payload: '# Vendored by ASK\n.ask/docs/\n.ask/skills/\n.ask/resolved.json\n.ask/skills-lock.json',
   },
 ]
 
