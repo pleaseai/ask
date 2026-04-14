@@ -1,0 +1,30 @@
+.claude/agent-memory/review-review-silent-failure-hunter/project_ensure_checkout_fallback_divergence.md
+  301fec399f794039 1-11
+packages/cli/src/commands/ensure-checkout.ts
+  301fec399f794039 1,43,215,217-226
+.claude/agent-memory/review-review-silent-failure-hunter/MEMORY.md
+  301fec399f794039 3
+packages/cli/test/commands/ensure-checkout.integration.test.ts
+  301fec399f794039 66-109
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "9f25e8f1b8ad3796afa2e24d40d0609c5089e5e5",
+  "prompts": {
+    "301fec399f794039": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "bab546c2-14c5-4114-bced-e1c39dcc1f0c",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 69,
+      "total_deletions": 4,
+      "accepted_lines": 69,
+      "overriden_lines": 0,
+      "messages_url": "https://usegitai.com/cas/1a1f06a623359fea4d7b295f9ccc22fa2cf15e6014bbbe0d1b75202843835f60"
+    }
+  }
+}
