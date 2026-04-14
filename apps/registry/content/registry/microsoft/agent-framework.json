@@ -1,0 +1,29 @@
+{
+  "name": "Microsoft Agent Framework",
+  "description": "Framework for building AI agents with .NET",
+  "repo": "microsoft/agent-framework",
+  "license": "MIT",
+  "tags": [
+    "ai",
+    "agents",
+    "microsoft",
+    "dotnet"
+  ],
+  "packages": [
+    {
+      "name": "Microsoft.Agents.AI",
+      "aliases": [
+        {
+          "ecosystem": "nuget",
+          "name": "Microsoft.Agents.AI"
+        }
+      ],
+      "sources": [
+        {
+          "type": "github",
+          "repo": "microsoft/agent-framework"
+        }
+      ]
+    }
+  ]
+}

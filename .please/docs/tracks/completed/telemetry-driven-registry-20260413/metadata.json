@@ -1,0 +1,10 @@
+{
+  "track_id": "telemetry-driven-registry-20260413",
+  "type": "feature",
+  "status": "review",
+  "created_at": "2026-04-13T12:00:00Z",
+  "updated_at": "2026-04-13T15:30:00Z",
+  "issue": "#78",
+  "pr": "#80",
+  "project": ""
+}

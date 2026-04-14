@@ -1,10 +1,9 @@
 <script setup lang="ts">
 const route = useRoute()
-const path = `/registry/${(route.params.slug as string[]).join('/')}`
+const stem = `registry/${(route.params.slug as string[]).join('/')}`
 
-const { data: entry } = await useAsyncData(`registry-${path}`, () =>
-  queryCollection('registry').path(path).first(),
-)
+const { data: entry } = await useAsyncData(`registry-${stem}`, () =>
+  queryCollection('registry').where('stem', '=', stem).first())
 
 if (!entry.value) {
   throw createError({ statusCode: 404, message: 'Library not found' })
@@ -23,9 +22,6 @@ if (!entry.value) {
       <h1 class="text-3xl font-bold">
         {{ entry.name }}
       </h1>
-      <UBadge variant="subtle" size="lg">
-        {{ entry.ecosystem }}
-      </UBadge>
     </div>
 
     <p class="text-lg text-gray-500 dark:text-gray-400 mb-6">
@@ -48,32 +44,28 @@ if (!entry.value) {
           Quick Start
         </h2>
       </template>
-      <code class="text-sm">ask add {{ entry.ecosystem }}:{{ entry.name }}</code>
+      <code class="text-sm">ask add {{ entry.packages?.[0]?.aliases?.[0] ? `${entry.packages[0].aliases[0].ecosystem}:${entry.packages[0].aliases[0].name}` : entry.repo }}</code>
     </UCard>
 
-    <div v-if="entry.strategies?.length" class="mb-8">
+    <div v-if="entry.packages?.length" class="mb-8">
       <h2 class="text-xl font-semibold mb-4">
-        Source Strategies
+        Packages
       </h2>
       <div class="space-y-3">
-        <UCard v-for="(strategy, i) in entry.strategies" :key="i">
+        <UCard v-for="(pkg, i) in entry.packages" :key="i">
           <div class="flex items-center gap-2 mb-2">
-            <UBadge>{{ strategy.source }}</UBadge>
-            <span v-if="strategy.repo" class="text-sm text-gray-500">{{ strategy.repo }}</span>
-            <span v-if="strategy.package" class="text-sm text-gray-500">{{ strategy.package }}</span>
+            <span class="font-medium">{{ pkg.name }}</span>
           </div>
           <div class="text-sm text-gray-500 dark:text-gray-400 space-y-1">
-            <p v-if="strategy.docsPath">
-              Docs path: <code>{{ strategy.docsPath }}</code>
+            <p v-if="pkg.aliases?.length">
+              Aliases: {{ pkg.aliases.map((a: { ecosystem: string, name: string }) => `${a.ecosystem}:${a.name}`).join(', ') }}
             </p>
-            <p v-if="strategy.urls?.length">
-              URLs: {{ strategy.urls.join(', ') }}
+            <p>
+              Sources: {{ pkg.sources.map((s: { type: string }) => s.type).join(', ') }}
             </p>
           </div>
         </UCard>
       </div>
     </div>
-
-    <ContentRenderer :value="entry" class="prose dark:prose-invert max-w-none" />
   </div>
 </template>

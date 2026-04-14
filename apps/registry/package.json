@@ -1,13 +1,13 @@
 {
   "name": "@pleaseai/ask-registry",
-  "private": true,
   "type": "module",
+  "private": true,
   "scripts": {
     "build": "nuxt build --preset=cloudflare_pages",
     "build:node": "nuxt build",
     "dev": "nuxt dev",
     "preview": "nuxt preview",
-    "preview:cf": "wrangler pages dev",
+    "preview:cf": "wrangler pages dev --config ../../wrangler.jsonc",
     "lint": "eslint",
     "lint:fix": "eslint --fix",
     "test": "vitest run",

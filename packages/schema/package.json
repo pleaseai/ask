@@ -20,21 +20,27 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "registry-entry.schema.json"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && bun run generate",
     "dev": "tsc --watch",
+    "generate": "bun scripts/generate-json-schema.ts",
     "lint": "eslint",
     "lint:fix": "eslint --fix",
     "test": "bun test"
   },
   "peerDependencies": {
     "zod": "^3.23.0"
+  },
+  "dependencies": {
+    "zod-to-json-schema": "^3.25.2"
   },
   "devDependencies": {
     "@pleaseai/eslint-config": "^0.0.1",
