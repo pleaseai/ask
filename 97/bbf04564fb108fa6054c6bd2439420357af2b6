@@ -1,0 +1,40 @@
+.please/docs/tracks/active/ask-skills-command-20260414/plan.md
+  2b96e672dfe3ffc6 68-71
+packages/cli/src/commands/skills/list.ts
+  2b96e672dfe3ffc6 1-96
+packages/cli/test/skills/vendor.test.ts
+  2b96e672dfe3ffc6 1-62
+packages/cli/test/skills/ignore-files-skills.test.ts
+  2b96e672dfe3ffc6 1-42
+packages/cli/src/ignore-files.ts
+  2b96e672dfe3ffc6 87,92,97,103
+packages/cli/test/skills/symlinks.test.ts
+  2b96e672dfe3ffc6 1-86
+packages/cli/test/commands/skills-list.test.ts
+  2b96e672dfe3ffc6 1-102
+packages/cli/src/skills/vendor.ts
+  2b96e672dfe3ffc6 1-61
+packages/cli/src/skills/symlinks.ts
+  2b96e672dfe3ffc6 1-80
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "97bbf04564fb108fa6054c6bd2439420357af2b6",
+  "prompts": {
+    "2b96e672dfe3ffc6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b79b6277-ce20-4a9e-8669-70a998e33f91",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 537,
+      "total_deletions": 8,
+      "accepted_lines": 537,
+      "overriden_lines": 0,
+      "messages_url": "https://usegitai.com/cas/8bb5eec49cafa037b55e92626765022db19734cd641caf007138859ca0f50882"
+    }
+  }
+}
