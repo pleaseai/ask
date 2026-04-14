@@ -19,6 +19,8 @@ One command (`ask install`) generates `AGENTS.md` with lazy documentation refere
 
 The lazy commands `ask src <spec>` and `ask docs <spec>` give coding agents on-demand documentation access: they print absolute paths to a cached source tree (and any documentation directories), fetching on cache miss. Both commands work via shell substitution, e.g. `rg "pattern" $(ask src react)`.
 
+`ask skills <spec>` is a sibling namespace that surfaces **producer-side skills** shipped by libraries (a `skills/` directory convention). `ask skills install` vendors those skills into `.ask/skills/` and symlinks them into every detected coding agent directory (Claude Code, Cursor, OpenCode, Codex) so the agent can consume library-authored instruction bundles directly.
+
 ## Product Components
 
 | Component | Purpose |

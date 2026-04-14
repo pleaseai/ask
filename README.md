@@ -169,6 +169,38 @@ matches `/doc/i` up to depth 4, skipping `node_modules`, `.git`, `.next`,
 always emitted as the first line so the agent can fall back to it when no
 `docs/` directory exists.
 
+### `ask skills` — producer-side skill bundles
+
+`ask skills` is a sibling namespace to `ask docs` that surfaces and
+installs **producer-side skills** shipped by libraries under a top-level
+`skills/` directory (convention inherited from tanstack-intent).
+
+```bash
+# List all candidate skill paths for a library (read-only, one per line)
+ask skills <spec>              # shorthand for `skills list`
+ask skills list <spec>
+
+# Vendor skills into .ask/skills/ and symlink into each selected agent dir
+ask skills install <spec>
+ask skills install <spec> --agent claude,cursor
+ask skills install <spec> --force      # overwrite conflicting entries
+
+# Reverse a prior install using the lock file
+ask skills remove <spec>
+ask skills remove <spec> --ignore-missing
+```
+
+Skills are vendored once into `.ask/skills/<spec-key>/<skill-name>/`
+(gitignored) and **symlinked** into each selected agent directory
+(`.claude/skills/`, `.cursor/skills/`, `.opencode/skills/`,
+`.codex/skills/`). `install` auto-detects which agents the project uses;
+if more than one is present it prompts you to pick. A lock file at
+`.ask/skills-lock.json` tracks what was installed so `remove` can reverse
+the operation deterministically without touching user-authored skills.
+
+v1 platform support is POSIX only (macOS/Linux) — Windows junction
+fallback is on the roadmap.
+
 ## Registry
 
 The ASK Registry (`apps/registry/`) is a community-maintained catalog of library documentation configs. Each entry is a Markdown file with YAML frontmatter:

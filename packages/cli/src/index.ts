@@ -7,6 +7,7 @@ import { defineCommand } from 'citty'
 import { consola } from 'consola'
 import { docsCmd } from './commands/docs.js'
 import { splitExplicitVersion } from './commands/ensure-checkout.js'
+import { skillsCmd } from './commands/skills/index.js'
 import { srcCmd } from './commands/src.js'
 import { manageIgnoreFiles } from './ignore-files.js'
 import { runInstall } from './install.js'
@@ -326,6 +327,7 @@ export const main = defineCommand({
     list: listCmd,
     src: srcCmd,
     docs: docsCmd,
+    skills: skillsCmd,
     cache: cacheCmd,
   },
 })

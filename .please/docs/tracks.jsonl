@@ -22,3 +22,4 @@
 {"id":"interactive-add-20260412","type":"feature","status":"in_progress","phase":"implement","issue":"#71","created":"2026-04-12","section":"active"}
 {"id":"monorepo-tag-pattern-20260413","type":"feature","status":"review","phase":"finalize","issue":"#77","pr":"#79","created":"2026-04-13","section":"completed"}
 {"id":"telemetry-driven-registry-20260413","type":"feature","status":"in_progress","phase":"implement","issue":"#78","created":"2026-04-13","section":"active"}
+{"id":"ask-skills-command-20260414","type":"feature","status":"review","phase":"finalize","issue":"#86","pr":"#87","created":"2026-04-14","section":"completed"}
