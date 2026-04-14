@@ -1,0 +1,28 @@
+.claude/agent-memory/review-review-silent-failure-hunter/project_ensure_checkout_fallback_divergence.md
+  301fec399f794039 2-3,7,9-13,15-17
+CLAUDE.md
+  301fec399f794039 66
+.claude/agent-memory/review-review-silent-failure-hunter/MEMORY.md
+  301fec399f794039 3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "965dc69d5c382440b8d6597fc20508b2cd1dd4ac",
+  "prompts": {
+    "301fec399f794039": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "bab546c2-14c5-4114-bced-e1c39dcc1f0c",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 533,
+      "total_deletions": 7,
+      "accepted_lines": 533,
+      "overriden_lines": 0,
+      "messages_url": "https://usegitai.com/cas/35646a6a8608164acab4f5f461d6712f99574d62f18070d016f5c55ebedd14f3"
+    }
+  }
+}
