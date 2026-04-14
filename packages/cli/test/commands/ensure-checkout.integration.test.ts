@@ -3,8 +3,8 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
-import { ensureCheckout } from '../../src/commands/ensure-checkout.js'
 import { runDocs } from '../../src/commands/docs.js'
+import { ensureCheckout } from '../../src/commands/ensure-checkout.js'
 import { githubStorePath } from '../../src/store/index.js'
 
 /**

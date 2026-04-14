@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
-import { removeVendorDir, vendorSkills, VENDOR_ROOT } from '../../src/skills/vendor.js'
+import { removeVendorDir, VENDOR_ROOT, vendorSkills } from '../../src/skills/vendor.js'
 
 let projectDir: string
 let srcRoot: string

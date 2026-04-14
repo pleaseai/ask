@@ -45,7 +45,7 @@ export function decodeSpecKey(key: string): SpecKeyInput {
     throw new Error(`malformed spec-key (needs at least 3 segments): ${key}`)
   }
   const ecosystem = segments[0]
-  const version = segments[segments.length - 1]
+  const version = segments.at(-1)
   const name = segments.slice(1, -1).join('/')
   if (!ecosystem || !name || !version) {
     throw new Error(`malformed spec-key (empty segment): ${key}`)

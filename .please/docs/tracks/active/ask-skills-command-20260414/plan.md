@@ -69,11 +69,11 @@ Give users a single command family to surface and consume library-provided (prod
 - [x] T006 Implement vendor step `vendorSkills(projectDir, specKey, sourcePaths)` in `packages/cli/src/skills/vendor.ts` + tests (file: packages/cli/src/skills/vendor.ts) (depends on T002). Atomic: copy to `.ask/skills/<specKey>/<basename(sourcePath)>/` via staging dir + rename on success. Refresh-safe: replaces any prior version of the same vendored key.
 - [x] T007 Implement symlink utilities `linkSkill`, `verifyLink`, `unlinkIfOwned` in `packages/cli/src/skills/symlinks.ts` + tests (file: packages/cli/src/skills/symlinks.ts). Uses relative POSIX symlinks. `unlinkIfOwned` only unlinks when `fs.readlinkSync` resolves to the expected vendored target; never deletes real directories.
 - [x] T008 Extend `ignore-files.ts` to also vendor `.ask/skills/` and `.ask/skills-lock.json` (file: packages/cli/src/ignore-files.ts). Update `ROOT_PATCHES` payloads for `.gitignore`, `.prettierignore`, `sonar-project.properties`, `.markdownlintignore`. Add a test that `manageIgnoreFiles('install')` produces the new marker block content.
-- [ ] T009 Implement `ask skills install` in `packages/cli/src/commands/skills/install.ts` (file: packages/cli/src/commands/skills/install.ts) (depends on T002, T003, T004, T005, T006, T007, T008). Orchestrates: resolve via `ensureCheckout` → walk → vendor → detect → multiselect (if >1) via `consola.prompt` → symlink → update lock → `manageIgnoreFiles('install')`. Flags: `--force`, `--no-fetch`, `--agent <name>[,<name>...]` (opt-in explicit override of detection). Emits `consola.info` summary of what was installed.
-- [ ] T010 Implement `ask skills remove` in `packages/cli/src/commands/skills/remove.ts` (file: packages/cli/src/commands/skills/remove.ts) (depends on T003, T007). Reads lock, iterates recorded symlinks, `unlinkIfOwned` each, deletes `.ask/skills/<specKey>/`, purges lock entry. Errors if lock entry missing (unless `--ignore-missing`).
-- [ ] T011 Wire `skillsCmd` into `packages/cli/src/index.ts` (file: packages/cli/src/index.ts) (depends on T005, T009, T010). Default run (no subcommand) dispatches to `list`. Update `cli/commands.test.ts` / `src-docs-registration.test.ts` style test to assert `skills`, `skills list`, `skills install`, `skills remove` are all registered.
-- [ ] T012 End-to-end integration test in `packages/cli/test/commands/skills.integration.test.ts` (file: packages/cli/test/commands/skills.integration.test.ts) (depends on T009, T010, T011). Happy path: install into a fixture with `.claude/` + `.cursor/`, verify vendored files, verify symlinks, verify lock; re-install is no-op; remove deletes everything.
-- [ ] T013 Documentation update in root `README.md` and `packages/cli/README.md` (file: README.md) (depends on T011). Add `ask skills` section under CLI usage; mention v1 platform limits (Linux/macOS only).
+- [x] T009 Implement `ask skills install` in `packages/cli/src/commands/skills/install.ts` (file: packages/cli/src/commands/skills/install.ts) (depends on T002, T003, T004, T005, T006, T007, T008). Orchestrates: resolve via `ensureCheckout` → walk → vendor → detect → multiselect (if >1) via `consola.prompt` → symlink → update lock → `manageIgnoreFiles('install')`. Flags: `--force`, `--no-fetch`, `--agent <name>[,<name>...]` (opt-in explicit override of detection). Emits `consola.info` summary of what was installed.
+- [x] T010 Implement `ask skills remove` in `packages/cli/src/commands/skills/remove.ts` (file: packages/cli/src/commands/skills/remove.ts) (depends on T003, T007). Reads lock, iterates recorded symlinks, `unlinkIfOwned` each, deletes `.ask/skills/<specKey>/`, purges lock entry. Errors if lock entry missing (unless `--ignore-missing`).
+- [x] T011 Wire `skillsCmd` into `packages/cli/src/index.ts` (file: packages/cli/src/index.ts) (depends on T005, T009, T010). Default run (no subcommand) dispatches to `list`. Update `cli/commands.test.ts` / `src-docs-registration.test.ts` style test to assert `skills`, `skills list`, `skills install`, `skills remove` are all registered.
+- [x] T012 End-to-end integration test in `packages/cli/test/commands/skills.integration.test.ts` (file: packages/cli/test/commands/skills.integration.test.ts) (depends on T009, T010, T011). Happy path: install into a fixture with `.claude/` + `.cursor/`, verify vendored files, verify symlinks, verify lock; re-install is no-op; remove deletes everything.
+- [x] T013 Documentation update in root `README.md` and `packages/cli/README.md` (file: README.md) (depends on T011). Add `ask skills` section under CLI usage; mention v1 platform limits (Linux/macOS only).
 
 ## Dependencies
 
@@ -114,10 +114,10 @@ T001–T004 and T008 are [P] (parallel). T005 depends only on T001. T006–T007 
 
 ## Progress
 
-- [ ] Phase 1 (T001–T004, T008): foundation utilities
-- [ ] Phase 2 (T005–T007): list command + vendor/symlink primitives
-- [ ] Phase 3 (T009–T011): install/remove orchestration + wiring
-- [ ] Phase 4 (T012–T013): integration test + docs
+- [x] Phase 1 (T001–T004, T008): foundation utilities
+- [x] Phase 2 (T005–T007): list command + vendor/symlink primitives
+- [x] Phase 3 (T009–T011): install/remove orchestration + wiring
+- [x] Phase 4 (T012–T013): integration test + docs
 
 ## Decision Log
 
@@ -127,4 +127,6 @@ T001–T004 and T008 are [P] (parallel). T005 depends only on T001. T006–T007 
 
 ## Surprises & Discoveries
 
-- (Filled in during implementation)
+- `findSkillLikePaths` needed a tight basename match (`/^skills?$/i`) when used as the "skills parent" selector in install. A loose substring match was vendoring the checkout root whenever its tempdir name happened to contain "skill" (e.g. `ask-skills-e2e-ck-XXXX`) — harmless in production, but it pulled `skills/` into itself and left the lock entry with `name: "skills"` instead of `name: "alpha"`. The walker still uses loose `/skill/i` for `list` output; the stricter filter lives in `collectSkillDirs`.
+- `manageIgnoreFiles` validates `ask.json` against the real `AskJsonSchema` (`{ libraries: [] }`), not a fabricated `{ entries: [] }` shape. Test fixtures had to match — a reminder that the schema package is authoritative and cannot be faked.
+- The integration test needed schema package built first (`bun run --cwd packages/schema build`) because `packages/cli/src/schemas.ts` imports `@pleaseai/ask-schema` from the workspace, and an unbuilt workspace dep surfaces as a runtime "Cannot find module" error rather than a TS build error.
