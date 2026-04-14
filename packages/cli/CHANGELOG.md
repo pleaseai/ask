@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.2](https://github.com/pleaseai/ask/compare/ask-v0.4.1...ask-v0.4.2) (2026-04-14)
+
+
+### Bug Fixes
+
+* **cli:** align ensureCheckout with PM-unified store layout ([#82](https://github.com/pleaseai/ask/issues/82)) ([4ee9db2](https://github.com/pleaseai/ask/commit/4ee9db20458f5d1a9957bfe93effab5d2fcdf420))
+
 ## [0.4.1](https://github.com/pleaseai/ask/compare/ask-v0.4.0...ask-v0.4.1) (2026-04-14)
 
 
