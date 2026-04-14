@@ -1,2 +1,3 @@
 - [Global store atomicity patterns](project_store_atomicity.md) — writeEntryAtomic/acquireEntryLock have known race windows; check before touching
 - [Shell pipe stderr loss pattern](feedback_shell_pipe_errors.md) — curl|tar execSync strings erase real errors; require -fsSL or execFileSync
+- [ensureCheckout fallback-ref path divergence](project_ensure_checkout_fallback_divergence.md) — PR #82 only fixed the naming axis; fetcher.fetch().storePath is still discarded, fallbackRefs/v-prefix winners silently exit 0 with no output

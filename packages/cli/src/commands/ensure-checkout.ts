@@ -1,11 +1,13 @@
-import type { GithubSourceOptions, SourceConfig } from '../sources/index.js'
+import type { FetchResult, GithubSourceOptions, SourceConfig } from '../sources/index.js'
 import type { ParsedSpec } from '../spec.js'
 import fs from 'node:fs'
 import { npmEcosystemReader } from '../lockfiles/index.js'
 import { getResolver } from '../resolvers/index.js'
 import { GithubSource } from '../sources/github.js'
 import { parseSpec } from '../spec.js'
-import { githubCheckoutPath, resolveAskHome } from '../store/index.js'
+import { githubStorePath, resolveAskHome } from '../store/index.js'
+
+const DEFAULT_GITHUB_HOST = 'github.com'
 
 export interface EnsureCheckoutOptions {
   /** User-supplied spec, optionally with a trailing `@version` suffix. */
@@ -22,7 +24,7 @@ export interface EnsureCheckoutResult {
   repo: string
   ref: string
   resolvedVersion: string
-  /** Absolute path to `~/.ask/github/checkouts/<owner>__<repo>/<ref>/`. */
+  /** Absolute path to `~/.ask/github/<host>/<owner>/<repo>/<ref>/` (PM-unified store layout). */
   checkoutDir: string
   /**
    * For npm-ecosystem specs, the package name (e.g. `react`, `@vercel/ai`).
@@ -38,7 +40,7 @@ export interface EnsureCheckoutResult {
  */
 export interface EnsureCheckoutDeps {
   askHome?: string
-  fetcher?: { fetch: (opts: SourceConfig) => Promise<unknown> }
+  fetcher?: { fetch: (opts: SourceConfig) => Promise<FetchResult> }
   lockfileReader?: { read: (name: string, projectDir: string) => { version: string } | null }
   resolverFor?: (ecosystem: string) => {
     resolve: (name: string, version: string) => Promise<{
@@ -186,8 +188,10 @@ export async function ensureCheckout(
     fallbackRefs = result.fallbackRefs
   }
 
-  // 4. Compute the cache directory
-  const checkoutDir = githubCheckoutPath(askHome, owner, repo, ref)
+  // 4. Compute the cache directory — PM-unified layout, shared with
+  //    `GithubSource.fetch` which writes to the same path. If these two
+  //    ever diverge, `ask docs` / `ask src` silently emit no output.
+  const checkoutDir = githubStorePath(askHome, DEFAULT_GITHUB_HOST, owner, repo, ref)
 
   // 5. Cache hit short-circuit
   if (fs.existsSync(checkoutDir)) {
@@ -208,7 +212,16 @@ export async function ensureCheckout(
     ...(isFromBranch ? { branch: ref } : { tag: ref }),
     ...(fallbackRefs?.length ? { fallbackRefs } : {}),
   }
-  await fetcher.fetch(fetchOpts)
+  const fetchResult = await fetcher.fetch(fetchOpts)
 
-  return { parsed, owner, repo, ref, resolvedVersion, checkoutDir, npmPackageName }
+  // 8. Prefer the actual on-disk path reported by the fetcher. When a
+  //    `fallbackRef` wins or `cloneAtTag` rescues a non-`v` ref via
+  //    `v<ref>`, the store dir is under the WINNING candidate, not the
+  //    originally requested `ref`. Silently returning `checkoutDir`
+  //    (the primary-ref path) would reproduce the same empty-output bug
+  //    on the ref-candidate axis that the PM-unified layout fix closed
+  //    on the naming axis.
+  const resolvedCheckoutDir = fetchResult?.storePath ?? checkoutDir
+
+  return { parsed, owner, repo, ref, resolvedVersion, checkoutDir: resolvedCheckoutDir, npmPackageName }
 }

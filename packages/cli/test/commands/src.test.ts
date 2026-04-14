@@ -31,7 +31,7 @@ describe('runSrc', () => {
       repo: 'react',
       ref: 'v18.2.0',
       resolvedVersion: '18.2.0',
-      checkoutDir: '/tmp/ask/github/checkouts/facebook__react/v18.2.0',
+      checkoutDir: '/tmp/ask/github/github.com/facebook/react/v18.2.0',
       npmPackageName: 'react',
     }))
 
@@ -40,7 +40,7 @@ describe('runSrc', () => {
       { ensureCheckout, ...deps },
     )
 
-    expect(io.stdout).toEqual(['/tmp/ask/github/checkouts/facebook__react/v18.2.0'])
+    expect(io.stdout).toEqual(['/tmp/ask/github/github.com/facebook/react/v18.2.0'])
     expect(io.stderr).toEqual([])
     expect(io.exitCode).toBeNull()
   })
