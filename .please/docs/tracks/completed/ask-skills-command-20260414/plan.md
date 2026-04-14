@@ -132,3 +132,32 @@ T001–T004 and T008 are [P] (parallel). T005 depends only on T001. T006–T007 
 - The integration test needed schema package built first (`bun run --cwd packages/schema build`) because `packages/cli/src/schemas.ts` imports `@pleaseai/ask-schema` from the workspace, and an unbuilt workspace dep surfaces as a runtime "Cannot find module" error rather than a TS build error.
 
 - [x] (2026-04-15 17:30 KST) Review fixes applied (SHA: `44de2d6`)
+
+## Outcomes & Retrospective
+
+### What Was Shipped
+
+- `ask skills` CLI namespace with `list`, `install`, `remove` subcommands (+ `ask skills <spec>` shorthand for `list`).
+- `.ask/skills/<spec-key>/<skill-name>/` vendored layout backed by `.ask/skills-lock.json` for deterministic reverse.
+- Relative POSIX symlinks into auto-detected agent dirs (`.claude/`, `.cursor/`, `.opencode/`, `.codex/`) with multiselect prompt when >1 agent is present and `--agent` CSV override.
+- 5 new foundation modules under `packages/cli/src/skills/` (spec-key, lock, agent-detect, vendor, symlinks).
+- Ignore-file management extended to mark skills paths vendored, now gated by a multi-signal opt-in check so skills-only users are covered.
+
+### What Went Well
+
+- The existing `ensureCheckout` + `findDocLikePaths` + `ignore-files.ts` patterns dropped in almost verbatim. Minimal new primitives.
+- Symlink + lock architecture means `remove` can never touch user-authored content — `unlinkIfOwned` compares the symlink target against the vendored path first.
+- TDD cycle (67 unit + integration tests) caught two design bugs before merge: the walker's substring-match surfacing the tempdir root, and `ask.json`-only opt-in gate missing skills-only users.
+- Review-fix loop surfaced the FR-11/AC-6 gap that the original integration tests masked by always seeding `ask.json`.
+
+### What Could Improve
+
+- Initial spec-key encode/decode design encoded `@` which broke scoped-npm round-trip. Should have exercised round-trip tests against all four representative specs before landing the encoder. Now fixed (only `/`/`:` encoded, `@` preserved).
+- `collectSkillDirs` needed a tighter `^skills?$` regex separate from the walker's looser `/skill/i` — worth documenting the dual regex convention in future producer-side skill features.
+- `manageIgnoreFiles` implicit opt-in (ask.json-only) was easy to overlook. The multi-signal `hasAskOptIn` helper should probably become the canonical predicate anywhere new ASK entry points appear.
+
+### Tech Debt Created
+
+- Windows native junction fallback is deferred (noted in spec Out of Scope + README). Any Windows user will hit a symlink permission issue today — follow-up track required.
+- Convention-based auto-discovery of skill packages (via `package.json` keywords / intent adapter) deferred.
+- No declarative `ask.json` entry shape for skills yet — users must invoke `ask skills install` imperatively per library.
