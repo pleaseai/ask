@@ -5,7 +5,9 @@ import { npmEcosystemReader } from '../lockfiles/index.js'
 import { getResolver } from '../resolvers/index.js'
 import { GithubSource } from '../sources/github.js'
 import { parseSpec } from '../spec.js'
-import { githubCheckoutPath, resolveAskHome } from '../store/index.js'
+import { githubStorePath, resolveAskHome } from '../store/index.js'
+
+const DEFAULT_GITHUB_HOST = 'github.com'
 
 export interface EnsureCheckoutOptions {
   /** User-supplied spec, optionally with a trailing `@version` suffix. */
@@ -22,7 +24,7 @@ export interface EnsureCheckoutResult {
   repo: string
   ref: string
   resolvedVersion: string
-  /** Absolute path to `~/.ask/github/checkouts/<owner>__<repo>/<ref>/`. */
+  /** Absolute path to `~/.ask/github/<host>/<owner>/<repo>/<ref>/` (PM-unified store layout). */
   checkoutDir: string
   /**
    * For npm-ecosystem specs, the package name (e.g. `react`, `@vercel/ai`).
@@ -186,8 +188,10 @@ export async function ensureCheckout(
     fallbackRefs = result.fallbackRefs
   }
 
-  // 4. Compute the cache directory
-  const checkoutDir = githubCheckoutPath(askHome, owner, repo, ref)
+  // 4. Compute the cache directory — PM-unified layout, shared with
+  //    `GithubSource.fetch` which writes to the same path. If these two
+  //    ever diverge, `ask docs` / `ask src` silently emit no output.
+  const checkoutDir = githubStorePath(askHome, DEFAULT_GITHUB_HOST, owner, repo, ref)
 
   // 5. Cache hit short-circuit
   if (fs.existsSync(checkoutDir)) {

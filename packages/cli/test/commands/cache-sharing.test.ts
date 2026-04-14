@@ -4,20 +4,22 @@ import os from 'node:os'
 import path from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, mock } from 'bun:test'
 import { ensureCheckout } from '../../src/commands/ensure-checkout.js'
-import { githubCheckoutPath } from '../../src/store/index.js'
+import { githubStorePath } from '../../src/store/index.js'
+
+const GH = 'github.com'
 
 /**
  * SC-6: After running `ask install` for a library that populates
- * `~/.ask/github/checkouts/<o>__<r>/<ref>/`, calling `ask src <spec>`
- * for the same library hits the EXACT same directory — zero
- * duplication.
+ * `~/.ask/github/<host>/<o>/<r>/<ref>/` (PM-unified layout), calling
+ * `ask src <spec>` for the same library hits the EXACT same directory
+ * — zero duplication.
  *
- * The eager (`install.ts` → `GithubSource.fetch`) and lazy
- * (`ensureCheckout` → `GithubSource.fetch`) paths must compute the
- * checkout path through the same `githubCheckoutPath(askHome, owner,
- * repo, ref)` helper. This test pins that contract by:
+ * The eager (`GithubSource.fetch`) and lazy (`ensureCheckout` →
+ * `GithubSource.fetch`) paths must compute the store path through the
+ * same `githubStorePath(askHome, 'github.com', owner, repo, ref)`
+ * helper. This test pins that contract by:
  *
- *   1. Computing the expected store path with `githubCheckoutPath`
+ *   1. Computing the expected store path with `githubStorePath`
  *      directly (the same way install.ts does it).
  *   2. Pre-populating that path with a fake checkout (simulating a
  *      prior `ask install` run).
@@ -44,9 +46,9 @@ afterEach(() => {
 })
 
 describe('cache sharing — install vs src/docs (SC-6)', () => {
-  it('ensureCheckout returns the same path that githubCheckoutPath computes', async () => {
+  it('ensureCheckout returns the same path that githubStorePath computes', async () => {
     // Pre-compute the path the eager pipeline would write to.
-    const expectedPath = githubCheckoutPath(askHome, 'facebook', 'react', 'v18.2.0')
+    const expectedPath = githubStorePath(askHome, GH, 'facebook', 'react', 'v18.2.0')
 
     // Simulate the directory left behind by a prior `ask install` run.
     fs.mkdirSync(expectedPath, { recursive: true })
@@ -87,7 +89,7 @@ describe('cache sharing — install vs src/docs (SC-6)', () => {
     // the helper hands the fetcher matches the path the eager pipeline
     // would use. The fake fetcher creates the dir to simulate a
     // successful fetch and we verify the post-condition.
-    const expectedPath = githubCheckoutPath(askHome, 'facebook', 'react', 'v18.2.0')
+    const expectedPath = githubStorePath(askHome, GH, 'facebook', 'react', 'v18.2.0')
 
     let fetchedRepo: string | undefined
     let fetchedTag: string | undefined
@@ -125,14 +127,13 @@ describe('cache sharing — install vs src/docs (SC-6)', () => {
     expect(result.checkoutDir).toBe(expectedPath)
   })
 
-  it('lazy and eager paths agree on the namespacing scheme (owner__repo / ref)', () => {
-    // This is a structural test: it asserts the directory layout is
-    // <askHome>/github/checkouts/<owner>__<repo>/<ref>/ — the layout
-    // both pipelines depend on. If anyone changes the separator or
-    // adds an intermediate segment, this test forces the rename to
-    // happen everywhere at once.
-    const p = githubCheckoutPath(askHome, 'facebook', 'react', 'v18.2.0')
-    const expected = path.join(askHome, 'github', 'checkouts', 'facebook__react', 'v18.2.0')
+  it('lazy and eager paths agree on the PM-unified layout (host/owner/repo/ref)', () => {
+    // Structural test: asserts the directory layout is
+    // <askHome>/github/<host>/<owner>/<repo>/<ref>/ — the PM-unified
+    // layout both pipelines depend on. If anyone changes the nesting
+    // scheme, this forces the rename to happen everywhere at once.
+    const p = githubStorePath(askHome, GH, 'facebook', 'react', 'v18.2.0')
+    const expected = path.join(askHome, 'github', GH, 'facebook', 'react', 'v18.2.0')
     expect(p).toBe(expected)
   })
 })

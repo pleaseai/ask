@@ -106,7 +106,7 @@ describe('splitExplicitVersion', () => {
 describe('ensureCheckout', () => {
   it('returns existing path on cache hit without calling fetch', async () => {
     // Pre-populate the cache
-    const checkoutDir = path.join(askHome, 'github', 'checkouts', 'facebook__react', 'v18.2.0')
+    const checkoutDir = path.join(askHome, 'github', 'github.com', 'facebook', 'react', 'v18.2.0')
     fs.mkdirSync(checkoutDir, { recursive: true })
     fs.writeFileSync(path.join(checkoutDir, 'README.md'), '# react')
 
@@ -136,7 +136,7 @@ describe('ensureCheckout', () => {
   })
 
   it('calls fetcher on cache miss and returns path', async () => {
-    const expectedDir = path.join(askHome, 'github', 'checkouts', 'facebook__react', 'v18.2.0')
+    const expectedDir = path.join(askHome, 'github', 'github.com', 'facebook', 'react', 'v18.2.0')
 
     const { fetcher, calls } = makeFetcher((opts) => {
       // Simulate fetcher writing files to the checkout dir
@@ -165,7 +165,7 @@ describe('ensureCheckout', () => {
   })
 
   it('uses explicit @version over lockfile version', async () => {
-    const expectedDir = path.join(askHome, 'github', 'checkouts', 'facebook__react', 'v18.2.0')
+    const expectedDir = path.join(askHome, 'github', 'github.com', 'facebook', 'react', 'v18.2.0')
     fs.mkdirSync(expectedDir, { recursive: true })
 
     const resolver = makeResolver({
@@ -190,7 +190,7 @@ describe('ensureCheckout', () => {
   })
 
   it('falls back to lockfile version when no explicit @version on npm spec', async () => {
-    const expectedDir = path.join(askHome, 'github', 'checkouts', 'facebook__react', 'v17.0.0')
+    const expectedDir = path.join(askHome, 'github', 'github.com', 'facebook', 'react', 'v17.0.0')
     fs.mkdirSync(expectedDir, { recursive: true })
 
     const resolver = makeResolver({
@@ -214,7 +214,7 @@ describe('ensureCheckout', () => {
   })
 
   it('falls back to "latest" when no explicit version and no lockfile hit', async () => {
-    const expectedDir = path.join(askHome, 'github', 'checkouts', 'facebook__react', 'v18.3.0')
+    const expectedDir = path.join(askHome, 'github', 'github.com', 'facebook', 'react', 'v18.3.0')
     fs.mkdirSync(expectedDir, { recursive: true })
 
     const resolver = makeResolver({
@@ -235,7 +235,7 @@ describe('ensureCheckout', () => {
   })
 
   it('handles github: spec without explicit ref by defaulting to main', async () => {
-    const expectedDir = path.join(askHome, 'github', 'checkouts', 'facebook__react', 'main')
+    const expectedDir = path.join(askHome, 'github', 'github.com', 'facebook', 'react', 'main')
 
     const { fetcher, calls } = makeFetcher(() => {
       fs.mkdirSync(expectedDir, { recursive: true })
@@ -259,7 +259,7 @@ describe('ensureCheckout', () => {
   })
 
   it('handles github: spec with explicit @ref', async () => {
-    const expectedDir = path.join(askHome, 'github', 'checkouts', 'facebook__react', 'v18.2.0')
+    const expectedDir = path.join(askHome, 'github', 'github.com', 'facebook', 'react', 'v18.2.0')
 
     const { fetcher, calls } = makeFetcher(() => {
       fs.mkdirSync(expectedDir, { recursive: true })
@@ -306,7 +306,7 @@ describe('ensureCheckout', () => {
   })
 
   it('returns cache hit even with noFetch=true', async () => {
-    const checkoutDir = path.join(askHome, 'github', 'checkouts', 'facebook__react', 'v18.2.0')
+    const checkoutDir = path.join(askHome, 'github', 'github.com', 'facebook', 'react', 'v18.2.0')
     fs.mkdirSync(checkoutDir, { recursive: true })
 
     const resolver = makeResolver({
@@ -364,7 +364,7 @@ describe('ensureCheckout', () => {
   })
 
   it('exposes npmPackageName for npm-ecosystem specs', async () => {
-    const checkoutDir = path.join(askHome, 'github', 'checkouts', 'facebook__react', 'v18.2.0')
+    const checkoutDir = path.join(askHome, 'github', 'github.com', 'facebook', 'react', 'v18.2.0')
     fs.mkdirSync(checkoutDir, { recursive: true })
 
     const resolver = makeResolver({
@@ -385,7 +385,7 @@ describe('ensureCheckout', () => {
   })
 
   it('does not expose npmPackageName for github specs', async () => {
-    const checkoutDir = path.join(askHome, 'github', 'checkouts', 'facebook__react', 'main')
+    const checkoutDir = path.join(askHome, 'github', 'github.com', 'facebook', 'react', 'main')
     fs.mkdirSync(checkoutDir, { recursive: true })
 
     const result = await ensureCheckout(
@@ -403,7 +403,7 @@ describe('ensureCheckout', () => {
 
   it('passes fallbackRefs from resolver result to fetcher options', async () => {
     const { fetcher, calls } = makeFetcher((opts) => {
-      const expectedDir = path.join(askHome, 'github', 'checkouts', 'vercel__ai', 'ai@6.0.159')
+      const expectedDir = path.join(askHome, 'github', 'github.com', 'vercel', 'ai', 'ai@6.0.159')
       fs.mkdirSync(expectedDir, { recursive: true })
       void opts
     })
