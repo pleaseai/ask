@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.4.1](https://github.com/pleaseai/ask/compare/ask-v0.4.0...ask-v0.4.1) (2026-04-14)
+
+
+### Features
+
+* **cli:** support monorepo tag patterns in npm resolver and GithubSource ([#79](https://github.com/pleaseai/ask/issues/79)) ([d13468e](https://github.com/pleaseai/ask/commit/d13468e62404646804186b93f97b405ede348ffe))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @pleaseai/ask-schema bumped to 0.3.2
+
 ## [0.4.0](https://github.com/pleaseai/ask/compare/ask-v0.3.3...ask-v0.4.0) (2026-04-12)
 
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.2](https://github.com/pleaseai/ask/compare/ask-plugin-v0.4.1...ask-plugin-v0.4.2) (2026-04-14)
+
+
+### Features
+
+* **cli:** support monorepo tag patterns in npm resolver and GithubSource ([#79](https://github.com/pleaseai/ask/issues/79)) ([d13468e](https://github.com/pleaseai/ask/commit/d13468e62404646804186b93f97b405ede348ffe))
+* **registry:** migrate registry entries from Markdown to JSON ([#80](https://github.com/pleaseai/ask/issues/80)) ([dcb4941](https://github.com/pleaseai/ask/commit/dcb4941ed138c575bae24f1b493fbc893698d9f2))
+
 ## [0.4.1](https://github.com/pleaseai/ask/compare/ask-plugin-v0.4.0...ask-plugin-v0.4.1) (2026-04-12)
 
 

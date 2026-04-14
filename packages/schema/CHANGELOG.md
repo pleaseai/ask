@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.2](https://github.com/pleaseai/ask/compare/ask-schema-v0.3.1...ask-schema-v0.3.2) (2026-04-14)
+
+
+### Features
+
+* **registry:** migrate registry entries from Markdown to JSON ([#80](https://github.com/pleaseai/ask/issues/80)) ([dcb4941](https://github.com/pleaseai/ask/commit/dcb4941ed138c575bae24f1b493fbc893698d9f2))
+
 ## [0.3.1](https://github.com/pleaseai/ask/compare/ask-schema-v0.3.0...ask-schema-v0.3.1) (2026-04-12)
 
 
