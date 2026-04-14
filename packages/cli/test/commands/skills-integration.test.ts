@@ -118,4 +118,22 @@ describe('skills install/remove (integration)', () => {
       runSkillsInstall({ spec: 'github:acme/skills-lib@v1.0.0', projectDir }, { ensureCheckout, ...quiet() }),
     ).rejects.toThrow(/exit 1/)
   })
+
+  it('skills-only project (no ask.json) still gets .gitignore patched — FR-11/AC-6', async () => {
+    createClaudeMarker()
+    // Seed an empty .gitignore so patchRootIgnores has a file to patch.
+    fs.writeFileSync(path.join(projectDir, '.gitignore'), '')
+    // Intentionally NO ask.json — this regressed before the hasAskOptIn fix
+    // landed: skills-only users ended up committing .ask/skills-lock.json.
+    const ensureCheckout = mockEnsureCheckout()
+
+    await runSkillsInstall(
+      { spec: 'github:acme/skills-lib@v1.0.0', projectDir },
+      { ensureCheckout, ...quiet() },
+    )
+
+    const gitignore = fs.readFileSync(path.join(projectDir, '.gitignore'), 'utf-8')
+    expect(gitignore).toContain('.ask/skills/')
+    expect(gitignore).toContain('.ask/skills-lock.json')
+  })
 })

@@ -22,6 +22,19 @@ import { readAskJson } from './io.js'
 import { inject, remove as removeMarker, wrap } from './markers.js'
 import { getDocsDir } from './storage.js'
 
+function hasAskOptIn(projectDir: string): boolean {
+  if (readAskJson(projectDir)) {
+    return true
+  }
+  if (fs.existsSync(path.join(projectDir, '.ask', 'skills-lock.json'))) {
+    return true
+  }
+  if (fs.existsSync(path.join(projectDir, '.ask', 'skills'))) {
+    return true
+  }
+  return false
+}
+
 /**
  * Local configuration files written inside `.ask/docs/` so that
  * lint/format/review tools with nested-config support automatically skip
@@ -213,11 +226,12 @@ export function manageIgnoreFiles(
   mode: 'install' | 'remove',
 ): void {
   // The pre-refactor `manageIgnores: false` opt-out lived in
-  // .ask/config.json, which no longer exists. The new contract: if
-  // ask.json is absent, do nothing (the user hasn't opted in to ASK
-  // at all).
-  const askJson = readAskJson(projectDir)
-  if (!askJson) {
+  // .ask/config.json, which no longer exists. The new contract: patch
+  // ignore files when the user has opted into ASK through ANY of its
+  // entry points — `ask.json` (docs), `.ask/skills-lock.json` (skills),
+  // or an existing `.ask/` vendor tree. Without any of those, a fresh
+  // project should stay untouched.
+  if (!hasAskOptIn(projectDir)) {
     return
   }
 
