@@ -26,15 +26,29 @@ describe('findDocLikePaths', () => {
     expect(findDocLikePaths(missing)).toEqual([])
   })
 
-  it('always returns the root as the first element', () => {
+  it('returns [root] as fallback when no doc-like subdirs exist', () => {
     const result = findDocLikePaths(root)
-    expect(result[0]).toBe(root)
+    expect(result).toEqual([root])
   })
 
-  it('matches a top-level "docs" directory', () => {
+  it('matches a top-level "docs" directory and omits root', () => {
     const docs = mkdir('docs')
     const result = findDocLikePaths(root)
     expect(result).toContain(docs)
+    expect(result).not.toContain(root)
+  })
+
+  it('emits dist/docs even though dist is in the skip set', () => {
+    const distDocs = mkdir('dist', 'docs')
+    const result = findDocLikePaths(root)
+    expect(result).toContain(distDocs)
+    expect(result).not.toContain(root)
+  })
+
+  it('does not emit dist itself when dist/docs is absent', () => {
+    mkdir('dist', 'lib')
+    const result = findDocLikePaths(root)
+    expect(result).toEqual([root])
   })
 
   it('matches case-insensitive — "Documentation" qualifies', () => {
@@ -61,14 +75,13 @@ describe('findDocLikePaths', () => {
     expect(result.some(p => p.includes('.git'))).toBe(false)
   })
 
-  it('skips .next, .nuxt, dist, build, coverage', () => {
+  it('skips .next, .nuxt, build, coverage (dist/docs is a special allow-listed case)', () => {
     mkdir('.next', 'docs')
     mkdir('.nuxt', 'docs')
-    mkdir('dist', 'docs')
     mkdir('build', 'docs')
     mkdir('coverage', 'docs')
     const result = findDocLikePaths(root)
-    for (const skip of ['.next', '.nuxt', 'dist', 'build', 'coverage']) {
+    for (const skip of ['.next', '.nuxt', 'build', 'coverage']) {
       expect(result.some(p => p.includes(`${path.sep}${skip}${path.sep}`))).toBe(false)
     }
   })

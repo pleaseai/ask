@@ -19,29 +19,44 @@ const SKIP_DIRS = new Set([
 const MAX_DEPTH = 4
 
 /**
- * Walk `root` and return:
- *   - The root itself as the first element (always, even if empty/missing).
- *   - Every subdirectory whose basename matches `/doc/i`, up to depth 4.
+ * Walk `root` and return every subdirectory whose basename matches
+ * `/doc/i`, up to depth 4. When no such subdirectory exists, fall back
+ * to `[root]` so small projects whose docs live as a top-level
+ * `README.md` still produce a usable path.
  *
  * Skips `node_modules`, `.git`, `.next`, `.nuxt`, `dist`, `build`,
  * `coverage`, and any dotdir.
  *
- * Used by `ask docs` to surface candidate documentation paths from a
- * cached source tree (and from `node_modules/<pkg>/` for npm specs).
- * The caller — typically a coding agent — decides which path is the
- * "real" docs directory by reading the contents.
+ * Used by `ask docs` to surface documentation paths from a cached
+ * source tree (and from `node_modules/<pkg>/` for npm specs). Emitting
+ * only doc-like subdirs when they exist keeps shell substitution
+ * (`rg "x" $(ask docs <spec>)`) focused on docs instead of dragging
+ * the whole source tree into the search. Callers that need the
+ * checkout root itself should use `ask src`.
  *
- * Returns an empty array when `root` does not exist (no throw). This
- * matches the calling convention of `ask docs`, which may want to walk
- * a node_modules path that does not exist for the current project.
+ * Returns an empty array when `root` does not exist (no throw).
  */
 export function findDocLikePaths(root: string): string[] {
   if (!fs.existsSync(root)) {
     return []
   }
-  const results: string[] = [root]
-  walk(root, 0, results)
-  return results
+  const subdirs: string[] = []
+
+  // `dist/docs` is a common publish-time convention (e.g. mastra ships
+  // its docs there). The walker skips `dist/` wholesale to avoid build
+  // noise, so probe this path explicitly.
+  const distDocs = path.join(root, 'dist', 'docs')
+  try {
+    if (fs.statSync(distDocs).isDirectory()) {
+      subdirs.push(distDocs)
+    }
+  }
+  catch {
+    // missing or not a directory — ignore
+  }
+
+  walk(root, 0, subdirs)
+  return subdirs.length > 0 ? subdirs : [root]
 }
 
 function walk(currentDir: string, depth: number, out: string[]): void {

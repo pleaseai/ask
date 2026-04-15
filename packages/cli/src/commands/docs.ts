@@ -20,19 +20,22 @@ export interface RunDocsDeps {
 
 /**
  * Implementation of `ask docs <spec>`. Resolves the spec via the
- * shared `ensureCheckout` helper, then walks two locations and prints
- * every doc-like path found, one per line:
+ * shared `ensureCheckout` helper, then prints documentation candidate
+ * paths from two locations (one per line):
  *
  *   1. For npm-ecosystem specs only: `node_modules/<pkg>/` if installed.
- *      Always emits the package root as the first line of that source,
- *      followed by any subdirectory whose basename matches `/doc/i`.
  *   2. The cached source tree (`<askHome>/github/<host>/<owner>/<repo>/<ref>/`).
- *      Always emits the checkout root, followed by any `/doc/i` subdirs.
  *
- * The agent decides which path is the "real" docs by reading the
- * contents. Multi-line output is intentional — it lets `rg` and `fd`
- * search across multiple candidates simultaneously via shell
- * substitution.
+ * For each location, `findDocLikePaths` emits:
+ *   - `dist/docs` when it exists (publish-time convention, e.g. mastra).
+ *   - Any subdirectory whose basename matches `/doc/i` up to depth 4.
+ *   - The root itself as a fallback when nothing above matches
+ *     (README-only packages).
+ *
+ * Emitting only doc-like paths when they exist keeps shell substitution
+ * (`rg "x" $(ask docs <spec>)`) focused on documentation instead of
+ * dragging the entire source tree into the search. Callers that need
+ * the checkout root itself should use `ask src`.
  */
 export async function runDocs(options: RunDocsOptions, deps: RunDocsDeps = {}): Promise<void> {
   const ensureCheckout = deps.ensureCheckout ?? defaultEnsureCheckout
