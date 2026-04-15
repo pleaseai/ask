@@ -145,8 +145,10 @@ describe('ensureCheckout ↔ GithubSource.fetch layout contract', () => {
     )
 
     const storeDir = githubStorePath(askHome, 'github.com', 'agentskills', 'agentskills', 'main')
-    expect(stdout).toContain(storeDir)
+    // findDocLikePaths now emits only the /doc/i subdirs when they exist,
+    // omitting the checkout root to keep shell substitution focused on docs.
     expect(stdout).toContain(path.join(storeDir, 'docs'))
+    expect(stdout).not.toContain(storeDir)
     expect(stderr).toEqual([])
     expect(exitCode).toBeNull()
   })
