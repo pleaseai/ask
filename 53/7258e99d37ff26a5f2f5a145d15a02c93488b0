@@ -1,0 +1,24 @@
+.please/docs/research/md/001-bun-pm-pack-workspace-lockfile-version-bug.md
+  d980e58d68315a08 1-49
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "537258e99d37ff26a5f2f5a145d15a02c93488b0",
+  "prompts": {
+    "d980e58d68315a08": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "68c06339-e1e4-4c28-b664-4bbb689b4bdc",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 49,
+      "total_deletions": 0,
+      "accepted_lines": 49,
+      "overriden_lines": 0,
+      "messages_url": "https://usegitai.com/cas/b4bb06328d08da090b0e52bfdd4c151e16dc319a4000a36f074fd19851b5efc3"
+    }
+  }
+}
