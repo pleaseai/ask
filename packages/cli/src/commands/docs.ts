@@ -26,7 +26,7 @@ export interface RunDocsDeps {
  *   1. For npm-ecosystem specs only: `node_modules/<pkg>/` if installed.
  *      Always emits the package root as the first line of that source,
  *      followed by any subdirectory whose basename matches `/doc/i`.
- *   2. The cached source tree (`~/.ask/github/checkouts/<o>__<r>/<ref>/`).
+ *   2. The cached source tree (`<askHome>/github/<host>/<owner>/<repo>/<ref>/`).
  *      Always emits the checkout root, followed by any `/doc/i` subdirs.
  *
  * The agent decides which path is the "real" docs by reading the
