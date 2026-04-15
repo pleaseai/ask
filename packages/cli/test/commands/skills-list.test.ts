@@ -37,7 +37,7 @@ afterEach(() => {
 })
 
 describe('runSkillsList', () => {
-  it('prints checkout root and any /skill/i subdirs', async () => {
+  it('prints only the fixed <checkout>/skills path, never the checkout root', async () => {
     fs.mkdirSync(path.join(checkoutDir, 'skills'), { recursive: true })
     const { io, deps } = makeIo()
     const ensureCheckout = mock(async () => ({
@@ -52,11 +52,11 @@ describe('runSkillsList', () => {
 
     await runSkillsList({ spec: 'react@18.2.0', projectDir }, { ensureCheckout, ...deps })
 
-    expect(io.stdout).toContain(checkoutDir)
-    expect(io.stdout).toContain(path.join(checkoutDir, 'skills'))
+    expect(io.stdout).toEqual([path.join(checkoutDir, 'skills')])
+    expect(io.exitCode).toBeNull()
   })
 
-  it('walks node_modules/<pkg>/ when the package is installed locally', async () => {
+  it('prints <nm>/skills when the npm package is installed locally', async () => {
     const pkgDir = path.join(projectDir, 'node_modules', 'react', 'skills')
     fs.mkdirSync(pkgDir, { recursive: true })
     const { io, deps } = makeIo()
@@ -73,6 +73,26 @@ describe('runSkillsList', () => {
     await runSkillsList({ spec: 'react', projectDir }, { ensureCheckout, ...deps })
 
     expect(io.stdout).toContain(pkgDir)
+    expect(io.stdout).not.toContain(path.join(projectDir, 'node_modules', 'react'))
+  })
+
+  it('exits 1 when no skills/ directory exists anywhere', async () => {
+    const { io, deps } = makeIo()
+    const ensureCheckout = mock(async () => ({
+      parsed: {} as any,
+      owner: 'facebook',
+      repo: 'react',
+      ref: 'v18.2.0',
+      resolvedVersion: '18.2.0',
+      checkoutDir,
+      npmPackageName: 'react',
+    }))
+
+    await runSkillsList({ spec: 'react', projectDir }, { ensureCheckout, ...deps })
+
+    expect(io.stdout).toEqual([])
+    expect(io.exitCode).toBe(1)
+    expect(io.stderr.join('\n')).toContain('no skills/ directory found')
   })
 
   it('exits 1 with NoCacheError message when ensureCheckout throws it', async () => {
