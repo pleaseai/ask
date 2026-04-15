@@ -1,0 +1,26 @@
+packages/cli/src/commands/skills/list.ts
+  d980e58d68315a08 6-25,42-46,48-49,80,83-85,88-97,99
+packages/cli/test/commands/skills-list.test.ts
+  d980e58d68315a08 40,55-56,59,76-95
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "4576f7c0e3004c33eba06f9654b2abf13629cb42",
+  "prompts": {
+    "d980e58d68315a08": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "68c06339-e1e4-4c28-b664-4bbb689b4bdc",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 116,
+      "overriden_lines": 0,
+      "messages_url": "https://usegitai.com/cas/d78918c04c01ab938794074ef3632df28ea34e1bd3a85a4f139847dbe553e92a"
+    }
+  }
+}
