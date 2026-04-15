@@ -39,7 +39,7 @@ afterEach(() => {
 })
 
 describe('runDocs', () => {
-  it('prints checkout root and any /doc/i subdirs from the source tree', async () => {
+  it('prints only /doc/i subdirs (not the checkout root) when docs exist', async () => {
     fs.mkdirSync(path.join(checkoutDir, 'docs'), { recursive: true })
     const { io, deps } = makeIo()
     const ensureCheckout = mock(async () => ({
@@ -57,12 +57,35 @@ describe('runDocs', () => {
       { ensureCheckout, ...deps },
     )
 
-    expect(io.stdout).toContain(checkoutDir)
     expect(io.stdout).toContain(path.join(checkoutDir, 'docs'))
+    expect(io.stdout).not.toContain(checkoutDir)
     expect(io.exitCode).toBeNull()
   })
 
-  it('walks node_modules/<pkg>/ for npm specs', async () => {
+  it('emits dist/docs for packages that publish docs there (mastra convention)', async () => {
+    const distDocs = path.join(checkoutDir, 'dist', 'docs')
+    fs.mkdirSync(distDocs, { recursive: true })
+    const { io, deps } = makeIo()
+    const ensureCheckout = mock(async () => ({
+      parsed: {} as any,
+      owner: 'mastra-ai',
+      repo: 'mastra',
+      ref: 'v0.1.0',
+      resolvedVersion: '0.1.0',
+      checkoutDir,
+      npmPackageName: 'mastra',
+    }))
+
+    await runDocs(
+      { spec: 'mastra', projectDir },
+      { ensureCheckout, ...deps },
+    )
+
+    expect(io.stdout).toContain(distDocs)
+    expect(io.stdout).not.toContain(checkoutDir)
+  })
+
+  it('walks node_modules/<pkg>/ for npm specs and emits only /doc/i subdirs', async () => {
     const nm = path.join(projectDir, 'node_modules', 'react')
     fs.mkdirSync(path.join(nm, 'docs'), { recursive: true })
     const { io, deps } = makeIo()
@@ -81,8 +104,10 @@ describe('runDocs', () => {
       { ensureCheckout, ...deps },
     )
 
-    expect(io.stdout).toContain(nm)
     expect(io.stdout).toContain(path.join(nm, 'docs'))
+    expect(io.stdout).not.toContain(nm)
+    // checkoutDir has no docs → falls back to root
+    expect(io.stdout).toContain(checkoutDir)
   })
 
   it('does NOT walk node_modules for non-npm specs', async () => {
