@@ -1,0 +1,24 @@
+CLAUDE.md
+  6222d90f0bb1601d 58
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "b1a9981b15856f17acb641ac3dca62a59c43fd59",
+  "prompts": {
+    "6222d90f0bb1601d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c870f526-1645-42fa-80b6-c222c71b98fb",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 1,
+      "total_deletions": 1,
+      "accepted_lines": 1,
+      "overriden_lines": 0,
+      "messages_url": "https://usegitai.com/cas/016f7548b15125f3059e5c542f90e4d8f7e73fb5b2501802440151369b8db683"
+    }
+  }
+}
