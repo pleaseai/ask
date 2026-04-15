@@ -1,0 +1,24 @@
+packages/cli/test/commands/ensure-checkout.integration.test.ts
+  d980e58d68315a08 148-149,151
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "a6b95a4ed673a6623215c5d04eb7669d5ceedcc1",
+  "prompts": {
+    "d980e58d68315a08": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "68c06339-e1e4-4c28-b664-4bbb689b4bdc",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 15,
+      "total_deletions": 1,
+      "accepted_lines": 15,
+      "overriden_lines": 0,
+      "messages_url": "https://usegitai.com/cas/433cb8ec9a409d149980f05df166eecd176bb743b88ed1e30368d217944b80bc"
+    }
+  }
+}
