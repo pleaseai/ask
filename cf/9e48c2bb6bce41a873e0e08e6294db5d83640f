@@ -1,0 +1,30 @@
+packages/cli/src/commands/find-doc-paths.ts
+  d980e58d68315a08 22-25,30-35,37,43-59
+packages/cli/test/commands/docs.test.ts
+  d980e58d68315a08 42,61,65-85,88,108-110
+packages/cli/src/commands/docs.ts
+  d980e58d68315a08 23-24,29-38
+packages/cli/test/commands/find-doc-paths.test.ts
+  d980e58d68315a08 29,31,34,38-51,78,84
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "cf9e48c2bb6bce41a873e0e08e6294db5d83640f",
+  "prompts": {
+    "d980e58d68315a08": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "68c06339-e1e4-4c28-b664-4bbb689b4bdc",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 155,
+      "total_deletions": 48,
+      "accepted_lines": 155,
+      "overriden_lines": 0,
+      "messages_url": "https://usegitai.com/cas/d78918c04c01ab938794074ef3632df28ea34e1bd3a85a4f139847dbe553e92a"
+    }
+  }
+}
