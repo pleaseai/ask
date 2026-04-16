@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.5](https://github.com/pleaseai/ask/compare/ask-v0.4.4...ask-v0.4.5) (2026-04-16)
+
+
+### Bug Fixes
+
+* **cli:** skip doc extraction in ensureCheckout and preserve symlinks in cpDirAtomic ([#96](https://github.com/pleaseai/ask/issues/96)) ([3837ee1](https://github.com/pleaseai/ask/commit/3837ee18f7ac1f0ade65419da8f73beee10b62d4))
+
 ## [0.4.4](https://github.com/pleaseai/ask/compare/ask-v0.4.3...ask-v0.4.4) (2026-04-16)
 
 
