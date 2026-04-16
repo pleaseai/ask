@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.4.4](https://github.com/pleaseai/ask/compare/ask-plugin-v0.4.3...ask-plugin-v0.4.4) (2026-04-16)
+
+
+### Features
+
+* **cli:** add ask skills namespace (list/install/remove) ([#87](https://github.com/pleaseai/ask/issues/87)) ([f19e161](https://github.com/pleaseai/ask/commit/f19e161e65a48c7cbc1f4ade363ac2fea6d01528))
+
+
+### Bug Fixes
+
+* **cli:** fall back to master when default branch is not main ([#92](https://github.com/pleaseai/ask/issues/92)) ([dc8efef](https://github.com/pleaseai/ask/commit/dc8efef347ecdc275fe2da10582758539896dfbf))
+* **docs,skills:** emit only doc-like subdirs; fixed-path skills check ([#90](https://github.com/pleaseai/ask/issues/90)) ([1ba8e57](https://github.com/pleaseai/ask/commit/1ba8e5734640e53898384bc14c85e69f138c85f9))
+
 ## [0.4.3](https://github.com/pleaseai/ask/compare/ask-plugin-v0.4.2...ask-plugin-v0.4.3) (2026-04-14)
 
 
