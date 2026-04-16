@@ -61,16 +61,22 @@ function hasGit(): boolean {
  *
  * When `extraCandidates` are provided (e.g. monorepo tags like
  * `ai@6.0.158` from ecosystem resolvers), they are prepended in order
- * (more specific first). Duplicates are removed — the first occurrence
+ * (more specific first). When `tailCandidates` are provided (e.g.
+ * `master` as a default-branch fallback for `main`), they are appended
+ * (less specific last). Duplicates are removed — the first occurrence
  * wins.
  */
-function refCandidates(ref: string, extraCandidates?: string[]): string[] {
+function refCandidates(
+  ref: string,
+  extraCandidates?: string[],
+  tailCandidates?: string[],
+): string[] {
   const base = ref.startsWith('v') ? [ref] : [ref, `v${ref}`]
-  if (!extraCandidates?.length)
+  if (!extraCandidates?.length && !tailCandidates?.length)
     return base
   const seen = new Set<string>()
   const result: string[] = []
-  for (const c of [...extraCandidates, ...base]) {
+  for (const c of [...(extraCandidates ?? []), ...base, ...(tailCandidates ?? [])]) {
     if (!seen.has(c)) {
       seen.add(c)
       result.push(c)
@@ -185,8 +191,9 @@ function cloneAtTag(
   tmpDir: string,
   extraCandidates?: string[],
   tagOnly?: boolean,
+  tailCandidates?: string[],
 ): { commit: string, winningCandidate: string } {
-  const candidates = refCandidates(ref, extraCandidates)
+  const candidates = refCandidates(ref, extraCandidates, tailCandidates)
   let lastErr: unknown
   for (const candidate of candidates) {
     try {
@@ -234,10 +241,20 @@ function cloneAtTag(
   )
 }
 
+/**
+ * Default-branch fallback chain used when the caller supplied neither
+ * `tag` nor `branch`. GitHub's modern default is `main`, but a large
+ * number of repos (especially older ones) still ship `master`. Trying
+ * `master` after `main` covers the long tail without requiring the user
+ * to guess the default branch name.
+ */
+const DEFAULT_BRANCH_FALLBACKS = ['master']
+
 export class GithubSource implements DocSource {
   async fetch(options: SourceConfig): Promise<FetchResult> {
     const opts = options as GithubSourceOptions
     const { repo, docsPath } = opts
+    const isDefaultRef = opts.tag === undefined && opts.branch === undefined
     const ref = opts.tag ?? opts.branch ?? 'main'
     const [owner, repoName] = repo.split('/')
 
@@ -255,12 +272,16 @@ export class GithubSource implements DocSource {
     const resolvedVersion = tagVersion ?? opts.version
     const askHome = resolveAskHome()
     const fallbackRefs = opts.fallbackRefs
+    // Only add `master` (and friends) when the caller did not specify
+    // a tag or branch. An explicit `branch: 'main'` must stay literal
+    // — silently falling through to `master` would surprise users.
+    const tailCandidates = isDefaultRef ? DEFAULT_BRANCH_FALLBACKS : undefined
 
     // Store-hit path: for each candidate key, check the new nested
     // layout and verify integrity before trusting it. Callers may have
     // given us `1.0.0` while the store holds `v1.0.0`, or vice versa.
     // Also check any fallbackRefs (e.g. monorepo tags like `ai@6.0.158`).
-    for (const candidate of refCandidates(ref, fallbackRefs)) {
+    for (const candidate of refCandidates(ref, fallbackRefs, tailCandidates)) {
       const storeDir = githubStorePath(askHome, DEFAULT_GITHUB_HOST, owner, repoName, candidate)
       if (!fs.existsSync(storeDir))
         continue
@@ -293,6 +314,7 @@ export class GithubSource implements DocSource {
           remoteUrl,
           askHome,
           fallbackRefs,
+          tailCandidates,
         )
       }
       catch (err) {
@@ -304,7 +326,7 @@ export class GithubSource implements DocSource {
       }
     }
 
-    return this.fetchFromTarGz(opts, repo, owner, repoName, ref, resolvedVersion, docsPath, askHome, fallbackRefs)
+    return this.fetchFromTarGz(opts, repo, owner, repoName, ref, resolvedVersion, docsPath, askHome, fallbackRefs, tailCandidates)
   }
 
   private async fetchViaShallowClone(
@@ -318,10 +340,11 @@ export class GithubSource implements DocSource {
     remoteUrl: string,
     askHome: string,
     fallbackRefs?: string[],
+    tailCandidates?: string[],
   ): Promise<FetchResult> {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ask-gh-clone-'))
     try {
-      const { commit, winningCandidate } = cloneAtTag(remoteUrl, ref, tmpDir, fallbackRefs, opts.tag !== undefined)
+      const { commit, winningCandidate } = cloneAtTag(remoteUrl, ref, tmpDir, fallbackRefs, opts.tag !== undefined, tailCandidates)
       const storeDir = githubStorePath(askHome, DEFAULT_GITHUB_HOST, owner, repoName, winningCandidate)
 
       const lock = await acquireEntryLock(storeDir)
@@ -360,14 +383,20 @@ export class GithubSource implements DocSource {
     docsPath: string | undefined,
     askHome: string,
     fallbackRefs?: string[],
+    tailCandidates?: string[],
   ): Promise<FetchResult> {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ask-gh-tar-'))
-    const candidates = refCandidates(ref, fallbackRefs)
+    const candidates = refCandidates(ref, fallbackRefs, tailCandidates)
     let lastErr: unknown
 
     try {
       for (const candidate of candidates) {
-        const archiveUrl = `https://github.com/${repo}/archive/refs/${opts.tag ? 'tags' : 'heads'}/${candidate}.tar.gz`
+        // Tag requests use /archive/refs/tags/, branch requests use
+        // /archive/refs/heads/. When we synthesize tail candidates for
+        // the default-branch case (e.g. `master`), those are always
+        // branches even though the original ref was the default `main`.
+        const isTagCandidate = opts.tag !== undefined && !tailCandidates?.includes(candidate)
+        const archiveUrl = `https://github.com/${repo}/archive/refs/${isTagCandidate ? 'tags' : 'heads'}/${candidate}.tar.gz`
 
         let response: Response
         try {
