@@ -37,6 +37,16 @@ export interface GithubSourceOptions {
    * URL or path); production code should leave this unset.
    */
   remoteUrl?: string
+  /**
+   * Skip the "walk the checkout for a docs directory" step after the
+   * clone lands in the store. Set by callers that only need the cached
+   * source tree on disk (e.g. `ask src`, `ask docs`) — those commands
+   * walk the directory themselves and must not fail when a repo has no
+   * conventional `docs/` folder (e.g. gitbutlerapp/gitbutler). The
+   * clone, verify, stamp, quarantine, and ref-fallback logic still run
+   * as before; only the final `extractDocsFromDir` call is bypassed.
+   */
+  skipDocExtraction?: boolean
 }
 
 export interface WebSourceOptions {

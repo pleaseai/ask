@@ -286,6 +286,32 @@ describe('ensureCheckout', () => {
     expect(calls[0].opts.branch).toBeUndefined()
   })
 
+  it('passes skipDocExtraction=true to fetcher so docs-less repos do not fail', async () => {
+    // Regression for: `bunx @pleaseai/ask src github:gitbutlerapp/gitbutler`
+    // failing with `No docs directory found` because `GithubSource.fetch`
+    // unconditionally walked the checkout for a `docs/` dir even though
+    // `ensureCheckout`'s callers (ask src, ask docs) only need the
+    // cached source tree. The flag tells the source to skip doc
+    // extraction after the clone lands in the store.
+    const { fetcher, calls } = makeFetcher(() => {
+      const dir = path.join(askHome, 'github', 'github.com', 'gitbutlerapp', 'gitbutler', 'main')
+      fs.mkdirSync(dir, { recursive: true })
+    })
+
+    await ensureCheckout(
+      { spec: 'github:gitbutlerapp/gitbutler', projectDir },
+      {
+        askHome,
+        fetcher,
+        resolverFor: () => null,
+        lockfileReader: { read: () => null },
+      },
+    )
+
+    expect(calls).toHaveLength(1)
+    expect(calls[0].opts.skipDocExtraction).toBe(true)
+  })
+
   it('handles github: spec with explicit @ref', async () => {
     const expectedDir = path.join(askHome, 'github', 'github.com', 'facebook', 'react', 'v18.2.0')
 

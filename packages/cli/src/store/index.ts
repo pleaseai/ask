@@ -207,12 +207,21 @@ export function writeEntryAtomic(
  * Copies to a temp directory first, then renames. Mirrors the atomicity
  * guarantee of `writeEntryAtomic` for the case where source files are
  * already on disk (e.g., extracted GitHub tarballs).
+ *
+ * `verbatimSymlinks: true` preserves the exact symlink target written
+ * in the source tree. Without it, Node resolves relative symlinks
+ * against the SOURCE directory at copy time, baking absolute paths
+ * pointing at the (soon-deleted) `ask-gh-clone-*` tmp dir into the
+ * store — once the tmp dir is cleaned up, every later `verifyEntry`
+ * would hit ENOENT reading the broken symlink. Observed on
+ * `gitbutlerapp/gitbutler`, whose `claude.md`/`CLAUDE.md` are relative
+ * symlinks to `AGENTS.md`.
  */
 export function cpDirAtomic(sourceDir: string, targetDir: string): void {
   const tmpDir = `${targetDir}.tmp-${crypto.randomUUID().slice(0, 8)}`
   fs.mkdirSync(path.dirname(tmpDir), { recursive: true })
   try {
-    fs.cpSync(sourceDir, tmpDir, { recursive: true })
+    fs.cpSync(sourceDir, tmpDir, { recursive: true, verbatimSymlinks: true })
     if (fs.existsSync(targetDir)) {
       const backupDir = `${targetDir}.bak-${crypto.randomUUID().slice(0, 8)}`
       fs.renameSync(targetDir, backupDir)
