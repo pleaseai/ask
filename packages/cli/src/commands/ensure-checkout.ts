@@ -127,6 +127,14 @@ export async function ensureCheckout(
   let npmPackageName: string | undefined
   let fallbackRefs: string[] | undefined
   let isFromBranch = false
+  // True when the caller supplied a bare `github:owner/repo` with no
+  // explicit @ref — we default to 'main' here for the cache-key but must
+  // leave BOTH `tag` and `branch` undefined so GithubSource sees the
+  // "no preference" state and applies its default-branch fallback chain
+  // (main → vmain → master). Passing `branch: 'main'` would lock the
+  // source into that literal branch and repos whose default is `master`
+  // (e.g. gitbutlerapp/gitbutler) would fail.
+  let isImplicitDefaultRef = false
 
   if (parsed.kind === 'github') {
     // Direct github spec — owner/repo from parse, ref from explicit @version or 'main'
@@ -135,6 +143,7 @@ export async function ensureCheckout(
     ref = explicitVersion ?? 'main'
     resolvedVersion = ref
     isFromBranch = !explicitVersion // 'main' is a branch, explicit refs are tags
+    isImplicitDefaultRef = !explicitVersion
   }
   else {
     // npm-prefixed, bare-name, or other ecosystem prefix → resolver dispatch
@@ -203,13 +212,19 @@ export async function ensureCheckout(
     throw new NoCacheError(checkoutDir, options.spec)
   }
 
-  // 7. Trigger the fetch via the existing GithubSource pipeline
+  // 7. Trigger the fetch via the existing GithubSource pipeline.
+  //    For implicit default refs, pass NEITHER `tag` nor `branch` so
+  //    GithubSource.fetch can activate its default-branch fallback
+  //    chain (main → vmain → master).
+  const refOpt: Partial<GithubSourceOptions> = isImplicitDefaultRef
+    ? {}
+    : isFromBranch ? { branch: ref } : { tag: ref }
   const fetchOpts: GithubSourceOptions = {
     source: 'github',
     name: parsed.name,
     version: resolvedVersion,
     repo: `${owner}/${repo}`,
-    ...(isFromBranch ? { branch: ref } : { tag: ref }),
+    ...refOpt,
     ...(fallbackRefs?.length ? { fallbackRefs } : {}),
   }
   const fetchResult = await fetcher.fetch(fetchOpts)

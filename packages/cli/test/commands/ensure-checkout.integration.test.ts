@@ -36,11 +36,13 @@ afterEach(() => {
 describe('ensureCheckout ↔ GithubSource.fetch layout contract', () => {
   it('returns the PM-unified store path that GithubSource.fetch writes to', async () => {
     // Simulate GithubSource.fetch by writing to the real PM-unified layout.
+    // Mirror the source's own default handling: when the caller supplies
+    // neither `tag` nor `branch`, GithubSource defaults to `main`.
     const fetcher = {
       fetch: async (opts: SourceConfig) => {
         const gh = opts as GithubSourceOptions
         const [owner, repo] = gh.repo.split('/')
-        const ref = gh.tag ?? gh.branch!
+        const ref = gh.tag ?? gh.branch ?? 'main'
         const storeDir = githubStorePath(askHome, 'github.com', owner, repo, ref)
         fs.mkdirSync(storeDir, { recursive: true })
         fs.writeFileSync(path.join(storeDir, 'README.md'), '# test')
@@ -115,7 +117,7 @@ describe('ensureCheckout ↔ GithubSource.fetch layout contract', () => {
       fetch: async (opts: SourceConfig) => {
         const gh = opts as GithubSourceOptions
         const [owner, repo] = gh.repo.split('/')
-        const ref = gh.tag ?? gh.branch!
+        const ref = gh.tag ?? gh.branch ?? 'main'
         const storeDir = githubStorePath(askHome, 'github.com', owner, repo, ref)
         fs.mkdirSync(path.join(storeDir, 'docs'), { recursive: true })
         return { files: [], resolvedVersion: ref, storePath: storeDir }
