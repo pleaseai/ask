@@ -344,6 +344,117 @@ describe('GithubSource — nested store layout', () => {
   })
 })
 
+describe('default-branch fallback — main → master', () => {
+  /**
+   * Create a local remote whose default branch is `master` (no `main`).
+   * This simulates older repos (pre-2020) that never migrated to `main`.
+   */
+  function createMasterDefaultRemote(): string {
+    const repoDir = path.join(tmpDir, 'master-remote.git')
+    const workDir = path.join(tmpDir, 'master-work')
+
+    fs.mkdirSync(workDir, { recursive: true })
+    execFileSync('git', ['init', '-b', 'master', workDir], { stdio: 'ignore' })
+    execFileSync('git', ['-C', workDir, 'config', 'user.email', 'test@test.com'], { stdio: 'ignore' })
+    execFileSync('git', ['-C', workDir, 'config', 'user.name', 'Test'], { stdio: 'ignore' })
+
+    fs.writeFileSync(path.join(workDir, 'README.md'), '# Master Default\n')
+    fs.mkdirSync(path.join(workDir, 'docs'))
+    fs.writeFileSync(path.join(workDir, 'docs', 'guide.md'), '# Master Guide\n')
+
+    execFileSync('git', ['-C', workDir, 'add', '-A'], { stdio: 'ignore' })
+    execFileSync('git', ['-C', workDir, 'commit', '-m', 'initial'], { stdio: 'ignore' })
+
+    execFileSync('git', ['clone', '--bare', workDir, repoDir], { stdio: 'ignore' })
+    return repoDir
+  }
+
+  it('falls back to master when no tag/branch is specified and main is absent', async () => {
+    // Regression test: a repo whose default branch is `master` must
+    // clone successfully when the caller supplies neither `tag` nor
+    // `branch`. Without the fallback, the ref defaults to `main`,
+    // the clone fails, and the user sees a confusing error.
+    const remoteUrl = createMasterDefaultRemote()
+    const source = new GithubSource()
+
+    const result = await source.fetch({
+      source: 'github',
+      name: 'master-repo',
+      version: 'main',
+      repo: 'test/master-repo',
+      docsPath: 'docs',
+      remoteUrl,
+    } as any)
+
+    expect(result.storePath).toContain('master')
+    expect(fs.readFileSync(path.join(result.storePath!, 'docs', 'guide.md'), 'utf-8'))
+      .toBe('# Master Guide\n')
+  })
+
+  it('does NOT fall back to master when branch=main is explicit', async () => {
+    // Invariant: an explicit `branch: 'main'` must fail rather than
+    // silently resolve to `master`. Otherwise a typo-free but wrong
+    // branch name could pick up unrelated content.
+    const remoteUrl = createMasterDefaultRemote()
+    const source = new GithubSource()
+
+    let capturedError: Error | null = null
+    try {
+      await source.fetch({
+        source: 'github',
+        name: 'some-pkg',
+        version: '1.0.0',
+        repo: 'test/some-pkg',
+        branch: 'main',
+        docsPath: 'docs',
+        remoteUrl,
+      } as any)
+    }
+    catch (err) {
+      capturedError = err as Error
+    }
+
+    expect(capturedError).not.toBeNull()
+    const message = capturedError!.message
+    expect(message).toContain('main')
+    // The error must NOT list `master` as a tried candidate — explicit
+    // branch requests stay literal. Inspect the `tried: ...` list
+    // specifically (not the whole message) so unrelated repo/branch
+    // names don't accidentally trip the assertion.
+    expect(message).not.toMatch(/tried:[^)]*\bmaster\b/)
+  })
+
+  it('lists master in the tried candidates when both main and master fail', async () => {
+    // Build an empty bare repo (no commits, no branches) so every
+    // clone attempt fails. The thrown error's `(tried: ...)` list must
+    // include `main`, `vmain`, and `master` — confirming the tail
+    // candidate is wired through the clone path.
+    const repoDir = path.join(tmpDir, 'empty-remote.git')
+    execFileSync('git', ['init', '--bare', repoDir], { stdio: 'ignore' })
+    const source = new GithubSource()
+
+    let capturedError: Error | null = null
+    try {
+      await source.fetch({
+        source: 'github',
+        name: 'empty-repo',
+        version: 'main',
+        repo: 'test/empty-repo',
+        docsPath: 'docs',
+        remoteUrl: repoDir,
+      } as any)
+    }
+    catch (err) {
+      capturedError = err as Error
+    }
+
+    expect(capturedError).not.toBeNull()
+    const message = capturedError!.message
+    expect(message).toContain('main')
+    expect(message).toContain('master')
+  })
+})
+
 describe('refCandidates via fetch behavior — fallbackRefs', () => {
   /**
    * Create a local remote with monorepo-style tags (e.g. `ai@6.0.158`).
