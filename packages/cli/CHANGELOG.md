@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.4](https://github.com/pleaseai/ask/compare/ask-v0.4.3...ask-v0.4.4) (2026-04-16)
+
+
+### Bug Fixes
+
+* **cli:** propagate default-branch fallback through ensureCheckout ([#93](https://github.com/pleaseai/ask/issues/93)) ([b10a580](https://github.com/pleaseai/ask/commit/b10a58037800ed27a9a6b3b0cf3eaf2de31cb2bb))
+
 ## [0.4.3](https://github.com/pleaseai/ask/compare/ask-v0.4.2...ask-v0.4.3) (2026-04-16)
 
 
