@@ -216,6 +216,11 @@ export async function ensureCheckout(
   //    For implicit default refs, pass NEITHER `tag` nor `branch` so
   //    GithubSource.fetch can activate its default-branch fallback
   //    chain (main → vmain → master).
+  //
+  //    `skipDocExtraction: true` — callers of `ensureCheckout` only
+  //    need the cached source tree on disk; they walk it themselves
+  //    (`findDocLikePaths`) and must not fail when the repo has no
+  //    conventional `docs/` folder (regression: gitbutlerapp/gitbutler).
   const refOpt: Partial<GithubSourceOptions> = isImplicitDefaultRef
     ? {}
     : isFromBranch ? { branch: ref } : { tag: ref }
@@ -224,6 +229,7 @@ export async function ensureCheckout(
     name: parsed.name,
     version: resolvedVersion,
     repo: `${owner}/${repo}`,
+    skipDocExtraction: true,
     ...refOpt,
     ...(fallbackRefs?.length ? { fallbackRefs } : {}),
   }

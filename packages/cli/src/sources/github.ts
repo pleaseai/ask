@@ -286,7 +286,9 @@ export class GithubSource implements DocSource {
       if (!fs.existsSync(storeDir))
         continue
       if (verifyEntry(storeDir)) {
-        const files = this.extractDocsFromDir(storeDir, repo, ref, docsPath)
+        const files = opts.skipDocExtraction
+          ? []
+          : this.extractDocsFromDir(storeDir, repo, ref, docsPath)
         return {
           files,
           resolvedVersion,
@@ -359,7 +361,9 @@ export class GithubSource implements DocSource {
         }
       }
 
-      const files = this.extractDocsFromDir(storeDir, repo, ref, docsPath)
+      const files = opts.skipDocExtraction
+        ? []
+        : this.extractDocsFromDir(storeDir, repo, ref, docsPath)
       return {
         files,
         resolvedVersion,
@@ -446,7 +450,9 @@ export class GithubSource implements DocSource {
           }
         }
 
-        const files = this.extractDocsFromDir(storeDir, repo, candidate, docsPath)
+        const files = opts.skipDocExtraction
+          ? []
+          : this.extractDocsFromDir(storeDir, repo, candidate, docsPath)
         return {
           files,
           resolvedVersion,

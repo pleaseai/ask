@@ -455,6 +455,108 @@ describe('default-branch fallback — main → master', () => {
   })
 })
 
+describe('skipDocExtraction — callers that only need the checkout path', () => {
+  /**
+   * Regression for `bunx @pleaseai/ask src github:gitbutlerapp/gitbutler`
+   * failing with `No docs directory found in gitbutlerapp/gitbutler@master`:
+   *
+   * `ask src` (and `ask docs`) go through `ensureCheckout`, which calls
+   * `GithubSource.fetch` to land the clone in the store. Before this
+   * flag, `fetch` unconditionally scanned the checkout for a `docs/`
+   * subdirectory and threw when none existed — even though `ask src`
+   * never needs the docs-file list, only the cached source tree on disk.
+   */
+  function createNoDocsRemote(): string {
+    const repoDir = path.join(tmpDir, 'no-docs-remote.git')
+    const workDir = path.join(tmpDir, 'no-docs-work')
+
+    fs.mkdirSync(workDir, { recursive: true })
+    execFileSync('git', ['init', '-b', 'master', workDir], { stdio: 'ignore' })
+    execFileSync('git', ['-C', workDir, 'config', 'user.email', 'test@test.com'], { stdio: 'ignore' })
+    execFileSync('git', ['-C', workDir, 'config', 'user.name', 'Test'], { stdio: 'ignore' })
+
+    // Intentionally no docs/ — mirrors gitbutlerapp/gitbutler's layout.
+    fs.writeFileSync(path.join(workDir, 'README.md'), '# No Docs Here\n')
+    fs.writeFileSync(path.join(workDir, 'src.ts'), 'export {}\n')
+
+    execFileSync('git', ['-C', workDir, 'add', '-A'], { stdio: 'ignore' })
+    execFileSync('git', ['-C', workDir, 'commit', '-m', 'initial'], { stdio: 'ignore' })
+
+    execFileSync('git', ['clone', '--bare', workDir, repoDir], { stdio: 'ignore' })
+    return repoDir
+  }
+
+  it('succeeds with empty files and storePath when repo has no docs directory', async () => {
+    const remoteUrl = createNoDocsRemote()
+    const source = new GithubSource()
+
+    const result = await source.fetch({
+      source: 'github',
+      name: 'no-docs-repo',
+      version: 'master',
+      repo: 'test/no-docs-repo',
+      skipDocExtraction: true,
+      remoteUrl,
+    } as any)
+
+    expect(result.files).toEqual([])
+    expect(result.storePath).toBeDefined()
+    expect(fs.existsSync(result.storePath!)).toBe(true)
+    expect(fs.existsSync(path.join(result.storePath!, 'README.md'))).toBe(true)
+  })
+
+  it('still activates the main→master fallback when skipDocExtraction=true', async () => {
+    // Combines the gitbutler scenario: default branch is `master` AND
+    // there is no `docs/` dir. Both failure modes must be neutralized.
+    const remoteUrl = createNoDocsRemote()
+    const source = new GithubSource()
+
+    const result = await source.fetch({
+      source: 'github',
+      name: 'no-docs-repo',
+      version: 'main',
+      repo: 'test/no-docs-repo',
+      skipDocExtraction: true,
+      remoteUrl,
+    } as any)
+
+    expect(result.storePath).toContain('master')
+    expect(result.files).toEqual([])
+  })
+
+  it('default behavior (flag unset) still throws when no docs directory exists', async () => {
+    // Guardrail: `runInstall` still depends on the throw — it materializes
+    // `.ask/docs/<name>@<version>/` from `FetchResult.files`, so an empty
+    // list would silently publish an empty docs tree. The flag is opt-in.
+    //
+    // With the flag unset, the shallow-clone path's `extractDocsFromDir`
+    // rejects the no-docs repo. The outer `fetch()` catches and logs a
+    // warn, then falls through to the tar.gz path — which for this
+    // fake local remote 404s on github.com. Either way, an error
+    // escapes: the point is that `runInstall` does NOT receive a
+    // successful empty-files result.
+    const remoteUrl = createNoDocsRemote()
+    const source = new GithubSource()
+
+    let capturedError: Error | null = null
+    try {
+      await source.fetch({
+        source: 'github',
+        name: 'no-docs-repo',
+        version: 'master',
+        repo: 'test/no-docs-repo',
+        branch: 'master',
+        remoteUrl,
+      } as any)
+    }
+    catch (err) {
+      capturedError = err as Error
+    }
+
+    expect(capturedError).not.toBeNull()
+  })
+})
+
 describe('refCandidates via fetch behavior — fallbackRefs', () => {
   /**
    * Create a local remote with monorepo-style tags (e.g. `ai@6.0.158`).
