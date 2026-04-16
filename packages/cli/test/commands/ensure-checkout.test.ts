@@ -254,8 +254,36 @@ describe('ensureCheckout', () => {
     expect(result.ref).toBe('main')
     expect(result.checkoutDir).toBe(expectedDir)
     expect(calls).toHaveLength(1)
-    expect(calls[0].opts.branch).toBe('main')
+    // Implicit default ref: pass NEITHER `tag` nor `branch` so
+    // GithubSource can apply its default-branch fallback chain
+    // (main → vmain → master). Setting `branch: 'main'` would defeat
+    // the fallback for repos whose default branch is `master`.
+    expect(calls[0].opts.branch).toBeUndefined()
     expect(calls[0].opts.tag).toBeUndefined()
+  })
+
+  it('omits tag/branch for bare github spec so master fallback in GithubSource activates', async () => {
+    // Regression for: `bunx @pleaseai/ask src github:gitbutlerapp/gitbutler`
+    // failing with `tried: main, vmain` because `ensureCheckout` passed
+    // `branch: 'main'` and forced `GithubSource.isDefaultRef = false`.
+    const { fetcher, calls } = makeFetcher(() => {
+      const dir = path.join(askHome, 'github', 'github.com', 'gitbutlerapp', 'gitbutler', 'main')
+      fs.mkdirSync(dir, { recursive: true })
+    })
+
+    await ensureCheckout(
+      { spec: 'github:gitbutlerapp/gitbutler', projectDir },
+      {
+        askHome,
+        fetcher,
+        resolverFor: () => null,
+        lockfileReader: { read: () => null },
+      },
+    )
+
+    expect(calls).toHaveLength(1)
+    expect(calls[0].opts.tag).toBeUndefined()
+    expect(calls[0].opts.branch).toBeUndefined()
   })
 
   it('handles github: spec with explicit @ref', async () => {
