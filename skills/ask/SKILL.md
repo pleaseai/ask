@@ -49,10 +49,10 @@ github:owner/repo@main          # pinned branch
   lockfile. Append `@version` to pin explicitly: `zod@3.22.0`,
   `npm:next@14.2.3`.
 - For `github:` specs, `@<ref>` pins a tag or branch. Bare `owner/repo`
-  defaults to `main`.
-- The one-shot reading commands (`docs` / `src` / `skills list`) skip the
-  strict ref validation used by the declarative workflow, so `main` /
-  `master` / mutable refs are allowed here.
+  (no `@ref`) defaults to `main`.
+- Any ref works with these one-shot reading commands — branches, tags,
+  or mutable refs like `main` / `master` are all accepted, since
+  nothing is persisted.
 
 ## One-Shot Reading Commands
 
@@ -74,8 +74,8 @@ Lazy-load these references only when the situation calls for them:
   `--older-than` filters, legacy v1 layout cleanup →
   [`references/cache.md`](references/cache.md).
 - **Project-level declarative workflow** — `ask.json`, `ask install`,
-  `ask add`, `ask remove`, `ask list`, auto-regenerated `AGENTS.md`,
-  `.ask/resolved.json` cache →
+  `ask add`, `ask remove`, `ask list`, auto-regenerated `AGENTS.md` and
+  per-library `.claude/skills/<name>-docs/SKILL.md` →
   [`references/declarative-workflow.md`](references/declarative-workflow.md).
 - **Vendoring producer skills into this project** — `ask skills install`,
   `--force`, `--agent claude,cursor,opencode,codex`, `ask skills remove
