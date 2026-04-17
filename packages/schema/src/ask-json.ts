@@ -18,22 +18,85 @@ const SpecString = z.string().min(1).regex(
 )
 
 /**
- * Lazy-first `ask.json` — a simple list of spec strings.
+ * Object form of a library entry — used ONLY when the user has selected
+ * a subset of candidate documentation paths at `ask add` time. When no
+ * override is needed, entries stay as plain spec strings so existing
+ * `ask.json` files render unchanged on disk.
+ *
+ * `docsPaths` is required and non-empty in this shape: an empty
+ * override would be indistinguishable from the default behavior, so the
+ * canonical form for "no override" is the bare string, not an object
+ * with an empty array.
+ *
+ * Paths are stored relative to their discovery root — either
+ * `node_modules/<pkg>/` (for npm specs with a local install) or the
+ * cached git checkout (`<askHome>/github/<host>/<owner>/<repo>/<ref>/`).
+ * This keeps the entry portable across machines and cache wipes.
+ */
+const LibraryEntryObjectSchema = z.object({
+  spec: SpecString,
+  docsPaths: z.array(z.string().min(1)).nonempty(),
+}).strict()
+
+/**
+ * A library entry is either a plain spec string (canonical form when
+ * there is no docs-path override) or an object carrying a non-empty
+ * `docsPaths` subset selected by the user.
+ */
+export const LibraryEntrySchema = z.union([SpecString, LibraryEntryObjectSchema])
+export type LibraryEntry = z.infer<typeof LibraryEntrySchema>
+
+/**
+ * Lazy-first `ask.json` — a list of library entries.
  *
  * ```json
- * { "libraries": ["npm:next", "npm:zod", "github:vercel/ai@v5.0.0"] }
+ * {
+ *   "libraries": [
+ *     "npm:next",
+ *     { "spec": "npm:zod", "docsPaths": ["docs/API.md"] },
+ *     "github:vercel/ai@v5.0.0"
+ *   ]
+ * }
  * ```
  *
- * All configuration previously carried by per-entry objects (ref, docsPath,
+ * Configuration previously carried by per-entry objects (ref, docsPath,
  * storeMode, emitSkill, inPlace) is removed. Versions are resolved from
  * lockfiles (npm) or encoded in the spec string (github: `@ref` suffix).
- * Metadata like docsPath comes from the ASK Registry at install time.
+ * The optional object form carries ONLY `docsPaths` overrides.
  */
 export const AskJsonSchema = z.object({
-  libraries: z.array(SpecString),
+  libraries: z.array(LibraryEntrySchema),
 }).strict()
 
 export type AskJson = z.infer<typeof AskJsonSchema>
+
+/**
+ * Extract the spec string from either form. Use this at every call site
+ * that iterates `askJson.libraries` but only cares about the spec.
+ */
+export function specFromEntry(entry: LibraryEntry): string {
+  return typeof entry === 'string' ? entry : entry.spec
+}
+
+/**
+ * Extract the docs-path override for the entry, or undefined when the
+ * entry has no override (string form).
+ */
+export function docsPathsFromEntry(entry: LibraryEntry): string[] | undefined {
+  return typeof entry === 'string' ? undefined : entry.docsPaths
+}
+
+/**
+ * Build a library entry from a spec and optional docs paths. Canonical
+ * form rule: an empty or absent `docsPaths` collapses to a bare string
+ * so `ask.json` stays diff-clean for users who never use the override.
+ */
+export function entryFromSpec(spec: string, docsPaths?: string[]): LibraryEntry {
+  if (!docsPaths || docsPaths.length === 0) {
+    return spec
+  }
+  return { spec, docsPaths: [docsPaths[0]!, ...docsPaths.slice(1)] }
+}
 
 /**
  * Re-export the StoreMode enum for the `--fetch` eager path which still

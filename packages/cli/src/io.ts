@@ -1,8 +1,10 @@
-import type { AskJson, ResolvedEntry, ResolvedJson } from './schemas.js'
+import type { AskJson, LibraryEntry, ResolvedEntry, ResolvedJson } from './schemas.js'
 import { createHash } from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
-import { AskJsonSchema, ResolvedJsonSchema } from './schemas.js'
+import { splitExplicitVersion } from './commands/ensure-checkout.js'
+import { AskJsonSchema, ResolvedJsonSchema, specFromEntry } from './schemas.js'
+import { libraryNameFromSpec, parseSpec } from './spec.js'
 
 /**
  * Recursively sort object keys for deterministic JSON serialization.
@@ -78,6 +80,39 @@ export function getAskJsonPath(projectDir: string): string {
 
 export function getResolvedJsonPath(projectDir: string): string {
   return path.join(getAskDir(projectDir), RESOLVED_FILE)
+}
+
+/**
+ * Locate a library entry in `ask.json` by user-supplied identifier.
+ * Matches in three steps (mirrors the rules already used by
+ * `ask remove`, see `index.ts` remove command):
+ *
+ *   1. Exact spec string (`npm:next`, `github:vercel/next.js@v14.2.3`)
+ *   2. Library name via `libraryNameFromSpec(splitExplicitVersion(...))`
+ *      — so `next` matches both `npm:next` and `npm:next@14`
+ *   3. Raw npm package name — `next` matches `npm:next`, `@scope/pkg`
+ *      matches `npm:@scope/pkg`
+ *
+ * Returns `undefined` when no entry matches so callers can decide
+ * whether to fall through to default behavior (e.g. `ask docs` emitting
+ * every candidate when the spec is not registered).
+ */
+export function findEntry(askJson: AskJson, target: string): LibraryEntry | undefined {
+  for (const entry of askJson.libraries) {
+    const spec = specFromEntry(entry)
+    if (spec === target) {
+      return entry
+    }
+    const { spec: body } = splitExplicitVersion(spec)
+    if (libraryNameFromSpec(body) === target) {
+      return entry
+    }
+    const parsed = parseSpec(body)
+    if (parsed.kind === 'npm' && parsed.pkg === target) {
+      return entry
+    }
+  }
+  return undefined
 }
 
 /**

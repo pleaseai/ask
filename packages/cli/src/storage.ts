@@ -6,6 +6,7 @@ import path from 'node:path'
 import { consola } from 'consola'
 import { readIntentSkillsMap } from './agents-intent.js'
 import { getAskDir, readAskJson, readResolvedJson } from './io.js'
+import { specFromEntry } from './schemas.js'
 import { libraryNameFromSpec } from './spec.js'
 
 export function getDocsDir(projectDir: string): string {
@@ -188,7 +189,8 @@ export function listDocs(projectDir: string): ListDocsEntry[] {
   }
 
   const out: ListDocsEntry[] = []
-  for (const spec of askJson.libraries) {
+  for (const entry of askJson.libraries) {
+    const spec = specFromEntry(entry)
     const name = libraryNameFromSpec(spec)
     const cached = resolved.entries[name]
     const sourceKind: ListDocsEntry['source'] = spec.startsWith('github:')

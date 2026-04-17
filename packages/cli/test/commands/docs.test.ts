@@ -259,3 +259,129 @@ describe('runDocs', () => {
     expect(io.exitCode).toBe(1)
   })
 })
+
+describe('runDocs — persisted docsPaths override', () => {
+  it('emits only the stored docsPaths when ask.json has an override', async () => {
+    // Checkout has two doc-like dirs; only `docs` is in the override.
+    fs.mkdirSync(path.join(checkoutDir, 'docs'), { recursive: true })
+    fs.mkdirSync(path.join(checkoutDir, 'api-docs'), { recursive: true })
+    fs.writeFileSync(
+      path.join(projectDir, 'ask.json'),
+      JSON.stringify({
+        libraries: [
+          { spec: 'npm:react', docsPaths: ['docs'] },
+        ],
+      }),
+    )
+
+    const { io, deps } = makeIo()
+    const ensureCheckout = mock(async () => ({
+      parsed: {} as any,
+      owner: 'facebook',
+      repo: 'react',
+      ref: 'v18.2.0',
+      resolvedVersion: '18.2.0',
+      checkoutDir,
+      npmPackageName: 'react',
+    }))
+
+    await runDocs(
+      { spec: 'react', projectDir },
+      { ensureCheckout, ...deps },
+    )
+
+    expect(io.stdout).toEqual([path.join(checkoutDir, 'docs')])
+    expect(io.stderr).toEqual([])
+  })
+
+  it('resolves stored paths against node_modules first when the package is installed there', async () => {
+    const nm = path.join(projectDir, 'node_modules', 'react')
+    fs.mkdirSync(path.join(nm, 'docs'), { recursive: true })
+    fs.writeFileSync(
+      path.join(projectDir, 'ask.json'),
+      JSON.stringify({
+        libraries: [
+          { spec: 'npm:react', docsPaths: ['docs'] },
+        ],
+      }),
+    )
+
+    const { io, deps } = makeIo()
+    const ensureCheckout = mock(async () => ({
+      parsed: {} as any,
+      owner: 'facebook',
+      repo: 'react',
+      ref: 'v18.2.0',
+      resolvedVersion: '18.2.0',
+      checkoutDir,
+      npmPackageName: 'react',
+    }))
+
+    await runDocs(
+      { spec: 'react', projectDir },
+      { ensureCheckout, ...deps },
+    )
+
+    // node_modules path should win over checkoutDir.
+    expect(io.stdout).toEqual([path.join(nm, 'docs')])
+  })
+
+  it('falls back to the default walk with a warning when every stored path is stale', async () => {
+    fs.mkdirSync(path.join(checkoutDir, 'docs'), { recursive: true })
+    fs.writeFileSync(
+      path.join(projectDir, 'ask.json'),
+      JSON.stringify({
+        libraries: [
+          { spec: 'npm:react', docsPaths: ['does-not-exist'] },
+        ],
+      }),
+    )
+
+    const { io, deps } = makeIo()
+    const ensureCheckout = mock(async () => ({
+      parsed: {} as any,
+      owner: 'facebook',
+      repo: 'react',
+      ref: 'v18.2.0',
+      resolvedVersion: '18.2.0',
+      checkoutDir,
+      npmPackageName: 'react',
+    }))
+
+    await runDocs(
+      { spec: 'react', projectDir },
+      { ensureCheckout, ...deps },
+    )
+
+    expect(io.stdout).toContain(path.join(checkoutDir, 'docs'))
+    expect(io.stderr.some(l => l.includes('stale'))).toBe(true)
+  })
+
+  it('ignores string entries (no override) and walks everything', async () => {
+    fs.mkdirSync(path.join(checkoutDir, 'docs'), { recursive: true })
+    fs.mkdirSync(path.join(checkoutDir, 'api-docs'), { recursive: true })
+    fs.writeFileSync(
+      path.join(projectDir, 'ask.json'),
+      JSON.stringify({ libraries: ['npm:react'] }),
+    )
+
+    const { io, deps } = makeIo()
+    const ensureCheckout = mock(async () => ({
+      parsed: {} as any,
+      owner: 'facebook',
+      repo: 'react',
+      ref: 'v18.2.0',
+      resolvedVersion: '18.2.0',
+      checkoutDir,
+      npmPackageName: 'react',
+    }))
+
+    await runDocs(
+      { spec: 'react', projectDir },
+      { ensureCheckout, ...deps },
+    )
+
+    expect(io.stdout).toContain(path.join(checkoutDir, 'docs'))
+    expect(io.stdout).toContain(path.join(checkoutDir, 'api-docs'))
+  })
+})

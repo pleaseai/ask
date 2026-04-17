@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'bun:test'
 import {
   AskJsonSchema,
+  docsPathsFromEntry,
+  entryFromSpec,
   ResolvedJsonSchema,
+  specFromEntry,
 } from '../src/index.js'
 
 describe('AskJsonSchema — lazy-first string array', () => {
@@ -42,7 +45,7 @@ describe('AskJsonSchema — lazy-first string array', () => {
     })).toThrow(/ecosystem prefix/)
   })
 
-  it('rejects non-string entries', () => {
+  it('rejects object entries without docsPaths', () => {
     expect(() => AskJsonSchema.parse({
       libraries: [{ spec: 'npm:next' }],
     })).toThrow()
@@ -59,7 +62,7 @@ describe('AskJsonSchema — lazy-first string array', () => {
     })).toThrow()
   })
 
-  it('rejects old LibraryEntry object format', () => {
+  it('rejects old LibraryEntry object format (docsPath singular)', () => {
     expect(() => AskJsonSchema.parse({
       libraries: [{ spec: 'npm:next', docsPath: 'docs' }],
     })).toThrow()
@@ -83,6 +86,80 @@ describe('AskJsonSchema — lazy-first string array', () => {
     expect(() => AskJsonSchema.parse({
       libraries: [''],
     })).toThrow()
+  })
+})
+
+describe('AskJsonSchema — object entries with docsPaths override', () => {
+  it('accepts an object entry with a non-empty docsPaths array', () => {
+    const result = AskJsonSchema.parse({
+      libraries: [{ spec: 'npm:next', docsPaths: ['docs', 'dist/docs'] }],
+    })
+    expect(result.libraries).toHaveLength(1)
+    expect(result.libraries[0]).toEqual({
+      spec: 'npm:next',
+      docsPaths: ['docs', 'dist/docs'],
+    })
+  })
+
+  it('accepts mixed string and object entries in one array', () => {
+    const result = AskJsonSchema.parse({
+      libraries: [
+        'npm:zod',
+        { spec: 'npm:next', docsPaths: ['docs'] },
+        'github:vercel/ai@v5.0.0',
+      ],
+    })
+    expect(result.libraries).toHaveLength(3)
+    expect(typeof result.libraries[0]).toBe('string')
+    expect(typeof result.libraries[1]).toBe('object')
+    expect(typeof result.libraries[2]).toBe('string')
+  })
+
+  it('rejects object entries with an empty docsPaths array', () => {
+    expect(() => AskJsonSchema.parse({
+      libraries: [{ spec: 'npm:next', docsPaths: [] }],
+    })).toThrow()
+  })
+
+  it('rejects object entries with a string path containing an empty string', () => {
+    expect(() => AskJsonSchema.parse({
+      libraries: [{ spec: 'npm:next', docsPaths: ['docs', ''] }],
+    })).toThrow()
+  })
+
+  it('rejects object entries with extra keys via .strict()', () => {
+    expect(() => AskJsonSchema.parse({
+      libraries: [{ spec: 'npm:next', docsPaths: ['docs'], extra: 'value' }],
+    })).toThrow()
+  })
+
+  it('rejects object entries whose spec has no ecosystem prefix', () => {
+    expect(() => AskJsonSchema.parse({
+      libraries: [{ spec: 'next', docsPaths: ['docs'] }],
+    })).toThrow(/ecosystem prefix/)
+  })
+})
+
+describe('Library entry helpers', () => {
+  it('specFromEntry returns the spec for both forms', () => {
+    expect(specFromEntry('npm:next')).toBe('npm:next')
+    expect(specFromEntry({ spec: 'npm:next', docsPaths: ['docs'] })).toBe('npm:next')
+  })
+
+  it('docsPathsFromEntry returns undefined for string form, the array for object form', () => {
+    expect(docsPathsFromEntry('npm:next')).toBeUndefined()
+    expect(docsPathsFromEntry({ spec: 'npm:next', docsPaths: ['docs'] })).toEqual(['docs'])
+  })
+
+  it('entryFromSpec canonicalizes undefined/empty docsPaths to the bare string form', () => {
+    expect(entryFromSpec('npm:next')).toBe('npm:next')
+    expect(entryFromSpec('npm:next', undefined)).toBe('npm:next')
+    expect(entryFromSpec('npm:next', [])).toBe('npm:next')
+  })
+
+  it('entryFromSpec returns an object entry when docsPaths is non-empty', () => {
+    const entry = entryFromSpec('npm:next', ['docs', 'dist/docs'])
+    expect(entry).toEqual({ spec: 'npm:next', docsPaths: ['docs', 'dist/docs'] })
   })
 })
 
