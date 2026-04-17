@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.3](https://github.com/pleaseai/ask/compare/ask-schema-v0.3.2...ask-schema-v0.3.3) (2026-04-17)
+
+
+### Features
+
+* **cli:** prompt to select docs paths on ask add ([#101](https://github.com/pleaseai/ask/issues/101)) ([eac1285](https://github.com/pleaseai/ask/commit/eac1285e1329b0bbf4b7825676de85cf1d7b993a))
+
 ## [0.3.2](https://github.com/pleaseai/ask/compare/ask-schema-v0.3.1...ask-schema-v0.3.2) (2026-04-14)
 
 
