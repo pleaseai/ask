@@ -1,7 +1,7 @@
 # ARCHITECTURE.md
 
 > Bird's-eye view of the ASK (Agent Skills Kit) monorepo.
-> Last updated: 2026-04-10
+> Last updated: 2026-04-17
 
 ## Overview
 
@@ -51,6 +51,12 @@ src/
 ├── install.ts        # runInstall() orchestrator — drives the full output pipeline
 ├── spec.ts           # parseSpec() — canonical spec string → discriminated union
 ├── registry.ts       # Registry API lookup + ecosystem auto-detection
+├── commands/
+│   ├── add.ts        # runAdd() — add-time docs-path prompt + --docs-paths/--clear-docs-paths flags
+│   ├── docs.ts       # runDocs() — prints candidate doc paths; honors persisted docsPaths override
+│   ├── src.ts        # runSrc() — prints absolute path to cached source tree
+│   ├── ensure-checkout.ts  # Shared spec resolution helper for add/docs/src
+│   └── find-doc-paths.ts   # findDocLikePaths() — walks a tree for /doc/i subdirs
 ├── sources/
 │   ├── index.ts      # DocSource interface, SourceConfig union, getSource() factory
 │   ├── npm.ts        # NpmSource — local-first node_modules read, npm tarball fallback
@@ -59,24 +65,35 @@ src/
 ├── lockfiles/
 │   └── index.ts      # npmEcosystemReader — resolves version from bun/npm/pnpm/yarn lockfile
 ├── discovery/
-│   └── local-intent.ts  # Checks if package ships TanStack Intent skills (intent-skills path)
+│   ├── local-intent.ts  # Checks if package ships TanStack Intent skills (intent-skills path)
+│   └── candidates.ts    # gatherDocsCandidates() — offline-first probe for ask add prompt
 ├── storage.ts        # Saves docs to .ask/docs/<name>@<version>/, creates INDEX.md
-├── io.ts             # Read/write ask.json + .ask/resolved.json; contentHash
+├── io.ts             # Read/write ask.json + .ask/resolved.json; contentHash; findEntry
 ├── skill.ts          # Generates .claude/skills/<name>-docs/SKILL.md
 └── agents.ts         # Generates/updates AGENTS.md + references in CLAUDE.md
 ```
 
-**Data flow for `ask add <spec>` / `ask install`:**
+**Data flow for `ask add <spec>`:**
 
-1. **Parse** — `spec.ts` parses spec string (`npm:zod` → kind, name; `github:owner/repo` → kind, owner, repo)
-2. **Resolve version** — `lockfiles/index.ts` reads the project lockfile to pin the exact version for `npm:` entries
-3. **Discover** — `discovery/local-intent.ts` checks if the package is a TanStack Intent package (short-circuits to intent path if so)
-4. **Registry** — `registry.ts` fetches strategy from Registry API to find best docs source (omitted when `--source` is set)
-5. **Fetch** — `sources/*.ts` downloads docs via the appropriate adapter
-6. **Store** — `storage.ts` writes files to `.ask/docs/<name>@<version>/`
-7. **Cache** — `io.ts` upserts version/hash into `.ask/resolved.json` for drift detection
-8. **Skill** — `skill.ts` generates `.claude/skills/<name>-docs/SKILL.md`
-9. **Agents** — `agents.ts` updates `AGENTS.md` with all downloaded doc references
+1. **Parse + validate** — `spec.ts` parses the spec string; `commands/add.ts:normalizeAddSpec` rejects ambiguous input
+2. **Probe candidates (offline-first)** — `discovery/candidates.ts:gatherDocsCandidates` walks `node_modules/<pkg>/` and calls `ensureCheckout({ noFetch: true })` to pick up any cached git checkout. `NoCacheError` is a silent skip — `ask add` never triggers a fresh clone
+3. **Prompt (optional)** — when more than one candidate exists and stdout is a TTY, `consola.prompt({ type: 'multiselect' })` asks which paths to keep. `--docs-paths` / `--clear-docs-paths` flags short-circuit the prompt
+4. **Persist** — `entryFromSpec(spec, docsPaths?)` canonicalizes to a bare string when there is no override, or a `{ spec, docsPaths }` object when there is; `writeAskJson` rewrites the file
+5. **Install** — dispatches to `runInstall({ onlySpecs: [spec] })` below
+
+**Data flow for `ask install`:**
+
+1. **Resolve version** — `lockfiles/index.ts` reads the project lockfile to pin the exact version for `npm:` entries (inline `@ref` for `github:`)
+2. **Skill** — `skill.ts` generates `.claude/skills/<name>-docs/SKILL.md` with lazy `ask src` / `ask docs` references
+3. **Agents** — `agents.ts` updates `AGENTS.md` with the resolved library list
+
+`ask install` is lazy — no source fetch, no tarball download, no on-disk `.ask/docs/` materialization. Documentation is fetched on demand by `ask src` / `ask docs` (both share `ensureCheckout`).
+
+**Data flow for `ask docs <spec>`:**
+
+1. **Resolve checkout** — `ensureCheckout` fetches-on-miss and returns the cached `checkoutDir` plus optional `npmPackageName`
+2. **Consult override** — `io.ts:findEntry` matches the spec against `ask.json`; if the entry has a `docsPaths` override, only those paths (resolved against `node_modules/<pkg>` first, `checkoutDir` second) are emitted. Zero-survivor case prints a stderr warning and falls through to the default walk
+3. **Walk** — `commands/find-doc-paths.ts:findDocLikePaths` surfaces every `/doc/i` subdir from each root
 
 ### `apps/registry/` — Registry Browser (`@pleaseai/ask-registry`)
 
@@ -162,6 +179,13 @@ Each github entry is an **independent shallow clone** (`git clone --depth 1 --br
 ## Key Types
 
 ```typescript
+// ask.json library entry — union of bare spec string and override object.
+// The object form is emitted ONLY when the user has selected a docs-path
+// subset at `ask add` time; otherwise the entry is a plain string so
+// existing ask.json files stay diff-clean. Helpers specFromEntry,
+// docsPathsFromEntry, and entryFromSpec live next to the schema.
+type LibraryEntry = string | { spec: string, docsPaths: [string, ...string[]] }
+
 // Source adapter interface — all sources implement this
 interface DocSource {
   fetch(options: SourceConfig): Promise<FetchResult>
@@ -188,6 +212,12 @@ interface RegistryEntry {
   strategies: RegistryStrategy[]
   tags?: string[]
 }
+
+// Offline-first candidate probe used by `ask add` to populate the prompt
+interface CandidateGroup {
+  root: string             // node_modules/<pkg> OR <checkoutDir> — docsPaths are stored relative to this
+  paths: string[]          // absolute paths from findDocLikePaths; falls back to [root] when nothing matches
+}
 ```
 
 ## Architecture Invariants
@@ -208,7 +238,11 @@ When a developer runs `ask add` or `ask install`, these files are created/update
 
 ```
 project-root/
-├── ask.json                           # Declarative library list (checked in)
+├── ask.json                           # Declarative library list (checked in).
+│                                      # Entries are bare spec strings by
+│                                      # default, or { spec, docsPaths } objects
+│                                      # when the user pinned a docs subset at
+│                                      # `ask add` time.
 ├── .ask/
 │   ├── resolved.json                  # Cache: resolved versions/hashes (gitignored)
 │   └── docs/
