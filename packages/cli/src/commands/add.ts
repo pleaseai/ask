@@ -14,16 +14,21 @@ const OWNER_REPO_RE = /^[^/]+\/[^/]+$/
 /**
  * Validate and canonicalize a user-supplied docs path (either from the
  * interactive prompt or the `--docs-paths` CSV flag). Returns the
- * normalized relative path on success, or null when the input is
- * unsafe / empty. Rejects:
+ * POSIX-normalized relative path on success, or null when the input
+ * is unsafe / empty. Rejects:
  *
  *   - Empty / whitespace-only strings
- *   - Absolute paths (anything `path.isAbsolute` accepts)
+ *   - Absolute paths (anything `path.isAbsolute` accepts — covers
+ *     POSIX `/...`, Windows `C:\...` and UNC `\\server\...`)
  *   - Paths that resolve out of their root via `..` segments
  *
- * Callers store the returned value verbatim; the read side
- * (`ask docs`) re-joins it against the candidate roots and applies
- * its own containment guard as defense-in-depth.
+ * Normalization uses `path.posix.normalize` over a forward-slash
+ * representation of the input so the value persisted in `ask.json`
+ * stays portable across operating systems. A Windows user writing
+ * `docs\api` and a POSIX user writing `docs/api` both produce the
+ * same stored token `docs/api`. The read side (`ask docs`) re-joins
+ * via `path.resolve`, which accepts both separator styles on Windows
+ * and forward slashes on POSIX.
  */
 function sanitizeDocsPath(input: string): string | null {
   const trimmed = input.trim()
@@ -33,15 +38,11 @@ function sanitizeDocsPath(input: string): string | null {
   if (path.isAbsolute(trimmed)) {
     return null
   }
-  const normalized = path.normalize(trimmed)
+  const normalized = path.posix.normalize(trimmed.replaceAll('\\', '/'))
   if (!normalized) {
     return null
   }
-  if (
-    normalized === '..'
-    || normalized.startsWith(`..${path.sep}`)
-    || normalized.startsWith('../')
-  ) {
+  if (normalized === '..' || normalized.startsWith('../')) {
     return null
   }
   return normalized

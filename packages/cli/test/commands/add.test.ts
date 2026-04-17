@@ -254,6 +254,35 @@ describe('runAdd — --docs-paths flag', () => {
     expect(askJson.libraries[0]).toEqual({ spec: 'npm:zod', docsPaths: ['docs'] })
   })
 
+  it('normalizes backslash separators to forward slashes for cross-platform portability', async () => {
+    await runAdd(
+      { projectDir, spec: 'npm:zod', docsPathsArg: 'docs\\api,dist\\docs' },
+      {
+        gatherCandidates: mock(async () => []) as any,
+        installer: noopInstaller(),
+      },
+    )
+
+    const askJson = readJson(path.join(projectDir, 'ask.json'))
+    expect(askJson.libraries[0]).toEqual({
+      spec: 'npm:zod',
+      docsPaths: ['docs/api', 'dist/docs'],
+    })
+  })
+
+  it('rejects backslash-prefixed parent traversal on any platform', async () => {
+    await runAdd(
+      { projectDir, spec: 'npm:zod', docsPathsArg: '..\\escape,docs' },
+      {
+        gatherCandidates: mock(async () => []) as any,
+        installer: noopInstaller(),
+      },
+    )
+
+    const askJson = readJson(path.join(projectDir, 'ask.json'))
+    expect(askJson.libraries[0]).toEqual({ spec: 'npm:zod', docsPaths: ['docs'] })
+  })
+
   it('drops to bare string when every --docs-paths entry is unsafe', async () => {
     await runAdd(
       { projectDir, spec: 'npm:zod', docsPathsArg: '/abs,../esc' },
