@@ -48,15 +48,23 @@ export async function runInstall(
     ? askJson.libraries.filter(s => options.onlySpecs!.includes(s))
     : askJson.libraries
 
+  const summary: InstallSummary = { installed: 0, skipped: 0 }
+  const resolved: LazyLibraryInfo[] = []
+
   if (targets.length === 0) {
+    // No targets can mean either a scoped install with a bogus --only-specs,
+    // or a full install after the last library was removed. In the latter
+    // case we still need to regenerate AGENTS.md so the auto-generated block
+    // is stripped rather than left pointing at the removed entry.
+    if (!options.onlySpecs) {
+      generateAgentsMd(projectDir, [])
+      manageIgnoreFiles(projectDir, 'remove')
+    }
     consola.info('No libraries to install.')
-    return { installed: 0, skipped: 0 }
+    return summary
   }
 
   consola.start(`Resolving ${targets.length} librar${targets.length === 1 ? 'y' : 'ies'}...`)
-
-  const summary: InstallSummary = { installed: 0, skipped: 0 }
-  const resolved: LazyLibraryInfo[] = []
 
   for (const spec of targets) {
     const result = resolveOne(projectDir, spec)

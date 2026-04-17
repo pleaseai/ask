@@ -1,8 +1,11 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import { consola } from 'consola'
 
 const BEGIN_MARKER = '<!-- BEGIN:ask-docs-auto-generated -->'
 const END_MARKER = '<!-- END:ask-docs-auto-generated -->'
+const TRAILING_NEWLINES_RE = /\n+$/
+const LEADING_NEWLINES_RE = /^\n+/
 
 export interface LazyLibraryInfo {
   name: string
@@ -14,8 +17,41 @@ export function generateAgentsMd(
   projectDir: string,
   libraries: LazyLibraryInfo[],
 ): string {
-  if (libraries.length === 0)
+  const agentsPath = path.join(projectDir, 'AGENTS.md')
+
+  if (libraries.length === 0) {
+    // Strip any previously generated block so removed libraries don't
+    // linger in AGENTS.md after the last entry is removed from ask.json.
+    if (fs.existsSync(agentsPath)) {
+      const existing = fs.readFileSync(agentsPath, 'utf-8')
+      const beginIdx = existing.indexOf(BEGIN_MARKER)
+      const endIdx = existing.indexOf(END_MARKER)
+      if (beginIdx !== -1 && endIdx !== -1) {
+        const head = existing.substring(0, beginIdx).replace(TRAILING_NEWLINES_RE, '')
+        const tail = existing.substring(endIdx + END_MARKER.length).replace(LEADING_NEWLINES_RE, '')
+        const stripped = head.length === 0
+          ? tail
+          : tail.length === 0
+            ? `${head}\n`
+            : `${head}\n\n${tail}`
+        if (stripped.length === 0) {
+          fs.rmSync(agentsPath)
+        }
+        else {
+          fs.writeFileSync(agentsPath, stripped, 'utf-8')
+        }
+      }
+      else if (beginIdx !== -1 || endIdx !== -1) {
+        // Mismatched markers — likely truncated or hand-edited. Leave the
+        // file alone so the user can repair it rather than silently emitting
+        // further corruption on the next install.
+        consola.warn(
+          `${path.relative(projectDir, agentsPath) || 'AGENTS.md'} has an unmatched ask-docs marker — leaving file untouched. Inspect manually to restore the <!-- BEGIN:ask-docs-auto-generated --> / <!-- END:ask-docs-auto-generated --> pair.`,
+        )
+      }
+    }
     return ''
+  }
 
   const sections = libraries.map(({ name, version }) => {
     const major = version.split('.')[0]
@@ -51,8 +87,6 @@ fd "\\.md$" "$(ask docs <package> | head -n 1)"
 
 ${sections.join('\n\n')}
 ${END_MARKER}`
-
-  const agentsPath = path.join(projectDir, 'AGENTS.md')
 
   if (fs.existsSync(agentsPath)) {
     const existing = fs.readFileSync(agentsPath, 'utf-8')
