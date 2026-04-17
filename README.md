@@ -203,48 +203,93 @@ fallback is on the roadmap.
 
 ## Registry
 
-The ASK Registry (`apps/registry/`) is a community-maintained catalog of library documentation configs. Each entry is a Markdown file with YAML frontmatter:
+The ASK Registry (`apps/registry/`) is a community-maintained catalog of library documentation configs. Each entry is a JSON file keyed by `<github-owner>/<repo>.json`:
 
 ```
 apps/registry/content/registry/
 ├── vercel/           # github owner
-│   └── next.js.md
+│   ├── next.js.json
+│   └── ai.json
 ├── colinhacks/       # github owner
-│   └── zod.md
+│   └── zod.json
 ├── tailwindlabs/     # github owner
-│   └── tailwindcss.md
+│   └── tailwindcss.json
 └── ...               # one directory per github owner
 ```
 
-### Registry entry format
+### Entry → Package → Source hierarchy
 
-```markdown
----
-name: Next.js
-description: The React framework by Vercel
-repo: vercel/next.js
-docsPath: docs
-homepage: https://nextjs.org
-license: MIT
-aliases:
-  - ecosystem: npm
-    name: next
-strategies:
-  - source: npm
-    package: next
-    docsPath: dist/docs
-  - source: github
-    repo: vercel/next.js
-    docsPath: docs
-tags: [react, framework, ssr]
----
+Each entry describes one GitHub repository and declares one or more **packages**. A package is a documentation target (a single library has one, a monorepo has many). Each package declares ordered **sources** the CLI tries head-first with fallback on failure. See [`ADR-0001`](.please/docs/decisions/0001-registry-entry-schema-entry-package-source.md) for the rationale.
 
-Description and version notes here...
+### Single-package entry
+
+```json
+{
+  "name": "Next.js",
+  "description": "The React framework by Vercel",
+  "repo": "vercel/next.js",
+  "homepage": "https://nextjs.org",
+  "license": "MIT",
+  "tags": ["react", "framework", "ssr"],
+  "packages": [
+    {
+      "name": "next",
+      "aliases": [
+        { "ecosystem": "npm", "name": "next" }
+      ],
+      "sources": [
+        { "type": "npm", "package": "next", "path": "dist/docs" },
+        { "type": "github", "repo": "vercel/next.js", "path": "docs" }
+      ]
+    }
+  ]
+}
 ```
+
+### Monorepo entry
+
+One package per documentation target; each owns its own aliases and source chain.
+
+```json
+{
+  "name": "Mastra",
+  "description": "TypeScript framework for building AI agents, workflows, and RAG pipelines",
+  "repo": "mastra-ai/mastra",
+  "packages": [
+    {
+      "name": "@mastra/core",
+      "aliases": [{ "ecosystem": "npm", "name": "@mastra/core" }],
+      "sources": [
+        { "type": "npm", "package": "@mastra/core", "path": "dist/docs" },
+        { "type": "github", "repo": "mastra-ai/mastra", "path": "docs" }
+      ]
+    },
+    {
+      "name": "@mastra/memory",
+      "aliases": [{ "ecosystem": "npm", "name": "@mastra/memory" }],
+      "sources": [
+        { "type": "npm", "package": "@mastra/memory", "path": "dist/docs" },
+        { "type": "github", "repo": "mastra-ai/mastra", "path": "docs" }
+      ]
+    }
+  ]
+}
+```
+
+### Source types
+
+| `type` | Required fields | Optional |
+|---|---|---|
+| `npm` | `package` | `path` (path inside the tarball, e.g. `dist/docs`) |
+| `github` | `repo` (`owner/name`) | `branch` or `tag` (mutually exclusive), `path` |
+| `web` | `urls` (array, non-empty) | `maxDepth`, `allowedPathPrefix` |
+| `llms-txt` | `url` | — |
+
+Supported alias ecosystems: `npm`, `pypi`, `pub`, `go`, `crates`, `hex`, `nuget`, `maven`.
 
 ### Contributing
 
-Add a new `.md` file under `apps/registry/content/registry/<github-owner>/` and submit a PR.
+Add a new `.json` file under `apps/registry/content/registry/<github-owner>/` and submit a PR. The file is validated against the `registryEntrySchema` in [`packages/schema/src/registry.ts`](packages/schema/src/registry.ts) at build time — duplicate aliases, duplicate package names, and slug collisions across packages are all rejected.
 
 ## Ecosystem Resolvers
 
