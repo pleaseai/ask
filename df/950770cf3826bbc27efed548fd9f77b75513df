@@ -1,0 +1,30 @@
+packages/cli/test/commands/docs.test.ts
+  92549c3eb214a462 360-432
+packages/cli/src/commands/docs.ts
+  92549c3eb214a462 90-98
+packages/cli/test/commands/add.test.ts
+  92549c3eb214a462 125-158,227-265
+packages/cli/src/commands/add.ts
+  92549c3eb214a462 14-49,151-165,217-225
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.0",
+  "base_commit_sha": "df950770cf3826bbc27efed548fd9f77b75513df",
+  "prompts": {
+    "92549c3eb214a462": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3757dd39-8ee8-4e7c-aeda-c588200093e1",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 215,
+      "total_deletions": 8,
+      "accepted_lines": 215,
+      "overriden_lines": 0,
+      "messages_url": "https://usegitai.com/cas/74e6f68a6652c6f8f9d0964d9797e8871bfc46063e01b65ff751a740ca2be9a4"
+    }
+  }
+}
