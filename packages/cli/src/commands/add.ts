@@ -11,6 +11,42 @@ import { parseSpec } from '../spec.js'
 
 const OWNER_REPO_RE = /^[^/]+\/[^/]+$/
 
+/**
+ * Validate and canonicalize a user-supplied docs path (either from the
+ * interactive prompt or the `--docs-paths` CSV flag). Returns the
+ * normalized relative path on success, or null when the input is
+ * unsafe / empty. Rejects:
+ *
+ *   - Empty / whitespace-only strings
+ *   - Absolute paths (anything `path.isAbsolute` accepts)
+ *   - Paths that resolve out of their root via `..` segments
+ *
+ * Callers store the returned value verbatim; the read side
+ * (`ask docs`) re-joins it against the candidate roots and applies
+ * its own containment guard as defense-in-depth.
+ */
+function sanitizeDocsPath(input: string): string | null {
+  const trimmed = input.trim()
+  if (!trimmed) {
+    return null
+  }
+  if (path.isAbsolute(trimmed)) {
+    return null
+  }
+  const normalized = path.normalize(trimmed)
+  if (!normalized) {
+    return null
+  }
+  if (
+    normalized === '..'
+    || normalized.startsWith(`..${path.sep}`)
+    || normalized.startsWith('../')
+  ) {
+    return null
+  }
+  return normalized
+}
+
 function normalizeAddSpec(input: string): string {
   if (!input.includes(':')) {
     if (OWNER_REPO_RE.test(input)) {
@@ -112,10 +148,21 @@ async function resolveSelectedPaths(
   }
 
   if (options.docsPathsArg !== undefined) {
-    const parsed = options.docsPathsArg
-      .split(',')
-      .map(s => s.trim())
-      .filter(Boolean)
+    const parsed: string[] = []
+    for (const raw of options.docsPathsArg.split(',')) {
+      const safe = sanitizeDocsPath(raw)
+      if (safe === null) {
+        const trimmed = raw.trim()
+        if (trimmed) {
+          consola.warn(
+            `Ignoring unsafe docs-path entry ${JSON.stringify(trimmed)} `
+            + `(must be a relative path that stays inside its root).`,
+          )
+        }
+        continue
+      }
+      parsed.push(safe)
+    }
     return parsed.length > 0 ? parsed : undefined
   }
 
@@ -167,9 +214,15 @@ async function resolveSelectedPaths(
     if (!c) {
       continue
     }
-    const rel = path.relative(c.group.root, c.abs)
-    if (rel) {
-      selected.push(rel)
+    // Root selection: `path.relative(root, root) === ''`. Persist `.`
+    // so the override schema (which requires `string.min(1)`) still
+    // accepts it, and so the read side can resolve it back to the
+    // root via `path.resolve(rootAbs, '.')`. Without this, a
+    // deliberate root pick would be silently dropped.
+    const rel = path.relative(c.group.root, c.abs) || '.'
+    const safe = sanitizeDocsPath(rel)
+    if (safe !== null) {
+      selected.push(safe)
     }
   }
   return selected.length > 0 ? selected : undefined

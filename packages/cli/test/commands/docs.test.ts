@@ -357,6 +357,79 @@ describe('runDocs — persisted docsPaths override', () => {
     expect(io.stderr.some(l => l.includes('stale'))).toBe(true)
   })
 
+  it('rejects stored docsPaths that escape their root via .. segments', async () => {
+    // An escaped path would, if naively joined, let us emit files from
+    // outside the root. The guard must drop such entries and fall back.
+    fs.mkdirSync(path.join(checkoutDir, 'docs'), { recursive: true })
+    const escapeTargetDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ask-test-docs-escape-'))
+    try {
+      fs.writeFileSync(
+        path.join(projectDir, 'ask.json'),
+        JSON.stringify({
+          libraries: [
+            { spec: 'npm:react', docsPaths: ['../../../etc'] },
+          ],
+        }),
+      )
+
+      const { io, deps } = makeIo()
+      const ensureCheckout = mock(async () => ({
+        parsed: {} as any,
+        owner: 'facebook',
+        repo: 'react',
+        ref: 'v18.2.0',
+        resolvedVersion: '18.2.0',
+        checkoutDir,
+        npmPackageName: 'react',
+      }))
+
+      await runDocs(
+        { spec: 'react', projectDir },
+        { ensureCheckout, ...deps },
+      )
+
+      // Nothing outside checkoutDir should have been emitted.
+      expect(io.stdout.every(p => !p.includes('/etc'))).toBe(true)
+      // Stale fallback warning surfaces since no stored path survived.
+      expect(io.stderr.some(l => l.includes('stale'))).toBe(true)
+      // Fallback walk still runs.
+      expect(io.stdout).toContain(path.join(checkoutDir, 'docs'))
+    }
+    finally {
+      fs.rmSync(escapeTargetDir, { recursive: true, force: true })
+    }
+  })
+
+  it('emits the root itself when the stored docsPaths entry is "."', async () => {
+    fs.mkdirSync(path.join(checkoutDir, 'docs'), { recursive: true })
+    fs.writeFileSync(
+      path.join(projectDir, 'ask.json'),
+      JSON.stringify({
+        libraries: [
+          { spec: 'npm:react', docsPaths: ['.'] },
+        ],
+      }),
+    )
+
+    const { io, deps } = makeIo()
+    const ensureCheckout = mock(async () => ({
+      parsed: {} as any,
+      owner: 'facebook',
+      repo: 'react',
+      ref: 'v18.2.0',
+      resolvedVersion: '18.2.0',
+      checkoutDir,
+      // no npmPackageName, so only checkoutDir is probed
+    }))
+
+    await runDocs(
+      { spec: 'react', projectDir },
+      { ensureCheckout, ...deps },
+    )
+
+    expect(io.stdout).toEqual([path.resolve(checkoutDir)])
+  })
+
   it('ignores string entries (no override) and walks everything', async () => {
     fs.mkdirSync(path.join(checkoutDir, 'docs'), { recursive: true })
     fs.mkdirSync(path.join(checkoutDir, 'api-docs'), { recursive: true })

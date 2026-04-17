@@ -87,7 +87,15 @@ export async function runDocs(options: RunDocsOptions, deps: RunDocsDeps = {}): 
     let emitted = 0
     for (const rel of stored) {
       for (const root of roots) {
-        const abs = path.join(root, rel)
+        // Containment guard: a malicious or buggy `docsPaths` entry
+        // (`..`, absolute path) must not escape its root, otherwise
+        // `ask docs` would emit arbitrary filesystem paths. Resolve
+        // both sides and confirm abs is rootAbs itself or a descendant.
+        const rootAbs = path.resolve(root)
+        const abs = path.resolve(rootAbs, rel)
+        if (abs !== rootAbs && !abs.startsWith(`${rootAbs}${path.sep}`)) {
+          continue
+        }
         if (fs.existsSync(abs)) {
           log(abs)
           emitted++

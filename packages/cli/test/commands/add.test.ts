@@ -122,6 +122,40 @@ describe('runAdd — discovery prompt integration', () => {
     }
   })
 
+  it('preserves a root selection as "." instead of silently dropping it', async () => {
+    const checkoutDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ask-test-add-checkout-'))
+    fs.mkdirSync(path.join(checkoutDir, 'docs'), { recursive: true })
+
+    try {
+      const groups: CandidateGroup[] = [
+        {
+          root: checkoutDir,
+          // A group whose root doubles as one of the selectable paths
+          // (user can pick the root itself alongside a real subdir).
+          paths: [checkoutDir, path.join(checkoutDir, 'docs')],
+        },
+      ]
+      const gatherCandidates = mock(async () => groups)
+      const prompt = mock(async () => [checkoutDir] as any)
+
+      await runAdd(
+        { projectDir, spec: 'npm:next' },
+        {
+          gatherCandidates,
+          prompt: prompt as any,
+          isTTY: () => true,
+          installer: noopInstaller(),
+        },
+      )
+
+      const askJson = readJson(path.join(projectDir, 'ask.json'))
+      expect(askJson.libraries[0]).toEqual({ spec: 'npm:next', docsPaths: ['.'] })
+    }
+    finally {
+      fs.rmSync(checkoutDir, { recursive: true, force: true })
+    }
+  })
+
   it('skips the prompt when stdout is not a TTY even with multiple candidates', async () => {
     const checkoutDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ask-test-add-checkout-'))
     fs.mkdirSync(path.join(checkoutDir, 'docs'), { recursive: true })
@@ -184,6 +218,45 @@ describe('runAdd — --docs-paths flag', () => {
   it('treats an empty --docs-paths value as no override', async () => {
     await runAdd(
       { projectDir, spec: 'npm:zod', docsPathsArg: '  ,,  ' },
+      {
+        gatherCandidates: mock(async () => []) as any,
+        installer: noopInstaller(),
+      },
+    )
+
+    const askJson = readJson(path.join(projectDir, 'ask.json'))
+    expect(askJson.libraries).toEqual(['npm:zod'])
+  })
+
+  it('rejects absolute paths in --docs-paths and persists nothing for them', async () => {
+    await runAdd(
+      { projectDir, spec: 'npm:zod', docsPathsArg: '/etc/passwd,docs' },
+      {
+        gatherCandidates: mock(async () => []) as any,
+        installer: noopInstaller(),
+      },
+    )
+
+    const askJson = readJson(path.join(projectDir, 'ask.json'))
+    expect(askJson.libraries[0]).toEqual({ spec: 'npm:zod', docsPaths: ['docs'] })
+  })
+
+  it('rejects parent-traversal entries in --docs-paths', async () => {
+    await runAdd(
+      { projectDir, spec: 'npm:zod', docsPathsArg: '../sibling,..,docs/../..,docs' },
+      {
+        gatherCandidates: mock(async () => []) as any,
+        installer: noopInstaller(),
+      },
+    )
+
+    const askJson = readJson(path.join(projectDir, 'ask.json'))
+    expect(askJson.libraries[0]).toEqual({ spec: 'npm:zod', docsPaths: ['docs'] })
+  })
+
+  it('drops to bare string when every --docs-paths entry is unsafe', async () => {
+    await runAdd(
+      { projectDir, spec: 'npm:zod', docsPathsArg: '/abs,../esc' },
       {
         gatherCandidates: mock(async () => []) as any,
         installer: noopInstaller(),
