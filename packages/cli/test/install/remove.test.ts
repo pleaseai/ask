@@ -152,16 +152,17 @@ describe('ask remove (lazy-first)', () => {
     expect(afterRemove).not.toContain('next v16.2.3')
   })
 
-  it('leaves AGENTS.md untouched and warns when only one marker is present', async () => {
+  const orphanMarkerCases: Array<[string, string]> = [
+    ['BEGIN', '# Project\n\n<!-- BEGIN:ask-docs-auto-generated -->\n(block was truncated)\n\n## Notes\nUser text after orphan marker.\n'],
+    ['END', '# Project\n\n(block header was deleted)\n<!-- END:ask-docs-auto-generated -->\n\n## Notes\nUser text after orphan marker.\n'],
+  ]
+  it.each(orphanMarkerCases)('leaves AGENTS.md untouched and warns when only the %s marker is present', async (_label, corruptedContent) => {
     writeLockedPkg(tmpDir, {
       next: { range: '^16.0.0', resolved: '16.2.3' },
     })
     writeAskJson(tmpDir, { libraries: ['npm:next'] })
 
-    // Hand-corrupt AGENTS.md: BEGIN marker only, no END.
     const agentsPath = path.join(tmpDir, 'AGENTS.md')
-    const corruptedContent
-      = '# Project\n\n<!-- BEGIN:ask-docs-auto-generated -->\n(block was truncated)\n\n## Notes\nUser text after orphan marker.\n'
     fs.writeFileSync(agentsPath, corruptedContent)
 
     await runCli(tmpDir, ['remove', 'next'])
