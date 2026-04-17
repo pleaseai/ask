@@ -1,5 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import { consola } from 'consola'
 
 const BEGIN_MARKER = '<!-- BEGIN:ask-docs-auto-generated -->'
 const END_MARKER = '<!-- END:ask-docs-auto-generated -->'
@@ -39,6 +40,14 @@ export function generateAgentsMd(
         else {
           fs.writeFileSync(agentsPath, stripped, 'utf-8')
         }
+      }
+      else if (beginIdx !== -1 || endIdx !== -1) {
+        // Mismatched markers — likely truncated or hand-edited. Leave the
+        // file alone so the user can repair it rather than silently emitting
+        // further corruption on the next install.
+        consola.warn(
+          `${path.relative(projectDir, agentsPath) || 'AGENTS.md'} has an unmatched ask-docs marker — leaving file untouched. Inspect manually to restore the <!-- BEGIN:ask-docs-auto-generated --> / <!-- END:ask-docs-auto-generated --> pair.`,
+        )
       }
     }
     return ''
