@@ -6,6 +6,7 @@ import { splitExplicitVersion } from './commands/ensure-checkout.js'
 import { manageIgnoreFiles } from './ignore-files.js'
 import { getAskJsonPath, readAskJson, writeAskJson } from './io.js'
 import { npmEcosystemReader } from './lockfiles/index.js'
+import { specFromEntry } from './schemas.js'
 import { generateSkill } from './skill.js'
 import { parseSpec } from './spec.js'
 
@@ -44,9 +45,9 @@ export async function runInstall(
     return { installed: 0, skipped: 0 }
   }
 
-  const targets = options.onlySpecs
-    ? askJson.libraries.filter(s => options.onlySpecs!.includes(s))
-    : askJson.libraries
+  const targets = (options.onlySpecs
+    ? askJson.libraries.filter(e => options.onlySpecs!.includes(specFromEntry(e)))
+    : askJson.libraries).map(specFromEntry)
 
   const summary: InstallSummary = { installed: 0, skipped: 0 }
   const resolved: LazyLibraryInfo[] = []
@@ -140,8 +141,8 @@ function resolveAll(projectDir: string): LazyLibraryInfo[] {
     return []
 
   const results: LazyLibraryInfo[] = []
-  for (const spec of askJson.libraries) {
-    const result = resolveOne(projectDir, spec)
+  for (const entry of askJson.libraries) {
+    const result = resolveOne(projectDir, specFromEntry(entry))
     if (result)
       results.push(result)
   }

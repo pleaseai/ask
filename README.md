@@ -29,6 +29,8 @@ After `ask add`, your `ask.json` looks like:
 }
 ```
 
+Entries can also be written as `{ "spec": "...", "docsPaths": [...] }` objects when you want to scope `ask docs` to a subset of discovered directories — see [Add a library](#add-a-library) below.
+
 Each successful install:
 
 1. Resolves the version (lockfile for `npm:`, inline `@ref` for `github:`)
@@ -72,6 +74,37 @@ ask add vercel/next.js@v14.2.3              # github: prefix is implied for owne
 
 `ask add` appends a spec string to `ask.json` and immediately runs
 install for that single entry.
+
+#### Selecting docs paths at add time
+
+When a library exposes multiple candidate documentation directories
+(e.g. both `docs/` and `dist/docs/`), `ask add` probes the local
+`node_modules/<pkg>/` and any already-cached git checkout, and — if
+more than one candidate is found and stdout is a TTY — shows a
+multiselect prompt so you can pin the entry to a specific subset.
+The selection is saved back to `ask.json` as an object entry:
+
+```json
+{
+  "libraries": [
+    "npm:zod",
+    { "spec": "npm:next", "docsPaths": ["docs"] }
+  ]
+}
+```
+
+Downstream `ask docs <spec>` calls then emit only the selected paths
+instead of every candidate. Flags:
+
+```bash
+ask add npm:next --docs-paths docs,dist/docs     # non-interactive — same effect as the prompt
+ask add npm:next --clear-docs-paths              # drop the override, restore default discovery
+```
+
+Discovery is **offline-first**: `ask add` never triggers a fresh clone
+on your behalf. If a spec has never been cached, the prompt is silently
+skipped and the bare spec string is recorded. Run `ask docs <spec>`
+once to warm the cache, then re-run `ask add <spec>` to pick paths.
 
 ### Install all declared libraries
 
@@ -168,6 +201,13 @@ matches `/doc/i` up to depth 4, skipping `node_modules`, `.git`, `.next`,
 `.nuxt`, `dist`, `build`, `coverage`, and dotdirs. The source root is
 always emitted as the first line so the agent can fall back to it when no
 `docs/` directory exists.
+
+If the spec has a persisted `docsPaths` override in `ask.json` (see
+[Selecting docs paths at add time](#selecting-docs-paths-at-add-time)),
+`ask docs` emits only those paths. Stale entries (paths that no longer
+exist on disk — e.g. after a major version bump) are dropped; when every
+stored path is stale, a warning is written to stderr and the command
+falls back to the unfiltered walk.
 
 ### `ask skills` — producer-side skill bundles
 

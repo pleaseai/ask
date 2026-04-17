@@ -5,37 +5,22 @@ import path from 'node:path'
 import process from 'node:process'
 import { defineCommand } from 'citty'
 import { consola } from 'consola'
+import { addCmd } from './commands/add.js'
 import { docsCmd } from './commands/docs.js'
 import { splitExplicitVersion } from './commands/ensure-checkout.js'
 import { skillsCmd } from './commands/skills/index.js'
 import { srcCmd } from './commands/src.js'
 import { manageIgnoreFiles } from './ignore-files.js'
 import { runInstall } from './install.js'
-import { runInteractiveAdd } from './interactive.js'
 import { readAskJson, writeAskJson } from './io.js'
 import { buildListModel } from './list/aggregate.js'
 import { ListModelSchema } from './list/model.js'
 import { renderList } from './list/render.js'
+import { specFromEntry } from './schemas.js'
 import { removeSkill } from './skill.js'
 import { libraryNameFromSpec, parseSpec } from './spec.js'
 import { cacheCleanLegacy, cacheGc, cacheLs, detectLegacyLayout, formatBytes, parseDuration } from './store/cache.js'
 import { resolveAskHome } from './store/index.js'
-
-const OWNER_REPO_RE = /^[^/]+\/[^/]+$/
-
-function normalizeAddSpec(input: string): string {
-  if (!input.includes(':')) {
-    if (OWNER_REPO_RE.test(input)) {
-      return `github:${input}`
-    }
-    throw new Error(
-      `Ambiguous spec '${input}'. Use:\n`
-      + `  • npm:<name>           (e.g. npm:next, npm:@mastra/client-js)\n`
-      + `  • github:<owner>/<repo>@<ref>  (e.g. github:vercel/next.js@v14.2.3)`,
-    )
-  }
-  return input
-}
 
 const installCmd = defineCommand({
   meta: {
@@ -45,55 +30,6 @@ const installCmd = defineCommand({
   args: {},
   async run() {
     await runInstall(process.cwd())
-  },
-})
-
-const addCmd = defineCommand({
-  meta: {
-    name: 'add',
-    description: 'Add a library spec to ask.json and generate docs references',
-  },
-  args: {
-    spec: {
-      type: 'positional',
-      description: 'Library spec (e.g. npm:next, github:vercel/next.js@v14.2.3). Omit for interactive mode.',
-      required: false,
-    },
-  },
-  async run({ args }) {
-    const projectDir = process.cwd()
-
-    if (!args.spec) {
-      await runInteractiveAdd(projectDir)
-      return
-    }
-
-    const spec = normalizeAddSpec(args.spec)
-
-    // Validate the spec parses correctly
-    const parsed = parseSpec(spec)
-    if (parsed.kind === 'unknown') {
-      consola.error(`Invalid spec: ${spec}`)
-      process.exit(1)
-    }
-
-    let askJson = readAskJson(projectDir)
-    if (!askJson) {
-      askJson = { libraries: [] }
-    }
-
-    // Replace any existing entry with the same spec; otherwise append.
-    const existingIdx = askJson.libraries.indexOf(spec)
-    if (existingIdx >= 0) {
-      consola.info(`${spec} already in ask.json`)
-    }
-    else {
-      askJson.libraries.push(spec)
-      consola.info(`Added ${spec} to ask.json`)
-    }
-    writeAskJson(projectDir, askJson)
-
-    await runInstall(projectDir, { onlySpecs: [spec] })
   },
 })
 
@@ -118,7 +54,8 @@ const removeCmd = defineCommand({
     }
 
     const target = args.name
-    const idx = askJson.libraries.findIndex((spec) => {
+    const idx = askJson.libraries.findIndex((entry) => {
+      const spec = specFromEntry(entry)
       if (spec === target)
         return true
       const { spec: body } = splitExplicitVersion(spec)
@@ -134,7 +71,7 @@ const removeCmd = defineCommand({
       return
     }
 
-    const removed = askJson.libraries[idx]!
+    const removed = specFromEntry(askJson.libraries[idx]!)
     const { spec: specBody } = splitExplicitVersion(removed)
     const libName = libraryNameFromSpec(specBody)
     askJson.libraries.splice(idx, 1)

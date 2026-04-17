@@ -6,6 +6,7 @@ import { consola } from 'consola'
 import { runInstall } from './install.js'
 import { readAskJson, writeAskJson } from './io.js'
 import { detectEcosystem, fetchRegistryEntry } from './registry.js'
+import { entryFromSpec, specFromEntry } from './schemas.js'
 import { parseSpec } from './spec.js'
 
 /**
@@ -130,7 +131,7 @@ export async function runInteractiveAdd(projectDir: string): Promise<void> {
     return
   }
   const askJson: AskJson = readAskJson(projectDir) ?? { libraries: [] }
-  const deps = readProjectDeps(packageJson, askJson.libraries)
+  const deps = readProjectDeps(packageJson, askJson.libraries.map(specFromEntry))
 
   if (deps.length === 0) {
     consola.info('All project dependencies are already registered in ask.json.')
@@ -219,12 +220,12 @@ async function addSpecs(
       continue
     }
 
-    if (askJson.libraries.includes(spec)) {
+    if (askJson.libraries.some(e => specFromEntry(e) === spec)) {
       consola.info(`${spec} already in ask.json`)
       continue
     }
 
-    askJson.libraries.push(spec)
+    askJson.libraries.push(entryFromSpec(spec))
     added.push(spec)
   }
 

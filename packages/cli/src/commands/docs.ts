@@ -2,6 +2,8 @@ import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { defineCommand } from 'citty'
+import { findEntry, readAskJson } from '../io.js'
+import { docsPathsFromEntry } from '../schemas.js'
 import { ensureCheckout as defaultEnsureCheckout, NoCacheError } from './ensure-checkout.js'
 import { findDocLikePaths } from './find-doc-paths.js'
 
@@ -60,6 +62,55 @@ export async function runDocs(options: RunDocsOptions, deps: RunDocsDeps = {}): 
     error(message)
     exit(1)
     return
+  }
+
+  // If the spec is registered in ask.json with a persisted docsPaths
+  // override, emit ONLY the stored paths (resolved against both roots
+  // that `ask add` probed at selection time). Falls back to the
+  // unfiltered walk when every stored path is stale — a silent
+  // exact-match with no output would be worse than just printing
+  // whatever does exist.
+  const askJson = readAskJson(options.projectDir)
+  const entry = askJson ? findEntry(askJson, options.spec) : undefined
+  const stored = entry ? docsPathsFromEntry(entry) : undefined
+
+  if (stored && stored.length > 0) {
+    const nmPath = result.npmPackageName
+      ? path.join(options.projectDir, 'node_modules', result.npmPackageName)
+      : null
+    const roots: string[] = []
+    if (nmPath && fs.existsSync(nmPath)) {
+      roots.push(nmPath)
+    }
+    roots.push(result.checkoutDir)
+
+    let emitted = 0
+    for (const rel of stored) {
+      for (const root of roots) {
+        // Containment guard: a malicious or buggy `docsPaths` entry
+        // (`..`, absolute path) must not escape its root, otherwise
+        // `ask docs` would emit arbitrary filesystem paths. Resolve
+        // both sides and confirm abs is rootAbs itself or a descendant.
+        const rootAbs = path.resolve(root)
+        const abs = path.resolve(rootAbs, rel)
+        if (abs !== rootAbs && !abs.startsWith(`${rootAbs}${path.sep}`)) {
+          continue
+        }
+        if (fs.existsSync(abs)) {
+          log(abs)
+          emitted++
+          break
+        }
+      }
+    }
+
+    if (emitted > 0) {
+      return
+    }
+    error(
+      `ask: stored docsPaths for ${options.spec} are all stale; emitting all candidates`,
+    )
+    // fall through to the default walk
   }
 
   // Walk node_modules/<pkg>/ first when the spec is an npm package and
