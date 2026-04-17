@@ -1,0 +1,28 @@
+packages/cli/src/install.ts
+  0ffd7487a137ba13 51-53,55-62,64
+packages/cli/src/agents.ts
+  0ffd7487a137ba13 6-7,19-43,45
+packages/cli/test/install/remove.test.ts
+  0ffd7487a137ba13 2-3,5-6,9-42,65-127
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.0",
+  "base_commit_sha": "6484636a1f9f4cdd76627520efb195e88a9ea334",
+  "prompts": {
+    "0ffd7487a137ba13": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a7a947e1-c5f3-4d6c-9143-8371d0b9086a",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 144,
+      "total_deletions": 9,
+      "accepted_lines": 142,
+      "overriden_lines": 0,
+      "messages_url": "https://usegitai.com/cas/982230bb8d9a6321e6bb0a3f3910b9ef421be860fd249759b1171b6646987351"
+    }
+  }
+}
