@@ -1,0 +1,24 @@
+packages/cli/test/install/remove.test.ts
+  0ffd7487a137ba13 155-159
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.0",
+  "base_commit_sha": "1675e4ebca849b59441d2e5aa1a6b54a43485699",
+  "prompts": {
+    "0ffd7487a137ba13": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a7a947e1-c5f3-4d6c-9143-8371d0b9086a",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 7,
+      "total_deletions": 6,
+      "accepted_lines": 5,
+      "overriden_lines": 0,
+      "messages_url": "https://usegitai.com/cas/6cb6b4852d83347d541a27137a45a92361501071cccae74ca0d9f3e12726de23"
+    }
+  }
+}
