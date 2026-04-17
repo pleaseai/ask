@@ -230,7 +230,7 @@ Each entry describes one GitHub repository and declares one or more **packages**
   "repo": "vercel/next.js",
   "homepage": "https://nextjs.org",
   "license": "MIT",
-  "tags": ["react", "framework", "ssr"],
+  "tags": ["react", "framework", "ssr", "vercel"],
   "packages": [
     {
       "name": "next",
