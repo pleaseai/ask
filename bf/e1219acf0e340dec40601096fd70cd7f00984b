@@ -1,0 +1,48 @@
+packages/cli/src/io.ts
+  92549c3eb214a462 1,5-7,85-117
+packages/cli/src/commands/docs.ts
+  92549c3eb214a462 5-6,67-107
+packages/cli/test/commands/docs.test.ts
+  92549c3eb214a462 262-387
+packages/schema/src/ask-json.ts
+  92549c3eb214a462 21-50,53-59,62,65,68,73-99
+packages/cli/src/storage.ts
+  92549c3eb214a462 9,192-193
+packages/cli/src/commands/add.ts
+  92549c3eb214a462 1-224
+packages/cli/test/discovery/candidates.test.ts
+  92549c3eb214a462 1-147
+packages/schema/test/ask-json.test.ts
+  92549c3eb214a462 4-5,7,48,65,92-162
+packages/cli/src/interactive.ts
+  92549c3eb214a462 9,134,223,228
+packages/cli/src/install.ts
+  92549c3eb214a462 9,48-50,144-145
+packages/cli/src/discovery/candidates.ts
+  92549c3eb214a462 1-95
+packages/cli/test/commands/add.test.ts
+  92549c3eb214a462 1-261
+packages/cli/src/index.ts
+  92549c3eb214a462 8,19,57-58,74
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.0",
+  "base_commit_sha": "bfe1219acf0e340dec40601096fd70cd7f00984b",
+  "prompts": {
+    "92549c3eb214a462": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3757dd39-8ee8-4e7c-aeda-c588200093e1",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 1159,
+      "total_deletions": 147,
+      "accepted_lines": 1098,
+      "overriden_lines": 0,
+      "messages_url": "https://usegitai.com/cas/e11fad9c33e8af8e82f434d378fe6582b816dff973b777926ac789e6ea63ec56"
+    }
+  }
+}
