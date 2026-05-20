@@ -2,6 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { defineCommand } from 'citty'
+import { z } from 'zod'
 import { findEntry, readAskJson } from '../io.js'
 import { docsPathsFromEntry } from '../schemas.js'
 import { ensureCheckout as defaultEnsureCheckout, NoCacheError } from './ensure-checkout.js'
@@ -11,7 +12,34 @@ export interface RunDocsOptions {
   spec: string
   projectDir: string
   noFetch?: boolean
+  json?: boolean
 }
+
+// ── JSON output model ─────────────────────────────────────────────
+// Schema for `ask docs <spec> --json`. Each candidate carries its
+// source root so agents can prefer `node_modules` (faster, no clone)
+// over the cached checkout, or filter on a specific origin.
+
+export const DocsCandidateSchema = z.object({
+  path: z.string(),
+  root: z.enum(['node_modules', 'checkout']),
+})
+
+export const DocsModelSchema = z.object({
+  spec: z.string(),
+  npmPackageName: z.string().nullable(),
+  checkoutDir: z.string(),
+  /**
+   * True iff ask.json defines a `docsPaths` override for this spec AND
+   * at least one of those paths resolved to an existing file/dir.
+   * When the override exists but every entry is stale, the model falls
+   * back to the unfiltered walk and reports `false`.
+   */
+  storedOverride: z.boolean(),
+  paths: z.array(DocsCandidateSchema),
+})
+
+export type DocsModel = z.infer<typeof DocsModelSchema>
 
 export interface RunDocsDeps {
   ensureCheckout?: typeof defaultEnsureCheckout
@@ -64,6 +92,21 @@ export async function runDocs(options: RunDocsOptions, deps: RunDocsDeps = {}): 
     return
   }
 
+  // Collect every candidate path into `paths` so both text mode (per-
+  // line `log`) and JSON mode (single blob at the end) consume the same
+  // result. `emit` is the single sink — it streams to `log` in text
+  // mode and just accumulates in JSON mode.
+  const paths: Array<{ path: string, root: 'node_modules' | 'checkout' }> = []
+  const emit = (p: string, root: 'node_modules' | 'checkout') => {
+    paths.push({ path: p, root })
+    if (!options.json)
+      log(p)
+  }
+
+  const nmPath = result.npmPackageName
+    ? path.join(options.projectDir, 'node_modules', result.npmPackageName)
+    : null
+
   // If the spec is registered in ask.json with a persisted docsPaths
   // override, emit ONLY the stored paths (resolved against both roots
   // that `ask add` probed at selection time). Falls back to the
@@ -73,20 +116,16 @@ export async function runDocs(options: RunDocsOptions, deps: RunDocsDeps = {}): 
   const askJson = readAskJson(options.projectDir)
   const entry = askJson ? findEntry(askJson, options.spec) : undefined
   const stored = entry ? docsPathsFromEntry(entry) : undefined
+  let storedOverride = false
 
   if (stored && stored.length > 0) {
-    const nmPath = result.npmPackageName
-      ? path.join(options.projectDir, 'node_modules', result.npmPackageName)
-      : null
-    const roots: string[] = []
-    if (nmPath && fs.existsSync(nmPath)) {
-      roots.push(nmPath)
-    }
-    roots.push(result.checkoutDir)
+    const roots: Array<{ abs: string, kind: 'node_modules' | 'checkout' }> = []
+    if (nmPath && fs.existsSync(nmPath))
+      roots.push({ abs: nmPath, kind: 'node_modules' })
+    roots.push({ abs: result.checkoutDir, kind: 'checkout' })
 
-    let emitted = 0
     for (const rel of stored) {
-      for (const root of roots) {
+      for (const { abs: root, kind } of roots) {
         // Containment guard: a malicious or buggy `docsPaths` entry
         // (`..`, absolute path) must not escape its root, otherwise
         // `ask docs` would emit arbitrary filesystem paths. Resolve
@@ -97,38 +136,48 @@ export async function runDocs(options: RunDocsOptions, deps: RunDocsDeps = {}): 
           continue
         }
         if (fs.existsSync(abs)) {
-          log(abs)
-          emitted++
+          emit(abs, kind)
           break
         }
       }
     }
 
-    if (emitted > 0) {
-      return
+    if (paths.length > 0) {
+      storedOverride = true
     }
-    error(
-      `ask: stored docsPaths for ${options.spec} are all stale; emitting all candidates`,
-    )
-    // fall through to the default walk
-  }
-
-  // Walk node_modules/<pkg>/ first when the spec is an npm package and
-  // the local install actually has it. Non-npm specs and missing
-  // installs are silently skipped — the checkout walk below still runs.
-  if (result.npmPackageName) {
-    const nmPath = path.join(options.projectDir, 'node_modules', result.npmPackageName)
-    if (fs.existsSync(nmPath)) {
-      for (const p of findDocLikePaths(nmPath)) {
-        log(p)
-      }
+    else {
+      error(
+        `ask: stored docsPaths for ${options.spec} are all stale; emitting all candidates`,
+      )
+      // fall through to the default walk
     }
   }
 
-  // Walk the cached source tree. Always emits the root as the first
-  // line, even if no /doc/i subdirs are found.
-  for (const p of findDocLikePaths(result.checkoutDir)) {
-    log(p)
+  if (!storedOverride) {
+    // Walk node_modules/<pkg>/ first when the spec is an npm package
+    // and the local install actually has it. Non-npm specs and missing
+    // installs are silently skipped — the checkout walk below still
+    // runs.
+    if (nmPath && fs.existsSync(nmPath)) {
+      for (const p of findDocLikePaths(nmPath))
+        emit(p, 'node_modules')
+    }
+
+    // Walk the cached source tree. Always emits the root as the first
+    // line, even if no /doc/i subdirs are found.
+    for (const p of findDocLikePaths(result.checkoutDir))
+      emit(p, 'checkout')
+  }
+
+  if (options.json) {
+    const model: DocsModel = {
+      spec: options.spec,
+      npmPackageName: result.npmPackageName ?? null,
+      checkoutDir: result.checkoutDir,
+      storedOverride,
+      paths,
+    }
+    log(JSON.stringify(DocsModelSchema.parse(model), null, 2))
   }
 }
 
@@ -152,12 +201,17 @@ export const docsCmd = defineCommand({
       type: 'boolean',
       description: 'Return cache hit only — exit 1 on cache miss',
     },
+    'json': {
+      type: 'boolean',
+      description: 'Emit candidates as JSON matching DocsModelSchema (single blob, suppresses per-line output)',
+    },
   },
   async run({ args }) {
     await runDocs({
       spec: args.spec,
       projectDir: process.cwd(),
       noFetch: Boolean(args['no-fetch']),
+      json: Boolean(args.json),
     })
   },
 })

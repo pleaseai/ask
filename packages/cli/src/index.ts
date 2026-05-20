@@ -19,7 +19,7 @@ import { renderList } from './list/render.js'
 import { specFromEntry } from './schemas.js'
 import { removeSkill } from './skill.js'
 import { libraryNameFromSpec, parseSpec } from './spec.js'
-import { cacheCleanLegacy, cacheGc, cacheLs, detectLegacyLayout, formatBytes, parseDuration } from './store/cache.js'
+import { buildCacheGcModel, buildCacheLsModel, cacheCleanLegacy, cacheGc, CacheGcModelSchema, cacheLs, CacheLsModelSchema, detectLegacyLayout, formatBytes, parseDuration } from './store/cache.js'
 import { resolveAskHome } from './store/index.js'
 
 const installCmd = defineCommand({
@@ -125,6 +125,10 @@ const cacheLsCmd = defineCommand({
       type: 'string',
       description: 'Filter by kind: npm, github, web, llms-txt',
     },
+    json: {
+      type: 'boolean',
+      description: 'Emit entries as JSON matching CacheLsModelSchema',
+    },
   },
   run({ args }) {
     const askHome = resolveAskHome()
@@ -133,7 +137,15 @@ const cacheLsCmd = defineCommand({
       consola.error(`Invalid --kind '${kind}'. Must be one of: npm, github, web, llms-txt`)
       process.exit(1)
     }
-    const entries = cacheLs(askHome, kind ? { kind: kind as 'npm' | 'github' | 'web' | 'llms-txt' } : undefined)
+    const filter = kind ? { kind: kind as 'npm' | 'github' | 'web' | 'llms-txt' } : undefined
+
+    if (args.json) {
+      const model = buildCacheLsModel(askHome, filter)
+      consola.log(JSON.stringify(CacheLsModelSchema.parse(model), null, 2))
+      return
+    }
+
+    const entries = cacheLs(askHome, filter)
 
     if (entries.length === 0) {
       consola.info(`No entries in store at ${askHome}`)
@@ -165,6 +177,10 @@ const cacheGcCmd = defineCommand({
       type: 'string',
       description: 'Only remove entries older than this duration (e.g. 30d, 12h, 90m, 60s)',
     },
+    'json': {
+      type: 'boolean',
+      description: 'Emit results as JSON matching CacheGcModelSchema',
+    },
   },
   run({ args }) {
     const askHome = resolveAskHome()
@@ -181,6 +197,12 @@ const cacheGcCmd = defineCommand({
         process.exit(1)
       }
       olderThan = parsed
+    }
+
+    if (args.json) {
+      const model = buildCacheGcModel(askHome, { dryRun, scanRoots, olderThan })
+      consola.log(JSON.stringify(CacheGcModelSchema.parse(model), null, 2))
+      return
     }
 
     const result = cacheGc(askHome, { dryRun, scanRoots, olderThan })

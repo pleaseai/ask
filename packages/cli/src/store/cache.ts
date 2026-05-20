@@ -2,6 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { consola } from 'consola'
+import { z } from 'zod'
 
 // ── Types ──────────────────────────────────────────────────────────
 
@@ -16,6 +17,74 @@ export interface CacheEntry {
    * `(legacy)` tag so users can spot them without a separate flag.
    */
   legacy?: boolean
+}
+
+// ── JSON output model ─────────────────────────────────────────────
+// Schema for `ask cache ls --json`. Keys are kept verbatim from
+// `cacheLs` (legacy entries still carry the `(legacy) ` key prefix),
+// but consumers should prefer the typed `legacy` boolean.
+
+export const CacheLsEntrySchema = z.object({
+  kind: z.enum(['npm', 'github', 'web', 'llms-txt']),
+  key: z.string(),
+  path: z.string(),
+  sizeBytes: z.number().int().nonnegative(),
+  legacy: z.boolean().optional(),
+})
+
+export const CacheLsModelSchema = z.object({
+  askHome: z.string(),
+  totalBytes: z.number().int().nonnegative(),
+  entries: z.array(CacheLsEntrySchema),
+})
+
+export type CacheLsModel = z.infer<typeof CacheLsModelSchema>
+
+export function buildCacheLsModel(
+  askHome: string,
+  filter?: { kind?: CacheEntry['kind'] },
+): CacheLsModel {
+  const entries = cacheLs(askHome, filter)
+  return {
+    askHome,
+    totalBytes: entries.reduce((sum, e) => sum + e.sizeBytes, 0),
+    entries: entries.map(e => toCacheLsEntry(e)),
+  }
+}
+
+// Schema for `ask cache gc --json`. `removed` is the list of entries
+// that were (or would be, in --dry-run) deleted; `freedBytes` matches
+// what the text renderer prints.
+export const CacheGcModelSchema = z.object({
+  askHome: z.string(),
+  dryRun: z.boolean(),
+  freedBytes: z.number().int().nonnegative(),
+  removed: z.array(CacheLsEntrySchema),
+})
+
+export type CacheGcModel = z.infer<typeof CacheGcModelSchema>
+
+export function buildCacheGcModel(
+  askHome: string,
+  options: { dryRun?: boolean, scanRoots?: string[], olderThan?: number } = {},
+): CacheGcModel {
+  const result = cacheGc(askHome, { ...options, silent: true })
+  return {
+    askHome,
+    dryRun: Boolean(options.dryRun),
+    freedBytes: result.freedBytes,
+    removed: result.removed.map(e => toCacheLsEntry(e)),
+  }
+}
+
+function toCacheLsEntry(e: CacheEntry): z.infer<typeof CacheLsEntrySchema> {
+  return {
+    kind: e.kind,
+    key: e.key,
+    path: e.path,
+    sizeBytes: e.sizeBytes,
+    ...(e.legacy ? { legacy: true } : {}),
+  }
 }
 
 export interface CacheGcResult {
@@ -209,9 +278,16 @@ export function cacheGc(
     dryRun?: boolean
     scanRoots?: string[]
     olderThan?: number
+    /**
+     * Suppress the per-entry "Removed: …" info messages emitted as
+     * entries are deleted. Set by the `--json` path so consola noise
+     * does not interleave with the JSON output on stdout.
+     * Warnings (stat / rm failures) still go to stderr regardless.
+     */
+    silent?: boolean
   } = {},
 ): CacheGcResult {
-  const { dryRun = false, olderThan } = options
+  const { dryRun = false, olderThan, silent = false } = options
   const scanRoots = options.scanRoots ?? [process.env.HOME].filter((r): r is string => Boolean(r))
 
   const referencedPaths = collectReferencedStorePaths(scanRoots, askHome)
@@ -246,7 +322,8 @@ export function cacheGc(
     if (!dryRun) {
       try {
         fs.rmSync(entry.path, { recursive: true, force: true })
-        consola.info(`  Removed: ${entry.kind}/${entry.key} (${formatBytes(entry.sizeBytes)})`)
+        if (!silent)
+          consola.info(`  Removed: ${entry.kind}/${entry.key} (${formatBytes(entry.sizeBytes)})`)
       }
       catch (err) {
         consola.warn(`  Failed to remove ${entry.path}: ${err}`)
