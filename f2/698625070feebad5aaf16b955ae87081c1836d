@@ -1,0 +1,38 @@
+packages/cli/src/commands/docs.ts
+  s_cebbadb3d77d70::t_817b19890ce363 95-109,119,122-125,128,139,145-152,156-163,165-169,172-180
+  s_cebbadb3d77d70::t_74e4f9b8c10594 204-207,214
+  s_cebbadb3d77d70::t_68423b0182f83c 5,15,18-42
+packages/cli/src/store/cache.ts
+  s_cebbadb3d77d70::t_1a71fc4acf1574 325-326
+  s_cebbadb3d77d70::t_918e03fb761884 5,22-50,87
+  s_cebbadb3d77d70::t_2c7be4bde67c3f 51-86
+  s_cebbadb3d77d70::t_416b94941a74ab 281-287,290
+packages/cli/test/commands/docs.test.ts
+  s_cebbadb3d77d70::t_5b5b4145730db2 5
+  s_cebbadb3d77d70::t_f7bcfc8cf9953b 461-622
+packages/cli/test/store/cache.test.ts
+  s_cebbadb3d77d70::t_a2f8cf21462fe8 125-166
+  s_cebbadb3d77d70::t_2daa714b3a585d 209-240
+  s_cebbadb3d77d70::t_dc5bb45380c523 6,10
+  s_cebbadb3d77d70::t_2c2aa675da6599 7,12
+packages/cli/src/index.ts
+  s_cebbadb3d77d70::t_23a233c1269a67 128-131,140-148
+  s_cebbadb3d77d70::t_999b8ff55ff599 22
+  s_cebbadb3d77d70::t_50e55c64a6d389 180-183,202-205
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.11",
+  "base_commit_sha": "f2698625070feebad5aaf16b955ae87081c1836d",
+  "prompts": {},
+  "sessions": {
+    "s_cebbadb3d77d70": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "818807af-e8e4-41ad-a37e-371092c5eb7d",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "Minsu Lee <amond@amond.net>"
+    }
+  }
+}
