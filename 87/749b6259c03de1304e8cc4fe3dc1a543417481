@@ -1,0 +1,30 @@
+skills/ask/SKILL.md
+  906ea749a1226fe9 1-106
+skills/ask/references/declarative-workflow.md
+  906ea749a1226fe9 1-145
+skills/ask/references/skills-vendoring.md
+  906ea749a1226fe9 1-109
+skills/ask/references/cache.md
+  906ea749a1226fe9 1-93
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.0",
+  "base_commit_sha": "87749b6259c03de1304e8cc4fe3dc1a543417481",
+  "prompts": {
+    "906ea749a1226fe9": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8464783a-5195-415b-b158-5b57bbcd8e08",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 453,
+      "total_deletions": 0,
+      "accepted_lines": 453,
+      "overriden_lines": 0,
+      "messages_url": "https://usegitai.com/cas/fb01dd921e7c8bce76e486c049c42e34210596f5ecaa28f684c5cd3187577add"
+    }
+  }
+}

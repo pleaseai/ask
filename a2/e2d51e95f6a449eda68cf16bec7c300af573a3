@@ -1,0 +1,36 @@
+packages/cli/src/store/index.ts
+  76fc5d0f8adf5bdb 210-218,224
+packages/cli/src/commands/ensure-checkout.ts
+  76fc5d0f8adf5bdb 219-223,232
+packages/cli/src/sources/index.ts
+  76fc5d0f8adf5bdb 40-49
+packages/cli/src/sources/github.ts
+  76fc5d0f8adf5bdb 289-291,364-366,453-455
+CLAUDE.md
+  76fc5d0f8adf5bdb 59-60
+packages/cli/test/commands/ensure-checkout.test.ts
+  76fc5d0f8adf5bdb 289-314
+packages/cli/test/sources/github.test.ts
+  76fc5d0f8adf5bdb 458-559
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.0",
+  "base_commit_sha": "a2e2d51e95f6a449eda68cf16bec7c300af573a3",
+  "prompts": {
+    "76fc5d0f8adf5bdb": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c7210dbb-1213-4347-a7e9-5e5af729b170",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 166,
+      "total_deletions": 5,
+      "accepted_lines": 165,
+      "overriden_lines": 0,
+      "messages_url": "https://usegitai.com/cas/e873c279d561aff525f8d1d77792b3b38e14c0cc605fce20bb7a2d3fde338634"
+    }
+  }
+}

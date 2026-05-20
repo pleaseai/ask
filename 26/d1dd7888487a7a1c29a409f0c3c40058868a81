@@ -1,0 +1,26 @@
+packages/cli/src/sources/github.ts
+  5dadc090544ca117 64-66,69-73,75,79,194,196,244-252,257,275-278,284,317,329,343,347,386,389,394-399
+packages/cli/test/sources/github.test.ts
+  5dadc090544ca117 347-457
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.0",
+  "base_commit_sha": "26d1dd7888487a7a1c29a409f0c3c40058868a81",
+  "prompts": {
+    "5dadc090544ca117": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7bae3523-60fe-4132-9149-38882e66932d",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Minsu Lee",
+      "messages": [],
+      "total_additions": 154,
+      "total_deletions": 14,
+      "accepted_lines": 150,
+      "overriden_lines": 0,
+      "messages_url": "https://usegitai.com/cas/3742e28d19abf43250c9d6bff05fec07d8afaa2f6fcbc561d9b903c90bdeac53"
+    }
+  }
+}
