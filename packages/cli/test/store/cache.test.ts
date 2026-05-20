@@ -3,9 +3,13 @@ import os from 'node:os'
 import path from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
 import {
+  buildCacheGcModel,
+  buildCacheLsModel,
   cacheCleanLegacy,
   cacheGc,
+  CacheGcModelSchema,
   cacheLs,
+  CacheLsModelSchema,
   detectLegacyLayout,
   formatBytes,
 } from '../../src/store/cache.js'
@@ -118,6 +122,48 @@ describe('cacheLs', () => {
   })
 })
 
+describe('buildCacheLsModel', () => {
+  it('returns an empty, schema-valid model for an empty store', () => {
+    const model = buildCacheLsModel(tmpDir)
+    expect(() => CacheLsModelSchema.parse(model)).not.toThrow()
+    expect(model).toEqual({ askHome: tmpDir, totalBytes: 0, entries: [] })
+  })
+
+  it('reports total bytes as the sum of per-entry sizes', () => {
+    createStoreEntry(tmpDir, 'npm', 'a@1.0.0', 'aaa')
+    createStoreEntry(tmpDir, 'npm', 'b@1.0.0', 'bbbbbb')
+
+    const model = buildCacheLsModel(tmpDir)
+    expect(model.entries).toHaveLength(2)
+    const expected = model.entries.reduce((sum, e) => sum + e.sizeBytes, 0)
+    expect(model.totalBytes).toBe(expected)
+  })
+
+  it('threads the kind filter through to cacheLs', () => {
+    createStoreEntry(tmpDir, 'npm', 'a@1.0.0', 'aaa')
+    createStoreEntry(tmpDir, 'web', 'abc123', 'web')
+
+    const npmOnly = buildCacheLsModel(tmpDir, { kind: 'npm' })
+    expect(npmOnly.entries).toHaveLength(1)
+    expect(npmOnly.entries[0].kind).toBe('npm')
+  })
+
+  it('marks legacy entries with legacy: true', () => {
+    createStoreEntry(tmpDir, 'github', 'colinhacks__zod/v3.22.4', '# Zod')
+
+    const model = buildCacheLsModel(tmpDir, { kind: 'github' })
+    expect(model.entries).toHaveLength(1)
+    expect(model.entries[0].legacy).toBe(true)
+  })
+
+  it('omits the legacy field on non-legacy entries (clean JSON)', () => {
+    createStoreEntry(tmpDir, 'npm', 'a@1.0.0', 'aaa')
+
+    const model = buildCacheLsModel(tmpDir)
+    expect(model.entries[0]).not.toHaveProperty('legacy')
+  })
+})
+
 describe('cacheGc', () => {
   it('removes unreferenced entries', () => {
     const storeDir = createStoreEntry(tmpDir, 'npm', 'unused@1.0.0', '# Unused')
@@ -157,6 +203,38 @@ describe('cacheGc', () => {
     expect(result.removed).toHaveLength(0)
     expect(result.kept).toHaveLength(0)
     expect(result.freedBytes).toBe(0)
+  })
+})
+
+describe('buildCacheGcModel', () => {
+  it('returns a schema-valid empty model for a clean store', () => {
+    const model = buildCacheGcModel(tmpDir, { scanRoots: ['/nonexistent-root'] })
+    expect(() => CacheGcModelSchema.parse(model)).not.toThrow()
+    expect(model).toEqual({
+      askHome: tmpDir,
+      dryRun: false,
+      freedBytes: 0,
+      removed: [],
+    })
+  })
+
+  it('reports removed entries and freed bytes', () => {
+    const storeDir = createStoreEntry(tmpDir, 'npm', 'unused@1.0.0', '# Unused')
+
+    const model = buildCacheGcModel(tmpDir, { scanRoots: ['/nonexistent-root'] })
+    expect(model.removed).toHaveLength(1)
+    expect(model.removed[0].key).toBe('unused@1.0.0')
+    expect(model.freedBytes).toBeGreaterThan(0)
+    expect(fs.existsSync(storeDir)).toBe(false) // actually deleted
+  })
+
+  it('dry-run reports without deleting and sets dryRun: true', () => {
+    const storeDir = createStoreEntry(tmpDir, 'npm', 'unused@1.0.0', '# Unused')
+
+    const model = buildCacheGcModel(tmpDir, { dryRun: true, scanRoots: ['/nonexistent-root'] })
+    expect(model.dryRun).toBe(true)
+    expect(model.removed).toHaveLength(1)
+    expect(fs.existsSync(storeDir)).toBe(true) // NOT deleted
   })
 })
 

@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, mock } from 'bun:test'
-import { runDocs } from '../../src/commands/docs.js'
+import { DocsModelSchema, runDocs } from '../../src/commands/docs.js'
 import { NoCacheError } from '../../src/commands/ensure-checkout.js'
 
 interface CapturedIO {
@@ -456,5 +456,167 @@ describe('runDocs — persisted docsPaths override', () => {
 
     expect(io.stdout).toContain(path.join(checkoutDir, 'docs'))
     expect(io.stdout).toContain(path.join(checkoutDir, 'api-docs'))
+  })
+})
+
+describe('runDocs --json', () => {
+  function parseJsonStdout(stdout: string[]) {
+    expect(stdout).toHaveLength(1)
+    const parsed = JSON.parse(stdout[0]!)
+    return DocsModelSchema.parse(parsed)
+  }
+
+  it('emits a single schema-valid JSON blob with no per-line output', async () => {
+    fs.mkdirSync(path.join(checkoutDir, 'docs'), { recursive: true })
+    const { io, deps } = makeIo()
+    const ensureCheckout = mock(async () => ({
+      parsed: {} as any,
+      owner: 'facebook',
+      repo: 'react',
+      ref: 'v18.2.0',
+      resolvedVersion: '18.2.0',
+      checkoutDir,
+      npmPackageName: 'react',
+    }))
+
+    await runDocs(
+      { spec: 'react', projectDir, json: true },
+      { ensureCheckout, ...deps },
+    )
+
+    const model = parseJsonStdout(io.stdout)
+    expect(model.spec).toBe('react')
+    expect(model.npmPackageName).toBe('react')
+    expect(model.checkoutDir).toBe(checkoutDir)
+    expect(model.storedOverride).toBe(false)
+    expect(model.paths).toEqual([
+      { path: path.join(checkoutDir, 'docs'), root: 'checkout' },
+    ])
+  })
+
+  it('tags node_modules candidates with root: "node_modules"', async () => {
+    const nm = path.join(projectDir, 'node_modules', 'react')
+    fs.mkdirSync(path.join(nm, 'docs'), { recursive: true })
+    const { io, deps } = makeIo()
+    const ensureCheckout = mock(async () => ({
+      parsed: {} as any,
+      owner: 'facebook',
+      repo: 'react',
+      ref: 'v18.2.0',
+      resolvedVersion: '18.2.0',
+      checkoutDir,
+      npmPackageName: 'react',
+    }))
+
+    await runDocs(
+      { spec: 'react', projectDir, json: true },
+      { ensureCheckout, ...deps },
+    )
+
+    const model = parseJsonStdout(io.stdout)
+    expect(model.paths[0]).toEqual({
+      path: path.join(nm, 'docs'),
+      root: 'node_modules',
+    })
+    // checkout root falls back when no /doc/ subdir exists there
+    expect(model.paths.some(p => p.root === 'checkout')).toBe(true)
+  })
+
+  it('returns npmPackageName: null for github specs without an npm package', async () => {
+    const { io, deps } = makeIo()
+    const ensureCheckout = mock(async () => ({
+      parsed: {} as any,
+      owner: 'facebook',
+      repo: 'react',
+      ref: 'main',
+      resolvedVersion: 'main',
+      checkoutDir,
+      // npmPackageName omitted (undefined)
+    }))
+
+    await runDocs(
+      { spec: 'github:facebook/react', projectDir, json: true },
+      { ensureCheckout, ...deps },
+    )
+
+    const model = parseJsonStdout(io.stdout)
+    expect(model.npmPackageName).toBeNull()
+    expect(model.paths.every(p => p.root === 'checkout')).toBe(true)
+  })
+
+  it('reports storedOverride: true and emits ONLY override hits when ask.json docsPaths apply', async () => {
+    // ask.json registers `react` with a docsPaths override that points
+    // at a path we'll create inside the checkout.
+    fs.mkdirSync(path.join(checkoutDir, 'custom-docs'), { recursive: true })
+    fs.mkdirSync(path.join(checkoutDir, 'docs'), { recursive: true }) // would normally also be emitted
+    fs.writeFileSync(
+      path.join(projectDir, 'ask.json'),
+      JSON.stringify({
+        libraries: [{ spec: 'npm:react', docsPaths: ['custom-docs'] }],
+      }),
+      'utf-8',
+    )
+
+    const { io, deps } = makeIo()
+    const ensureCheckout = mock(async () => ({
+      parsed: {} as any,
+      owner: 'facebook',
+      repo: 'react',
+      ref: 'v18.2.0',
+      resolvedVersion: '18.2.0',
+      checkoutDir,
+      npmPackageName: 'react',
+    }))
+
+    await runDocs(
+      { spec: 'react', projectDir, json: true },
+      { ensureCheckout, ...deps },
+    )
+
+    const model = parseJsonStdout(io.stdout)
+    expect(model.storedOverride).toBe(true)
+    expect(model.paths).toEqual([
+      { path: path.join(checkoutDir, 'custom-docs'), root: 'checkout' },
+    ])
+    // The default `docs` dir would have been emitted in unfiltered mode
+    // but must be filtered out when the override is honored.
+    expect(model.paths.some(p => p.path === path.join(checkoutDir, 'docs'))).toBe(false)
+  })
+
+  it('falls back to unfiltered walk and reports storedOverride: false when every stored path is stale', async () => {
+    // Override points at a path that does NOT exist → fallback warning,
+    // unfiltered walk runs.
+    fs.mkdirSync(path.join(checkoutDir, 'docs'), { recursive: true })
+    fs.writeFileSync(
+      path.join(projectDir, 'ask.json'),
+      JSON.stringify({
+        libraries: [{ spec: 'npm:react', docsPaths: ['nonexistent-docs'] }],
+      }),
+      'utf-8',
+    )
+
+    const { io, deps } = makeIo()
+    const ensureCheckout = mock(async () => ({
+      parsed: {} as any,
+      owner: 'facebook',
+      repo: 'react',
+      ref: 'v18.2.0',
+      resolvedVersion: '18.2.0',
+      checkoutDir,
+      npmPackageName: 'react',
+    }))
+
+    await runDocs(
+      { spec: 'react', projectDir, json: true },
+      { ensureCheckout, ...deps },
+    )
+
+    const model = parseJsonStdout(io.stdout)
+    expect(model.storedOverride).toBe(false)
+    expect(model.paths).toEqual([
+      { path: path.join(checkoutDir, 'docs'), root: 'checkout' },
+    ])
+    // Stderr carries the "stale; emitting all candidates" warning.
+    expect(io.stderr.some(m => m.includes('all stale'))).toBe(true)
   })
 })
