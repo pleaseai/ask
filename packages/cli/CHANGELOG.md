@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.4.6](https://github.com/pleaseai/ask/compare/ask-v0.4.5...ask-v0.4.6) (2026-05-20)
+
+
+### Features
+
+* **cli:** add --json output to cache ls/gc and docs commands ([#104](https://github.com/pleaseai/ask/issues/104)) ([2665572](https://github.com/pleaseai/ask/commit/2665572e6225063a385bd9cbac9be0ec3f2a509e))
+* **cli:** prompt to select docs paths on ask add ([#101](https://github.com/pleaseai/ask/issues/101)) ([eac1285](https://github.com/pleaseai/ask/commit/eac1285e1329b0bbf4b7825676de85cf1d7b993a))
+
+
+### Bug Fixes
+
+* **cli:** normalize docsPaths to POSIX separators for cross-platform portability ([#103](https://github.com/pleaseai/ask/issues/103)) ([2608bab](https://github.com/pleaseai/ask/commit/2608babf8d22abe63fcf2eac2b7ec4979b86920f))
+* **cli:** strip removed library from AGENTS.md on ask remove ([#98](https://github.com/pleaseai/ask/issues/98)) ([58660e4](https://github.com/pleaseai/ask/commit/58660e448e93d42c3ec437c6909cc038672b5baa))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @pleaseai/ask-schema bumped to 0.3.3
+
 ## [0.4.5](https://github.com/pleaseai/ask/compare/ask-v0.4.4...ask-v0.4.5) (2026-04-16)
 
 
