@@ -1,0 +1,26 @@
+diff --git a/app/components/content/UButton.vue b/app/components/content/UButton.vue
+index 39accd4abce6518923ddddba3d5b2ffc6017d944..164e32c1e7219d1693f4d8c47f13c13515e17385 100644
+--- a/app/components/content/UButton.vue
++++ b/app/components/content/UButton.vue
+@@ -3,7 +3,7 @@ import type { NuxtLinkProps } from '#app'
+ import type { ButtonVariants } from '~/components/ui/button'
+ import Button from '~/components/ui/button/Button.vue'
+ 
+-interface Props extends NuxtLinkProps {
++interface Props extends /* @vue-ignore */ NuxtLinkProps {
+   variant?: ButtonVariants['variant']
+   size?: ButtonVariants['size']
+ }
+diff --git a/app/components/ui/button/Button.vue b/app/components/ui/button/Button.vue
+index 7b3478e756a42ab638ca940229c5437578db19e9..af5089cbc91dd5d4ded295f83eeb747036fbd291 100644
+--- a/app/components/ui/button/Button.vue
++++ b/app/components/ui/button/Button.vue
+@@ -6,7 +6,7 @@ import { Primitive } from 'reka-ui'
+ import { cn } from '~/lib/utils'
+ import { buttonVariants } from '.'
+ 
+-interface Props extends PrimitiveProps {
++interface Props extends /* @vue-ignore */ PrimitiveProps {
+   variant?: ButtonVariants['variant']
+   size?: ButtonVariants['size']
+   class?: HTMLAttributes['class']

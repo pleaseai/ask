@@ -37,6 +37,11 @@ bun run --cwd apps/registry build
 bun run --cwd apps/registry test                                 # unit only (e2e skipped without host)
 REGISTRY_E2E_HOST=http://localhost:3000 bun run --cwd apps/registry test  # e2e against a separately started dev server
 
+# Docs site (apps/docs/)
+bun run --cwd apps/docs dev
+bun run --cwd apps/docs build                                    # Cloudflare Pages preset (default)
+bun run --cwd apps/docs build:node                               # Node preset (no D1 required)
+
 # Running CLI directly
 node packages/cli/dist/index.js docs add <spec> -s <source> [options]
 ```
@@ -48,8 +53,9 @@ node packages/cli/dist/index.js docs add <spec> -s <source> [options]
 ## Gotchas
 
 - Always use `bun run test` (not `bun test`) to run tests — `bun test` may be blocked by hooks or workspace configuration.
-- bun workspace uses `.bun/` symlink structure — native Node modules (e.g. better-sqlite3) may fail to load. Prefer native alternatives (e.g. `node:sqlite`)
-- Docus (Nuxt docs theme) is incompatible with bun workspace (nuxt-content/docus#1279)
+- Root `bunfig.toml` forces `linker = "hoisted"`. Bun 1.3.2+ defaults workspace projects to the `isolated` linker (pnpm-style `.bun/` symlinks), which breaks Nitro's Rollup pipeline when a dep ships raw `.ts`/`.vue` from `node_modules` (see nuxt-content/docus#1279). With hoisted, `node_modules/` is flat and 1300+ packages live at root — no `.bun/` directory exists. If you ever flip back to isolated, re-test `apps/docs` (docs-please) and `apps/registry` and re-validate the `h3@2.0.1-rc.*` cleanup in root postinstall (it becomes a no-op under hoisted).
+- bun workspace previously used `.bun/` symlink structure — native Node modules (e.g. better-sqlite3) failed to load. Prefer native alternatives (e.g. `node:sqlite`). Under hoisted these issues do not manifest, but the `node:sqlite` preference still applies for Cloudflare Workers / D1 compatibility.
+- Docus (Nuxt docs theme) is incompatible with bun workspace (nuxt-content/docus#1279). `docs-please` (Nuxt layer from github.com/pleaseai/docs) is the documentation backbone for `apps/docs/`. It publishes raw `.vue` files that use `interface Props extends NuxtLinkProps` / `extends PrimitiveProps` — Vue SFC compiler cannot resolve the auto-imported types when the .vue sits inside `node_modules/`, so `patches/docs-please@0.2.6.patch` injects `/* @vue-ignore */` before each base. Upstream pleaseai/docs uses `workspace:*` so the issue only surfaces when consuming `docs-please` as a published npm package. If `docs-please` ever ships a fix (or pre-compiled .vue), drop the patch.
 - Nuxt Content v3 requires SQLite at build time even when deploying to D1. Use `experimental.sqliteConnector: 'native'` (requires Node 22.5+)
 - In `content.config.ts`, import `z` from `@nuxt/content` — do not install zod separately
 - `getSource(type)` (`packages/cli/src/sources/index.ts:54`) returns a `DocSource`; pass config to `DocSource.fetch(options)`, not to `getSource`. It is a single-arg factory.

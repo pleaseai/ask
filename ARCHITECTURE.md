@@ -138,6 +138,31 @@ tags: [react, framework, ssr]
 
 **Content API**: Nuxt Content v3 exposes registry entries as JSON via `/api/registry/{owner}/{name}`. The CLI fetches this during `ask add` / `ask install` when `--source` is omitted, passing either `{ecosystem}/{name}` (for ecosystem-prefixed specs) or `{owner}/{repo}` (for github shorthand specs).
 
+### `apps/docs/` — Documentation Site (`@pleaseai/ask-docs`)
+
+```
+apps/docs/
+├── app/
+│   └── app.config.ts                # site metadata (title, GitHub repo, UI overrides)
+├── content/
+│   ├── index.md                     # landing page (MDC syntax)
+│   └── docs/
+│       └── 1.getting-started/
+│           ├── .navigation.yml
+│           ├── 1.introduction.md
+│           └── 2.installation.md
+├── public/                          # static assets (favicon, landing images)
+├── eslint.config.ts                 # vue: true; ignores content/**/*.md (MDC isn't valid markdown)
+├── nuxt.config.ts                   # extends ['docs-please']; same build-time D1/sqlite split as registry
+├── package.json                     # depends on docs-please ^0.2.6 + nuxt ^4
+├── tsconfig.json
+└── wrangler.jsonc                   # Cloudflare Pages config (D1 binding name `DB`)
+```
+
+`apps/docs` is a thin wrapper around the [`docs-please`](https://github.com/pleaseai/docs) Nuxt layer (shadcn-vue + Nuxt Content + Tailwind 4). The layer ships the chrome (header, footer, sidebar, TOC) and styling; this app provides metadata via `app.config.ts` and the actual content as `.md` files under `content/`.
+
+Same Cloudflare/sqlite split as `apps/registry/`: the `nuxt.config.ts` inspects `NITRO_PRESET` / `CF_PAGES` / `NUXT_CONTENT_DATABASE_TYPE` at build time and picks the D1 binding or the native sqlite connector accordingly.
+
 ## Global Store (`~/.ask/`)
 
 ASK maintains a per-machine docs store at `ASK_HOME` (default `~/.ask/`) so identical entries are fetched once and reused across projects. All four source kinds follow the PM-style `<kind>/<identity>@<version>/` mental model:

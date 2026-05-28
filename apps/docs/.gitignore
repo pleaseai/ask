@@ -1,0 +1,6 @@
+.nuxt/
+.output/
+dist/
+.data/
+node_modules/
+.turbo/

@@ -1,0 +1,26 @@
+{
+  "name": "@pleaseai/ask-docs",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "nuxt build --preset=cloudflare_pages",
+    "build:node": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "preview:cf": "wrangler pages dev",
+    "lint": "eslint",
+    "lint:fix": "eslint --fix",
+    "postinstall": "nuxt prepare"
+  },
+  "dependencies": {
+    "docs-please": "^0.2.6",
+    "nuxt": "^4"
+  },
+  "devDependencies": {
+    "@pleaseai/eslint-config": "^0.0.1",
+    "better-sqlite3": "^11.9.1",
+    "eslint": "^10.1.0",
+    "typescript": "^5.9.3"
+  }
+}

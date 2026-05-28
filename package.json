@@ -29,6 +29,7 @@
     "vite": "~7.3.1"
   },
   "patchedDependencies": {
-    "@nuxt/test-utils@4.0.0": "patches/@nuxt%2Ftest-utils@4.0.0.patch"
+    "@nuxt/test-utils@4.0.0": "patches/@nuxt%2Ftest-utils@4.0.0.patch",
+    "docs-please@0.2.6": "patches/docs-please@0.2.6.patch"
   }
 }
