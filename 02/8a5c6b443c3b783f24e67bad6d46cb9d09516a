@@ -1,0 +1,56 @@
+apps/docs/eslint.config.ts
+  s_a647ed6dbe409e::t_f68316038cce80 1-2
+  s_a647ed6dbe409e::t_06114636af384d 3-12
+apps/docs/tsconfig.json
+  s_a647ed6dbe409e::t_f68316038cce80 1-3
+apps/docs/package.json
+  s_a647ed6dbe409e::t_f68316038cce80 1-26
+apps/docs/content/docs/1.getting-started/1.introduction.md
+  s_a647ed6dbe409e::t_f68316038cce80 1-33
+apps/docs/wrangler.jsonc
+  s_a647ed6dbe409e::t_f68316038cce80 1-19,21-23
+  s_a647ed6dbe409e::t_bc22085d6d876e 20
+apps/docs/nuxt.config.ts
+  s_a647ed6dbe409e::t_f68316038cce80 1-56
+patches/docs-please@0.2.6.patch
+  s_a647ed6dbe409e::t_eb561f59e74581 1-26
+apps/docs/.gitignore
+  s_a647ed6dbe409e::t_f68316038cce80 1-6
+apps/docs/content/index.md
+  s_a647ed6dbe409e::t_f68316038cce80 1-80
+apps/docs/app/app.config.ts
+  s_a647ed6dbe409e::t_f68316038cce80 1-28
+CLAUDE.md
+  s_a647ed6dbe409e::t_bce6bb9d0f30da 56-58
+  s_a647ed6dbe409e::t_70d928f5dfb01f 40-44
+apps/docs/content/docs/1.getting-started/.navigation.yml
+  s_a647ed6dbe409e::t_f68316038cce80 1-2
+ARCHITECTURE.md
+  s_a647ed6dbe409e::t_d713dc49aa4d18 141-165
+apps/docs/.wrangler/deploy/config.json
+  s_a647ed6dbe409e::t_1f93bbe9f8e4db 1
+bunfig.toml
+  s_a647ed6dbe409e::t_f68316038cce80 1-23
+apps/docs/content/docs/1.getting-started/2.installation.md
+  s_a647ed6dbe409e::t_f68316038cce80 1-78
+package.json
+  s_a647ed6dbe409e::t_eb561f59e74581 32-33
+apps/docs/README.md
+  s_a647ed6dbe409e::t_f68316038cce80 1-52
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "028a5c6b443c3b783f24e67bad6d46cb9d09516a",
+  "prompts": {},
+  "sessions": {
+    "s_a647ed6dbe409e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "bd01a43e-4ea1-420a-b44b-23cb171b5faf",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "Minsu Lee <amond@amond.net>"
+    }
+  }
+}
