@@ -2,5 +2,6 @@
 .output/
 dist/
 .data/
+.wrangler/
 node_modules/
 .turbo/

@@ -19,5 +19,8 @@
       "database_name": "ask-docs-db",
       "database_id": "13fc057c-92f7-4879-9fb1-e9a7a457fd57"
     }
-  ]
+  ],
+  "vars": {
+    "SKIP_DEPENDENCY_INSTALL": "1"
+  }
 }
