@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.8](https://github.com/pleaseai/ask/compare/ask-plugin-v0.4.7...ask-plugin-v0.4.8) (2026-05-28)
+
+
+### Features
+
+* **docs:** add apps/docs documentation site ([#105](https://github.com/pleaseai/ask/issues/105)) ([63a132a](https://github.com/pleaseai/ask/commit/63a132a345ead94c4f9ef73265f5bfb58b05c9e9))
+
 ## [0.4.7](https://github.com/pleaseai/ask/compare/ask-plugin-v0.4.6...ask-plugin-v0.4.7) (2026-05-20)
 
 
