@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.9](https://github.com/pleaseai/ask/compare/ask-plugin-v0.4.8...ask-plugin-v0.4.9) (2026-05-28)
+
+
+### Bug Fixes
+
+* **cloudflare:** relocate wrangler.jsonc into apps/registry/ ([#107](https://github.com/pleaseai/ask/issues/107)) ([929b74f](https://github.com/pleaseai/ask/commit/929b74fc2be4f2dca98e52f74de82ce9e1f9123f))
+
 ## [0.4.8](https://github.com/pleaseai/ask/compare/ask-plugin-v0.4.7...ask-plugin-v0.4.8) (2026-05-28)
 
 
