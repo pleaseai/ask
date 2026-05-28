@@ -2,9 +2,10 @@
 //
 // This file serves two purposes:
 //
-//   1. `wrangler pages dev` (local preview, via `bun run --cwd apps/registry preview:cf`) reads it to
-//      mount the D1 binding `DB` against the real Cloudflare database
-//      used by production. That is the only way to exercise the
+//   1. `wrangler pages dev` (local preview, via
+//      `bun run --cwd apps/registry preview:cf`) reads it to mount the D1
+//      binding `DB` against the real Cloudflare database used by
+//      production. That is the only way to exercise the
 //      `content.database = { type: 'd1', bindingName: 'DB' }` branch of
 //      `nuxt.config.ts` on a developer machine.
 //
@@ -19,18 +20,24 @@
 //      and prevents a silent regression if the dashboard binding is ever
 //      removed.
 //
+// Cloudflare Pages project setup (must match this file):
+//   - Root directory:       apps/registry
+//   - Build command:        cd ../.. && bun install && bun run build -- --filter=@pleaseai/ask-registry
+//                           (turbo's `^build` dep makes schema build first)
+//   - Build output dir:     dist            (resolved under Root directory)
+//
 // Note: Cloudflare Pages also accepts bindings configured through the
 // dashboard UI. The values here should match what the dashboard sets so
 // both entry points agree.
 {
-  "$schema": "apps/registry/node_modules/wrangler/config-schema.json",
+  "$schema": "node_modules/wrangler/config-schema.json",
   "name": "ask-registry",
   "compatibility_date": "2026-04-03",
-  // Nitro's `cloudflare_pages` preset emits registry assets to
-  // `apps/registry/dist/`. Cloudflare Pages runs with the repo root as
-  // its Root directory so turbo can build the schema workspace dep
-  // before Nuxt; the output path is relative to that root.
-  "pages_build_output_dir": "apps/registry/dist",
+  // Resolved relative to the Cloudflare Pages "Root directory" setting,
+  // which must be `apps/registry`. Nitro's `cloudflare_pages` preset
+  // emits the registry assets to `apps/registry/dist/`, i.e. `dist/` from
+  // this file's perspective.
+  "pages_build_output_dir": "dist",
   "d1_databases": [
     {
       "binding": "DB",
