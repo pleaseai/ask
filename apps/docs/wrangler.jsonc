@@ -1,0 +1,23 @@
+// Cloudflare Pages / wrangler configuration for the ASK docs site.
+//
+// Sibling to apps/registry. The D1 binding `DB` is required because
+// nuxt.config.ts switches the @nuxt/content backend to D1 on Cloudflare
+// builds. Create the database with:
+//
+//   wrangler d1 create ask-docs-db
+//
+// then paste the returned `database_id` below.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "ask-docs",
+  "compatibility_date": "2025-12-03",
+  "compatibility_flags": ["nodejs_compat", "no_nodejs_compat_v2"],
+  "pages_build_output_dir": "dist",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "ask-docs-db",
+      "database_id": "13fc057c-92f7-4879-9fb1-e9a7a457fd57"
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+# Force the hoisted (npm/yarn-style) install linker.
+#
+# Bun 1.3.2+ defaults workspace projects to the `isolated` linker (pnpm
+# style), which symlinks every dep through `node_modules/.bun/<pkg>@<ver>/`.
+# That breaks two consumers in this repo:
+#
+#   1. Docus / docs-please (apps/docs) — Nitro's Rollup esbuild plugin
+#      excludes `/node_modules/` from TS transform, so raw `.ts`/`.vue`
+#      files inside `.bun/...` fail to compile (Vue SFC compiler also
+#      can't resolve Nuxt's auto-imported `NuxtLinkProps` from a symlink
+#      sub-tree). See nuxt-content/docus#1279.
+#
+#   2. Anything else that walks `node_modules` assuming a flat layout
+#      (some Cloudflare Pages build helpers, certain native-module loaders).
+#
+# Hoisted is the workaround verified in docus#1279 on Bun 1.3.11 + Nuxt
+# 4.4.2 + Cloudflare Pages. The trade-off is a flatter, slightly larger
+# node_modules — acceptable for this monorepo.
+#
+# If a future Bun release fixes the underlying isolated-linker behavior,
+# remove this file and re-test all three apps.
+[install]
+linker = "hoisted"
