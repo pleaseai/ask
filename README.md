@@ -1,5 +1,7 @@
 # ASK (Agent Skills Kit)
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/bbd8fab3461e4f17bfaf94793645a5be)](https://app.codacy.com/gh/pleaseai/ask?utm_source=github.com&utm_medium=referral&utm_content=pleaseai/ask&utm_campaign=Badge_Grade)
+
 Download version-specific library documentation for AI coding agents.
 
 Inspired by [Next.js evals](https://nextjs.org/evals) showing that providing `AGENTS.md` with bundled docs dramatically improves AI agent performance (Claude Opus 4.6: 71% → 100%), ASK generalizes this pattern to any library.
