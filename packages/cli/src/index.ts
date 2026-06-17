@@ -269,14 +269,30 @@ const cacheCmd = defineCommand({
   },
 })
 
-const pkg = JSON.parse(
-  readFileSync(new URL('../package.json', import.meta.url), 'utf8'),
-) as { version: string }
+// Replaced with a string literal by `bun build --compile --define` when
+// building the standalone Homebrew binary. Left undefined in the npm/tsc build
+// (a global of this name never exists at runtime), so we read package.json from
+// disk instead — a path that does not exist inside a compiled binary.
+declare const __ASK_VERSION__: string | undefined
+
+function resolveVersion(): string {
+  if (typeof __ASK_VERSION__ !== 'undefined')
+    return __ASK_VERSION__
+  try {
+    const pkg = JSON.parse(
+      readFileSync(new URL('../package.json', import.meta.url), 'utf8'),
+    ) as { version: string }
+    return pkg.version
+  }
+  catch {
+    return '0.0.0'
+  }
+}
 
 export const main = defineCommand({
   meta: {
     name: 'ask',
-    version: pkg.version,
+    version: resolveVersion(),
     description: 'Agent Skills Kit - Download version-specific library docs for AI coding agents',
   },
   subCommands: {

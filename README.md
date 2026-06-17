@@ -44,7 +44,27 @@ on-demand via `ask src` / `ask docs`, which fetch and cache on first use.
 `ask install` is `postinstall`-friendly: failures on individual entries
 emit a warning and the command still exits 0.
 
-## Installation
+## Install the CLI
+
+Homebrew (standalone binary, no Node.js required):
+
+```bash
+brew install pleaseai/tap/ask
+# or
+brew tap pleaseai/tap && brew install ask
+```
+
+npm (requires Node.js):
+
+```bash
+npm install -g @pleaseai/ask
+# or
+bun install -g @pleaseai/ask
+```
+
+## Development
+
+Build the monorepo from source:
 
 ```bash
 bun install
