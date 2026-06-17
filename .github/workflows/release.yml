@@ -314,7 +314,7 @@ jobs:
           cd homebrew-tap
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          if git diff --quiet ask.rb 2>/dev/null; then
+          if git diff --quiet -- ask.rb && git ls-files --error-unmatch ask.rb >/dev/null 2>&1; then
             echo "No changes to ask.rb"
             exit 0
           fi
