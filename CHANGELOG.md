@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.4.9](https://github.com/pleaseai/ask/compare/ask-plugin-v0.4.8...ask-plugin-v0.4.9) (2026-06-17)
+
+
+### Features
+
+* **release:** distribute the CLI via Homebrew tap ([#111](https://github.com/pleaseai/ask/issues/111)) ([0bac76b](https://github.com/pleaseai/ask/commit/0bac76b023bcd4f80527d7664f08ef61b478db1d))
+
+
+### Bug Fixes
+
+* **cloudflare:** relocate wrangler.jsonc into apps/registry/ ([#107](https://github.com/pleaseai/ask/issues/107)) ([929b74f](https://github.com/pleaseai/ask/commit/929b74fc2be4f2dca98e52f74de82ce9e1f9123f))
+
 ## [0.4.8](https://github.com/pleaseai/ask/compare/ask-plugin-v0.4.7...ask-plugin-v0.4.8) (2026-05-28)
 
 

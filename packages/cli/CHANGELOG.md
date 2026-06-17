@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.7](https://github.com/pleaseai/ask/compare/ask-v0.4.6...ask-v0.4.7) (2026-06-17)
+
+
+### Features
+
+* **release:** distribute the CLI via Homebrew tap ([#111](https://github.com/pleaseai/ask/issues/111)) ([0bac76b](https://github.com/pleaseai/ask/commit/0bac76b023bcd4f80527d7664f08ef61b478db1d))
+
 ## [0.4.6](https://github.com/pleaseai/ask/compare/ask-v0.4.5...ask-v0.4.6) (2026-05-20)
 
 
