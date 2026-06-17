@@ -130,3 +130,194 @@ jobs:
           fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  # ---------------------------------------------------------------------------
+  # Homebrew distribution: build standalone binaries, attach them to the CLI
+  # GitHub release, and update the formula in pleaseai/homebrew-tap.
+  # ---------------------------------------------------------------------------
+  build-binaries:
+    name: Build standalone binaries
+    needs: release-please
+    if: needs.release-please.outputs.cli_release_created == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.3.11
+
+      - uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5
+        with:
+          path: |
+            ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lock') }}
+          restore-keys: ${{ runner.os }}-bun-
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build schema (workspace dependency)
+        run: bun run --cwd packages/schema build
+
+      # bun cross-compiles to every target from a single host, so no OS matrix
+      # is needed. The version is injected as a literal via --define because the
+      # compiled binary has no package.json on disk to read at runtime.
+      - name: Build binaries
+        run: |
+          set -euo pipefail
+          TAG="${{ needs.release-please.outputs.cli_tag_name }}"
+          VERSION_NO_V="${TAG#ask-v}"
+          mkdir -p dist-bin
+          for target in darwin-x64 darwin-arm64 linux-x64 linux-arm64; do
+            echo "::group::build ask-${target}"
+            bun build packages/cli/src/cli.ts \
+              --compile \
+              --target="bun-${target}" \
+              --define "__ASK_VERSION__=\"${VERSION_NO_V}\"" \
+              --outfile "dist-bin/ask-${target}"
+            ( cd dist-bin && shasum -a 256 "ask-${target}" > "ask-${target}.sha256" )
+            echo "::endgroup::"
+          done
+          ls -lh dist-bin
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ask-binaries
+          path: |
+            dist-bin/ask-*
+          if-no-files-found: error
+
+  upload-release-assets:
+    name: Upload release assets
+    needs: [release-please, build-binaries]
+    if: needs.release-please.outputs.cli_release_created == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: ask-binaries
+          path: dist-bin
+
+      - name: Upload binaries to release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release upload "${{ needs.release-please.outputs.cli_tag_name }}" \
+            dist-bin/ask-* \
+            --clobber \
+            --repo "${{ github.repository }}"
+
+  update-homebrew-formula:
+    name: Update Homebrew formula
+    needs: [release-please, upload-release-assets]
+    if: needs.release-please.outputs.cli_release_created == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        id: app-token
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.PRIVATE_KEY }}
+          owner: pleaseai
+          repositories: |
+            ask
+            homebrew-tap
+
+      - name: Checkout homebrew-tap
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          repository: pleaseai/homebrew-tap
+          token: ${{ steps.app-token.outputs.token }}
+          path: homebrew-tap
+
+      - name: Update formula
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          TAG: ${{ needs.release-please.outputs.cli_tag_name }}
+        run: |
+          set -euo pipefail
+          VERSION_NO_V="${TAG#ask-v}"
+
+          # Pull the published checksums straight from the release assets.
+          gh release download "$TAG" \
+            --repo "${{ github.repository }}" \
+            --pattern 'ask-*.sha256' \
+            --dir checksums \
+            --clobber
+          sha() { awk '{print $1}' "checksums/ask-$1.sha256"; }
+          DARWIN_X64_SHA256="$(sha darwin-x64)"
+          DARWIN_ARM64_SHA256="$(sha darwin-arm64)"
+          LINUX_X64_SHA256="$(sha linux-x64)"
+          LINUX_ARM64_SHA256="$(sha linux-arm64)"
+
+          cat > homebrew-tap/ask.rb << 'FORMULA_EOF'
+          class Ask < Formula
+            desc "Agent Skills Kit - Download version-specific library docs for AI coding agents"
+            homepage "https://github.com/pleaseai/ask"
+            version "VERSION_PLACEHOLDER"
+            license "MIT"
+
+            on_macos do
+              if Hardware::CPU.arm?
+                url "https://github.com/pleaseai/ask/releases/download/ask-vVERSION_PLACEHOLDER/ask-darwin-arm64"
+                sha256 "SHA256_DARWIN_ARM64_PLACEHOLDER"
+              else
+                url "https://github.com/pleaseai/ask/releases/download/ask-vVERSION_PLACEHOLDER/ask-darwin-x64"
+                sha256 "SHA256_DARWIN_X64_PLACEHOLDER"
+              end
+            end
+
+            on_linux do
+              if Hardware::CPU.arm?
+                url "https://github.com/pleaseai/ask/releases/download/ask-vVERSION_PLACEHOLDER/ask-linux-arm64"
+                sha256 "SHA256_LINUX_ARM64_PLACEHOLDER"
+              else
+                url "https://github.com/pleaseai/ask/releases/download/ask-vVERSION_PLACEHOLDER/ask-linux-x64"
+                sha256 "SHA256_LINUX_X64_PLACEHOLDER"
+              end
+            end
+
+            def install
+              if OS.mac?
+                if Hardware::CPU.arm?
+                  bin.install "ask-darwin-arm64" => "ask"
+                else
+                  bin.install "ask-darwin-x64" => "ask"
+                end
+              else
+                if Hardware::CPU.arm?
+                  bin.install "ask-linux-arm64" => "ask"
+                else
+                  bin.install "ask-linux-x64" => "ask"
+                end
+              end
+            end
+
+            test do
+              assert_match version.to_s, shell_output("#{bin}/ask --version")
+            end
+          end
+          FORMULA_EOF
+
+          sed -i "s/VERSION_PLACEHOLDER/${VERSION_NO_V}/g" homebrew-tap/ask.rb
+          sed -i "s/SHA256_DARWIN_X64_PLACEHOLDER/${DARWIN_X64_SHA256}/" homebrew-tap/ask.rb
+          sed -i "s/SHA256_DARWIN_ARM64_PLACEHOLDER/${DARWIN_ARM64_SHA256}/" homebrew-tap/ask.rb
+          sed -i "s/SHA256_LINUX_X64_PLACEHOLDER/${LINUX_X64_SHA256}/" homebrew-tap/ask.rb
+          sed -i "s/SHA256_LINUX_ARM64_PLACEHOLDER/${LINUX_ARM64_SHA256}/" homebrew-tap/ask.rb
+
+          cd homebrew-tap
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet ask.rb 2>/dev/null; then
+            echo "No changes to ask.rb"
+            exit 0
+          fi
+          git add ask.rb
+          git commit -m "chore: update ask to ${TAG}"
+          git push origin HEAD
