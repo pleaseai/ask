@@ -1,0 +1,25 @@
+packages/cli/src/index.ts
+  s_168a78e6111f4e::t_d5569639acafac 272-277,279-280
+  s_168a78e6111f4e::t_40bfb6b0e7548d 278,281-290,295
+.github/workflows/release.yml
+  s_168a78e6111f4e::t_a58486dd5bb2ba 288-292,294-298
+  s_168a78e6111f4e::t_c48e956985a5e4 133-287,293,299-323
+README.md
+  s_168a78e6111f4e::t_81f0d902e69737 47-67
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.8",
+  "base_commit_sha": "c85bd719ad094af090db2f6c70ad01ad066a5879",
+  "prompts": {},
+  "sessions": {
+    "s_168a78e6111f4e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7664a47e-fda9-4027-ac7f-223050b662e3",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Minsu Lee <minsu.lee@pleaseai.dev>"
+    }
+  }
+}
