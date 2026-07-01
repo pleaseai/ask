@@ -8,6 +8,7 @@ import { consola } from 'consola'
 import { addCmd } from './commands/add.js'
 import { docsCmd } from './commands/docs.js'
 import { splitExplicitVersion } from './commands/ensure-checkout.js'
+import { searchCmd } from './commands/search.js'
 import { skillsCmd } from './commands/skills/index.js'
 import { srcCmd } from './commands/src.js'
 import { manageIgnoreFiles } from './ignore-files.js'
@@ -302,6 +303,7 @@ export const main = defineCommand({
     list: listCmd,
     src: srcCmd,
     docs: docsCmd,
+    search: searchCmd,
     skills: skillsCmd,
     cache: cacheCmd,
   },

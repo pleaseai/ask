@@ -41,26 +41,29 @@ The load-bearing, low-risk contract. No csp dependency.
 **Files:** `commands/src.ts`, `test/commands/src.test.ts`.
 **Exit:** ✅ `ask src <spec> --json | jq .checkoutDir` returns the pinned path.
 
-## Phase 2 — `ask search` wrapper (FR-B*, FR-C*)
+## Phase 2 — `ask search` wrapper (FR-B*, FR-C*) ✅ DONE
 
 Depends on Phase 0 (exact csp argv) + Phase 1 (shared resolution path).
 
-- [ ] New `packages/cli/src/commands/search.ts` with `runSearch(options, deps)`:
-      - `deps.ensureCheckout` (default real), `deps.spawn` (default `node:child_process`),
-        `deps.resolveCsp` (default PATH/`CSP_BIN` probe), `deps.log/error/exit`.
+- [x] New `packages/cli/src/commands/search.ts` with `runSearch(options, deps)`:
+      - injected `ensureCheckout`, `resolveCsp`, `runCsp` (wraps `spawnSync`, `stdio:'inherit'`),
+        `log/error/exit`.
       - Flow: `ensureCheckout(spec)` → `resolveCsp()`:
-        - **found:** `spawn(csp, ['index', checkoutDir])` (idempotent) then
-          `spawn(csp, ['search', query, '--path', checkoutDir, ...contentArgs, ...limitArgs])`
-          with `stdio: 'inherit'`; forward exit code (FR-B4).
-        - **not found:** print `checkoutDir` + recipe, `exit(0)` (FR-B3).
-- [ ] `csp` resolution helper: `CSP_BIN` env → `which csp`/PATH scan → null (FR-B2, NFR-4).
-- [ ] Register `search: searchCmd` in `packages/cli/src/index.ts` subCommands (next to `src`, `docs`).
-- [ ] Tests: found-path (asserts index-then-search argv + forwarded exit code), not-found-path
-      (asserts recipe + exit 0), `--content`/`--limit` pass-through, `--no-fetch` propagation.
+        - **found:** `csp search "<query>" <checkoutDir> [--content …] [--top-k …]` (positional path,
+          auto-cache — NO `csp index` step, per Phase 0); forward csp's exit code (FR-B4).
+        - **not found:** print `checkoutDir` + runnable recipe, `exit(0)` (FR-B3, INV-3).
+      - `buildCspArgs()` extracted + unit-tested (positional path, `--content` repeatable, `--top-k`).
+- [x] `resolve-csp.ts`: `CSP_BIN` → PATH scan (PATHEXT on win32) → null (FR-B2, NFR-4).
+- [x] Registered `search: searchCmd` in `index.ts` subCommands (next to `src`, `docs`).
+- [x] Tests: 19 cases (buildCspArgs, csp-present forwards exit code, csp-absent recipe+exit0,
+      content/top-k passthrough, cache-miss no-csp-spawn, resolver error) — all pass; tsc + lint clean.
+- [x] **Live E2E** (csp actually installed at `/usr/local/bin/csp`):
+      `ask search github:sindresorhus/slugify@v2.2.1 "how does slugify strip diacritics" --content docs
+      --top-k 5` → ask cloned pinned checkout → csp auto-indexed + returned ranked snippets. Degradation
+      path (PATH without csp) → path + recipe, exit 0. Both verified.
 
-**Files:** `commands/search.ts`, `commands/resolve-csp.ts`, `index.ts`, `test/commands/search.test.ts`.
-**Exit:** `ask search react "how does useState schedule re-renders"` streams csp snippets when csp is
-installed; prints a runnable recipe when it is not.
+**Files:** `commands/search.ts`, `commands/resolve-csp.ts`, `index.ts`,
+`test/commands/search.test.ts`, `test/commands/resolve-csp.test.ts`.
 
 ## Phase 3 — Agent discovery + cache note (FR-D*, FR-C3)
 
