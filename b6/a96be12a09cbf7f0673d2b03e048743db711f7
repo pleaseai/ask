@@ -1,0 +1,43 @@
+CLAUDE.md
+  s_a7aa488e223547::t_452980e912eb31 64
+.please/docs/tracks/active/ask-csp-integration-20260701/plan.md
+  s_a7aa488e223547::t_5193f7a1a26653 98-99
+.claude/agent-memory/review-review-code-reviewer/csp_cli_source_location.md
+  s_a7aa488e223547::t_182f3753ea20b8 1-28
+.please/docs/tracks/active/ask-csp-integration-20260701/phase0-findings.md
+  s_a7aa488e223547::t_bf3369435c79e4 67
+  s_a7aa488e223547::t_42692f24468b85 64
+.please/docs/tracks/active/ask-csp-integration-20260701/spec.md
+  s_a7aa488e223547::t_c8330b7324de31 88
+packages/cli/test/commands/search.test.ts
+  s_a7aa488e223547::t_dc2d54148df111 143-162
+  s_a7aa488e223547::t_b70553fbe90fb2 101-113,141
+  s_a7aa488e223547::t_c88ac61e180695 63-79
+  s_a7aa488e223547::t_cff275cc88b8a4 1,4
+  s_a7aa488e223547::t_7b0f5c9084a108 138-140
+  s_a7aa488e223547::t_b16d9e048c50a5 142
+packages/cli/src/commands/search.ts
+  s_a7aa488e223547::t_d89b5cb82470e4 58-66
+  s_a7aa488e223547::t_a28ec0d4fd52bd 130,138-140
+  s_a7aa488e223547::t_90b1661cf60fb7 22-39
+  s_a7aa488e223547::t_65d58fdd8fbe02 182-185,192
+  s_a7aa488e223547::t_c9209908909b70 3
+.claude/agent-memory/review-review-code-reviewer/MEMORY.md
+  s_a7aa488e223547::t_8d8648314398ce 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.8",
+  "base_commit_sha": "b6a96be12a09cbf7f0673d2b03e048743db711f7",
+  "prompts": {},
+  "sessions": {
+    "s_a7aa488e223547": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "91524782-30c9-4d46-9081-6ddc5437aecd",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Minsu Lee <minsu.lee@pleaseai.dev>"
+    }
+  }
+}
