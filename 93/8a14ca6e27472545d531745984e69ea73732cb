@@ -1,0 +1,30 @@
+packages/cli/src/commands/resolve-csp.ts
+  s_a7aa488e223547::t_469c11f4e97120 1-76
+packages/cli/src/index.ts
+  s_a7aa488e223547::t_1cc775c95f92be 306
+  s_a7aa488e223547::t_1f2d96c4ffd3e8 11
+packages/cli/src/commands/search.ts
+  s_a7aa488e223547::t_ab8a8a0444db1a 1-164
+.please/docs/tracks/active/ask-csp-integration-20260701/plan.md
+  s_a7aa488e223547::t_499f686a08a845 44,48-50,52-66
+packages/cli/test/commands/search.test.ts
+  s_a7aa488e223547::t_91bb90d28969e0 1-142
+packages/cli/test/commands/resolve-csp.test.ts
+  s_a7aa488e223547::t_4aabfca0d053ff 1-55
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.8",
+  "base_commit_sha": "938a14ca6e27472545d531745984e69ea73732cb",
+  "prompts": {},
+  "sessions": {
+    "s_a7aa488e223547": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "91524782-30c9-4d46-9081-6ddc5437aecd",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Minsu Lee <minsu.lee@pleaseai.dev>"
+    }
+  }
+}
