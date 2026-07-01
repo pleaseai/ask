@@ -85,7 +85,7 @@ csp is an **optional** dependency — ask degrades gracefully when it is absent.
   path per pinned ref — and `ensureCheckout` never mutates an existing checkout in place — csp's
   path-derived key maps 1:1 to a stable corpus, so a given ref is indexed at most once across all
   `ask search` invocations. Holds without any csp change.
-- [ ] FR-C3: `ask cache clean` / store eviction that removes a `checkoutDir` SHOULD surface a note
+- [ ] FR-C3: `ask cache gc` / store eviction that removes a `checkoutDir` SHOULD surface a note
   that any csp index built over that path is now stale (csp owns its own `csp clear`; ask only
   informs — INV-2).
 

@@ -1,6 +1,7 @@
+import os from 'node:os'
 import { describe, expect, it, mock } from 'bun:test'
 import { NoCacheError } from '../../src/commands/ensure-checkout.js'
-import { buildCspArgs, runSearch } from '../../src/commands/search.js'
+import { buildCspArgs, cspExitCode, runSearch } from '../../src/commands/search.js'
 
 interface CapturedIO {
   stdout: string[]
@@ -59,6 +60,23 @@ describe('buildCspArgs', () => {
   })
 })
 
+describe('cspExitCode', () => {
+  it('forwards a normal exit status', () => {
+    expect(cspExitCode({ status: 0 })).toBe(0)
+    expect(cspExitCode({ status: 3 })).toBe(3)
+  })
+
+  it('maps a signal-killed child to 128 + signum (not 0)', () => {
+    const sigkill = os.constants.signals.SIGKILL // 9 on POSIX
+    expect(cspExitCode({ status: null, signal: 'SIGKILL' })).toBe(128 + sigkill)
+    expect(cspExitCode({ status: null, signal: 'SIGKILL' })).not.toBe(0)
+  })
+
+  it('falls back to 0 only when neither status nor signal is present', () => {
+    expect(cspExitCode({ status: null })).toBe(0)
+  })
+})
+
 describe('runSearch', () => {
   it('spawns csp with the built args and forwards its exit code', async () => {
     const { io, deps } = makeIo()
@@ -78,6 +96,19 @@ describe('runSearch', () => {
       { bin: '/usr/local/bin/csp', args: ['search', 'reconciler', DIR, '--top-k', '5'] },
     ])
     expect(io.exitCode).toBe(3) // csp exit code forwarded (FR-B4)
+  })
+
+  it('reports a signal-killed csp as non-zero (not a bogus 0)', async () => {
+    const { io, deps } = makeIo()
+    const runCsp = () => ({ status: null, signal: 'SIGKILL' as const })
+
+    await runSearch(
+      { spec: 'react', query: 'q', projectDir: '/proj' },
+      { ensureCheckout: okCheckout(), resolveCsp: () => '/usr/local/bin/csp', runCsp, ...deps },
+    )
+
+    expect(io.exitCode).toBe(128 + os.constants.signals.SIGKILL)
+    expect(io.exitCode).not.toBe(0)
   })
 
   it('degrades gracefully when csp is absent: prints path + recipe, exit 0', async () => {
@@ -104,7 +135,31 @@ describe('runSearch', () => {
       { spec: 'react', query: 'q', projectDir: '/proj', content: ['all'], topK: 8 },
       { ensureCheckout: okCheckout(), resolveCsp: () => null, ...deps },
     )
-    expect(io.stdout[1]).toBe(`csp search "q" ${DIR} --content all --top-k 8`)
+    // quoting rule is uniform: only whitespace tokens are quoted, so a
+    // single-word query stays bare while a spaced query/path gets quoted.
+    expect(io.stdout[1]).toBe(`csp search q ${DIR} --content all --top-k 8`)
+  })
+
+  it('quotes a checkout path containing spaces in the recipe', async () => {
+    const { io, deps } = makeIo()
+    const spacedDir = '/Users/j doe/.ask/github/github.com/facebook/react/v18.2.0'
+    const ensureCheckout = mock(async () => ({
+      parsed: { kind: 'npm', pkg: 'react', name: 'react' } as any,
+      owner: 'facebook',
+      repo: 'react',
+      ref: 'v18.2.0',
+      resolvedVersion: '18.2.0',
+      checkoutDir: spacedDir,
+      npmPackageName: 'react',
+    }))
+
+    await runSearch(
+      { spec: 'react', query: 'reconciler', projectDir: '/proj' },
+      { ensureCheckout, resolveCsp: () => null, ...deps },
+    )
+
+    // both the query and the spaced path are quoted → copy-pasteable
+    expect(io.stdout[1]).toBe(`csp search reconciler ${JSON.stringify(spacedDir)}`)
   })
 
   it('exits 1 on cache miss without invoking csp (noFetch)', async () => {

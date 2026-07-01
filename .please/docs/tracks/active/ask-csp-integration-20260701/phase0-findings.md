@@ -61,10 +61,10 @@ not file bytes.** Key = normalized path + content-selection + git_ref, hashed. C
 
 ### R2 (mutable-ref staleness) → **LOW risk, bounded.**
 `ask src`/`ask docs` allow branch refs (e.g. `main`); `ask.json` strict validation does not. For a
-branch ref the store path is stable but a *re-fetch after `ask cache clean`* could give new content
+branch ref the store path is stable but a *re-fetch after `ask cache gc`* could give new content
 under the same path — and csp (keying on path, no byte-hash invalidation yet) could serve a stale
 index. Since ask never mutates a `checkoutDir` in place, this only bites across an explicit
-clean+re-fetch cycle. Mitigation (FR-C3): on `ask cache clean` of a `checkoutDir`, note that its
+clean+re-fetch cycle. Mitigation (FR-C3): on `ask cache gc` of a `checkoutDir`, note that its
 csp index may be stale; advanced users can `csp clear index` or ask can pass `--index`/force. No
 change needed for the pinned-ref happy path.
 

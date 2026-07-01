@@ -1,5 +1,6 @@
 import type { ResolveCspDeps } from './resolve-csp.js'
 import { spawnSync } from 'node:child_process'
+import os from 'node:os'
 import process from 'node:process'
 import { defineCommand } from 'citty'
 import { ensureCheckout as defaultEnsureCheckout, NoCacheError } from './ensure-checkout.js'
@@ -18,6 +19,24 @@ export interface RunSearchOptions {
 
 export interface CspRunResult {
   status: number | null
+  /** Set by `spawnSync` when the child was terminated by a signal. */
+  signal?: NodeJS.Signals | null
+}
+
+/**
+ * Map a csp `spawnSync` result to a process exit code. A normal exit
+ * forwards `status`. A signal-terminated child (SIGSEGV, SIGKILL/OOM,
+ * SIGINT) reports `status: null` with a `signal` — forward the shell
+ * convention `128 + signum` so a crashed csp is NOT reported as success
+ * to a script/agent checking `$?` (FR-B4). Only a truly-empty result
+ * (no status, no signal) falls back to 0.
+ */
+export function cspExitCode(result: CspRunResult): number {
+  if (result.status !== null)
+    return result.status
+  if (result.signal)
+    return 128 + (os.constants.signals[result.signal] ?? 0)
+  return 0
 }
 
 export interface RunSearchDeps {
@@ -36,7 +55,15 @@ function defaultRunCsp(bin: string, args: string[]): CspRunResult {
   const result = spawnSync(bin, args, { stdio: 'inherit' })
   if (result.error)
     throw result.error
-  return { status: result.status }
+  return { status: result.status, signal: result.signal }
+}
+
+// Shell-quote a recipe token so the printed csp command stays
+// copy-pasteable even when a token (the query, or a checkout path under
+// a directory with spaces) contains whitespace.
+const WHITESPACE_RE = /\s/
+function quoteToken(token: string): string {
+  return WHITESPACE_RE.test(token) ? JSON.stringify(token) : token
 }
 
 /**
@@ -100,7 +127,7 @@ export async function runSearch(options: RunSearchOptions, deps: RunSearchDeps =
   // recipe, exit 0. ask deliberately passes the LOCAL checkout, never a
   // git URL, even though csp accepts URLs (INV-2).
   if (!csp) {
-    const recipe = ['csp', ...cspArgs.map(a => (a === options.query ? JSON.stringify(a) : a))].join(' ')
+    const recipe = ['csp', ...cspArgs.map(quoteToken)].join(' ')
     error('ask: csp (code-search) not found on PATH or $CSP_BIN — printing checkout path + recipe.')
     log(checkoutDir)
     log(recipe)
@@ -108,9 +135,9 @@ export async function runSearch(options: RunSearchOptions, deps: RunSearchDeps =
     return
   }
 
-  // csp present: stream its output through and forward the exit code.
-  const { status } = runCsp(csp, cspArgs)
-  exit(status ?? 0)
+  // csp present: stream its output through and forward the exit code
+  // (a signal-killed csp maps to 128 + signum, never a bogus 0).
+  exit(cspExitCode(runCsp(csp, cspArgs)))
 }
 
 /**
@@ -152,13 +179,17 @@ export const searchCmd = defineCommand({
       : undefined
     const topKRaw = args['top-k']
     const topK = typeof topKRaw === 'string' && topKRaw.length > 0 ? Number(topKRaw) : undefined
+    // Don't silently drop a garbage --top-k: warn so the user knows csp
+    // ran with its own default rather than the value they typed.
+    if (topK !== undefined && Number.isNaN(topK))
+      process.stderr.write(`ask: ignoring invalid --top-k '${topKRaw}' (not a number)\n`)
     await runSearch({
       spec: args.spec,
       query: args.query,
       projectDir: process.cwd(),
       noFetch: Boolean(args['no-fetch']),
       content,
-      topK: Number.isNaN(topK) ? undefined : topK,
+      topK: topK === undefined || Number.isNaN(topK) ? undefined : topK,
     })
   },
 })

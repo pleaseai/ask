@@ -95,8 +95,8 @@ Depends on Phase 0 (exact csp argv) + Phase 1 (shared resolution path).
 - **R2: csp index staleness on mutable refs — LOW/bounded (resolved Phase 0).** csp keys its cache on
   `{path, content, git_ref}`, not file bytes, and ask never mutates a `checkoutDir` in place. For the
   common **pinned ref**, path+content are stable ⇒ correct reuse. Staleness only arises after an
-  explicit `ask cache clean` + re-fetch of a **moving ref** (branches — allowed by `ask src`, rejected
-  by `ask.json` strict validation). Mitigation: FR-C3 note on cache-clean; advanced escape hatch is
+  explicit `ask cache gc` + re-fetch of a **moving ref** (branches — allowed by `ask src`, rejected
+  by `ask.json` strict validation). Mitigation: FR-C3 note on cache-gc; advanced escape hatch is
   `csp clear index` or ask forwarding `--index`. No default-path change needed.
 - **R3: Windows PATH probe.** Cover in `resolve-csp.ts` (`.exe`, `where` fallback) + NFR-4 test.
 
