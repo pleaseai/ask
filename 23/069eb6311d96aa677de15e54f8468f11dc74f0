@@ -1,0 +1,46 @@
+packages/cli/src/commands/ensure-checkout.ts
+  s_a7aa488e223547::t_4c0aada8a4d8b2 4
+  s_a7aa488e223547::t_739f3d8ca81b0c 248-256
+packages/cli/src/commands/resolve-csp.ts
+  s_a7aa488e223547::t_9c49f524131963 5-8
+  s_a7aa488e223547::t_2f80e5e7ee9829 59-63,65-68
+packages/cli/test/commands/search.test.ts
+  s_a7aa488e223547::t_80499c3abca4e7 127-128
+  s_a7aa488e223547::t_6918dd9317106e 139,143-150
+  s_a7aa488e223547::t_a28ca733725894 171-172
+  s_a7aa488e223547::t_00f51d07690e13 49,56
+  s_1b5c2d673b1a48::t_5a13a08eab8bdd 151-152
+.please/docs/tracks/active/ask-csp-integration-20260701/spec.md
+  s_a7aa488e223547::t_f95b3266504393 53-55
+packages/cli/test/commands/resolve-csp.test.ts
+  s_a7aa488e223547::t_d5672a310bb75a 47-56
+packages/cli/src/commands/search.ts
+  s_a7aa488e223547::t_b3591f0513b1a6 69,73
+  s_a7aa488e223547::t_cb5eb3be4a09ff 61-68,70-72
+  s_a7aa488e223547::t_7724aba64459c3 84-90
+  s_a7aa488e223547::t_3fc61572428045 142
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.8",
+  "base_commit_sha": "23069eb6311d96aa677de15e54f8468f11dc74f0",
+  "prompts": {},
+  "sessions": {
+    "s_1b5c2d673b1a48": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "119bc51e-572c-4a48-aa83-ef6c2229dbed",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Minsu Lee <minsu.lee@pleaseai.dev>"
+    },
+    "s_a7aa488e223547": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "91524782-30c9-4d46-9081-6ddc5437aecd",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Minsu Lee <minsu.lee@pleaseai.dev>"
+    }
+  }
+}
