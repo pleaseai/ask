@@ -1,0 +1,19 @@
+CONTRIBUTING.md
+  s_2f6c69e10f8057::t_7f3a8cd35353c0 33-34
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.8",
+  "base_commit_sha": "b534cb7f1abd3484e525714a85672285e4c23bfb",
+  "prompts": {},
+  "sessions": {
+    "s_2f6c69e10f8057": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f45f5858-e9b8-4a85-ae01-d43e222b5def",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Minsu Lee <minsu.lee@pleaseai.dev>"
+    }
+  }
+}
