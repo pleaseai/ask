@@ -30,6 +30,8 @@ bun run --cwd packages/cli test   # run the test suite
 bun run build                     # ensure it builds
 ```
 
+Each workspace ships its own test suite — run the ones relevant to your change: `bun run --cwd packages/cli test`, `bun run --cwd packages/schema test`, or `bun run --cwd apps/registry test`.
+
 ## Commit messages
 
 We follow [Conventional Commits](https://www.conventionalcommits.org/): `type(scope): subject`, where `type` is one of `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, etc. Breaking changes include a `BREAKING CHANGE:` footer. Versioning and the changelog are generated automatically from these messages, so accurate types matter.
