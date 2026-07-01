@@ -50,8 +50,9 @@ csp is an **optional** dependency — ask degrades gracefully when it is absent.
 #### A. Stable machine-readable handoff from `ask src`
 
 - [ ] FR-A1: Add `ask src <spec> --json` emitting a single JSON object with the fields already on
-  `EnsureCheckoutResult`: `{ spec, owner, repo, ref, resolvedVersion, checkoutDir, npmPackageName? }`.
-  Mirrors the existing `ask docs --json` precedent (`packages/cli/src/commands/docs.ts`).
+  `EnsureCheckoutResult`: `{ spec, owner, repo, ref, resolvedVersion, checkoutDir, npmPackageName: string | null }`
+  (the field is always present, `null` for non-npm specs). Mirrors the existing `ask docs --json`
+  precedent (`packages/cli/src/commands/docs.ts`).
 - [ ] FR-A2: `checkoutDir` in the JSON MUST be the immutable, version-pinned store path
   (`~/.ask/github/<host>/<owner>/<repo>/<ref>/`). This path is content-stable per ref, which csp
   relies on for index-cache reuse (FR-C2).

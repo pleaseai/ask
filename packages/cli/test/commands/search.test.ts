@@ -46,13 +46,14 @@ describe('buildCspArgs', () => {
     ])
   })
 
-  it('appends --content (repeatable) and --top-k when provided', () => {
+  it('repeats the --content flag per value (not spread after one) and adds --top-k', () => {
     expect(buildCspArgs('q', DIR, { content: ['docs', 'config'], topK: 10 })).toEqual([
       'search',
       'q',
       DIR,
       '--content',
       'docs',
+      '--content',
       'config',
       '--top-k',
       '10',
@@ -123,8 +124,8 @@ describe('runSearch', () => {
 
     expect(runCsp).not.toHaveBeenCalled()
     expect(io.stdout[0]).toBe(DIR)
-    // recipe is a runnable csp command with the quoted query
-    expect(io.stdout[1]).toBe(`csp search "how does useState work" ${DIR}`)
+    // recipe is a runnable csp command; the spaced query is single-quoted
+    expect(io.stdout[1]).toBe(`csp search 'how does useState work' ${DIR}`)
     expect(io.stderr.join(' ')).toContain('csp (code-search) not found')
     expect(io.exitCode).toBe(0) // INV-3: never fail solely because csp is absent
   })
@@ -135,9 +136,18 @@ describe('runSearch', () => {
       { spec: 'react', query: 'q', projectDir: '/proj', content: ['all'], topK: 8 },
       { ensureCheckout: okCheckout(), resolveCsp: () => null, ...deps },
     )
-    // quoting rule is uniform: only whitespace tokens are quoted, so a
-    // single-word query stays bare while a spaced query/path gets quoted.
+    // shell-safe tokens stay bare; single-value --content emits one flag
     expect(io.stdout[1]).toBe(`csp search q ${DIR} --content all --top-k 8`)
+  })
+
+  it('shell-quotes recipe tokens that are not shell-safe (spaces, metachars)', async () => {
+    const { io, deps } = makeIo()
+    await runSearch(
+      { spec: 'react', query: 'what is $(whoami)', projectDir: '/proj' },
+      { ensureCheckout: okCheckout(), resolveCsp: () => null, ...deps },
+    )
+    // command-substitution metacharacters are neutralized by single quotes
+    expect(io.stdout[1]).toBe(`csp search 'what is $(whoami)' ${DIR}`)
   })
 
   it('quotes a checkout path containing spaces in the recipe', async () => {
@@ -158,8 +168,8 @@ describe('runSearch', () => {
       { ensureCheckout, resolveCsp: () => null, ...deps },
     )
 
-    // both the query and the spaced path are quoted → copy-pasteable
-    expect(io.stdout[1]).toBe(`csp search reconciler ${JSON.stringify(spacedDir)}`)
+    // bare single-word query; spaced path wrapped in single quotes
+    expect(io.stdout[1]).toBe(`csp search reconciler '${spacedDir}'`)
   })
 
   it('exits 1 on cache miss without invoking csp (noFetch)', async () => {

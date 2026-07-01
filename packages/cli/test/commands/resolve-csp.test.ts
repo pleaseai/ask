@@ -44,6 +44,16 @@ describe('resolveCsp', () => {
     expect(found?.toLowerCase().endsWith('csp.exe')).toBe(true)
   })
 
+  it('does not resolve .cmd/.bat shims (unspawnable without a shell)', () => {
+    const found = resolveCsp({
+      env: { Path: 'C\\\\tools', PATHEXT: '.CMD;.BAT' },
+      platform: 'win32',
+      // even though a csp.cmd "exists", it must be filtered out
+      isExecutable: (p: string) => p.toLowerCase().endsWith('csp.cmd'),
+    })
+    expect(found).toBeNull()
+  })
+
   it('ignores a blank CSP_BIN and falls through to PATH', () => {
     const found = resolveCsp({
       env: { CSP_BIN: '   ', PATH: '/bin' },

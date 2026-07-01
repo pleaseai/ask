@@ -2,6 +2,10 @@ import { accessSync, constants } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
+// Windows extensions that require a shell interpreter to launch. `ask
+// search` spawns csp without a shell, so these are never resolvable.
+const SHELL_ONLY_EXTS = new Set(['.cmd', '.bat', '.ps1'])
+
 /**
  * Locate the `csp` (code-search) binary without importing it — ask
  * spawns csp as a separate process (INV-4: the ask<->csp contract is a
@@ -52,8 +56,16 @@ export function resolveCsp(deps: ResolveCspDeps = {}): string | null {
     return null
 
   const isWin = platform === 'win32'
+  // `ask search` spawns csp WITHOUT a shell (`spawnSync`, no `shell: true`),
+  // and Node cannot execute `.cmd`/`.bat`/`.ps1` shims that way — resolving
+  // one would return a path that then fails to launch. csp ships as a native
+  // `.exe`, so probe only shell-free-executable extensions and drop shims
+  // even if the user's PATHEXT lists them.
   const exts = isWin
-    ? (env.PATHEXT ?? '.EXE;.CMD;.BAT;.COM').split(';').filter(Boolean)
+    ? (env.PATHEXT ?? '.EXE;.COM')
+        .split(';')
+        .filter(Boolean)
+        .filter(ext => !SHELL_ONLY_EXTS.has(ext.toLowerCase()))
     : ['']
 
   for (const dir of pathVar.split(path.delimiter)) {

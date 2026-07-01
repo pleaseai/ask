@@ -58,12 +58,19 @@ function defaultRunCsp(bin: string, args: string[]): CspRunResult {
   return { status: result.status, signal: result.signal }
 }
 
-// Shell-quote a recipe token so the printed csp command stays
-// copy-pasteable even when a token (the query, or a checkout path under
-// a directory with spaces) contains whitespace.
-const WHITESPACE_RE = /\s/
-function quoteToken(token: string): string {
-  return WHITESPACE_RE.test(token) ? JSON.stringify(token) : token
+// POSIX-shell-quote a recipe token so the printed csp command is safe to
+// copy-paste. Bare only for a conservative safe-character set; otherwise
+// wrap in single quotes (which disable ALL expansion — spaces, `$()`,
+// backticks, pipes) with embedded single quotes escaped as '\''. This
+// closes the shell-injection window from a query containing shell
+// metacharacters. Display-only: the real `runCsp` call passes an argv
+// array and never goes through a shell.
+const SHELL_SAFE_RE = /^[\w.:/@%+=-]+$/
+const SINGLE_QUOTE_RE = /'/g
+function shellQuote(token: string): string {
+  if (token.length > 0 && SHELL_SAFE_RE.test(token))
+    return token
+  return `'${token.replace(SINGLE_QUOTE_RE, `'\\''`)}'`
 }
 
 /**
@@ -74,8 +81,13 @@ function quoteToken(token: string): string {
  */
 export function buildCspArgs(query: string, checkoutDir: string, options: { content?: string[], topK?: number }): string[] {
   const args = ['search', query, checkoutDir]
-  if (options.content && options.content.length > 0)
-    args.push('--content', ...options.content)
+  // csp declares `content` as a repeatable flag (clap `Vec<ContentFilter>`).
+  // Emit one `--content <value>` per selection rather than spreading all
+  // values after a single flag, which csp would misparse.
+  if (options.content) {
+    for (const c of options.content)
+      args.push('--content', c)
+  }
   if (options.topK !== undefined)
     args.push('--top-k', String(options.topK))
   return args
@@ -127,7 +139,7 @@ export async function runSearch(options: RunSearchOptions, deps: RunSearchDeps =
   // recipe, exit 0. ask deliberately passes the LOCAL checkout, never a
   // git URL, even though csp accepts URLs (INV-2).
   if (!csp) {
-    const recipe = ['csp', ...cspArgs.map(quoteToken)].join(' ')
+    const recipe = ['csp', ...cspArgs.map(shellQuote)].join(' ')
     error('ask: csp (code-search) not found on PATH or $CSP_BIN — printing checkout path + recipe.')
     log(checkoutDir)
     log(recipe)

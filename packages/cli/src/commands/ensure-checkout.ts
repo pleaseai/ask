@@ -1,6 +1,7 @@
 import type { FetchResult, GithubSourceOptions, SourceConfig } from '../sources/index.js'
 import type { ParsedSpec } from '../spec.js'
 import fs from 'node:fs'
+import path from 'node:path'
 import { npmEcosystemReader } from '../lockfiles/index.js'
 import { getResolver } from '../resolvers/index.js'
 import { GithubSource } from '../sources/github.js'
@@ -244,5 +245,13 @@ export async function ensureCheckout(
   //    on the naming axis.
   const resolvedCheckoutDir = fetchResult?.storePath ?? checkoutDir
 
-  return { parsed, owner, repo, ref, resolvedVersion, checkoutDir: resolvedCheckoutDir, npmPackageName }
+  // When a fallbackRef (or a `v`-rescued ref) wins, the store dir lives
+  // under the WINNING ref, not the requested one. The store layout ends
+  // in `.../<owner>/<repo>/<ref>/`, so the actual ref is the checkout's
+  // basename. Keep `ref` consistent with `checkoutDir` — otherwise the
+  // `ask src --json` contract would report a `ref` that disagrees with
+  // the path downstream tools actually index.
+  const actualRef = resolvedCheckoutDir === checkoutDir ? ref : path.basename(resolvedCheckoutDir)
+
+  return { parsed, owner, repo, ref: actualRef, resolvedVersion, checkoutDir: resolvedCheckoutDir, npmPackageName }
 }
