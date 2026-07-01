@@ -140,4 +140,74 @@ describe('runSrc', () => {
     expect(io.stderr.join(' ')).toMatch(/unsupported ecosystem/)
     expect(io.exitCode).toBe(1)
   })
+
+  it('emits a JSON object matching SrcModelSchema when json=true', async () => {
+    const { io, deps } = makeIo()
+    const ensureCheckout = mock(async () => ({
+      parsed: { kind: 'npm', pkg: 'react', name: 'react' } as any,
+      owner: 'facebook',
+      repo: 'react',
+      ref: 'v18.2.0',
+      resolvedVersion: '18.2.0',
+      checkoutDir: '/tmp/ask/github/github.com/facebook/react/v18.2.0',
+      npmPackageName: 'react',
+    }))
+
+    await runSrc(
+      { spec: 'react@18.2.0', projectDir: '/proj', json: true },
+      { ensureCheckout, ...deps },
+    )
+
+    // Single JSON blob on stdout, no per-line path output.
+    expect(io.stdout.length).toBe(1)
+    expect(io.stderr).toEqual([])
+    expect(io.exitCode).toBeNull()
+    const parsed = JSON.parse(io.stdout[0])
+    expect(parsed).toEqual({
+      spec: 'react@18.2.0',
+      owner: 'facebook',
+      repo: 'react',
+      ref: 'v18.2.0',
+      resolvedVersion: '18.2.0',
+      checkoutDir: '/tmp/ask/github/github.com/facebook/react/v18.2.0',
+      npmPackageName: 'react',
+    })
+  })
+
+  it('sets npmPackageName to null in JSON for non-npm specs', async () => {
+    const { io, deps } = makeIo()
+    const ensureCheckout = mock(async () => ({
+      parsed: { kind: 'github', owner: 'facebook', repo: 'react' } as any,
+      owner: 'facebook',
+      repo: 'react',
+      ref: 'v18.2.0',
+      resolvedVersion: 'v18.2.0',
+      checkoutDir: '/tmp/ask/github/github.com/facebook/react/v18.2.0',
+      // npmPackageName intentionally absent (github spec)
+    }))
+
+    await runSrc(
+      { spec: 'github:facebook/react@v18.2.0', projectDir: '/proj', json: true },
+      { ensureCheckout, ...deps },
+    )
+
+    const parsed = JSON.parse(io.stdout[0])
+    expect(parsed.npmPackageName).toBeNull()
+  })
+
+  it('does not emit JSON on cache miss (json=true, noFetch)', async () => {
+    const { io, deps } = makeIo()
+    const ensureCheckout = mock(async () => {
+      throw new NoCacheError('/cache/facebook__react/v18.2.0', 'react@18.2.0')
+    })
+
+    await runSrc(
+      { spec: 'react@18.2.0', projectDir: '/proj', noFetch: true, json: true },
+      { ensureCheckout, ...deps },
+    )
+
+    expect(io.stdout).toEqual([])
+    expect(io.stderr[0]).toContain('no cached checkout')
+    expect(io.exitCode).toBe(1)
+  })
 })
