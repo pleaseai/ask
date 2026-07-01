@@ -229,6 +229,34 @@ exist on disk — e.g. after a major version bump) are dropped; when every
 stored path is stale, a warning is written to stderr and the command
 falls back to the unfiltered walk.
 
+### `ask search` — semantic search over a pinned checkout (optional csp)
+
+`ask search` closes the loop from **acquisition** (ask) to **retrieval**:
+it resolves a spec to its version-pinned checkout, then delegates to
+[`csp`](https://github.com/pleaseai/code-search) (Code Search Please) for
+token-efficient semantic search. Use it for *"how does X work internally"*
+questions instead of dragging whole files into context.
+
+```bash
+# Semantic search over the exact pinned source of a dependency
+ask search react "how does useState schedule re-renders"
+
+# Scope to docs, cap results — flags forwarded to csp
+ask search @vercel/ai "streaming response protocol" --content docs --top-k 10
+```
+
+Under the hood this is just `ask src` + `csp`:
+
+```bash
+csp search "how does useState work" "$(ask src react)"
+```
+
+**csp is optional.** ask never fails because csp is missing — when `csp`
+is not found on `PATH` (or `$CSP_BIN`), `ask search` prints the resolved
+checkout path plus a runnable recipe and exits 0. Install csp to get live
+results. See [ADR-0002](.please/docs/decisions/0002-ask-csp-integration-boundary.md)
+for the acquisition↔retrieval boundary (ask stays TypeScript, csp stays Rust).
+
 ### `ask skills` — producer-side skill bundles
 
 `ask skills` is a sibling namespace to `ask docs` that surfaces and

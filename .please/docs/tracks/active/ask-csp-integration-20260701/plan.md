@@ -76,14 +76,16 @@ Depends on Phase 0 (exact csp argv) + Phase 1 (shared resolution path).
       csp (INV-2); suppressed under `--json` (silent) and dry-run.
 - [x] Tests green (skill + store: 72 pass); tsc + lint clean.
 
-## Phase 4 — Docs + decision record
+## Phase 4 — Docs + decision record ✅ DONE
 
-- [ ] ADR `.please/docs/decisions/ask-csp-integration.md`: the acquisition↔retrieval boundary,
-      the four INVs, and why the contract is process+path (enables TS/Rust split).
-- [ ] Decision `ask-stays-ts-csp-stays-rust` (referenced by spec Out-of-Scope): I/O-bound vs
-      CPU-bound rationale + the startup benchmark evidence (node 160ms / bun 90ms / rust-native
-      6.6ms / node-launcher 68ms).
-- [ ] README + ARCHITECTURE.md: add the `ask src → csp` pipeline diagram and the combined recipe.
+- [x] ADR-0002 `.please/docs/decisions/0002-ask-csp-integration-boundary.md`: acquisition↔retrieval
+      boundary, the four INVs, contract = process+path (enables TS/Rust split). Indexed in
+      `decisions/index.md`.
+- [x] Folded the `ask-stays-ts-csp-stays-rust` decision INTO ADR-0002 (§Decision 1) with the startup
+      benchmark table (node 160 / bun 90 / bun --compile 90 / node-launcher 68 / rust-native 6.6 ms)
+      and the "distribution + bundling beats a rewrite" follow-up — they're the same decision.
+- [x] README: new `### ask search` section (recipe + optional-csp behavior + ADR link).
+- [x] ARCHITECTURE.md: `ask ↔ csp (acquisition → retrieval)` paragraph in the data-flow section.
 
 ## Risks / mitigations
 
