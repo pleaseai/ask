@@ -1,0 +1,25 @@
+packages/cli/src/skill.ts
+  s_a7aa488e223547::t_da7aa787dfa0d5 51-54
+packages/cli/src/store/cache.ts
+  s_a7aa488e223547::t_344832c44663af 338-345
+packages/cli/test/skill.test.ts
+  s_a7aa488e223547::t_cbc12b6461c38f 41-50
+.please/docs/tracks/active/ask-csp-integration-20260701/plan.md
+  s_a7aa488e223547::t_b70713c52afe36 68-77
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.8",
+  "base_commit_sha": "e551a20cf6b0bef4d52967b365b0a7ed59feddcb",
+  "prompts": {},
+  "sessions": {
+    "s_a7aa488e223547": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "91524782-30c9-4d46-9081-6ddc5437aecd",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Minsu Lee <minsu.lee@pleaseai.dev>"
+    }
+  }
+}
