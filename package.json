@@ -1,6 +1,7 @@
 {
   "name": "@pleaseai/ask-monorepo",
   "private": true,
+  "license": "MIT",
   "scripts": {
     "build": "turbo build",
     "dev": "turbo dev",
