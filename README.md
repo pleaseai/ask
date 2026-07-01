@@ -1,8 +1,11 @@
 # ASK (Agent Skills Kit)
 
+[![npm](https://img.shields.io/npm/v/@pleaseai/ask)](https://www.npmjs.com/package/@pleaseai/ask)
+[![CI](https://github.com/pleaseai/ask/actions/workflows/ci.yml/badge.svg)](https://github.com/pleaseai/ask/actions/workflows/ci.yml)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=pleaseai_ask&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=pleaseai_ask)
 [![codecov](https://codecov.io/gh/pleaseai/ask/branch/main/graph/badge.svg)](https://codecov.io/gh/pleaseai/ask)
 [![Socket Badge](https://socket.dev/api/badge/npm/package/@pleaseai/ask)](https://socket.dev/npm/package/@pleaseai/ask)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 
 Download version-specific library documentation for AI coding agents.
 
