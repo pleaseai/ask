@@ -1,0 +1,31 @@
+.please/docs/decisions/index.md
+  s_a7aa488e223547::t_743891c4f36a4e 8
+ARCHITECTURE.md
+  s_a7aa488e223547::t_9b4dc995580922 98-99
+.please/docs/tracks/active/ask-csp-integration-20260701/plan.md
+  s_a7aa488e223547::t_72ec638f06db50 79-88
+.please/docs/tracks.jsonl
+  s_a7aa488e223547::t_6bda948957a60f 26
+.please/docs/tracks/active/ask-csp-integration-20260701/metadata.json
+  s_a7aa488e223547::t_a573803a49f4fa 4
+.please/docs/decisions/0002-ask-csp-integration-boundary.md
+  s_a7aa488e223547::t_a3f6ff3e7d28cd 1-102
+README.md
+  s_a7aa488e223547::t_1359b9ecace329 232-259
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.8",
+  "base_commit_sha": "a2b819586fa42b9751c7646a3fb7b9c7cfeba33f",
+  "prompts": {},
+  "sessions": {
+    "s_a7aa488e223547": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "91524782-30c9-4d46-9081-6ddc5437aecd",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Minsu Lee <minsu.lee@pleaseai.dev>"
+    }
+  }
+}
