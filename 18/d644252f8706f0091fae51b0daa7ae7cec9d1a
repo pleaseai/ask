@@ -1,0 +1,31 @@
+skills/ask/SKILL.md
+  s_a7aa488e223547::t_6df81481cfcf58 41-49
+  s_a7aa488e223547::t_9c8be80d2d854f 106-108
+  s_a7aa488e223547::t_a2d5f59edc5038 3
+  s_a7aa488e223547::t_83c7fdf169a101 27-30
+  s_a7aa488e223547::t_6b7f48c589ee28 76
+  s_a7aa488e223547::t_fafa00c9f191fe 79-81
+apps/docs/content/docs/1.getting-started/1.introduction.md
+  s_a7aa488e223547::t_430b4c8949427f 29
+apps/docs/content/docs/1.getting-started/2.installation.md
+  s_a7aa488e223547::t_c556ee71d37e49 74-76,81
+apps/docs/content/index.md
+  s_a7aa488e223547::t_2de451841e654f 61
+  s_a7aa488e223547::t_07dcd8c86277f8 70
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.8",
+  "base_commit_sha": "18d644252f8706f0091fae51b0daa7ae7cec9d1a",
+  "prompts": {},
+  "sessions": {
+    "s_a7aa488e223547": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "91524782-30c9-4d46-9081-6ddc5437aecd",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Minsu Lee <minsu.lee@pleaseai.dev>"
+    }
+  }
+}
