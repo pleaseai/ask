@@ -65,14 +65,16 @@ Depends on Phase 0 (exact csp argv) + Phase 1 (shared resolution path).
 **Files:** `commands/search.ts`, `commands/resolve-csp.ts`, `index.ts`,
 `test/commands/search.test.ts`, `test/commands/resolve-csp.test.ts`.
 
-## Phase 3 — Agent discovery + cache note (FR-D*, FR-C3)
+## Phase 3 — Agent discovery + cache note (FR-D*, FR-C3) ✅ DONE
 
-- [ ] `skill.ts` / AGENTS.md generation: when `ask search` exists, add a one-line hint to the
-      generated `<pkg>-docs` skill ("internal source questions → `ask search <pkg> \"...\"`").
-      Gate on integration presence (FR-D2).
-- [ ] `store/cache.ts`: when eviction removes a `checkoutDir`, emit a note that csp indexes over it
-      may be stale (informational only — INV-2). No csp invocation.
-- [ ] Tests: skill snapshot includes the hint; cache-clean note asserted.
+- [x] `skill.ts`: added an `ask search <pkg> "how does <feature> work"` hint to the generated
+      `<pkg>-docs` SKILL.md Quick Access block. `ask search` is always registered and degrades
+      gracefully when csp is absent, so the hint is unconditional (satisfies FR-D2 — the command
+      always exists). Test added (`skill.test.ts`).
+- [x] `store/cache.ts` (`cacheGc`): after eviction, if any removed entry is `kind === 'github'`,
+      emit ONE informational line pointing at `csp clear index`. ask only informs, never invokes
+      csp (INV-2); suppressed under `--json` (silent) and dry-run.
+- [x] Tests green (skill + store: 72 pass); tsc + lint clean.
 
 ## Phase 4 — Docs + decision record
 

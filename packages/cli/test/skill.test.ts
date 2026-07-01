@@ -38,6 +38,16 @@ describe('generateSkill (lazy-first)', () => {
     expect(content).toContain('$(ask docs zod)')
   })
 
+  it('emits the ask search (semantic search) hint', () => {
+    generateSkill(tmpDir, 'zod', '3.22.0')
+
+    const content = fs.readFileSync(
+      path.join(getSkillDir(tmpDir, 'zod'), 'SKILL.md'),
+      'utf-8',
+    )
+    expect(content).toContain('ask search zod "how does <feature> work"')
+  })
+
   it('emits frontmatter with trigger description', () => {
     generateSkill(tmpDir, 'next', '16.2.3')
 

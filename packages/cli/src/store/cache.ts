@@ -335,6 +335,14 @@ export function cacheGc(
     freedBytes += entry.sizeBytes
   }
 
+  // FR-C3: a removed github checkout may still be indexed by csp
+  // (code-search) under ~/.csp/index. ask only informs — it never
+  // invokes csp (INV-2). One line, not per-entry, and only when a
+  // github checkout was actually evicted.
+  if (!silent && !dryRun && removed.some(e => e.kind === 'github')) {
+    consola.info('  Note: csp indexes over removed checkouts may now be stale — run `csp clear index` if you use code-search.')
+  }
+
   return { removed, kept, freedBytes }
 }
 

@@ -48,6 +48,10 @@ ask docs ${name}
 # Search across the library source
 rg "pattern" $(ask src ${name})
 
+# Semantic search over the pinned source (token-efficient; needs csp — optional)
+# For "how does X work internally" questions, prefer this over reading whole files:
+ask search ${name} "how does <feature> work"
+
 # Read a specific doc file
 cat "$(ask src ${name})/README.md"
 
