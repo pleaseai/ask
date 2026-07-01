@@ -58,6 +58,7 @@ ASK downloads version-specific library docs and generates **AGENTS.md** + **Clau
     ask add npm:next                  # add a library and regenerate AGENTS.md
     ask docs zod                      # print candidate doc paths for the version in lockfile
     ask src facebook/react            # print the cached checkout root
+    ask search zod "how does parse work"  # semantic search over the pinned source (via csp)
     ```
     ::::
 
@@ -66,7 +67,7 @@ ASK downloads version-specific library docs and generates **AGENTS.md** + **Clau
     [One-shot reading]{.text-primary} commands
 
     #description
-    `ask docs <spec>` and `ask src <spec>` emit absolute paths to stdout — drop them straight into `$(…)` for `rg`, `cat`, `fd`, or any tool that takes a path.
+    `ask docs <spec>` and `ask src <spec>` emit absolute paths to stdout — drop them straight into `$(…)` for `rg`, `cat`, `fd`, or any tool that takes a path. `ask search <spec> <query>` adds semantic search over that same pinned source via csp.
     ::::
 
     ::::u-page-card{class="col-span-1"}
