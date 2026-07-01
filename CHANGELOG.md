@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.10](https://github.com/pleaseai/ask/compare/ask-plugin-v0.4.9...ask-plugin-v0.4.10) (2026-07-01)
+
+
+### Features
+
+* **cli:** ask ↔ csp integration — ask src --json + ask search ([#112](https://github.com/pleaseai/ask/issues/112)) ([933b49e](https://github.com/pleaseai/ask/commit/933b49e5401f876bb5f6bee355b4644727dfd587))
+
 ## [0.4.9](https://github.com/pleaseai/ask/compare/ask-plugin-v0.4.8...ask-plugin-v0.4.9) (2026-06-17)
 
 
