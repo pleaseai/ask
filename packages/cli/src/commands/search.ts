@@ -148,8 +148,22 @@ export async function runSearch(options: RunSearchOptions, deps: RunSearchDeps =
   }
 
   // csp present: stream its output through and forward the exit code
-  // (a signal-killed csp maps to 128 + signum, never a bogus 0).
-  exit(cspExitCode(runCsp(csp, cspArgs)))
+  // (a signal-killed csp maps to 128 + signum, never a bogus 0). A spawn
+  // failure — e.g. ENOEXEC from a wrong-arch binary that `accessSync`
+  // (existence + exec bit only) can't rule out — is routed through the
+  // same error()/exit(1) path as every other failure, not a raw citty
+  // stacktrace.
+  let cspResult
+  try {
+    cspResult = runCsp(csp, cspArgs)
+  }
+  catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    error(`ask: failed to run csp (${csp}): ${message}`)
+    exit(1)
+    return
+  }
+  exit(cspExitCode(cspResult))
 }
 
 /**

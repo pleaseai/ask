@@ -99,6 +99,22 @@ describe('runSearch', () => {
     expect(io.exitCode).toBe(3) // csp exit code forwarded (FR-B4)
   })
 
+  it('routes a spawn failure through error()+exit(1), not a raw throw', async () => {
+    const { io, deps } = makeIo()
+    const runCsp = () => {
+      throw Object.assign(new Error('spawnSync csp ENOEXEC'), { code: 'ENOEXEC' })
+    }
+
+    await runSearch(
+      { spec: 'react', query: 'q', projectDir: '/proj' },
+      { ensureCheckout: okCheckout(), resolveCsp: () => '/usr/local/bin/csp', runCsp, ...deps },
+    )
+
+    expect(io.stderr.join(' ')).toContain('failed to run csp')
+    expect(io.stderr.join(' ')).toContain('ENOEXEC')
+    expect(io.exitCode).toBe(1)
+  })
+
   it('reports a signal-killed csp as non-zero (not a bogus 0)', async () => {
     const { io, deps } = makeIo()
     const runCsp = () => ({ status: null, signal: 'SIGKILL' as const })
