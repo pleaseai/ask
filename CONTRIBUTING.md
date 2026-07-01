@@ -15,7 +15,7 @@ git submodule update --init --recursive   # fetch vendored submodules
 bun install                               # install dependencies
 ```
 
-The worktree setup in `orca.yaml` runs these same steps automatically. For the full toolchain conventions, see `Skill("standards:dev-tooling")`.
+The worktree setup in `orca.yaml` runs these same steps automatically. The project targets the Node version pinned in `.nvmrc` and uses [bun](https://bun.sh) as its package manager.
 
 ## Development workflow
 
@@ -25,9 +25,9 @@ The worktree setup in `orca.yaml` runs these same steps automatically. For the f
 4. Open a pull request and fill out the template.
 
 ```bash
-bun run lint        # lint and format
-bun run test        # run the test suite
-bun run build       # ensure it builds
+bun run lint                      # lint and format
+bun run --cwd packages/cli test   # run the test suite
+bun run build                     # ensure it builds
 ```
 
 ## Commit messages
