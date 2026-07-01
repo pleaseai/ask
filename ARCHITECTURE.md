@@ -95,6 +95,8 @@ src/
 2. **Consult override** — `io.ts:findEntry` matches the spec against `ask.json`; if the entry has a `docsPaths` override, only those paths (resolved against `node_modules/<pkg>` first, `checkoutDir` second) are emitted. Zero-survivor case prints a stderr warning and falls through to the default walk
 3. **Walk** — `commands/find-doc-paths.ts:findDocLikePaths` surfaces every `/doc/i` subdir from each root
 
+**ask ↔ csp (acquisition → retrieval):** ask handles *acquisition* (spec → version-pinned `checkoutDir`); [csp](https://github.com/pleaseai/code-search) handles *retrieval* (semantic search over that tree). The contract is a **filesystem path across two processes**, not an in-process API — which is what lets ask stay TypeScript (I/O-bound) and csp stay Rust (CPU-bound). `commands/src.ts:runSrc --json` emits the stable handoff object (`SrcModelSchema`: `checkoutDir` + resolution metadata); `commands/search.ts:runSearch` resolves via the same `ensureCheckout`, then spawns `csp search "<query>" <checkoutDir>` (positional path; csp auto-indexes into `~/.csp/index/`). csp is **optional** — `commands/resolve-csp.ts` probes `$CSP_BIN`→PATH; on miss, `ask search` prints the path + a runnable recipe and exits 0 (never hard-depends on csp). See [ADR-0002](.please/docs/decisions/0002-ask-csp-integration-boundary.md).
+
 ### `apps/registry/` — Registry Browser (`@pleaseai/ask-registry`)
 
 ```

@@ -1,6 +1,6 @@
 ---
 name: ask
-description: Fetch version-accurate library documentation, source trees, and producer-shipped skills so the agent works against the exact version installed in the project, not training-data guesses. Use this skill whenever the user needs docs for a dependency, wants to read a library's real source, asks "how does X work internally", needs to pin reading to a specific version or ref, mentions ask docs / ask src / ask skills, or any task that would benefit from a library's actual README / source / skill files over recalled knowledge — even when they don't explicitly name the "ask" CLI. Preferred over inferring API shape from memory whenever accuracy matters.
+description: Fetch version-accurate library documentation, source trees, and producer-shipped skills so the agent works against the exact version installed in the project, not training-data guesses. Use this skill whenever the user needs docs for a dependency, wants to read a library's real source, asks "how does X work internally", needs to pin reading to a specific version or ref, wants token-efficient semantic search over a dependency's real source, mentions ask docs / ask src / ask search / ask skills, or any task that would benefit from a library's actual README / source / skill files over recalled knowledge — even when they don't explicitly name the "ask" CLI. Preferred over inferring API shape from memory whenever accuracy matters.
 allowed-tools: Bash(ask:*)
 ---
 
@@ -24,6 +24,10 @@ rg "parseAsync" $(ask docs zod)
 rg "ZodError" $(ask src zod)
 fd -e test.ts . $(ask src zod)
 
+# Semantic search over the pinned source — token-efficient, for
+# "how does X work internally" questions (delegates to csp; optional)
+ask search zod "how does parseAsync short-circuit"
+
 # Producer-shipped skills — one /skills/ dir per line
 ls $(ask skills vercel/ai)
 ```
@@ -33,6 +37,15 @@ ls $(ask skills vercel/ai)
 up to depth 4, falling back to the checkout root when nothing matches).
 `ask src` emits exactly one path: the checkout root. Both auto-fetch on
 cache miss; pass `--no-fetch` to fail fast (exit 1) on miss instead.
+
+`ask search <spec> <query>` resolves the same pinned checkout, then hands
+it to [`csp`](https://github.com/pleaseai/code-search) (Code Search
+Please) for token-efficient semantic search over the exact installed
+version. csp is **optional**: when it isn't on `PATH` (or `$CSP_BIN`),
+`ask search` prints the checkout path plus a runnable
+`csp search "<query>" <dir>` recipe and exits 0 — it never fails just
+because csp is absent. Flags `--content code|docs|config|all` and
+`--top-k <n>` are forwarded to csp.
 
 ## Spec Grammar
 
@@ -60,11 +73,12 @@ github:owner/repo@main          # pinned branch
 |---------|--------|----------|
 | `ask docs <spec> [--no-fetch]` | Candidate doc dirs, one per line | You want README / guides / handwritten docs at the installed version |
 | `ask src <spec> [--no-fetch]`  | Checkout root, single line        | You need to read real source, search all files, follow implementations |
+| `ask search <spec> <query> [--content …] [--top-k n]` | Ranked snippets (via csp), or path + recipe if csp absent | "How does X work internally" — semantic search beats reading whole files; csp optional |
 | `ask skills <spec>` (= `ask skills list`) | `/skills/` dirs, one per line | The library ships its own Claude / Cursor / OpenCode skills |
 
-All three share `ensureCheckout`, so the cached path is reused across
-commands — calling `ask docs`, then `ask src`, then `ask skills list` on
-the same spec fetches once.
+`ask docs`, `ask src`, and `ask search` share `ensureCheckout`, so the
+cached path is reused across commands — resolving a spec with any of them
+(then `ask skills list`) fetches once.
 
 ## When You Need More
 
@@ -89,7 +103,9 @@ Reach for it when:
 - The installed version matters — otherwise the agent risks fabricating
   API shape from an outdated training snapshot.
 - The answer lives in source, not types — edge cases, error paths,
-  internal helpers, behavior that isn't documented anywhere else.
+  internal helpers, behavior that isn't documented anywhere else. Reach
+  for `ask search <spec> "<question>"` to pull just the relevant snippets
+  instead of reading whole files.
 - A library may ship its own skills — `ask skills list <spec>` discovers
   producer-side `skills/` directories without touching the project.
 
