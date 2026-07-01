@@ -1,0 +1,21 @@
+packages/cli/src/commands/search.ts
+  s_a7aa488e223547::t_1d35b539fdf5b5 151-166
+packages/cli/test/commands/search.test.ts
+  s_a7aa488e223547::t_90b6d2149db842 102-117
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.8",
+  "base_commit_sha": "f78a317e0029ba7ef3ae0b30230bad34b01cf250",
+  "prompts": {},
+  "sessions": {
+    "s_a7aa488e223547": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "91524782-30c9-4d46-9081-6ddc5437aecd",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Minsu Lee <minsu.lee@pleaseai.dev>"
+    }
+  }
+}
