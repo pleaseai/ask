@@ -1,0 +1,19 @@
+packages/cli/src/commands/ensure-checkout.ts
+  s_32c92b2ed5e544::t_4f529694bc1cc0 265
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.9",
+  "base_commit_sha": "bec57a0657b17360f5dae03ba61144aba8002fbe",
+  "prompts": {},
+  "sessions": {
+    "s_32c92b2ed5e544": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a06c4834-d76b-4eb9-b007-36f90031d94f",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Minsu Lee <minsu.lee@pleaseai.dev>"
+    }
+  }
+}
