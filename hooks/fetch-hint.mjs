@@ -124,6 +124,7 @@ function githubHint(url) {
     const query = url.searchParams.get('q')
     // Plain-text CLI arg quoting for the returned hint string, not HTML —
     // this value is never rendered in a browser/DOM context.
+    // eslint-disable-next-line -- static analysis false positive: no HTML sink involved
     const escapedQuery = query ? `"${query.replaceAll('"', '\\"')}"` : '"<query>"'
     return `This WebFetch targets GitHub code search in \`${owner}/${repo}\`. Instead run \`ask search ${spec} ${escapedQuery}\` for semantic search over a pinned local checkout (or \`ask src ${spec}\` then Grep the checkout dir).`
   }
