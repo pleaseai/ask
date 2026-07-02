@@ -74,6 +74,36 @@ type Frame
 const DEP_GROUP_KEYS = new Set(['dependencies', 'devDependencies', 'optionalDependencies'])
 
 /**
+ * Split a `packages:`/`snapshots:` entry key (leading `/` already
+ * stripped) into name + version + the node key used in the dep graph.
+ *
+ * v6–v9 keys use `<name>@<version>[<peer-suffix>]` — the node key is
+ * the raw key so it matches dep values that include peer suffixes.
+ *
+ * v5 keys use `/<name>/<version>[_peerhash]` (slash separator, no `@`
+ * between name and version): split at the LAST slash so scoped names
+ * (`@scope/pkg/1.2.3`) stay intact, and strip the `_peerhash` suffix.
+ * The node key is canonicalized to `<name>@<version>` because v5 dep
+ * edges and top-level roots reference deps as `<name>: <version>`.
+ */
+function splitPackagesKey(key: string): { name: string, versionWithPeer: string, nodeKey: string } | null {
+  const split = splitPkgSpec(key)
+  if (split) {
+    const [name, versionWithPeer] = split
+    return { name, versionWithPeer, nodeKey: key }
+  }
+  const i = key.lastIndexOf('/')
+  if (i <= 0 || i === key.length - 1)
+    return null
+  const name = key.slice(0, i)
+  const underscore = key.indexOf('_', i)
+  const version = underscore >= 0 ? key.slice(i + 1, underscore) : key.slice(i + 1)
+  if (version.length === 0)
+    return null
+  return { name, versionWithPeer: version, nodeKey: `${name}@${version}` }
+}
+
+/**
  * Parse a `pnpm-lock.yaml` text and return the installed version of
  * `pkg`, if found.
  *
@@ -185,19 +215,19 @@ export function parsePnpmLock(text: string, pkg: string): string | null {
           const key = rawKey.startsWith('/') ? rawKey.slice(1) : rawKey
           const valuePart = content.slice(sep + 1)
 
-          const split = splitPkgSpec(key)
+          const split = splitPackagesKey(key)
           if (split) {
-            const [name, versionWithPeer] = split
+            const { name, versionWithPeer, nodeKey } = split
             const version = stripPeerSuffix(versionWithPeer)
 
-            if (!graph.nodes.has(key))
-              graph.nodes.set(key, { name, version, deps: [] })
+            if (!graph.nodes.has(nodeKey))
+              graph.nodes.set(nodeKey, { name, version, deps: [] })
 
             if (name === pkg && packagesFallback === null && isRegistryVersion(version))
               packagesFallback = version
 
             if (valuePart.trim().length === 0)
-              stack.push({ kind: 'pkgEntry', base: indent, key })
+              stack.push({ kind: 'pkgEntry', base: indent, key: nodeKey })
             // Else: inline value like `{}` — no children to parse.
           }
         }

@@ -164,6 +164,61 @@ describe('ensureCheckout', () => {
     expect(calls[0].opts.tag).toBe('v18.2.0')
   })
 
+  it('reports fromCache=true on primary-key cache hit and false on fresh fetch', async () => {
+    const checkoutDir = path.join(askHome, 'github', 'github.com', 'facebook', 'react', 'v18.2.0')
+    const deps = {
+      askHome,
+      resolverFor: () => makeResolver({
+        react: { repo: 'facebook/react', ref: 'v18.2.0', resolvedVersion: '18.2.0' },
+      }),
+      lockfileReader: { read: () => null },
+    }
+
+    const { fetcher } = makeFetcher(() => {
+      fs.mkdirSync(checkoutDir, { recursive: true })
+    })
+    const fresh = await ensureCheckout({ spec: 'react@18.2.0', projectDir }, { ...deps, fetcher })
+    expect(fresh.fromCache).toBe(false)
+
+    const { fetcher: unusedFetcher } = makeFetcher(() => {
+      throw new Error('fetcher must not be called on cache hit')
+    })
+    const hit = await ensureCheckout({ spec: 'react@18.2.0', projectDir }, { ...deps, fetcher: unusedFetcher })
+    expect(hit.fromCache).toBe(true)
+  })
+
+  it('reports fromCache=true when the fetcher hit its own store on a ref-candidate variant', async () => {
+    // Primary key `.../react/v18.2.0` is absent, but GithubSource finds a
+    // verified entry under a candidate ref and returns fromStoreCache
+    // without any network I/O — ensureCheckout must not report "fetched".
+    const variantDir = path.join(askHome, 'github', 'github.com', 'facebook', 'react', '18.2.0')
+    fs.mkdirSync(variantDir, { recursive: true })
+
+    const fetcher = {
+      fetch: mock(async (opts: SourceConfig) => ({
+        files: [],
+        resolvedVersion: (opts as GithubSourceOptions).version,
+        storePath: variantDir,
+        fromStoreCache: true,
+      })),
+    }
+
+    const result = await ensureCheckout(
+      { spec: 'react@18.2.0', projectDir },
+      {
+        askHome,
+        fetcher,
+        resolverFor: () => makeResolver({
+          react: { repo: 'facebook/react', ref: 'v18.2.0', resolvedVersion: '18.2.0' },
+        }),
+        lockfileReader: { read: () => null },
+      },
+    )
+
+    expect(result.fromCache).toBe(true)
+    expect(result.checkoutDir).toBe(variantDir)
+  })
+
   it('uses explicit @version over lockfile version', async () => {
     const expectedDir = path.join(askHome, 'github', 'github.com', 'facebook', 'react', 'v18.2.0')
     fs.mkdirSync(expectedDir, { recursive: true })

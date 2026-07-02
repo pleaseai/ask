@@ -352,6 +352,7 @@ export class GithubSource implements DocSource {
           resolvedVersion,
           storePath: storeDir,
           storeSubpath: docsPath,
+          fromStoreCache: true,
           meta: { ref },
         }
       }

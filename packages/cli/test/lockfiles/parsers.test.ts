@@ -401,6 +401,57 @@ snapshots:
     expect(parsePnpmLock(text, 'unused')).toBe('9.9.9')
   })
 
+  it('v5 slash-form packages key works as fallback', () => {
+    const text = `lockfileVersion: '5.4'
+
+packages:
+  /zod/3.22.0:
+    resolution: {}
+`
+    expect(parsePnpmLock(text, 'zod')).toBe('3.22.0')
+  })
+
+  it('v5 slash-form scoped packages key works as fallback', () => {
+    const text = `lockfileVersion: '5.4'
+
+packages:
+  /@scope/pkg/1.2.3:
+    resolution: {}
+`
+    expect(parsePnpmLock(text, '@scope/pkg')).toBe('1.2.3')
+  })
+
+  it('v5 slash-form key strips the peer-hash suffix', () => {
+    const text = `lockfileVersion: '5.4'
+
+packages:
+  /foo/1.0.0_abcd1234:
+    resolution: {}
+`
+    expect(parsePnpmLock(text, 'foo')).toBe('1.0.0')
+  })
+
+  it('v5 slash-form keys participate in transitive resolution', () => {
+    // target is only reachable through a's packages-level dep edge; the
+    // v5 `/name/version` node keys must canonicalize to `name@version`
+    // so root and dep references (`a: 1.0.0`, `target: 2.0.0`) connect.
+    const text = `lockfileVersion: '5.4'
+
+dependencies:
+  a: 1.0.0
+
+packages:
+
+  /a/1.0.0:
+    dependencies:
+      target: 2.0.0
+
+  /target/2.0.0:
+    resolution: {}
+`
+    expect(parsePnpmLock(text, 'target')).toBe('2.0.0')
+  })
+
   it('handles dependency cycles', () => {
     const text = `lockfileVersion: '9.0'
 
