@@ -10,6 +10,7 @@ import { execFileSync, spawnSync } from 'node:child_process'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
+import process from 'node:process'
 import { consola } from 'consola'
 import {
   acquireEntryLock,
@@ -40,6 +41,56 @@ const RE_SAFE_REPO = /^[\w.-]+\/[\w.-]+$/
 const RE_SAFE_REF = /^[\w./@-]+$/
 
 const DEFAULT_GITHUB_HOST = 'github.com'
+
+/**
+ * Read the GitHub auth token from the environment, treating an empty
+ * string as absent.
+ */
+function githubToken(): string | undefined {
+  const token = process.env.GITHUB_TOKEN
+  return token || undefined
+}
+
+/**
+ * Rewrite an HTTPS GitHub clone URL to embed auth credentials when a
+ * token is available. Ported from opensrc's `authenticated_clone_url`
+ * including the vercel-labs/opensrc#66 host-validation fix: the URL is
+ * fully parsed and the token is only injected on an EXACT `github.com`
+ * host match — prefix-confusable hosts like `github.com.evil.com` (or
+ * `evilgithub.com`, subdomains, non-https schemes, ssh remotes) never
+ * receive credentials and pass through unchanged.
+ *
+ * The returned URL contains the secret — use it ONLY as a git/network
+ * argument, never in log or error output.
+ */
+export function authenticatedCloneUrl(url: string, token: string | undefined = githubToken()): string {
+  if (!token)
+    return url
+  let parsed: URL
+  try {
+    parsed = new URL(url)
+  }
+  catch {
+    return url
+  }
+  if (parsed.protocol !== 'https:')
+    return url
+  if (parsed.hostname.toLowerCase() !== DEFAULT_GITHUB_HOST)
+    return url
+  parsed.username = 'x-access-token'
+  parsed.password = token
+  return parsed.toString()
+}
+
+/**
+ * Scrub the GitHub token from a message before it reaches logs or
+ * thrown errors. `execFileSync` failures embed the full command line
+ * (including the authenticated URL) in `err.message`, and git itself
+ * echoes the URL it was given in fatal output.
+ */
+function redactToken(msg: string, token: string | undefined = githubToken()): string {
+  return token ? msg.split(token).join('***') : msg
+}
 
 /**
  * Check whether `git` is available on the system PATH.
@@ -98,7 +149,7 @@ function probeRemoteTag(
     const output = execFileSync('git', [
       'ls-remote',
       '--tags',
-      remoteUrl,
+      authenticatedCloneUrl(remoteUrl),
     ], { encoding: 'utf-8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 10_000 })
 
     // Parse refs/tags/<tagname> lines, filter by version
@@ -116,7 +167,7 @@ function probeRemoteTag(
     return { tag: exact ?? matching[0], allMatching: matching }
   }
   catch (err) {
-    consola.debug(`probeRemoteTag: ls-remote failed for ${remoteUrl}: ${err instanceof Error ? err.message : err}`)
+    consola.debug(`probeRemoteTag: ls-remote failed for ${remoteUrl}: ${redactToken(err instanceof Error ? err.message : String(err))}`)
     return null
   }
 }
@@ -143,16 +194,23 @@ function shallowCloneRef(
   tmpDir: string,
 ): string {
   clearDirContents(tmpDir)
-  execFileSync('git', [
-    'clone',
-    '--depth',
-    '1',
-    '--branch',
-    candidate,
-    '--single-branch',
-    remoteUrl,
-    tmpDir,
-  ], { stdio: ['ignore', 'ignore', 'pipe'] })
+  // Auth is injected at the exec boundary only — `remoteUrl` stays
+  // token-free so every error message built from it is safe to print.
+  try {
+    execFileSync('git', [
+      'clone',
+      '--depth',
+      '1',
+      '--branch',
+      candidate,
+      '--single-branch',
+      authenticatedCloneUrl(remoteUrl),
+      tmpDir,
+    ], { stdio: ['ignore', 'ignore', 'pipe'] })
+  }
+  catch (err) {
+    throw new Error(redactToken(err instanceof Error ? err.message : String(err)))
+  }
 
   // Capture the commit SHA before we strip `.git/`.
   const commit = execFileSync(
@@ -400,11 +458,22 @@ export class GithubSource implements DocSource {
         // the default-branch case (e.g. `master`), those are always
         // branches even though the original ref was the default `main`.
         const isTagCandidate = opts.tag !== undefined && !tailCandidates?.includes(candidate)
-        const archiveUrl = `https://github.com/${repo}/archive/refs/${isTagCandidate ? 'tags' : 'heads'}/${candidate}.tar.gz`
+        // With a token, go through the API tarball endpoint: undici
+        // strips the Authorization header on the cross-origin redirect
+        // to codeload, but GitHub embeds a temporary token in the
+        // redirect Location itself, so private repos still work. The
+        // hosts are hard-coded here, so no URL-host validation (as in
+        // `authenticatedCloneUrl`) is needed.
+        const token = githubToken()
+        const archiveUrl = token
+          ? `https://api.github.com/repos/${repo}/tarball/${candidate}`
+          : `https://github.com/${repo}/archive/refs/${isTagCandidate ? 'tags' : 'heads'}/${candidate}.tar.gz`
 
         let response: Response
         try {
-          response = await fetch(archiveUrl)
+          response = await fetch(archiveUrl, token
+            ? { headers: { authorization: `Bearer ${token}` } }
+            : undefined)
         }
         catch (err) {
           lastErr = err
