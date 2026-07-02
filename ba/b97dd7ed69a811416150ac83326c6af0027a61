@@ -1,0 +1,24 @@
+skills/ask/SKILL.md
+  s_32c92b2ed5e544::t_28268d6bb5cb14 78,80-84
+CLAUDE.md
+  s_32c92b2ed5e544::t_0f236f6a5a7f84 67,93
+  s_32c92b2ed5e544::t_c0a527079a63fa 64,100
+README.md
+  s_32c92b2ed5e544::t_e3b89322479834 181-183,186-194
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.9",
+  "base_commit_sha": "bab97dd7ed69a811416150ac83326c6af0027a61",
+  "prompts": {},
+  "sessions": {
+    "s_32c92b2ed5e544": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a06c4834-d76b-4eb9-b007-36f90031d94f",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Minsu Lee <minsu.lee@pleaseai.dev>"
+    }
+  }
+}
