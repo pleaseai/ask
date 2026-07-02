@@ -1,0 +1,28 @@
+hooks/fetch-hint.mjs
+  s_43d62734156ca7::t_9dab0ace14723c 171
+  s_43d62734156ca7::t_0ff8835a09c800 18
+  s_43d62734156ca7::t_3c10e50c4da631 1-17,19-93,95-170,172
+  s_43d62734156ca7::t_49628065978bc8 94
+hooks/hooks.json
+  s_43d62734156ca7::t_617634f6b5d93e 1-16
+hooks/known-docs-hosts.json
+  s_43d62734156ca7::t_5774d0b771ed3e 1-32
+hooks/fetch-hint.test.mjs
+  s_43d62734156ca7::t_912b3adaeade9c 1-63
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.9",
+  "base_commit_sha": "b75bb5fd424fb99dfc8d711b117eeeab815fbc72",
+  "prompts": {},
+  "sessions": {
+    "s_43d62734156ca7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "258e2d93-44bb-41d2-8deb-d5d9184343a1",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Minsu Lee <minsu.lee@pleaseai.dev>"
+    }
+  }
+}
