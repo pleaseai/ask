@@ -47,7 +47,12 @@ export interface EnsureCheckoutResult {
  */
 export interface EnsureCheckoutDeps {
   askHome?: string
-  fetcher?: { fetch: (opts: SourceConfig) => Promise<FetchResult> }
+  /**
+   * The result may be undefined: test seams simulate a successful fetch
+   * by materializing the checkout dir without building a `FetchResult`.
+   * Downstream reads must stay null-safe (`fetchResult?.…`).
+   */
+  fetcher?: { fetch: (opts: SourceConfig) => Promise<FetchResult | undefined> }
   lockfileReader?: { read: (name: string, projectDir: string) => { version: string } | null }
   resolverFor?: (ecosystem: string) => {
     resolve: (name: string, version: string) => Promise<{
@@ -262,5 +267,5 @@ export async function ensureCheckout(
   // `GithubSource.fetch` can satisfy the request from its own store-hit
   // path (a ref-candidate variant like `v<ref>` or `master`) with zero
   // network I/O — trust its `fromStoreCache` over our primary-key miss.
-  return { parsed, owner, repo, ref: actualRef, resolvedVersion, checkoutDir: resolvedCheckoutDir, npmPackageName, fromCache: fetchResult.fromStoreCache ?? false }
+  return { parsed, owner, repo, ref: actualRef, resolvedVersion, checkoutDir: resolvedCheckoutDir, npmPackageName, fromCache: fetchResult?.fromStoreCache ?? false }
 }
