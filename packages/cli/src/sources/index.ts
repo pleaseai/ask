@@ -89,6 +89,13 @@ export interface FetchResult {
    * points at the docs directory, not the repo root.
    */
   storeSubpath?: string
+  /**
+   * True when the result was served from an existing verified store
+   * entry without any network fetch (e.g. GithubSource's store-hit
+   * short-circuit on a ref candidate). Lets callers report cache hits
+   * accurately even when their own cache-key check missed.
+   */
+  fromStoreCache?: boolean
   /** Source-specific metadata propagated to ask.lock */
   meta?: {
     /** GitHub commit sha (40 hex chars) */

@@ -178,13 +178,20 @@ documentation**. They print absolute paths to cached source trees,
 fetching on cache miss:
 
 ```bash
-ask src <spec>     # Print the absolute path to a cached library source tree
-ask docs <spec>    # Print all candidate documentation paths from node_modules + the cached source
+ask src <spec>          # Print the absolute path to a cached library source tree
+ask docs <spec>         # Print all candidate documentation paths from node_modules + the cached source
+ask fetch <spec...>     # Warm the cache for one or more specs without printing paths (-q/--quiet)
 ```
 
-Both commands fetch on cache miss (first run) and short-circuit on cache
-hit. They share the same `~/.ask/github/github.com/<owner>/<repo>/<tag>/`
-store.
+All three commands fetch on cache miss (first run) and short-circuit on
+cache hit. They share the same
+`~/.ask/github/github.com/<owner>/<repo>/<tag>/` store. `ask fetch` is
+the prefetch counterpart for setup scripts — it also warms the cache
+that `ask add`'s offline-first docs-path prompt reads from.
+
+Private GitHub repositories are supported by setting `GITHUB_TOKEN` in
+the environment; the token is attached only to exact `https://github.com`
+remotes.
 
 ```bash
 # Print the absolute path to React's source tree (fetches on first run)

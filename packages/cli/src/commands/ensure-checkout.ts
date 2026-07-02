@@ -33,6 +33,12 @@ export interface EnsureCheckoutResult {
    * Undefined for github/pypi/pub/etc. specs.
    */
   npmPackageName?: string
+  /**
+   * True when the checkout was already in the store (no network fetch
+   * happened). `ask fetch` uses this to report "fetched" vs "already
+   * cached" per spec.
+   */
+  fromCache: boolean
 }
 
 /**
@@ -41,7 +47,12 @@ export interface EnsureCheckoutResult {
  */
 export interface EnsureCheckoutDeps {
   askHome?: string
-  fetcher?: { fetch: (opts: SourceConfig) => Promise<FetchResult> }
+  /**
+   * The result may be undefined: test seams simulate a successful fetch
+   * by materializing the checkout dir without building a `FetchResult`.
+   * Downstream reads must stay null-safe (`fetchResult?.…`).
+   */
+  fetcher?: { fetch: (opts: SourceConfig) => Promise<FetchResult | undefined> }
   lockfileReader?: { read: (name: string, projectDir: string) => { version: string } | null }
   resolverFor?: (ecosystem: string) => {
     resolve: (name: string, version: string) => Promise<{
@@ -205,7 +216,7 @@ export async function ensureCheckout(
 
   // 5. Cache hit short-circuit
   if (fs.existsSync(checkoutDir)) {
-    return { parsed, owner, repo, ref, resolvedVersion, checkoutDir, npmPackageName }
+    return { parsed, owner, repo, ref, resolvedVersion, checkoutDir, npmPackageName, fromCache: true }
   }
 
   // 6. Cache miss + noFetch → throw
@@ -253,5 +264,8 @@ export async function ensureCheckout(
   // the path downstream tools actually index.
   const actualRef = resolvedCheckoutDir === checkoutDir ? ref : path.basename(resolvedCheckoutDir)
 
-  return { parsed, owner, repo, ref: actualRef, resolvedVersion, checkoutDir: resolvedCheckoutDir, npmPackageName }
+  // `GithubSource.fetch` can satisfy the request from its own store-hit
+  // path (a ref-candidate variant like `v<ref>` or `master`) with zero
+  // network I/O — trust its `fromStoreCache` over our primary-key miss.
+  return { parsed, owner, repo, ref: actualRef, resolvedVersion, checkoutDir: resolvedCheckoutDir, npmPackageName, fromCache: fetchResult?.fromStoreCache ?? false }
 }
