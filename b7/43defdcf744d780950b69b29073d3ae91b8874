@@ -1,0 +1,21 @@
+packages/cli/test/sources/github.test.ts
+  s_32c92b2ed5e544::t_7a1269f7c7f988 48-49,53-54,59-60,366,483,578,580,699,701
+packages/cli/test/sources/github-monorepo.test.ts
+  s_32c92b2ed5e544::t_7a1269f7c7f988 57,59,83-84
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.9",
+  "base_commit_sha": "b743defdcf744d780950b69b29073d3ae91b8874",
+  "prompts": {},
+  "sessions": {
+    "s_32c92b2ed5e544": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a06c4834-d76b-4eb9-b007-36f90031d94f",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Minsu Lee <minsu.lee@pleaseai.dev>"
+    }
+  }
+}
