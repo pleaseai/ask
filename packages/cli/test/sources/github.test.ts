@@ -45,19 +45,19 @@ function createLocalRemote(): string {
   fs.writeFileSync(path.join(workDir, 'docs', 'guide.md'), '# Guide v1\n')
 
   execFileSync('git', ['-C', workDir, 'add', '-A'], { stdio: 'ignore' })
-  execFileSync('git', ['-C', workDir, 'commit', '-m', 'initial'], { stdio: 'ignore' })
-  execFileSync('git', ['-C', workDir, 'tag', 'v1.0.0'], { stdio: 'ignore' })
+  execFileSync('git', ['-C', workDir, '-c', 'commit.gpgsign=false', 'commit', '-m', 'initial'], { stdio: 'ignore' })
+  execFileSync('git', ['-C', workDir, '-c', 'tag.gpgsign=false', 'tag', 'v1.0.0'], { stdio: 'ignore' })
 
   fs.writeFileSync(path.join(workDir, 'docs', 'guide.md'), '# Guide v2\n')
   execFileSync('git', ['-C', workDir, 'add', '-A'], { stdio: 'ignore' })
-  execFileSync('git', ['-C', workDir, 'commit', '-m', 'update'], { stdio: 'ignore' })
-  execFileSync('git', ['-C', workDir, 'tag', 'v2.0.0'], { stdio: 'ignore' })
+  execFileSync('git', ['-C', workDir, '-c', 'commit.gpgsign=false', 'commit', '-m', 'update'], { stdio: 'ignore' })
+  execFileSync('git', ['-C', workDir, '-c', 'tag.gpgsign=false', 'tag', 'v2.0.0'], { stdio: 'ignore' })
 
   // Add a bare tag (no `v` prefix) so we can test the fallback chain
   fs.writeFileSync(path.join(workDir, 'docs', 'guide.md'), '# Guide v3\n')
   execFileSync('git', ['-C', workDir, 'add', '-A'], { stdio: 'ignore' })
-  execFileSync('git', ['-C', workDir, 'commit', '-m', 'bare-tag'], { stdio: 'ignore' })
-  execFileSync('git', ['-C', workDir, 'tag', '3.0.0'], { stdio: 'ignore' })
+  execFileSync('git', ['-C', workDir, '-c', 'commit.gpgsign=false', 'commit', '-m', 'bare-tag'], { stdio: 'ignore' })
+  execFileSync('git', ['-C', workDir, '-c', 'tag.gpgsign=false', 'tag', '3.0.0'], { stdio: 'ignore' })
 
   execFileSync('git', ['clone', '--bare', workDir, repoDir], { stdio: 'ignore' })
   return repoDir
@@ -363,7 +363,7 @@ describe('default-branch fallback — main → master', () => {
     fs.writeFileSync(path.join(workDir, 'docs', 'guide.md'), '# Master Guide\n')
 
     execFileSync('git', ['-C', workDir, 'add', '-A'], { stdio: 'ignore' })
-    execFileSync('git', ['-C', workDir, 'commit', '-m', 'initial'], { stdio: 'ignore' })
+    execFileSync('git', ['-C', workDir, '-c', 'commit.gpgsign=false', 'commit', '-m', 'initial'], { stdio: 'ignore' })
 
     execFileSync('git', ['clone', '--bare', workDir, repoDir], { stdio: 'ignore' })
     return repoDir
@@ -480,7 +480,7 @@ describe('skipDocExtraction — callers that only need the checkout path', () =>
     fs.writeFileSync(path.join(workDir, 'src.ts'), 'export {}\n')
 
     execFileSync('git', ['-C', workDir, 'add', '-A'], { stdio: 'ignore' })
-    execFileSync('git', ['-C', workDir, 'commit', '-m', 'initial'], { stdio: 'ignore' })
+    execFileSync('git', ['-C', workDir, '-c', 'commit.gpgsign=false', 'commit', '-m', 'initial'], { stdio: 'ignore' })
 
     execFileSync('git', ['clone', '--bare', workDir, repoDir], { stdio: 'ignore' })
     return repoDir
@@ -575,9 +575,9 @@ describe('refCandidates via fetch behavior — fallbackRefs', () => {
     fs.writeFileSync(path.join(workDir, 'docs', 'intro.md'), '# AI Docs\n')
 
     execFileSync('git', ['-C', workDir, 'add', '-A'], { stdio: 'ignore' })
-    execFileSync('git', ['-C', workDir, 'commit', '-m', 'initial'], { stdio: 'ignore' })
+    execFileSync('git', ['-C', workDir, '-c', 'commit.gpgsign=false', 'commit', '-m', 'initial'], { stdio: 'ignore' })
     // monorepo-style tag with `@` separator
-    execFileSync('git', ['-C', workDir, 'tag', 'ai@6.0.158'], { stdio: 'ignore' })
+    execFileSync('git', ['-C', workDir, '-c', 'tag.gpgsign=false', 'tag', 'ai@6.0.158'], { stdio: 'ignore' })
 
     execFileSync('git', ['clone', '--bare', workDir, repoDir], { stdio: 'ignore' })
     return repoDir
@@ -696,9 +696,9 @@ describe('git ls-remote fallback probe (T005)', () => {
     fs.writeFileSync(path.join(workDir, 'docs', 'api.md'), '# API Docs\n')
 
     execFileSync('git', ['-C', workDir, 'add', '-A'], { stdio: 'ignore' })
-    execFileSync('git', ['-C', workDir, 'commit', '-m', 'initial'], { stdio: 'ignore' })
+    execFileSync('git', ['-C', workDir, '-c', 'commit.gpgsign=false', 'commit', '-m', 'initial'], { stdio: 'ignore' })
     // Only monorepo-style tag: no `v1.0.0` exists
-    execFileSync('git', ['-C', workDir, 'tag', 'ai@1.0.0'], { stdio: 'ignore' })
+    execFileSync('git', ['-C', workDir, '-c', 'tag.gpgsign=false', 'tag', 'ai@1.0.0'], { stdio: 'ignore' })
 
     execFileSync('git', ['clone', '--bare', workDir, repoDir], { stdio: 'ignore' })
     return repoDir

@@ -54,9 +54,9 @@ function createMonorepoRemote(tagName: string): string {
   fs.writeFileSync(path.join(workDir, 'docs', 'intro.md'), '# AI Docs\n')
 
   execFileSync('git', ['-C', workDir, 'add', '-A'], { stdio: 'ignore' })
-  execFileSync('git', ['-C', workDir, 'commit', '-m', 'initial'], { stdio: 'ignore' })
+  execFileSync('git', ['-C', workDir, '-c', 'commit.gpgsign=false', 'commit', '-m', 'initial'], { stdio: 'ignore' })
   // Only monorepo-style tag — no `v1.0.0`
-  execFileSync('git', ['-C', workDir, 'tag', tagName], { stdio: 'ignore' })
+  execFileSync('git', ['-C', workDir, '-c', 'tag.gpgsign=false', 'tag', tagName], { stdio: 'ignore' })
 
   execFileSync('git', ['clone', '--bare', workDir, repoDir], { stdio: 'ignore' })
   return repoDir
@@ -80,8 +80,8 @@ function createStandardRemote(version: string): string {
   fs.writeFileSync(path.join(workDir, 'docs', 'api.md'), '# API Docs\n')
 
   execFileSync('git', ['-C', workDir, 'add', '-A'], { stdio: 'ignore' })
-  execFileSync('git', ['-C', workDir, 'commit', '-m', 'initial'], { stdio: 'ignore' })
-  execFileSync('git', ['-C', workDir, 'tag', `v${version}`], { stdio: 'ignore' })
+  execFileSync('git', ['-C', workDir, '-c', 'commit.gpgsign=false', 'commit', '-m', 'initial'], { stdio: 'ignore' })
+  execFileSync('git', ['-C', workDir, '-c', 'tag.gpgsign=false', 'tag', `v${version}`], { stdio: 'ignore' })
 
   execFileSync('git', ['clone', '--bare', workDir, repoDir], { stdio: 'ignore' })
   return repoDir
