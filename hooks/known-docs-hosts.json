@@ -36,6 +36,7 @@
   "emulate.dev": "github:vercel-labs/emulate",
   "esbuild.github.io": "npm:esbuild",
   "eslint.org": "npm:eslint",
+  "executor.sh": "npm:executor",
   "expo.dev": "npm:expo",
   "expressjs.com": "npm:express",
   "fastapi.tiangolo.com": "pypi:fastapi",
