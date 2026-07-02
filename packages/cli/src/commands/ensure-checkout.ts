@@ -33,6 +33,12 @@ export interface EnsureCheckoutResult {
    * Undefined for github/pypi/pub/etc. specs.
    */
   npmPackageName?: string
+  /**
+   * True when the checkout was already in the store (no network fetch
+   * happened). `ask fetch` uses this to report "fetched" vs "already
+   * cached" per spec.
+   */
+  fromCache: boolean
 }
 
 /**
@@ -205,7 +211,7 @@ export async function ensureCheckout(
 
   // 5. Cache hit short-circuit
   if (fs.existsSync(checkoutDir)) {
-    return { parsed, owner, repo, ref, resolvedVersion, checkoutDir, npmPackageName }
+    return { parsed, owner, repo, ref, resolvedVersion, checkoutDir, npmPackageName, fromCache: true }
   }
 
   // 6. Cache miss + noFetch → throw
@@ -253,5 +259,5 @@ export async function ensureCheckout(
   // the path downstream tools actually index.
   const actualRef = resolvedCheckoutDir === checkoutDir ? ref : path.basename(resolvedCheckoutDir)
 
-  return { parsed, owner, repo, ref: actualRef, resolvedVersion, checkoutDir: resolvedCheckoutDir, npmPackageName }
+  return { parsed, owner, repo, ref: actualRef, resolvedVersion, checkoutDir: resolvedCheckoutDir, npmPackageName, fromCache: false }
 }
