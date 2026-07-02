@@ -1,0 +1,29 @@
+packages/cli/test/commands/fetch.test.ts
+  s_32c92b2ed5e544::t_5c90031e1edbcb 1-86
+packages/cli/src/index.ts
+  s_32c92b2ed5e544::t_c212b58939c0cf 11
+  s_32c92b2ed5e544::t_937af77d34a48b 307
+packages/cli/src/commands/fetch.ts
+  s_32c92b2ed5e544::t_4c7a614a4d93a9 1-41,45-47,49-52,54-109
+  s_32c92b2ed5e544::t_50750e2e3d35e8 42-44,48,53
+packages/cli/src/commands/ensure-checkout.ts
+  s_32c92b2ed5e544::t_c6444adf47ded2 214
+  s_32c92b2ed5e544::t_8b80bd0b9d091f 262
+  s_32c92b2ed5e544::t_9c6116abf7af2d 36-41
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.9",
+  "base_commit_sha": "053e1a3d28b95b2b6538e8bb7a2a6a27558effa0",
+  "prompts": {},
+  "sessions": {
+    "s_32c92b2ed5e544": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a06c4834-d76b-4eb9-b007-36f90031d94f",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Minsu Lee <minsu.lee@pleaseai.dev>"
+    }
+  }
+}
