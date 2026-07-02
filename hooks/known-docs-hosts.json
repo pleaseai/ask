@@ -20,6 +20,7 @@
   "d3js.org": "npm:d3",
   "date-fns.org": "npm:date-fns",
   "day.js.org": "npm:dayjs",
+  "docs.coderabbit.ai": "github:coderabbitai/docs-public",
   "docusaurus.io": "npm:@docusaurus/core",
   "effect.website": "npm:effect",
   "ejs.co": "npm:ejs",
