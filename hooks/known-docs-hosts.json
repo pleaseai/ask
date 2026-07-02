@@ -13,6 +13,7 @@
   "axios-http.com": "npm:axios",
   "axios.rest": "npm:axios",
   "babeljs.io": "npm:@babel/core",
+  "biomejs.dev": "npm:@biomejs/biome",
   "bullmq.io": "npm:bullmq",
   "capacitorjs.com": "npm:@capacitor/core",
   "chaijs.com": "npm:chai",
