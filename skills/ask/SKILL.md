@@ -75,10 +75,13 @@ github:owner/repo@main          # pinned branch
 | `ask src <spec> [--no-fetch]`  | Checkout root, single line        | You need to read real source, search all files, follow implementations |
 | `ask search <spec> <query> [--content …] [--top-k n]` | Ranked snippets (via csp), or path + recipe if csp absent | "How does X work internally" — semantic search beats reading whole files; csp optional |
 | `ask skills <spec>` (= `ask skills list`) | `/skills/` dirs, one per line | The library ships its own Claude / Cursor / OpenCode skills |
+| `ask fetch <spec...> [-q]` | Fetch status per spec, no paths | You only want to warm the cache (prefetch, setup scripts, before `ask add`'s docs-path prompt) |
 
-`ask docs`, `ask src`, and `ask search` share `ensureCheckout`, so the
-cached path is reused across commands — resolving a spec with any of them
-(then `ask skills list`) fetches once.
+`ask docs`, `ask src`, `ask search`, and `ask fetch` share
+`ensureCheckout`, so the cached path is reused across commands —
+resolving a spec with any of them (then `ask skills list`) fetches once.
+Private GitHub repos work when `GITHUB_TOKEN` is set (token attached
+only to exact `https://github.com` remotes).
 
 ## When You Need More
 
