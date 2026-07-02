@@ -1,0 +1,30 @@
+packages/cli/test/sources/github-auth.test.ts
+  s_32c92b2ed5e544::t_8dbea3a8c85474 1-57
+packages/cli/src/sources/github.ts
+  s_32c92b2ed5e544::t_a9069f681e36ff 199-213
+  s_32c92b2ed5e544::t_f0843a58c0da1b 13
+  s_32c92b2ed5e544::t_01fb5b4b8b7f81 86-94
+  s_32c92b2ed5e544::t_220098dc886f47 197-198
+  s_32c92b2ed5e544::t_476425b0b38437 45-50,52-85
+  s_32c92b2ed5e544::t_c73bddfc28a03a 467,474-476
+  s_32c92b2ed5e544::t_6bbc9fe9bfb9bf 152
+  s_32c92b2ed5e544::t_98618e7b750637 461-466,468-470
+  s_32c92b2ed5e544::t_f3b5e96de100b9 51
+  s_32c92b2ed5e544::t_7b7f553c2c3f03 170
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.9",
+  "base_commit_sha": "4fedd109827dace2e3b486e81e086a6789816fc8",
+  "prompts": {},
+  "sessions": {
+    "s_32c92b2ed5e544": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a06c4834-d76b-4eb9-b007-36f90031d94f",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Minsu Lee <minsu.lee@pleaseai.dev>"
+    }
+  }
+}
