@@ -2,6 +2,8 @@
   "emulate.dev": "github:vercel-labs/emulate",
   "agent-browser.dev": "github:vercel-labs/agent-browser",
   "ai-sdk.dev": "npm:ai",
+  "lodash.com": "npm:lodash",
+  "axios-http.com": "npm:axios",
   "react.dev": "npm:react",
   "nextjs.org": "npm:next",
   "vuejs.org": "npm:vue",
