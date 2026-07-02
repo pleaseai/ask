@@ -1,3 +1,8 @@
+---
+paths:
+  - "hooks/**"
+---
+
 # Maintaining `hooks/known-docs-hosts.json`
 
 This map powers the WebFetch PreToolUse hook (`hooks/fetch-hint.mjs`): when an
