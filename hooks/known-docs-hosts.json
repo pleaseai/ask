@@ -4,6 +4,7 @@
   "ai-sdk.dev": "npm:ai",
   "lodash.com": "npm:lodash",
   "axios-http.com": "npm:axios",
+  "axios.rest": "npm:axios",
   "react.dev": "npm:react",
   "nextjs.org": "npm:next",
   "vuejs.org": "npm:vue",
