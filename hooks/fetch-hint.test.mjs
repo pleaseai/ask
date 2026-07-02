@@ -42,6 +42,12 @@ test('known docs host maps to its spec, including docs. subdomains', () => {
   assert.match(buildHint('https://docs.astro.build/en/getting-started/', KNOWN), /ask docs npm:astro/)
 })
 
+test('exact subdomain entry wins over apex fallback', () => {
+  const known = { 'vuejs.org': 'npm:vue', 'pinia.vuejs.org': 'npm:pinia' }
+  assert.match(buildHint('https://pinia.vuejs.org/core-concepts/', known), /ask docs npm:pinia/)
+  assert.match(buildHint('https://vuejs.org/guide/', known), /ask docs npm:vue/)
+})
+
 test('dynamic github routes and non-repo paths stay silent', () => {
   assert.equal(buildHint('https://github.com/vercel/next.js/issues/123', KNOWN), null)
   assert.equal(buildHint('https://github.com/vercel/next.js/pull/456', KNOWN), null)
