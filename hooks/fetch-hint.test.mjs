@@ -29,12 +29,24 @@ test('github code search suggests ask search with the query', () => {
   assert.match(hint, /ask search github:hono\/hono "middleware"/)
 })
 
-test('raw.githubusercontent.com suggests ask src, including refs/heads form', () => {
+test('raw.githubusercontent.com suggests ask src, including refs/heads and refs/tags forms', () => {
   const plain = buildHint('https://raw.githubusercontent.com/colinhacks/zod/v3.24.1/README.md', KNOWN)
   assert.match(plain, /ask src github:colinhacks\/zod --ref v3\.24\.1/)
-  const refsForm = buildHint('https://raw.githubusercontent.com/colinhacks/zod/refs/heads/main/README.md', KNOWN)
-  assert.match(refsForm, /--ref main/)
-  assert.match(refsForm, /<checkoutDir>\/README\.md/)
+  const refsHeadsForm = buildHint('https://raw.githubusercontent.com/colinhacks/zod/refs/heads/main/README.md', KNOWN)
+  assert.match(refsHeadsForm, /--ref main/)
+  assert.match(refsHeadsForm, /<checkoutDir>\/README\.md/)
+  const refsTagsForm = buildHint('https://raw.githubusercontent.com/colinhacks/zod/refs/tags/v1.0.0/README.md', KNOWN)
+  assert.match(refsTagsForm, /--ref v1\.0\.0/)
+  assert.match(refsTagsForm, /<checkoutDir>\/README\.md/)
+})
+
+test('github blob URL recognizes the refs/heads and refs/tags disambiguation form', () => {
+  const headsForm = buildHint('https://github.com/TanStack/query/blob/refs/heads/main/README.md', KNOWN)
+  assert.match(headsForm, /ask src github:TanStack\/query --ref main/)
+  assert.match(headsForm, /<checkoutDir>\/README\.md/)
+  const tagsForm = buildHint('https://github.com/TanStack/query/blob/refs/tags/v5.62.0/README.md', KNOWN)
+  assert.match(tagsForm, /ask src github:TanStack\/query --ref v5\.62\.0/)
+  assert.match(tagsForm, /<checkoutDir>\/README\.md/)
 })
 
 test('known docs host maps to its spec, including docs. subdomains', () => {
@@ -54,6 +66,9 @@ test('dynamic github routes and non-repo paths stay silent', () => {
   assert.equal(buildHint('https://github.com/vercel/next.js/releases', KNOWN), null)
   assert.equal(buildHint('https://github.com/trending', KNOWN), null)
   assert.equal(buildHint('https://github.com/features/copilot', KNOWN), null)
+  assert.equal(buildHint('https://github.com/explore/topics', KNOWN), null)
+  assert.equal(buildHint('https://github.com/gist/123', KNOWN), null)
+  assert.equal(buildHint('https://github.com/codespaces/new', KNOWN), null)
 })
 
 test('unknown hosts and malformed URLs stay silent', () => {
