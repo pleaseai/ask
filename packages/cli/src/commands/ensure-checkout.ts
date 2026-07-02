@@ -262,5 +262,5 @@ export async function ensureCheckout(
   // `GithubSource.fetch` can satisfy the request from its own store-hit
   // path (a ref-candidate variant like `v<ref>` or `master`) with zero
   // network I/O — trust its `fromStoreCache` over our primary-key miss.
-  return { parsed, owner, repo, ref: actualRef, resolvedVersion, checkoutDir: resolvedCheckoutDir, npmPackageName, fromCache: fetchResult?.fromStoreCache ?? false }
+  return { parsed, owner, repo, ref: actualRef, resolvedVersion, checkoutDir: resolvedCheckoutDir, npmPackageName, fromCache: fetchResult.fromStoreCache ?? false }
 }
