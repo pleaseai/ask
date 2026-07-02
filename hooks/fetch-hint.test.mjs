@@ -29,6 +29,12 @@ test('github code search suggests ask search with the query', () => {
   assert.match(hint, /ask search github:hono\/hono "middleware"/)
 })
 
+test('github code search escapes shell metacharacters in the query', () => {
+  const hint = buildHint('https://github.com/hono/hono/search?q=$(rm -rf /)`x`', KNOWN)
+  assert.ok(hint.includes('ask search github:hono/hono "\\$(rm -rf /)\\`x\\`"'), hint)
+  assert.ok(!hint.includes('"$(rm -rf /)`x`"'), 'query must not appear unescaped')
+})
+
 test('raw.githubusercontent.com suggests ask src, including refs/heads and refs/tags forms', () => {
   const plain = buildHint('https://raw.githubusercontent.com/colinhacks/zod/v3.24.1/README.md', KNOWN)
   assert.match(plain, /ask src github:colinhacks\/zod --ref v3\.24\.1/)

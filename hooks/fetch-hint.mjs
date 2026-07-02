@@ -123,9 +123,12 @@ function githubHint(url) {
   if (route === 'search') {
     const query = url.searchParams.get('q')
     // Plain-text CLI arg quoting for the returned hint string, not HTML —
-    // this value is never rendered in a browser/DOM context.
+    // this value is never rendered in a browser/DOM context. Escapes `$`,
+    // backtick, backslash, and `"` so a query containing shell metacharacters
+    // (e.g. `$(...)`) can't trigger unintended expansion if the hint text is
+    // ever copy-pasted into a shell.
     // eslint-disable-next-line -- static analysis false positive: no HTML sink involved
-    const escapedQuery = query ? `"${query.replaceAll('"', '\\"')}"` : '"<query>"'
+    const escapedQuery = query ? `"${query.replaceAll(/[$`\\"]/g, '\\$&')}"` : '"<query>"'
     return `This WebFetch targets GitHub code search in \`${owner}/${repo}\`. Instead run \`ask search ${spec} ${escapedQuery}\` for semantic search over a pinned local checkout (or \`ask src ${spec}\` then Grep the checkout dir).`
   }
   if (GITHUB_LIVE_ROUTES.has(route))
