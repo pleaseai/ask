@@ -1,0 +1,19 @@
+hooks/known-docs-hosts.json
+  s_43d62734156ca7::t_d71ebc8195c57a 23
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.9",
+  "base_commit_sha": "f4f23883b808dfb13daf13b376dd4cceb4f9e738",
+  "prompts": {},
+  "sessions": {
+    "s_43d62734156ca7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "258e2d93-44bb-41d2-8deb-d5d9184343a1",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Minsu Lee <minsu.lee@pleaseai.dev>"
+    }
+  }
+}
