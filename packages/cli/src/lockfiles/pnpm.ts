@@ -52,11 +52,11 @@ type Origin = 'root' | 'importer'
 /**
  * A frame on the indent-aware parse stack. `base` is the indent of the
  * line that opened the frame; children must be at indent strictly greater
- * than that value. The `root` frame has no header line and is never popped.
+ * than that value. The root scope has no frame — an empty stack means
+ * the current line is at document level.
  */
 type Frame
-  = | { kind: 'root' }
-    | { kind: 'importers', base: number }
+  = | { kind: 'importers', base: number }
     | { kind: 'importer', base: number }
     | { kind: 'depGroup', base: number, origin: Origin }
     /** Block-form dep entry awaiting a nested `version:` line. */
@@ -70,6 +70,16 @@ type Frame
      * collecting dep edges for `owner`.
      */
     | { kind: 'pkgDeps', base: number, owner: string }
+
+/** Mutable state threaded through the per-frame line handlers. */
+interface ParseState {
+  pkg: string
+  stack: Frame[]
+  graph: PnpmGraph
+  importerMatch: string | null
+  topMatch: string | null
+  packagesFallback: string | null
+}
 
 const DEP_GROUP_KEYS = new Set(['dependencies', 'devDependencies', 'optionalDependencies'])
 
@@ -104,6 +114,174 @@ function splitPackagesKey(key: string): { name: string, versionWithPeer: string,
 }
 
 /**
+ * Pop frames whose scope ended at this indent and return the frame the
+ * line belongs to — `undefined` means document (root) level.
+ */
+function currentFrame(stack: Frame[], indent: number): Frame | undefined {
+  let top = stack.at(-1)
+  while (top && indent <= top.base) {
+    stack.pop()
+    top = stack.at(-1)
+  }
+  return top
+}
+
+/**
+ * Record a direct dependency entry: seed the graph roots and capture the
+ * version when the entry names the package we're looking for.
+ */
+function captureDirect(state: ParseState, depName: string, rawValue: string, origin: Origin): void {
+  const cleaned = cleanValue(rawValue)
+  const stripped = stripPeerSuffix(cleaned)
+  // Add to graph roots using the raw (peer-including) value so the key
+  // matches `snapshots:` entries.
+  state.graph.roots.push(`${depName}@${cleaned}`)
+
+  // Filter at capture so workspace/link/file versions in one importer
+  // don't block a real version in a later importer.
+  if (depName !== state.pkg || !isRegistryVersion(stripped))
+    return
+  if (origin === 'importer' && state.importerMatch === null)
+    state.importerMatch = stripped
+  else if (origin === 'root' && state.topMatch === null)
+    state.topMatch = stripped
+}
+
+/** Document-level line: open the top-level sections we care about. */
+function handleRootLine(state: ParseState, indent: number, content: string): void {
+  if (indent !== 0 || !content.endsWith(':'))
+    return
+  const key = content.slice(0, -1).trim()
+  if (key === 'importers')
+    state.stack.push({ kind: 'importers', base: indent })
+  else if (DEP_GROUP_KEYS.has(key))
+    state.stack.push({ kind: 'depGroup', base: indent, origin: 'root' })
+  else if (key === 'packages')
+    state.stack.push({ kind: 'packages', base: indent })
+  else if (key === 'snapshots')
+    state.stack.push({ kind: 'snapshots', base: indent })
+}
+
+/** Inside `importers:` — every child key is an importer (workspace dir). */
+function handleImportersLine(state: ParseState, indent: number, content: string): void {
+  if (content.endsWith(':'))
+    state.stack.push({ kind: 'importer', base: indent })
+}
+
+/** Inside one importer — open its dependency groups. */
+function handleImporterLine(state: ParseState, indent: number, content: string): void {
+  if (content.endsWith(':') && DEP_GROUP_KEYS.has(content.slice(0, -1).trim()))
+    state.stack.push({ kind: 'depGroup', base: indent, origin: 'importer' })
+}
+
+/**
+ * Inside a dependency group — either an inline `name: version` entry
+ * (v5) or a block entry whose `version:` arrives on a nested line (v6+).
+ */
+function handleDepGroupLine(state: ParseState, frame: Extract<Frame, { kind: 'depGroup' }>, indent: number, content: string): void {
+  const sep = content.indexOf(':')
+  if (sep < 0)
+    return
+  const depName = trimQuotes(content.slice(0, sep).trim())
+  const rawValue = content.slice(sep + 1).trim()
+  if (rawValue.length === 0)
+    state.stack.push({ kind: 'depBlock', base: indent, origin: frame.origin, pkgName: depName })
+  else
+    captureDirect(state, depName, rawValue, frame.origin)
+}
+
+/** Block-form dep entry — capture its nested `version:` line. */
+function handleDepBlockLine(state: ParseState, frame: Extract<Frame, { kind: 'depBlock' }>, content: string): void {
+  if (!content.startsWith('version:'))
+    return
+  captureDirect(state, frame.pkgName, content.slice('version:'.length), frame.origin)
+  state.stack.pop()
+}
+
+/**
+ * Inside `packages:`/`snapshots:` — register a graph node per entry and
+ * remember the first key matching the package as a last-resort fallback.
+ */
+function handlePackagesLine(state: ParseState, indent: number, content: string): void {
+  const sep = content.indexOf(':')
+  if (sep < 0)
+    return
+  const rawKey = trimQuotes(content.slice(0, sep).trim())
+  const key = rawKey.startsWith('/') ? rawKey.slice(1) : rawKey
+  const valuePart = content.slice(sep + 1)
+
+  const split = splitPackagesKey(key)
+  if (!split)
+    return
+  const { name, versionWithPeer, nodeKey } = split
+  const version = stripPeerSuffix(versionWithPeer)
+
+  if (!state.graph.nodes.has(nodeKey))
+    state.graph.nodes.set(nodeKey, { name, version, deps: [] })
+
+  if (name === state.pkg && state.packagesFallback === null && isRegistryVersion(version))
+    state.packagesFallback = version
+
+  if (valuePart.trim().length === 0)
+    state.stack.push({ kind: 'pkgEntry', base: indent, key: nodeKey })
+  // Else: inline value like `{}` — no children to parse.
+}
+
+/** Inside one pkg entry — open its dependency blocks, ignore the rest. */
+function handlePkgEntryLine(state: ParseState, frame: Extract<Frame, { kind: 'pkgEntry' }>, indent: number, content: string): void {
+  if (!content.endsWith(':'))
+    return
+  const subKey = content.slice(0, -1).trim()
+  if (subKey === 'dependencies' || subKey === 'optionalDependencies')
+    state.stack.push({ kind: 'pkgDeps', base: indent, owner: frame.key })
+  // Ignore resolution/engines/peerDependencies/transitivePeerDependencies/etc.
+}
+
+/** Inside a pkg entry's dependency block — record a graph edge. */
+function handlePkgDepsLine(state: ParseState, frame: Extract<Frame, { kind: 'pkgDeps' }>, content: string): void {
+  const sep = content.indexOf(':')
+  if (sep < 0)
+    return
+  const depName = trimQuotes(content.slice(0, sep).trim())
+  const depValue = cleanValue(content.slice(sep + 1))
+  if (depValue.length > 0)
+    state.graph.nodes.get(frame.owner)?.deps.push(`${depName}@${depValue}`)
+}
+
+/** Route one content line to the handler for the frame it belongs to. */
+function dispatchLine(state: ParseState, indent: number, content: string): void {
+  const top = currentFrame(state.stack, indent)
+  if (!top) {
+    handleRootLine(state, indent, content)
+    return
+  }
+  switch (top.kind) {
+    case 'importers':
+      handleImportersLine(state, indent, content)
+      break
+    case 'importer':
+      handleImporterLine(state, indent, content)
+      break
+    case 'depGroup':
+      handleDepGroupLine(state, top, indent, content)
+      break
+    case 'depBlock':
+      handleDepBlockLine(state, top, content)
+      break
+    case 'packages':
+    case 'snapshots':
+      handlePackagesLine(state, indent, content)
+      break
+    case 'pkgEntry':
+      handlePkgEntryLine(state, top, indent, content)
+      break
+    case 'pkgDeps':
+      handlePkgDepsLine(state, top, content)
+      break
+  }
+}
+
+/**
  * Parse a `pnpm-lock.yaml` text and return the installed version of
  * `pkg`, if found.
  *
@@ -115,147 +293,27 @@ function splitPackagesKey(key: string): { name: string, versionWithPeer: string,
  * 4. Fallback: first matching `packages:` or `snapshots:` key
  */
 export function parsePnpmLock(text: string, pkg: string): string | null {
-  const stack: Frame[] = [{ kind: 'root' }]
-  const graph: PnpmGraph = { nodes: new Map(), roots: [] }
-
-  let importerMatch: string | null = null
-  let topMatch: string | null = null
-  let packagesFallback: string | null = null
-
-  const captureDirect = (depName: string, rawValue: string, origin: Origin): void => {
-    const cleaned = cleanValue(rawValue)
-    const stripped = stripPeerSuffix(cleaned)
-    // Add to graph roots using the raw (peer-including) value so the key
-    // matches `snapshots:` entries.
-    graph.roots.push(`${depName}@${cleaned}`)
-
-    // Filter at capture so workspace/link/file versions in one importer
-    // don't block a real version in a later importer.
-    if (depName === pkg && isRegistryVersion(stripped)) {
-      if (origin === 'importer' && importerMatch === null)
-        importerMatch = stripped
-      else if (origin === 'root' && topMatch === null)
-        topMatch = stripped
-    }
+  const state: ParseState = {
+    pkg,
+    stack: [],
+    graph: { nodes: new Map(), roots: [] },
+    importerMatch: null,
+    topMatch: null,
+    packagesFallback: null,
   }
 
   for (const raw of text.split('\n')) {
     const line = raw.endsWith('\r') ? raw.slice(0, -1) : raw
-    if (line.trim().length === 0)
-      continue
-    if (line.trimStart().startsWith('#'))
+    if (line.trim().length === 0 || line.trimStart().startsWith('#'))
       continue
     const indent = line.length - line.trimStart().length
-    const content = line.slice(indent)
-
-    // Pop frames whose scope has ended. Root (no base) never pops, so
-    // the stack is never empty and the `at(-1)!` assertions are safe.
-    while (true) {
-      const frame = stack.at(-1)!
-      if (frame.kind !== 'root' && indent <= frame.base) {
-        stack.pop()
-        continue
-      }
-      break
-    }
-
-    const top = stack.at(-1)!
-    switch (top.kind) {
-      case 'root': {
-        if (indent === 0 && content.endsWith(':')) {
-          const key = content.slice(0, -1).trim()
-          if (key === 'importers')
-            stack.push({ kind: 'importers', base: indent })
-          else if (DEP_GROUP_KEYS.has(key))
-            stack.push({ kind: 'depGroup', base: indent, origin: 'root' })
-          else if (key === 'packages')
-            stack.push({ kind: 'packages', base: indent })
-          else if (key === 'snapshots')
-            stack.push({ kind: 'snapshots', base: indent })
-        }
-        break
-      }
-      case 'importers': {
-        if (content.endsWith(':'))
-          stack.push({ kind: 'importer', base: indent })
-        break
-      }
-      case 'importer': {
-        if (content.endsWith(':') && DEP_GROUP_KEYS.has(content.slice(0, -1).trim()))
-          stack.push({ kind: 'depGroup', base: indent, origin: 'importer' })
-        break
-      }
-      case 'depGroup': {
-        const sep = content.indexOf(':')
-        if (sep >= 0) {
-          const depName = trimQuotes(content.slice(0, sep).trim())
-          const rawValue = content.slice(sep + 1).trim()
-          if (rawValue.length === 0) {
-            // Block form: version comes on a nested line.
-            stack.push({ kind: 'depBlock', base: indent, origin: top.origin, pkgName: depName })
-          }
-          else {
-            captureDirect(depName, rawValue, top.origin)
-          }
-        }
-        break
-      }
-      case 'depBlock': {
-        if (content.startsWith('version:')) {
-          captureDirect(top.pkgName, content.slice('version:'.length), top.origin)
-          stack.pop()
-        }
-        break
-      }
-      case 'packages':
-      case 'snapshots': {
-        const sep = content.indexOf(':')
-        if (sep >= 0) {
-          const rawKey = trimQuotes(content.slice(0, sep).trim())
-          const key = rawKey.startsWith('/') ? rawKey.slice(1) : rawKey
-          const valuePart = content.slice(sep + 1)
-
-          const split = splitPackagesKey(key)
-          if (split) {
-            const { name, versionWithPeer, nodeKey } = split
-            const version = stripPeerSuffix(versionWithPeer)
-
-            if (!graph.nodes.has(nodeKey))
-              graph.nodes.set(nodeKey, { name, version, deps: [] })
-
-            if (name === pkg && packagesFallback === null && isRegistryVersion(version))
-              packagesFallback = version
-
-            if (valuePart.trim().length === 0)
-              stack.push({ kind: 'pkgEntry', base: indent, key: nodeKey })
-            // Else: inline value like `{}` — no children to parse.
-          }
-        }
-        break
-      }
-      case 'pkgEntry': {
-        if (content.endsWith(':')) {
-          const subKey = content.slice(0, -1).trim()
-          if (subKey === 'dependencies' || subKey === 'optionalDependencies')
-            stack.push({ kind: 'pkgDeps', base: indent, owner: top.key })
-          // Ignore resolution/engines/peerDependencies/transitivePeerDependencies/etc.
-        }
-        break
-      }
-      case 'pkgDeps': {
-        const sep = content.indexOf(':')
-        if (sep >= 0) {
-          const depName = trimQuotes(content.slice(0, sep).trim())
-          const depValue = cleanValue(content.slice(sep + 1))
-          if (depValue.length > 0)
-            graph.nodes.get(top.owner)?.deps.push(`${depName}@${depValue}`)
-        }
-        break
-      }
-    }
+    dispatchLine(state, indent, line.slice(indent))
   }
 
-  return importerMatch ?? topMatch ?? resolveTransitive(graph, pkg) ?? packagesFallback
+  return state.importerMatch
+    ?? state.topMatch
+    ?? resolveTransitive(state.graph, pkg)
+    ?? state.packagesFallback
 }
 
 /**
@@ -270,8 +328,10 @@ function resolveTransitive(graph: PnpmGraph, pkg: string): string | null {
     return null
   const visited = new Set<string>()
   const queue = [...graph.roots]
-  while (queue.length > 0) {
-    const key = queue.shift()!
+  // Index-pointer BFS: `queue` only grows, so iterating by index visits
+  // entries in insertion order without shift()'s O(n) reindexing.
+  for (let i = 0; i < queue.length; i++) {
+    const key = queue[i]
     if (visited.has(key))
       continue
     visited.add(key)
