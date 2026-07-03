@@ -1,12 +1,17 @@
-//! Registry spec parsing + ecosystem detection — Rust port of the pure parts of
-//! `packages/cli/src/registry.ts`.
+//! Registry spec parsing, ecosystem detection, and the registry HTTP lookup —
+//! Rust port of `packages/cli/src/registry.ts`.
 //!
-//! The HTTP surface (`fetchRegistryEntry` / `resolveFromRegistry`, bounded by a
-//! 10s timeout against `https://ask-registry.pages.dev`) and the `RegistrySource`
-//! response type are deferred to a later phase — they depend on the registry
-//! schema (`@pleaseai/ask-schema`) and an HTTP client, ported together once the
-//! registry-entry schema lands. The parsing/detection helpers here are pure and
-//! unblock the resolver + sources layers.
+//! The pure parsing/detection helpers live here; the HTTP surface
+//! (`RegistrySource`, `RegistryApiResponse`, [`api::fetch_registry_entry`],
+//! [`api::resolve_from_registry`], bounded by the shared 10s-timeout
+//! [`crate::http::HttpClient`]) lives in the `api` submodule.
+
+pub mod api;
+
+pub use api::{
+    fetch_registry_entry, resolve_from_registry, RegistryApiPackage, RegistryApiResponse,
+    RegistryResolution, RegistrySource,
+};
 
 use std::path::Path;
 
