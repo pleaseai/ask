@@ -16,6 +16,7 @@ pub mod registry;
 pub mod resolved;
 pub mod resolvers;
 pub mod spec;
+pub mod store;
 
 use std::fmt;
 
