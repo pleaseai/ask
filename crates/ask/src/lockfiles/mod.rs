@@ -8,10 +8,13 @@
 //! The first hit wins; the `package.json` fallback returns a *range* (not an
 //! exact pin), so callers can decide whether to normalize it via a resolver.
 //!
-//! **Port status:** `bun.lock`, `package-lock.json`, `yarn.lock`, and
-//! `package.json` readers are ported. The `pnpm-lock.yaml` indent-aware stack
-//! parser is still TODO — [`NPM_ECOSYSTEM_CHAIN`] marks exactly where it slots
-//! in, so wiring it later restores full priority parity.
+//! **Port status:** all five readers (`bun.lock`, `package-lock.json`,
+//! `pnpm-lock.yaml`, `yarn.lock`, `package.json`) are ported, restoring full
+//! priority parity with `lockfiles/index.ts`.
+
+mod pnpm;
+
+pub use pnpm::{parse_pnpm_lock, PNPM_LOCK_READER};
 
 use std::path::Path;
 
@@ -298,15 +301,12 @@ pub const YARN_LOCK_READER: LockfileReader = LockfileReader {
     read: yarn_read,
 };
 
-/// The npm-ecosystem chain in priority order.
-///
-/// TODO(rust-port): insert the `pnpm-lock.yaml` reader between `NPM_LOCK_READER`
-/// and `YARN_LOCK_READER` once its indent-aware stack parser is ported — that
-/// restores full priority parity with lockfiles/index.ts
-/// (bun → package-lock → pnpm → yarn → package.json).
+/// The npm-ecosystem chain in priority order:
+/// bun → package-lock → pnpm → yarn → package.json.
 pub const NPM_ECOSYSTEM_CHAIN: &[LockfileReader] = &[
     BUN_LOCK_READER,
     NPM_LOCK_READER,
+    PNPM_LOCK_READER,
     YARN_LOCK_READER,
     PACKAGE_JSON_READER,
 ];
