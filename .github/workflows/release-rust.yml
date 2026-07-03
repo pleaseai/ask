@@ -28,9 +28,6 @@ on:
         required: false
         type: string
 
-permissions:
-  contents: read
-
 concurrency:
   group: release-rust-${{ github.ref }}
   cancel-in-progress: false
@@ -38,6 +35,8 @@ concurrency:
 jobs:
   build:
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
     strategy:
       fail-fast: false
       matrix:
