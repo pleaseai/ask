@@ -1,0 +1,75 @@
+crates/ask/src/sources/npm.rs
+  s_446aea7ceb013f::t_2cd5e31539e3ff 184-190,197-201
+crates/ask/src/sources/mod.rs
+  s_446aea7ceb013f::t_b4d03e4b8bf19d 230-253
+  s_446aea7ceb013f::t_ee0e03f4dc79aa 97-100,105-110,114-116,118-129
+crates/ask/src/ask_json.rs
+  s_446aea7ceb013f::t_01f5bc5ec03d2f 143,148-150
+  s_446aea7ceb013f::t_905570c81c18d2 144-147
+  s_446aea7ceb013f::t_547189920b5915 219-225
+  s_446aea7ceb013f::t_bad6cf7b1f9cf8 218
+scripts/parity-diff.sh
+  s_446aea7ceb013f::t_262f0542688d52 62-69,71-76
+  s_446aea7ceb013f::t_8b14ed33ee112c 161-169
+crates/ask/src/storage.rs
+  s_446aea7ceb013f::t_66fa8f3fa680c3 171-175
+  s_446aea7ceb013f::t_b0782ea05984b5 11
+crates/ask/src/resolved.rs
+  s_446aea7ceb013f::t_1722e26133b0fe 91-92
+  s_446aea7ceb013f::t_e93b84e7c7e761 98-105
+  s_446aea7ceb013f::t_b844bcdd28bbe1 287-295
+  s_446aea7ceb013f::t_b3b3860b8d3a4b 286
+crates/ask/src/skills/symlinks.rs
+  s_446aea7ceb013f::t_c4cf05fecb040a 101
+  s_446aea7ceb013f::t_325e4d4082b501 142
+  s_446aea7ceb013f::t_fdedc86700c51f 54-70
+crates/ask/src/io.rs
+  s_446aea7ceb013f::t_bcf8edde7d0f1f 144-151,153-158,160
+  s_446aea7ceb013f::t_e1d74078767706 191
+  s_446aea7ceb013f::t_98fea3efe2e00e 210
+  s_446aea7ceb013f::t_027f184e107db5 333,344,367,383,389,396
+  s_446aea7ceb013f::t_2c6733500f7a3b 373-376
+crates/ask/src/cli.rs
+  s_446aea7ceb013f::t_2c6733500f7a3b 477-478
+  s_446aea7ceb013f::t_9bd5634e8cf8b8 473-476
+crates/ask/src/resolvers/maven.rs
+  s_446aea7ceb013f::t_8c0f181b6d91bc 336-352
+  s_446aea7ceb013f::t_2c6733500f7a3b 206-208
+  s_446aea7ceb013f::t_a78686a48be7e2 204
+  s_446aea7ceb013f::t_af18773d6e3010 39-45
+  s_446aea7ceb013f::t_dccf8791e44dff 335
+crates/ask/src/store/paths.rs
+  s_446aea7ceb013f::t_2c6733500f7a3b 147
+  s_446aea7ceb013f::t_e70ba76ceb2094 142-146,148-149,154
+crates/ask/src/store/mod.rs
+  s_446aea7ceb013f::t_d8200b80cea9a1 129
+  s_446aea7ceb013f::t_9f28de84a1fb69 140,145,148-159
+.github/workflows/release.yml
+  s_446aea7ceb013f::t_8bfbef56da337b 171-186
+crates/ask/src/commands/docs.rs
+  s_89a1ea2eef4d72::t_a00e94a2d43c04 108-114
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "73ae9a987ababf6201000dd0cd67932cd0632137",
+  "prompts": {},
+  "sessions": {
+    "s_446aea7ceb013f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dd704e3f-30cf-4e3a-8e00-08f1c3e22797",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Minsu Lee <minsu.lee@pleaseai.dev>"
+    },
+    "s_89a1ea2eef4d72": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e0ecbac6-adef-41ce-80c5-9091cd53660a",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Minsu Lee <minsu.lee@pleaseai.dev>"
+    }
+  }
+}
