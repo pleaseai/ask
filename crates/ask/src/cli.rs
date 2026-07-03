@@ -101,8 +101,14 @@ pub struct SrcArgs {
 
 #[derive(Debug, Args)]
 pub struct DocsArgs {
-    /// A single spec (e.g. npm:next, github:owner/repo).
+    /// Library spec (e.g. react, npm:react@18.2.0, github:facebook/react@v18.2.0).
     pub spec: String,
+    /// Return a cache hit only — exit 1 on cache miss.
+    #[arg(long = "no-fetch")]
+    pub no_fetch: bool,
+    /// Emit candidates as JSON matching DocsModelSchema (suppresses per-line output).
+    #[arg(long)]
+    pub json: bool,
 }
 
 #[derive(Debug, Args)]
@@ -197,7 +203,7 @@ pub fn run(cli: Cli) -> anyhow::Result<()> {
         Command::Add(_) => Err(NotPorted::new("add").into()),
         Command::Remove(_) => Err(NotPorted::new("remove").into()),
         Command::Src(args) => run_src_cmd(args),
-        Command::Docs(_) => Err(NotPorted::new("docs").into()),
+        Command::Docs(args) => run_docs_cmd(args),
         Command::Fetch(args) => run_fetch_cmd(args),
         Command::Search(_) => Err(NotPorted::new("search").into()),
         Command::Skills(_) => Err(NotPorted::new("skills").into()),
@@ -250,6 +256,33 @@ fn run_fetch_cmd(args: FetchArgs) -> anyhow::Result<()> {
         std::process::exit(1);
     }
     Ok(())
+}
+
+/// `ask docs <spec>` — print candidate doc paths (lazy fetch on miss). Stale
+/// docsPaths warnings go to stderr but do not fail; a NoCacheError / resolver
+/// error prints to stderr and exits 1.
+fn run_docs_cmd(args: DocsArgs) -> anyhow::Result<()> {
+    use crate::commands::docs::{run_docs, RunDocsOptions};
+    let client = crate::http::UreqClient::new();
+    let options = RunDocsOptions {
+        spec: args.spec,
+        project_dir: current_dir()?,
+        no_fetch: args.no_fetch,
+        json: args.json,
+    };
+    match run_docs(&client, &options) {
+        Ok(run) => {
+            for w in &run.warnings {
+                eprintln!("{w}");
+            }
+            println!("{}", run.stdout);
+            Ok(())
+        }
+        Err(err) => {
+            eprintln!("{err}");
+            std::process::exit(1);
+        }
+    }
 }
 
 /// `ask list` — render the docs model as text (default) or JSON (`--json`).
