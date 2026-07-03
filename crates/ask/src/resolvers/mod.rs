@@ -1,14 +1,50 @@
-//! Ecosystem resolvers — turn package metadata into a GitHub `owner/repo`.
-//! Rust port of `packages/cli/src/resolvers/`.
+//! Ecosystem resolvers — map a package name + version to a GitHub `owner/repo`
+//! plus a git ref, over the injectable [`crate::http::HttpClient`]. Rust port of
+//! `packages/cli/src/resolvers/`.
 //!
-//! **Port status:** the shared [`parse_repo_url`] helper (resolvers/utils.ts) is
-//! ported. The per-ecosystem resolvers (npm/pypi/pub/maven) fetch registry
-//! metadata over HTTP and are deferred to the phase that introduces the HTTP
-//! client (ureq), alongside the registry HTTP surface.
+//! Resolvers are orthogonal to sources: they only do metadata lookups and hand
+//! the resolved `repo` + `ref` to the github source. The npm/pypi/pub resolvers
+//! parse JSON; maven walks the Search API + POM XML.
+
+mod maven;
+mod npm;
+mod pub_dev;
+mod pypi;
 
 use std::sync::LazyLock;
 
 use regex::Regex;
+
+use crate::http::HttpClient;
+
+/// Result of resolving an ecosystem package to a GitHub repository. Always
+/// handed off to the github source for download (port of `ResolveResult`).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ResolveResult {
+    /// GitHub `owner/repo`.
+    pub repo: String,
+    /// Primary git ref to try first (tag or branch).
+    pub ref_: String,
+    /// Fallback refs to try if the primary ref doesn't exist (empty = none).
+    pub fallback_refs: Vec<String>,
+    /// Resolved version string (e.g. `4.17.21`).
+    pub resolved_version: String,
+}
+
+/// An ecosystem resolver function: `(client, name, version) -> ResolveResult`.
+pub type ResolverFn = fn(&dyn HttpClient, &str, &str) -> anyhow::Result<ResolveResult>;
+
+/// Return the resolver for the given ecosystem, or `None` if unsupported
+/// (port of `getResolver`).
+pub fn get_resolver(ecosystem: &str) -> Option<ResolverFn> {
+    match ecosystem {
+        "maven" => Some(maven::resolve),
+        "npm" => Some(npm::resolve),
+        "pypi" => Some(pypi::resolve),
+        "pub" => Some(pub_dev::resolve),
+        _ => None,
+    }
+}
 
 // `github.com` followed by `/` or `:`, then owner (no `/`), `/`, then repo up to
 // the first `/`, `#`, `?`, or whitespace. Mirrors the TS `RE_GITHUB_URL`.
