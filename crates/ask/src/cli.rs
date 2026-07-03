@@ -89,10 +89,12 @@ pub struct ListArgs {
 
 #[derive(Debug, Args)]
 pub struct SrcArgs {
-    /// One or more specs (e.g. npm:next, github:owner/repo@v1).
-    #[arg(required = true)]
-    pub specs: Vec<String>,
-    /// Emit resolved paths as JSON.
+    /// Library spec (e.g. react, npm:react@18.2.0, github:facebook/react@v18.2.0).
+    pub spec: String,
+    /// Return a cache hit only — exit 1 on cache miss.
+    #[arg(long = "no-fetch")]
+    pub no_fetch: bool,
+    /// Emit the resolution as JSON matching SrcModelSchema.
     #[arg(long)]
     pub json: bool,
 }
@@ -194,13 +196,60 @@ pub fn run(cli: Cli) -> anyhow::Result<()> {
         Command::List(args) => run_list(args),
         Command::Add(_) => Err(NotPorted::new("add").into()),
         Command::Remove(_) => Err(NotPorted::new("remove").into()),
-        Command::Src(_) => Err(NotPorted::new("src").into()),
+        Command::Src(args) => run_src_cmd(args),
         Command::Docs(_) => Err(NotPorted::new("docs").into()),
-        Command::Fetch(_) => Err(NotPorted::new("fetch").into()),
+        Command::Fetch(args) => run_fetch_cmd(args),
         Command::Search(_) => Err(NotPorted::new("search").into()),
         Command::Skills(_) => Err(NotPorted::new("skills").into()),
         Command::Cache(_) => Err(NotPorted::new("cache").into()),
     }
+}
+
+/// `ask src <spec>` — print the cached source path (lazy fetch on miss).
+/// Failures (NoCacheError, resolver errors) print to stderr and exit 1,
+/// matching the TS `exit(1)` contract rather than the generic exit-2 path.
+fn run_src_cmd(args: SrcArgs) -> anyhow::Result<()> {
+    use crate::commands::src::{run_src, RunSrcOptions};
+    let client = crate::http::UreqClient::new();
+    let options = RunSrcOptions {
+        spec: args.spec,
+        project_dir: current_dir()?,
+        no_fetch: args.no_fetch,
+        json: args.json,
+    };
+    match run_src(&client, &options) {
+        Ok(out) => {
+            println!("{out}");
+            Ok(())
+        }
+        Err(err) => {
+            eprintln!("{err}");
+            std::process::exit(1);
+        }
+    }
+}
+
+/// `ask fetch <spec...>` — warm the cache; per-spec failures still let the
+/// rest run, and the process exits 1 if any spec failed.
+fn run_fetch_cmd(args: FetchArgs) -> anyhow::Result<()> {
+    use crate::commands::fetch::{run_fetch, RunFetchOptions};
+    let client = crate::http::UreqClient::new();
+    let options = RunFetchOptions {
+        specs: args.specs,
+        project_dir: current_dir()?,
+        quiet: args.quiet,
+    };
+    let report = run_fetch(&client, &options);
+    for line in &report.stdout {
+        println!("{line}");
+    }
+    for line in &report.stderr {
+        eprintln!("{line}");
+    }
+    if report.had_errors {
+        std::process::exit(1);
+    }
+    Ok(())
 }
 
 /// `ask list` — render the docs model as text (default) or JSON (`--json`).

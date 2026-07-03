@@ -5,3 +5,5 @@
 //! `packages/cli/src/commands/`.
 
 pub mod ensure_checkout;
+pub mod fetch;
+pub mod src;
