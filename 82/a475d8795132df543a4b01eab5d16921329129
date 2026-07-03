@@ -1,0 +1,24 @@
+.github/workflows/release-cargo.yml
+  s_446aea7ceb013f::t_5fafefa63d2f94 1-71
+release-please-config.json
+  s_446aea7ceb013f::t_e0c56baa6ff13b 23,27
+  s_446aea7ceb013f::t_ae5dda13b13051 19-22,24-26,28-30
+.github/workflows/release-rust.yml
+  s_446aea7ceb013f::t_9a360e9a901fb5 1-146
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "82a475d8795132df543a4b01eab5d16921329129",
+  "prompts": {},
+  "sessions": {
+    "s_446aea7ceb013f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dd704e3f-30cf-4e3a-8e00-08f1c3e22797",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Minsu Lee <minsu.lee@pleaseai.dev>"
+    }
+  }
+}
