@@ -13,6 +13,7 @@ pub mod lockfiles;
 pub mod markers;
 pub mod registry;
 pub mod resolved;
+pub mod resolvers;
 pub mod spec;
 
 use std::fmt;
