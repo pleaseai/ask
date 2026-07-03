@@ -9,6 +9,7 @@
 pub mod ask_json;
 pub mod cli;
 pub mod io;
+pub mod markers;
 pub mod resolved;
 pub mod spec;
 
