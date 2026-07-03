@@ -17,6 +17,7 @@ pub mod resolved;
 pub mod resolvers;
 pub mod sources;
 pub mod spec;
+pub mod storage;
 pub mod store;
 
 use std::fmt;
