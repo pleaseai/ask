@@ -1,0 +1,52 @@
+crates/ask/src/skills/lock.rs
+  s_446aea7ceb013f::t_b3d1df2d0f4f0b 1-139,144-154,159-183,189-191
+  s_446aea7ceb013f::t_679cb425974315 140-143,155-158,184-188
+scripts/parity-diff.sh
+  s_446aea7ceb013f::t_02e123aa5e967f 131-167
+crates/ask/src/skills/spec_key.rs
+  s_446aea7ceb013f::t_4fd919fb976a2e 1-79,84-99,104-115
+  s_446aea7ceb013f::t_679cb425974315 80-83,100-103
+crates/ask/src/skills/agent_detect.rs
+  s_446aea7ceb013f::t_679cb425974315 27-33,48-50,57-60,71-74,117-120
+  s_446aea7ceb013f::t_4143db03a5774f 1-26,34-47,51-56,61-70,75-116,121-122
+crates/ask/src/commands/find_skill_paths.rs
+  s_446aea7ceb013f::t_0461de6b97f389 1-95
+crates/ask/src/commands/skills.rs
+  s_446aea7ceb013f::t_6b346f2bbe98ab 156-158,164,166
+  s_446aea7ceb013f::t_679cb425974315 200-207,209,398-401,479-482,534-537,622-625,628-631
+  s_446aea7ceb013f::t_e6ecb34eaac415 1-155,159-163,165,167-199,208,210-397,402-478,483-533,538-621,626-627,632-660
+crates/ask/src/cli.rs
+  s_446aea7ceb013f::t_74173f7d00b3ba 136-142,147-185
+  s_446aea7ceb013f::t_c0558d7b23a487 4
+  s_446aea7ceb013f::t_a99deeeb3c779c 234
+  s_446aea7ceb013f::t_5874c4274aa4cd 248
+  s_446aea7ceb013f::t_d987a41d8608e6 299-373
+  s_446aea7ceb013f::t_708a7e02aaae97 707-712
+crates/ask/src/skills/symlinks.rs
+  s_446aea7ceb013f::t_5f005b0d777cea 1-180,185-199,204-209
+  s_446aea7ceb013f::t_679cb425974315 181-184,200-203
+crates/ask/src/skills/vendor.rs
+  s_446aea7ceb013f::t_2f6a881b228ac9 1-151
+crates/ask/src/skills/mod.rs
+  s_446aea7ceb013f::t_0cf77a3119b677 1-10
+crates/ask/src/lib.rs
+  s_446aea7ceb013f::t_e1866e818c2f66 25
+crates/ask/src/commands/mod.rs
+  s_446aea7ceb013f::t_bbd8372380dc11 12,16
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "607bc4e13c6de324ad1cf7f8c5172e3c80ee7c38",
+  "prompts": {},
+  "sessions": {
+    "s_446aea7ceb013f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dd704e3f-30cf-4e3a-8e00-08f1c3e22797",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Minsu Lee <minsu.lee@pleaseai.dev>"
+    }
+  }
+}
