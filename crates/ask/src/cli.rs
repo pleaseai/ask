@@ -4,6 +4,8 @@
 //! command *bodies* are filled in per migration phase. Un-ported commands return
 //! [`NotPorted`](crate::NotPorted) so the surface is honest about what works.
 
+use std::env::current_dir;
+
 use clap::{Args, Parser, Subcommand};
 
 use crate::NotPorted;
@@ -181,22 +183,35 @@ pub struct CacheCleanArgs {
     pub legacy: bool,
 }
 
-/// Dispatch a parsed [`Cli`] to its command. Phase 0: every command is a stub
-/// returning [`NotPorted`]; phases fill these in bottom-up (see the track plan).
+/// Dispatch a parsed [`Cli`] to its command. Ported commands run their real
+/// logic; the rest still return [`NotPorted`] until their migration phase.
 pub fn run(cli: Cli) -> anyhow::Result<()> {
-    let name = match cli.command {
-        Command::Install => "install",
-        Command::Add(_) => "add",
-        Command::Remove(_) => "remove",
-        Command::List(_) => "list",
-        Command::Src(_) => "src",
-        Command::Docs(_) => "docs",
-        Command::Fetch(_) => "fetch",
-        Command::Search(_) => "search",
-        Command::Skills(_) => "skills",
-        Command::Cache(_) => "cache",
-    };
-    Err(NotPorted::new(name).into())
+    match cli.command {
+        Command::Install => {
+            crate::install::run_install(&current_dir()?, &Default::default())?;
+            Ok(())
+        }
+        Command::List(args) => run_list(args),
+        Command::Add(_) => Err(NotPorted::new("add").into()),
+        Command::Remove(_) => Err(NotPorted::new("remove").into()),
+        Command::Src(_) => Err(NotPorted::new("src").into()),
+        Command::Docs(_) => Err(NotPorted::new("docs").into()),
+        Command::Fetch(_) => Err(NotPorted::new("fetch").into()),
+        Command::Search(_) => Err(NotPorted::new("search").into()),
+        Command::Skills(_) => Err(NotPorted::new("skills").into()),
+        Command::Cache(_) => Err(NotPorted::new("cache").into()),
+    }
+}
+
+/// `ask list` — render the docs model as text (default) or JSON (`--json`).
+fn run_list(args: ListArgs) -> anyhow::Result<()> {
+    let model = crate::list::build_list_model(&current_dir()?);
+    if args.json {
+        println!("{}", serde_json::to_string_pretty(&model)?);
+    } else {
+        println!("{}", crate::list::format_list(&model));
+    }
+    Ok(())
 }
 
 #[cfg(test)]

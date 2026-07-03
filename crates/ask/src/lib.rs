@@ -13,6 +13,7 @@ pub mod http;
 pub mod ignore_files;
 pub mod install;
 pub mod io;
+pub mod list;
 pub mod lockfiles;
 pub mod markers;
 pub mod registry;
