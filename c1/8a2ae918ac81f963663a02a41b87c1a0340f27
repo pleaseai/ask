@@ -1,0 +1,62 @@
+crates/ask/src/main.rs
+  s_446aea7ceb013f::t_2641ed84f25c16 1-19
+.please/docs/tracks/active/rust-port-20260704/spec.md
+  s_446aea7ceb013f::t_bd0de9cb32ff94 1-98
+crates/ask/README.md
+  s_446aea7ceb013f::t_f56306a80635a9 1-21
+.please/docs/tracks.jsonl
+  s_446aea7ceb013f::t_64d4bae0cc77fa 27
+.please/docs/tracks/active/rust-port-20260704/metadata.json
+  s_446aea7ceb013f::t_75c5e26305e410 1-10
+crates/ask/src/cli.rs
+  s_446aea7ceb013f::t_158e9741476683 1-217,222-228,230-245
+  s_446aea7ceb013f::t_a8e6b5770c5e92 218-221,229
+crates/ask/src/lib.rs
+  s_446aea7ceb013f::t_2b1dcf9dc6d84f 1-40
+.please/docs/tracks/active/rust-port-20260704/plan.md
+  s_446aea7ceb013f::t_52269e3fcb1919 1-75
+.gitignore
+  s_446aea7ceb013f::t_0714aa59f3215b 13-17
+Cargo.lock
+  s_446aea7ceb013f::t_c3584eb7ea49c4 1-283
+Cargo.toml
+  s_b6d2f829eeb131::t_28dcc98b5ddfd1 1-43
+crates/ask/Cargo.toml
+  s_1dfdff5e997de2::t_b9fd6be46b0640 1-33
+rust-toolchain.toml
+  s_b6d2f829eeb131::t_8bae2361de774b 1-4
+rustfmt.toml
+  s_b6d2f829eeb131::t_ed7c7e16cd632b 1-2
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "c18a2ae918ac81f963663a02a41b87c1a0340f27",
+  "prompts": {},
+  "sessions": {
+    "s_1dfdff5e997de2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "82785666-46bf-4955-9ff5-83a398fa44eb",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Minsu Lee <minsu.lee@pleaseai.dev>"
+    },
+    "s_446aea7ceb013f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dd704e3f-30cf-4e3a-8e00-08f1c3e22797",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Minsu Lee <minsu.lee@pleaseai.dev>"
+    },
+    "s_b6d2f829eeb131": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ef40db73-8241-47cd-9dd1-e07065b25782",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Minsu Lee <minsu.lee@pleaseai.dev>"
+    }
+  }
+}
