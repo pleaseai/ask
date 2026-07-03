@@ -4,6 +4,7 @@
 //! GitHub checkout in the global store on demand. Rust port of
 //! `packages/cli/src/commands/`.
 
+pub mod add;
 pub mod docs;
 pub mod ensure_checkout;
 pub mod fetch;

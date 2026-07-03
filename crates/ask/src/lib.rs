@@ -10,6 +10,7 @@ pub mod agents;
 pub mod ask_json;
 pub mod cli;
 pub mod commands;
+pub mod discovery;
 pub mod http;
 pub mod ignore_files;
 pub mod install;

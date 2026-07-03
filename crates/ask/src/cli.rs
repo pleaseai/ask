@@ -58,20 +58,15 @@ pub enum Command {
 
 #[derive(Debug, Args)]
 pub struct AddArgs {
-    /// Library name or full spec (e.g. next, @mastra/client-js, npm:react).
-    pub spec: String,
-    /// Comma-separated docs-path override (non-interactive).
+    /// Library spec (e.g. npm:next, github:vercel/next.js@v14.2.3). Omit for
+    /// interactive mode.
+    pub spec: Option<String>,
+    /// Comma-separated relative docs paths; skips the interactive prompt.
     #[arg(long = "docs-paths")]
     pub docs_paths: Option<String>,
-    /// Downgrade an object entry back to a bare-string entry.
+    /// Remove any persisted docsPaths override and restore default discovery.
     #[arg(long = "clear-docs-paths")]
     pub clear_docs_paths: bool,
-    /// Explicit source override (registry auto-detect is bypassed).
-    #[arg(short = 's', long = "source")]
-    pub source: Option<String>,
-    /// Allow a mutable ref (main/master/latest/...) in ask.json.
-    #[arg(long = "allow-mutable-ref")]
-    pub allow_mutable_ref: bool,
 }
 
 #[derive(Debug, Args)]
@@ -209,7 +204,7 @@ pub fn run(cli: Cli) -> anyhow::Result<()> {
             Ok(())
         }
         Command::List(args) => run_list(args),
-        Command::Add(_) => Err(NotPorted::new("add").into()),
+        Command::Add(args) => run_add_cmd(args),
         Command::Remove(args) => run_remove_cmd(args),
         Command::Src(args) => run_src_cmd(args),
         Command::Docs(args) => run_docs_cmd(args),
@@ -217,6 +212,52 @@ pub fn run(cli: Cli) -> anyhow::Result<()> {
         Command::Search(args) => run_search_cmd(args),
         Command::Skills(_) => Err(NotPorted::new("skills").into()),
         Command::Cache(args) => run_cache_cmd(args),
+    }
+}
+
+/// `ask add [spec]` — add a library to ask.json and materialize its docs. With
+/// no spec, runs the interactive dependency scanner (TTY-only). Both paths
+/// print collected messages and exit 1 on error, matching the TS `exit(1)`.
+fn run_add_cmd(args: AddArgs) -> anyhow::Result<()> {
+    let client = crate::http::UreqClient::new();
+    let project_dir = current_dir()?;
+
+    let Some(spec) = args.spec else {
+        use crate::commands::add::{run_interactive_add, RunInteractiveDeps};
+        let report = run_interactive_add(&client, &project_dir, &RunInteractiveDeps::default())?;
+        for line in &report.stdout {
+            println!("{line}");
+        }
+        for line in &report.stderr {
+            eprintln!("{line}");
+        }
+        if report.exit_code != 0 {
+            std::process::exit(report.exit_code);
+        }
+        return Ok(());
+    };
+
+    use crate::commands::add::{run_add, RunAddDeps, RunAddOptions};
+    let options = RunAddOptions {
+        project_dir,
+        spec,
+        docs_paths_arg: args.docs_paths,
+        clear_docs_paths: args.clear_docs_paths,
+    };
+    match run_add(&client, &options, &RunAddDeps::default()) {
+        Ok(report) => {
+            for line in &report.stdout {
+                println!("{line}");
+            }
+            for line in &report.stderr {
+                eprintln!("{line}");
+            }
+            Ok(())
+        }
+        Err(err) => {
+            eprintln!("{err}");
+            std::process::exit(1);
+        }
     }
 }
 

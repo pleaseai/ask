@@ -96,6 +96,23 @@ seed_empty() {
 seed_npm_and_github_rm() { seed_npm_and_github "$1"; }
 seed_github_only_rm() { seed_github_only "$1"; }
 
+# `ask add` fixtures. A package.json + lockfile let the npm entry resolve its
+# version offline (lazy-first install never downloads). The object-entry
+# serialization ({ "spec", "docsPaths" }) is the drift-prone bit this exercises.
+seed_add_docs_paths() {
+  printf '{\n  "libraries": []\n}\n' >"$1/ask.json"
+  printf '{\n  "name": "fixture",\n  "dependencies": { "react": "^18.2.0" }\n}\n' >"$1/package.json"
+  printf '{\n  "lockfileVersion": 3,\n  "packages": {\n    "node_modules/react": { "version": "18.3.1" }\n  }\n}\n' >"$1/package-lock.json"
+}
+seed_add_clear() {
+  printf '{\n  "libraries": [{ "spec": "npm:react", "docsPaths": ["docs"] }]\n}\n' >"$1/ask.json"
+  printf '{\n  "name": "fixture",\n  "dependencies": { "react": "^18.2.0" }\n}\n' >"$1/package.json"
+  printf '{\n  "lockfileVersion": 3,\n  "packages": {\n    "node_modules/react": { "version": "18.3.1" }\n  }\n}\n' >"$1/package-lock.json"
+}
+seed_add_github_bare() {
+  printf '{\n  "libraries": []\n}\n' >"$1/ask.json"
+}
+
 # --- cases -----------------------------------------------------------------
 
 echo "==> running parity cases"
@@ -105,6 +122,11 @@ run_case empty install
 # Sequences: install then remove — exercises skill teardown + AGENTS.md regen.
 run_case npm_and_github_rm install "remove react"
 run_case github_only_rm install "remove next.js"
+# `ask add` non-interactive contract: CSV override (object entry), downgrade,
+# and bare owner/repo → github normalization.
+run_case add_docs_paths "add npm:react --docs-paths docs,api"
+run_case add_clear "add npm:react --clear-docs-paths"
+run_case add_github_bare "add vercel/next.js@v15.0.3"
 
 if [[ "$fail" == 0 ]]; then
   echo "ALL PARITY CASES IDENTICAL"
