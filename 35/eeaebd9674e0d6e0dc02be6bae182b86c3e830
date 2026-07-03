@@ -1,0 +1,25 @@
+crates/ask/src/lockfiles/pnpm.rs
+  s_446aea7ceb013f::t_bf163582c168ec 48-57,59-69,71-74,76-79,108-111,123-127,142-146,191-194,210-213,222-226,251-259,266-269,280-283,308-310,328-331,371-373,436-439
+  s_446aea7ceb013f::t_4a662305e387a4 484-487,492,494-495,498,503-504
+  s_446aea7ceb013f::t_e2852e519446d5 1-47,58,70,75,80-107,112-122,128-141,147-190,195-209,214-221,227-250,260-265,270-279,284-307,311-327,332-370,374-435,440-483,488-491,493,496-497,505-519
+  s_446aea7ceb013f::t_eec6fbd29af85b 499-502
+crates/ask/src/lockfiles/mod.rs
+  s_446aea7ceb013f::t_419f62a46a9892 11-17
+  s_446aea7ceb013f::t_f349578bf733ad 304-309
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "35eeaebd9674e0d6e0dc02be6bae182b86c3e830",
+  "prompts": {},
+  "sessions": {
+    "s_446aea7ceb013f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dd704e3f-30cf-4e3a-8e00-08f1c3e22797",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Minsu Lee <minsu.lee@pleaseai.dev>"
+    }
+  }
+}
