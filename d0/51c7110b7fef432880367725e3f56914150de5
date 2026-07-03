@@ -1,0 +1,29 @@
+scripts/parity-diff.sh
+  s_446aea7ceb013f::t_b6759dc4b68c54 95-98
+  s_446aea7ceb013f::t_d55629283a18c6 105-107
+  s_446aea7ceb013f::t_6efbcf20c6acea 59-60,62-66
+crates/ask/src/commands/remove.rs
+  s_446aea7ceb013f::t_81c04edda25545 124-127,147-150
+  s_446aea7ceb013f::t_298f05597b044b 1-123,128-146,151-158
+crates/ask/src/commands/mod.rs
+  s_446aea7ceb013f::t_0898518f3bf138 11
+crates/ask/src/cli.rs
+  s_446aea7ceb013f::t_c80aae824f84dd 261-277
+  s_446aea7ceb013f::t_6811342dd13998 204
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "d051c7110b7fef432880367725e3f56914150de5",
+  "prompts": {},
+  "sessions": {
+    "s_446aea7ceb013f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dd704e3f-30cf-4e3a-8e00-08f1c3e22797",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Minsu Lee <minsu.lee@pleaseai.dev>"
+    }
+  }
+}
