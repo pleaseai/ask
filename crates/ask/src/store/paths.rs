@@ -139,17 +139,19 @@ pub fn normalize_url(url: &str) -> String {
     if let Some(scheme_end) = stripped.find("://") {
         let scheme = &stripped[..scheme_end];
         let rest = &stripped[scheme_end + 3..];
-        let (authority, path) = match rest.find('/') {
-            Some(i) => (&rest[..i], &rest[i..]),
-            None => (rest, ""),
-        };
-        // Authority may carry userinfo@host:port; lowercase the whole authority
-        // (host is the case-relevant part; userinfo/port are ASCII-safe here).
+        // The authority ends at the FIRST of `/`, `?`, or `#`. Splitting only on
+        // `/` lets a URL with a query/fragment but no path (`host?Query`) fold the
+        // query/fragment into the authority and lowercase it — collapsing distinct
+        // URLs to the same store key. TS normalizeUrl lowercases only host+scheme
+        // and preserves path/query/fragment case; mirror that here.
+        let split_at = rest.find(['/', '?', '#']).unwrap_or(rest.len());
+        let authority = &rest[..split_at];
+        let suffix = &rest[split_at..];
         format!(
             "{}://{}{}",
             scheme.to_lowercase(),
             authority.to_lowercase(),
-            path
+            suffix
         )
     } else {
         stripped.to_lowercase()

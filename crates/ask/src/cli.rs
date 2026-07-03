@@ -470,9 +470,12 @@ fn run_cache_cmd(args: CacheArgs) -> anyhow::Result<()> {
             eprintln!("\nTotal: {}", format_bytes(total));
         }
         CacheCommand::Gc(a) => {
-            let scan_roots = std::env::var("ASK_GC_SCAN_ROOTS")
-                .ok()
-                .map(|v| v.split(':').map(std::path::PathBuf::from).collect());
+            // Split on the OS path-list delimiter (`:` on unix, `;` on Windows)
+            // via split_paths so a Windows drive-letter root (`C:\...`) is not
+            // mis-split on its `:`. On unix this is identical to the previous
+            // `:`-split.
+            let scan_roots =
+                std::env::var_os("ASK_GC_SCAN_ROOTS").map(|v| std::env::split_paths(&v).collect());
             let older_than = match a.older_than.as_deref() {
                 Some(raw) => match parse_duration(raw) {
                     Some(ms) => Some(ms),

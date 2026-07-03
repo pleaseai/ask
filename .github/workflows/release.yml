@@ -168,6 +168,22 @@ jobs:
             --dir assets-bin \
             --clobber
 
+          # Require ALL platform binaries before publishing. The wrapper pins
+          # optionalDependencies for every platform; a partial build (release-rust
+          # uses fail-fast:false, so one target can fail while others upload) would
+          # otherwise publish a wrapper missing a platform — npm does NOT error on
+          # a missing optional dep, so that platform silently gets a broken install,
+          # and the version number is burned permanently. Partial *release assets*
+          # are fine (some binaries beat none); a partial *npm wrapper* is not.
+          missing=()
+          for a in ask-darwin-arm64 ask-darwin-x64 ask-linux-x64 ask-linux-arm64 ask-linux-x64-musl ask-windows-x64.exe; do
+            [ -f "assets-bin/$a" ] || missing+=("$a")
+          done
+          if [ ${#missing[@]} -ne 0 ]; then
+            echo "::error::Refusing to publish an incomplete @pleaseai/ask wrapper — missing platform binaries: ${missing[*]}. Re-run the failed release-rust build legs, then re-run this publish." >&2
+            exit 1
+          fi
+
           # Generate npm/dist/<platform pkgs> + npm/dist/ask (the wrapper).
           node npm/scripts/generate-platform-packages.mjs "$VERSION_NO_V" "$PWD/assets-bin"
 

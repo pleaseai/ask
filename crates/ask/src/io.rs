@@ -141,15 +141,23 @@ pub fn write_ask_json(project_dir: &Path, ask_json: &AskJson) -> anyhow::Result<
 }
 
 /// Read and validate `.ask/resolved.json`. Returns the default empty cache when
-/// the file is missing OR fails to parse/validate — the cache is rebuilt from
-/// scratch in that case. This is the contract that makes `resolved.json` safe to
-/// delete by hand.
-pub fn read_resolved_json(project_dir: &Path) -> ResolvedJson {
+/// the file is MISSING or fails to parse/validate — the cache is rebuilt from
+/// scratch in that case, which is what makes `resolved.json` safe to delete by
+/// hand. A non-NotFound read error (e.g. permission denied) is NOT masked as an
+/// empty cache — it is surfaced, matching TS `readResolvedJson` where the
+/// `readFileSync` sits OUTSIDE the parse `try/catch` (only parse failures fall
+/// back to empty). Masking it would hide a real disk/permission fault behind a
+/// silent full re-resolve.
+pub fn read_resolved_json(project_dir: &Path) -> anyhow::Result<ResolvedJson> {
     let file = get_resolved_json_path(project_dir);
-    let Ok(raw) = std::fs::read_to_string(&file) else {
-        return empty_resolved();
+    let raw = match std::fs::read_to_string(&file) {
+        Ok(raw) => raw,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(empty_resolved()),
+        Err(e) => {
+            return Err(anyhow::Error::new(e).context(format!("Failed to read {}", file.display())))
+        }
     };
-    ResolvedJson::parse(&raw).unwrap_or_else(|_| empty_resolved())
+    Ok(ResolvedJson::parse(&raw).unwrap_or_else(|_| empty_resolved()))
 }
 
 /// The default empty resolved cache.
@@ -180,7 +188,7 @@ pub fn upsert_resolved_entry(
     key: &str,
     entry: ResolvedEntry,
 ) -> anyhow::Result<()> {
-    let mut resolved = read_resolved_json(project_dir);
+    let mut resolved = read_resolved_json(project_dir)?;
     let changed = match resolved.entries.get(key) {
         None => true,
         Some(previous) => !eq_ignoring_fetched_at(previous, &entry),
@@ -199,7 +207,7 @@ pub fn remove_resolved_entries(project_dir: &Path, keys: &[String]) -> anyhow::R
     if keys.is_empty() {
         return Ok(());
     }
-    let mut resolved = read_resolved_json(project_dir);
+    let mut resolved = read_resolved_json(project_dir)?;
     for k in keys {
         resolved.entries.remove(k);
     }
@@ -322,7 +330,7 @@ mod tests {
     #[test]
     fn read_missing_resolved_is_empty_default() {
         let dir = tmp();
-        let r = read_resolved_json(dir.path());
+        let r = read_resolved_json(dir.path()).unwrap();
         assert_eq!(r.schema_version, 1);
         assert!(r.entries.is_empty());
     }
@@ -333,7 +341,7 @@ mod tests {
         let file = get_resolved_json_path(dir.path());
         std::fs::create_dir_all(file.parent().unwrap()).unwrap();
         std::fs::write(&file, "{ not valid json").unwrap();
-        assert!(read_resolved_json(dir.path()).entries.is_empty());
+        assert!(read_resolved_json(dir.path()).unwrap().entries.is_empty());
     }
 
     fn sample_entry(spec: &str) -> ResolvedEntry {
@@ -356,33 +364,36 @@ mod tests {
     fn upsert_then_remove_resolved_entry() {
         let dir = tmp();
         upsert_resolved_entry(dir.path(), "next", sample_entry("npm:next")).unwrap();
-        let r = read_resolved_json(dir.path());
+        let r = read_resolved_json(dir.path()).unwrap();
         assert!(r.entries.contains_key("next"));
         // generatedAt was stamped to a real time (not the 1970 default).
         assert_ne!(r.generated_at, "1970-01-01T00:00:00Z");
 
         remove_resolved_entries(dir.path(), &["next".to_string()]).unwrap();
-        assert!(!read_resolved_json(dir.path()).entries.contains_key("next"));
+        assert!(!read_resolved_json(dir.path())
+            .unwrap()
+            .entries
+            .contains_key("next"));
     }
 
     #[test]
     fn upsert_skips_rewrite_when_only_fetched_at_differs() {
         let dir = tmp();
         upsert_resolved_entry(dir.path(), "next", sample_entry("npm:next")).unwrap();
-        let first = read_resolved_json(dir.path()).generated_at.clone();
+        let first = read_resolved_json(dir.path()).unwrap().generated_at.clone();
 
         // Same entry but a different fetched_at → treated as unchanged, no rewrite.
         let mut again = sample_entry("npm:next");
         again.fetched_at = "2099-01-01T00:00:00Z".into();
         upsert_resolved_entry(dir.path(), "next", again).unwrap();
-        assert_eq!(read_resolved_json(dir.path()).generated_at, first);
+        assert_eq!(read_resolved_json(dir.path()).unwrap().generated_at, first);
 
         // A material change (version) → rewrite.
         let mut changed = sample_entry("npm:next");
         changed.resolved_version = "2.0.0".into();
         upsert_resolved_entry(dir.path(), "next", changed).unwrap();
         assert_eq!(
-            read_resolved_json(dir.path()).entries["next"].resolved_version,
+            read_resolved_json(dir.path()).unwrap().entries["next"].resolved_version,
             "2.0.0"
         );
     }

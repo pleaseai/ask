@@ -105,13 +105,13 @@ pub fn run_docs_with(
     // Persisted docsPaths override: emit ONLY the stored paths (resolved against
     // both roots that `ask add` probed). Falls back to the unfiltered walk when
     // every stored path is stale — silent empty output would be worse.
-    let stored: Option<Vec<String>> =
-        read_ask_json(&options.project_dir)
-            .ok()
-            .flatten()
-            .and_then(|aj| {
-                find_entry(&aj, &options.spec).and_then(|e| e.docs_paths().map(|d| d.to_vec()))
-            });
+    // Propagate an invalid ask.json rather than masking it: TS `ask docs` calls
+    // readAskJson directly (no try/catch), so a broken config surfaces a parse
+    // error instead of silently emitting the unfiltered candidate list.
+    let stored: Option<Vec<String>> = match read_ask_json(&options.project_dir)? {
+        Some(aj) => find_entry(&aj, &options.spec).and_then(|e| e.docs_paths().map(|d| d.to_vec())),
+        None => None,
+    };
     let mut stored_override = false;
 
     if let Some(stored) = stored.as_ref().filter(|s| !s.is_empty()) {

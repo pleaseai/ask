@@ -126,7 +126,7 @@ fn copy_tree_verbatim(src: &Path, dst: &Path) -> anyhow::Result<()> {
         let to = dst.join(entry.file_name());
         if file_type.is_symlink() {
             let target = std::fs::read_link(&from)?;
-            symlink_verbatim(&target, &to)?;
+            symlink_verbatim(&target, &from, &to)?;
         } else if file_type.is_dir() {
             copy_tree_verbatim(&from, &to)?;
         } else {
@@ -137,15 +137,26 @@ fn copy_tree_verbatim(src: &Path, dst: &Path) -> anyhow::Result<()> {
 }
 
 #[cfg(unix)]
-fn symlink_verbatim(target: &Path, link: &Path) -> std::io::Result<()> {
+fn symlink_verbatim(target: &Path, _src_link: &Path, link: &Path) -> std::io::Result<()> {
     std::os::unix::fs::symlink(target, link)
 }
 
 #[cfg(not(unix))]
-fn symlink_verbatim(target: &Path, link: &Path) -> std::io::Result<()> {
+fn symlink_verbatim(target: &Path, src_link: &Path, link: &Path) -> std::io::Result<()> {
     // Windows requires privileges/target-type for symlinks; fall back to copying
     // the resolved file (best-effort; the store gotchas this guards are unix).
-    std::fs::copy(target, link).map(|_| ())
+    // `target` may be RELATIVE to the source link's directory, so resolve it
+    // against `src_link.parent()` before copying — copying the raw relative
+    // target would resolve against the process CWD and read the wrong file / fail.
+    let resolved = if target.is_absolute() {
+        target.to_path_buf()
+    } else {
+        src_link
+            .parent()
+            .unwrap_or_else(|| Path::new("."))
+            .join(target)
+    };
+    std::fs::copy(&resolved, link).map(|_| ())
 }
 
 // ── Entry locking ──────────────────────────────────────────────────

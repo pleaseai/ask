@@ -51,6 +51,23 @@ fn create_symlink(target: &Path, link: &Path) -> std::io::Result<()> {
     }
 }
 
+/// Remove a symlink previously created by [`create_symlink`]. On Windows the
+/// links are directory symlinks (`symlink_dir`), and a directory symlink must
+/// be removed with `remove_dir` — `remove_file` only removes file symlinks and
+/// would fail, leaving the link behind. On unix `remove_file` removes any
+/// symlink. Keeping removal symmetric with creation makes relink/unlink work
+/// cross-platform.
+fn remove_symlink(link: &Path) -> std::io::Result<()> {
+    #[cfg(windows)]
+    {
+        std::fs::remove_dir(link)
+    }
+    #[cfg(not(windows))]
+    {
+        std::fs::remove_file(link)
+    }
+}
+
 /// Create a relative symlink at `link_path` → `target_path`, creating the
 /// parent dir on demand. A pre-existing identical symlink is a no-op; a
 /// differing symlink or a real file/dir errors unless `force`. Parity with
@@ -81,7 +98,7 @@ pub fn link_skill(opts: &LinkSkillOptions) -> anyhow::Result<()> {
                 }
                 .into());
             }
-            std::fs::remove_file(opts.link_path)?;
+            remove_symlink(opts.link_path)?;
         } else {
             if !opts.force {
                 return Err(SymlinkConflictError {
@@ -122,7 +139,7 @@ pub fn unlink_if_owned(link_path: &Path, expected_target: &Path) -> bool {
     if current != rel_expected {
         return false;
     }
-    std::fs::remove_file(link_path).is_ok()
+    remove_symlink(link_path).is_ok()
 }
 
 #[cfg(test)]

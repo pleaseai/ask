@@ -94,18 +94,39 @@ pub fn is_doc_file(name: &str) -> bool {
 /// `base` (forward-slash separated), sorted for determinism.
 pub fn collect_doc_files(base: &Path, current: &Path) -> std::io::Result<Vec<DocFile>> {
     let mut files = Vec::new();
-    collect_into(base, current, &mut files)?;
+    // Canonicalized base for the per-file symlink-escape guard in collect_into.
+    // `None` (base itself unresolvable) leaves non-symlink collection working.
+    let canon_base = std::fs::canonicalize(base).ok();
+    collect_into(base, canon_base.as_deref(), current, &mut files)?;
     files.sort_by(|a, b| a.path.cmp(&b.path));
     Ok(files)
 }
 
-fn collect_into(base: &Path, current: &Path, out: &mut Vec<DocFile>) -> std::io::Result<()> {
+fn collect_into(
+    base: &Path,
+    canon_base: Option<&Path>,
+    current: &Path,
+    out: &mut Vec<DocFile>,
+) -> std::io::Result<()> {
     for entry in std::fs::read_dir(current)? {
         let entry = entry?;
         let path = entry.path();
-        if entry.file_type()?.is_dir() {
-            collect_into(base, &path, out)?;
+        let file_type = entry.file_type()?;
+        if file_type.is_dir() {
+            collect_into(base, canon_base, &path, out)?;
         } else if is_doc_file(&entry.file_name().to_string_lossy()) {
+            // A symlinked doc file can point outside the docs root; the root-only
+            // containment guard in extract_docs_from_dir does not cover per-file
+            // links. Verify a symlink's real target stays within the canonical
+            // base before reading, so a checkout can't exfiltrate arbitrary files.
+            // Non-symlink files are physically inside the tree — no check needed,
+            // so normal collection stays byte-identical.
+            if file_type.is_symlink() {
+                match (canon_base, std::fs::canonicalize(&path)) {
+                    (Some(cb), Ok(real)) if real.starts_with(cb) => {}
+                    _ => continue, // escapes base, or unresolvable → skip
+                }
+            }
             let rel = path.strip_prefix(base).unwrap_or(&path);
             let rel_str = rel
                 .components()
@@ -204,6 +225,30 @@ mod tests {
             extract_docs_from_dir(root, "o/r", "v1", Some("docs"), GITHUB_DOC_CANDIDATES).unwrap();
         let paths: Vec<&str> = files.iter().map(|f| f.path.as_str()).collect();
         assert_eq!(paths, vec!["a.md", "sub/b.mdx"]);
+    }
+
+    // A symlinked doc file that escapes the docs root must be skipped (not read),
+    // while an in-tree symlink resolving inside the root is still collected.
+    #[cfg(unix)]
+    #[test]
+    fn collect_skips_escaping_symlink_files() {
+        let dir = tempfile::tempdir().unwrap();
+        let root = dir.path();
+        let outside = root.join("secret.md");
+        std::fs::write(&outside, "TOP SECRET").unwrap();
+        let docs = root.join("docs");
+        std::fs::create_dir_all(&docs).unwrap();
+        std::fs::write(docs.join("real.md"), "REAL").unwrap();
+        // Escaping link: docs/leak.md -> ../secret.md (outside docs root).
+        std::os::unix::fs::symlink("../secret.md", docs.join("leak.md")).unwrap();
+        // In-tree link: docs/alias.md -> real.md (inside docs root).
+        std::os::unix::fs::symlink("real.md", docs.join("alias.md")).unwrap();
+
+        let files = collect_doc_files(&docs, &docs).unwrap();
+        let paths: Vec<&str> = files.iter().map(|f| f.path.as_str()).collect();
+        // leak.md is dropped; real.md and the in-tree alias.md survive.
+        assert_eq!(paths, vec!["alias.md", "real.md"]);
+        assert!(files.iter().all(|f| f.content != "TOP SECRET"));
     }
 
     #[test]

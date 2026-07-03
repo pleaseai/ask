@@ -36,7 +36,13 @@ struct MavenSearchInner {
 
 #[derive(Deserialize)]
 struct MavenSearchDoc {
-    v: String,
+    // `core=gav` responses (explicit version) carry `v`; the default core (used
+    // for `latest`) carries `latestVersion` and has no `v`. Accept both so a
+    // healthy Search API can resolve `latest` instead of erroring on the missing
+    // `v` field and always falling through to maven-metadata.xml.
+    v: Option<String>,
+    #[serde(rename = "latestVersion")]
+    latest_version: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -195,9 +201,11 @@ fn fetch_search_api(
         .docs
         .into_iter()
         .next()
-        .map(|d| d.v)
+        .and_then(|d| d.v.or(d.latest_version))
         .ok_or_else(|| {
-            anyhow!("Maven Central Search API returned no docs for {group_id}:{artifact_id}")
+            anyhow!(
+                "Maven Central Search API returned no usable version for {group_id}:{artifact_id}"
+            )
         })?;
 
     // Best-effort scm.url from the artifact-level (non-GAV) core.
@@ -322,6 +330,24 @@ mod tests {
         assert_eq!(r.resolved_version, "1.2.3");
         assert_eq!(r.ref_, "v1.2.3");
         assert_eq!(r.fallback_refs, vec!["1.2.3"]);
+    }
+
+    #[test]
+    fn resolve_latest_reads_latest_version_field() {
+        // The default (non-GAV) core used for `latest` returns `latestVersion`,
+        // not `v`. The parser must accept it instead of erroring and falling
+        // through to maven-metadata.xml.
+        let latest =
+            "https://search.maven.org/solrsearch/select?q=g:com.example+AND+a:lib&rows=1&wt=json";
+        let client = MockClient::new().with(
+            latest,
+            200,
+            r#"{"response":{"numFound":1,"docs":[{"latestVersion":"2.0.0","scm.url":"https://github.com/example/lib"}]}}"#,
+        );
+        let r = resolve(&client, "com.example:lib", "latest").unwrap();
+        assert_eq!(r.resolved_version, "2.0.0");
+        assert_eq!(r.repo, "example/lib");
+        assert_eq!(r.ref_, "v2.0.0");
     }
 
     #[test]

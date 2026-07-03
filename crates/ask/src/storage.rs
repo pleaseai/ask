@@ -8,7 +8,7 @@
 use std::path::{Path, PathBuf};
 
 pub use crate::ask_json::StoreMode;
-use crate::io::{get_ask_dir, read_ask_json, read_resolved_json};
+use crate::io::{empty_resolved, get_ask_dir, read_ask_json, read_resolved_json};
 use crate::resolved::{EntryFormat, Materialization};
 use crate::sources::DocFile;
 use crate::spec::library_name_from_spec;
@@ -168,7 +168,11 @@ pub fn list_docs(project_dir: &Path) -> Vec<ListDocsEntry> {
     let Ok(Some(ask_json)) = read_ask_json(project_dir) else {
         return Vec::new();
     };
-    let resolved = read_resolved_json(project_dir);
+    // `ask list` is a display-only, infallible lister (it already returns empty
+    // on an unreadable ask.json). It performs no rewrites, so masking a resolved
+    // read error here can't trigger the incorrect-rewrite bug the read_resolved_json
+    // change guards against — keep the infallible signature with an empty fallback.
+    let resolved = read_resolved_json(project_dir).unwrap_or_else(|_| empty_resolved());
 
     let mut out = Vec::new();
     for entry in &ask_json.libraries {

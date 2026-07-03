@@ -88,11 +88,21 @@ pub enum ResolvedError {
     MissingInPlacePath(String),
     #[error("schemaVersion must be 1, got {0}")]
     SchemaVersion(u32),
+    #[error("{0} must be a non-empty string")]
+    EmptyField(&'static str),
 }
 
 impl ResolvedEntry {
     /// Enforce the field-shape refinements serde structural parsing cannot.
     pub fn validate(&self) -> Result<(), ResolvedError> {
+        // TS: spec / resolvedVersion are `z.string().min(1)` — reject empties so
+        // `.ask/resolved.json` acceptance stays in parity with the TS validator.
+        if self.spec.is_empty() {
+            return Err(ResolvedError::EmptyField("spec"));
+        }
+        if self.resolved_version.is_empty() {
+            return Err(ResolvedError::EmptyField("resolvedVersion"));
+        }
         if !is_content_hash(&self.content_hash) {
             return Err(ResolvedError::ContentHash(self.content_hash.clone()));
         }
@@ -271,6 +281,16 @@ mod tests {
     fn rejects_bad_content_hash() {
         let json = base_entry_json("").replace(HASH, "sha256-xyz");
         assert!(ResolvedJson::parse(&doc(&json)).is_err());
+    }
+
+    #[test]
+    fn rejects_empty_spec_or_version() {
+        // TS: spec / resolvedVersion are z.string().min(1).
+        let empty_spec = base_entry_json("").replace(r#""spec":"npm:next""#, r#""spec":"""#);
+        assert!(ResolvedJson::parse(&doc(&empty_spec)).is_err());
+        let empty_ver =
+            base_entry_json("").replace(r#""resolvedVersion":"15.0.0""#, r#""resolvedVersion":"""#);
+        assert!(ResolvedJson::parse(&doc(&empty_ver)).is_err());
     }
 
     #[test]

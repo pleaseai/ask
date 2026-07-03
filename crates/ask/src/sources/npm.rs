@@ -181,11 +181,23 @@ fn fetch_from_tarball(
         })?;
 
     let docs_dir = package_dir.join(&docs_path);
+    // Containment guard: a `--docs-path` that is absolute, uses `../`, or points
+    // at a symlink escaping the package must not let ask read arbitrary local
+    // paths. Mirror try_local_read's lexical + realpath checks (the local-first
+    // path had them; the tarball path did not).
+    if !lexical_clean(&docs_dir).starts_with(lexical_clean(&package_dir)) {
+        bail!("Docs path \"{docs_path}\" escapes the package directory in {spec}.");
+    }
     if !docs_dir.exists() {
         bail!(
             "Docs path \"{docs_path}\" not found in {spec}. Available paths:\n{}",
             list_dirs(&package_dir)
         );
+    }
+    let real_pkg = std::fs::canonicalize(&package_dir)?;
+    let real_docs = std::fs::canonicalize(&docs_dir)?;
+    if !real_docs.starts_with(&real_pkg) {
+        bail!("Docs path \"{docs_path}\" resolves outside the package directory in {spec}.");
     }
 
     let files = if docs_dir.is_file() {

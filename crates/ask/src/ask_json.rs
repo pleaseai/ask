@@ -140,6 +140,14 @@ fn is_valid_spec_string(spec: &str) -> bool {
     if payload.is_empty() {
         return false;
     }
+    // The zod regex `^...:.+$` has no `s`/`m` flags: `.` never matches a JS line
+    // terminator and `$` is strict end-of-string, so a payload containing any JS
+    // line terminator (LF, CR, U+2028, U+2029) is rejected. Mirror that so Rust
+    // does not accept multiline specs the TS schema rejects. (The prefix charset
+    // already excludes these.)
+    if payload.contains(['\n', '\r', '\u{2028}', '\u{2029}']) {
+        return false;
+    }
     let mut chars = prefix.chars();
     match chars.next() {
         Some(c) if c.is_ascii_lowercase() => {}
@@ -204,6 +212,14 @@ mod tests {
     #[test]
     fn rejects_spec_without_ecosystem_prefix() {
         let err = AskJson::parse(r#"{"libraries":["next"]}"#).unwrap_err();
+        assert!(err.to_string().contains("ecosystem prefix"));
+    }
+
+    #[test]
+    fn rejects_spec_with_embedded_line_terminator() {
+        // The `\n` here is a JSON escape → the parsed spec string contains a real
+        // newline. TS's `.+$` regex rejects it; Rust must too.
+        let err = AskJson::parse(r#"{"libraries":["npm:next\nmalicious"]}"#).unwrap_err();
         assert!(err.to_string().contains("ecosystem prefix"));
     }
 

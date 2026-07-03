@@ -59,10 +59,21 @@ run_case() {
   # Each remaining arg is ONE command line (word-split here), run in order in
   # both copies — supports sequences like `install` then `remove react`.
   # Scrub env so inherited BUN_*/TTY state cannot perturb either side.
-  local cmd
+  #
+  # Capture and COMPARE exit codes rather than blanket-`|| true`. A blanket
+  # ignore lets the harness false-pass when BOTH sides error (e.g. both crash
+  # on the same regression and write nothing → identical empty trees). By
+  # requiring the exit codes to agree, an asymmetric success/failure — the
+  # exact divergence a byte-diff of generated files can miss — is caught even
+  # when the files happen to match. The file diff below still runs on top.
+  local cmd rc_ts rc_rs
   for cmd in "$@"; do
-    ( cd "$ts" && env -i PATH="$PATH" HOME="$HOME" NO_COLOR=1 node "$TS_CLI" $cmd >/dev/null 2>&1 ) || true
-    ( cd "$rs" && env -i PATH="$PATH" HOME="$HOME" NO_COLOR=1 "$RS_CLI" $cmd >/dev/null 2>&1 ) || true
+    if ( cd "$ts" && env -i PATH="$PATH" HOME="$HOME" NO_COLOR=1 node "$TS_CLI" $cmd >/dev/null 2>&1 ); then rc_ts=0; else rc_ts=$?; fi
+    if ( cd "$rs" && env -i PATH="$PATH" HOME="$HOME" NO_COLOR=1 "$RS_CLI" $cmd >/dev/null 2>&1 ); then rc_rs=0; else rc_rs=$?; fi
+    if [[ "$rc_ts" != "$rc_rs" ]]; then
+      echo "  FAIL $name ($cmd): exit code mismatch (ts=$rc_ts rs=$rc_rs)"
+      fail=1
+    fi
   done
   if diff -r "$ts" "$rs" >"$WORK/$name.diff" 2>&1; then
     echo "  ok   $name ($*)"
@@ -147,6 +158,15 @@ skills_install_parity() {
     mkdir -p "$d/.claude"
     printf 'node_modules\n' >"$d/.gitignore"
   done
+  # Exit codes are intentionally NOT compared for this case (only the files are).
+  # The TS `skills` parent command (commands/skills/index.ts) declares BOTH
+  # `subCommands` AND its own `run()` with a positional `spec`, so citty runs the
+  # `install` subcommand AND then fires the parent run() with spec="install",
+  # which calls runSkillsList → "no skills/ directory found for install" → exit 1.
+  # That double-dispatch is a TS bug; the Rust router dispatches `skills install`
+  # to install ONLY (exit 0). Both produce byte-identical files (verified below) —
+  # replicating the spurious exit 1 in Rust would mean porting the bug, so we do
+  # not. (run_case still compares exit codes for the non-skills commands.)
   ( cd "$ts" && env -i PATH="$PATH" HOME="$HOME" ASK_HOME="$home" NO_COLOR=1 node "$TS_CLI" skills install github:o/r@v1.0.0 --agent claude >/dev/null 2>&1 ) || true
   ( cd "$rs" && env -i PATH="$PATH" HOME="$HOME" ASK_HOME="$home" NO_COLOR=1 "$RS_CLI" skills install github:o/r@v1.0.0 --agent claude >/dev/null 2>&1 ) || true
   for d in "$ts" "$rs"; do
