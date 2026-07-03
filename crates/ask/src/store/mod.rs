@@ -105,7 +105,9 @@ pub fn cp_dir_atomic(source_dir: &Path, target_dir: &Path) -> anyhow::Result<()>
         std::fs::create_dir_all(parent)?;
     }
     let result = (|| -> anyhow::Result<()> {
-        copy_tree_verbatim(source_dir, &tmp_dir)?;
+        // `source_dir` is the containment root: a (non-unix) symlink whose target
+        // dereferences outside it must not pull unrelated files into the entry.
+        copy_tree_verbatim(source_dir, source_dir, &tmp_dir)?;
         atomic_swap(&tmp_dir, target_dir)?;
         Ok(())
     })();
@@ -117,7 +119,7 @@ pub fn cp_dir_atomic(source_dir: &Path, target_dir: &Path) -> anyhow::Result<()>
 
 /// Recursively copy `src` into `dst`, copying symlinks as symlinks (verbatim
 /// target) rather than following them.
-fn copy_tree_verbatim(src: &Path, dst: &Path) -> anyhow::Result<()> {
+fn copy_tree_verbatim(root: &Path, src: &Path, dst: &Path) -> anyhow::Result<()> {
     std::fs::create_dir_all(dst)?;
     for entry in std::fs::read_dir(src)? {
         let entry = entry?;
@@ -126,9 +128,9 @@ fn copy_tree_verbatim(src: &Path, dst: &Path) -> anyhow::Result<()> {
         let to = dst.join(entry.file_name());
         if file_type.is_symlink() {
             let target = std::fs::read_link(&from)?;
-            symlink_verbatim(&target, &from, &to)?;
+            symlink_verbatim(root, &target, &from, &to)?;
         } else if file_type.is_dir() {
-            copy_tree_verbatim(&from, &to)?;
+            copy_tree_verbatim(root, &from, &to)?;
         } else {
             std::fs::copy(&from, &to)?;
         }
@@ -137,12 +139,24 @@ fn copy_tree_verbatim(src: &Path, dst: &Path) -> anyhow::Result<()> {
 }
 
 #[cfg(unix)]
-fn symlink_verbatim(target: &Path, _src_link: &Path, link: &Path) -> std::io::Result<()> {
+fn symlink_verbatim(
+    _root: &Path,
+    target: &Path,
+    _src_link: &Path,
+    link: &Path,
+) -> std::io::Result<()> {
+    // Unix records the link verbatim — it never dereferences the target, so an
+    // escaping target is just a link, not a copy of external content.
     std::os::unix::fs::symlink(target, link)
 }
 
 #[cfg(not(unix))]
-fn symlink_verbatim(target: &Path, src_link: &Path, link: &Path) -> std::io::Result<()> {
+fn symlink_verbatim(
+    root: &Path,
+    target: &Path,
+    src_link: &Path,
+    link: &Path,
+) -> std::io::Result<()> {
     // Windows requires privileges/target-type for symlinks; fall back to copying
     // the resolved file (best-effort; the store gotchas this guards are unix).
     // `target` may be RELATIVE to the source link's directory, so resolve it
@@ -156,7 +170,20 @@ fn symlink_verbatim(target: &Path, src_link: &Path, link: &Path) -> std::io::Res
             .unwrap_or_else(|| Path::new("."))
             .join(target)
     };
-    std::fs::copy(&resolved, link).map(|_| ())
+    // Containment: unlike unix (which only records the link), this branch COPIES
+    // the target's bytes into the entry. A symlink whose target dereferences
+    // outside the copy root (`../…`, an absolute path, or an escaping chain)
+    // would exfiltrate unrelated local files into the cached entry — so canonicalize
+    // both and skip the entry when the target escapes the root or cannot be resolved.
+    match (
+        std::fs::canonicalize(root),
+        std::fs::canonicalize(&resolved),
+    ) {
+        (Ok(real_root), Ok(real_target)) if real_target.starts_with(&real_root) => {
+            std::fs::copy(&real_target, link).map(|_| ())
+        }
+        _ => Ok(()), // escapes the root or unresolvable → skip, do not exfiltrate
+    }
 }
 
 // ── Entry locking ──────────────────────────────────────────────────
