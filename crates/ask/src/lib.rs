@@ -8,6 +8,7 @@
 
 pub mod ask_json;
 pub mod cli;
+pub mod resolved;
 pub mod spec;
 
 use std::fmt;
