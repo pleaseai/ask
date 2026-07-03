@@ -1,0 +1,45 @@
+{
+  "name": "@pleaseai/ask",
+  "version": "0.4.8",
+  "description": "Agent Skills Kit — download version-specific library docs for AI coding agents (Rust binary, npm-distributed).",
+  "license": "MIT",
+  "homepage": "https://github.com/pleaseai/ask",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pleaseai/ask.git"
+  },
+  "bugs": {
+    "url": "https://github.com/pleaseai/ask/issues"
+  },
+  "keywords": [
+    "agents",
+    "documentation",
+    "skills",
+    "cli",
+    "llm",
+    "claude",
+    "agents-md"
+  ],
+  "bin": {
+    "ask": "bin/ask.js"
+  },
+  "files": [
+    "bin/ask.js",
+    "install.js",
+    "lib/resolve.js"
+  ],
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "postinstall": "node install.js"
+  },
+  "optionalDependencies": {
+    "@pleaseai/ask-darwin-arm64": "0.0.0",
+    "@pleaseai/ask-darwin-x64": "0.0.0",
+    "@pleaseai/ask-linux-arm64": "0.0.0",
+    "@pleaseai/ask-linux-x64": "0.0.0",
+    "@pleaseai/ask-linux-x64-musl": "0.0.0",
+    "@pleaseai/ask-win32-x64": "0.0.0"
+  }
+}
