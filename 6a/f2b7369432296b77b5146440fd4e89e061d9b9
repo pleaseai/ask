@@ -1,0 +1,27 @@
+crates/ask/src/store/paths.rs
+  s_446aea7ceb013f::t_5c8885369e7e29 29-31,41-43,76-80,121-123,148-153,205-208,211-214
+  s_446aea7ceb013f::t_ec27e442619486 1-28,32-40,44-75,81-120,124-147,154-204,209-210,215-239
+crates/ask/Cargo.toml
+  s_446aea7ceb013f::t_b9f90c3196ee2f 39
+crates/ask/src/store/mod.rs
+  s_446aea7ceb013f::t_5c8885369e7e29 39-42,65-68,173-176,187-191,259-263,279-281,289-291,304-306,320-323,331-338,394-398,418-424
+  s_446aea7ceb013f::t_3b4af7e0093631 1-38,43-64,69-172,177-186,192-258,264-278,282-288,292-303,307-319,324-330,339-393,399-417,425-426
+crates/ask/src/lib.rs
+  s_446aea7ceb013f::t_8b4c14f85370fd 19
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "6af2b7369432296b77b5146440fd4e89e061d9b9",
+  "prompts": {},
+  "sessions": {
+    "s_446aea7ceb013f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dd704e3f-30cf-4e3a-8e00-08f1c3e22797",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Minsu Lee <minsu.lee@pleaseai.dev>"
+    }
+  }
+}
