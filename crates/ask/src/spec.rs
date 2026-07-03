@@ -95,6 +95,23 @@ pub fn library_name_from_spec(spec: &str) -> String {
     parse_spec(spec).name().to_string()
 }
 
+/// Split an inline `@version` suffix off a spec — port of
+/// `splitExplicitVersion` in `commands/ensure-checkout.ts`.
+///
+/// The `@` is treated as a version separator only when it is neither the first
+/// character (a bare scoped name `@vercel/ai`) nor immediately after the
+/// ecosystem-prefix colon (`npm:@vercel/ai`). Returns the spec body and the
+/// optional version, borrowing from the input.
+pub fn split_explicit_version(input: &str) -> (&str, Option<&str>) {
+    match input.rfind('@') {
+        None => (input, None),
+        // `@` at index 0, or right after a `:` → scope marker, not a version.
+        Some(0) => (input, None),
+        Some(idx) if input.as_bytes()[idx - 1] == b':' => (input, None),
+        Some(idx) => (&input[..idx], Some(&input[idx + 1..])),
+    }
+}
+
 /// `@mastra/client-js` → `mastra-client-js`. Scoped npm names are not valid as
 /// `.ask/docs/<dir>` or Claude Code skill dir names, so we flatten them the same
 /// way the registry server does. Non-scoped names pass through unchanged.
@@ -217,6 +234,31 @@ mod tests {
         );
         assert_eq!(library_name_from_spec("github:vercel/next.js"), "next.js");
         assert_eq!(library_name_from_spec("react"), "react");
+    }
+
+    #[test]
+    fn split_explicit_version_cases() {
+        assert_eq!(
+            split_explicit_version("npm:next@14"),
+            ("npm:next", Some("14"))
+        );
+        assert_eq!(
+            split_explicit_version("github:vercel/next.js@v14.2.3"),
+            ("github:vercel/next.js", Some("v14.2.3"))
+        );
+        // Bare scoped name: leading `@` is a scope marker.
+        assert_eq!(split_explicit_version("@vercel/ai"), ("@vercel/ai", None));
+        // `@` right after the ecosystem colon is a scope marker.
+        assert_eq!(
+            split_explicit_version("npm:@vercel/ai"),
+            ("npm:@vercel/ai", None)
+        );
+        // Scoped name WITH a version → split on the last `@`.
+        assert_eq!(
+            split_explicit_version("npm:@vercel/ai@5.0.0"),
+            ("npm:@vercel/ai", Some("5.0.0"))
+        );
+        assert_eq!(split_explicit_version("next"), ("next", None));
     }
 
     #[test]
