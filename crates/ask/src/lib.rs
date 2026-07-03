@@ -7,6 +7,7 @@
 //! "not yet ported" notice via [`NotPorted`].
 
 pub mod cli;
+pub mod spec;
 
 use std::fmt;
 
