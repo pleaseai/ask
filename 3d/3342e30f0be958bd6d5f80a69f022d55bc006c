@@ -1,0 +1,46 @@
+Cargo.toml
+  s_446aea7ceb013f::t_64f5474a82ebd8 39-42
+crates/ask/Cargo.toml
+  s_446aea7ceb013f::t_449615a1a9bba8 44
+crates/ask/src/discovery/mod.rs
+  s_446aea7ceb013f::t_88673b25e03e5c 1-6
+crates/ask/src/lib.rs
+  s_446aea7ceb013f::t_4d4a85a9e66514 13
+crates/ask/src/discovery/candidates.rs
+  s_446aea7ceb013f::t_5e42be27845147 1-115,125-129,131-168
+  s_446aea7ceb013f::t_a9e942740dcf13 116-124,130
+crates/ask/src/commands/add.rs
+  s_446aea7ceb013f::t_885c2b90b6764f 16,261-265,340-343,453-455,484-488,498-501,524-526,543-546,667-674,686-689,697-708
+  s_446aea7ceb013f::t_4bcf533026a9ba 221
+  s_446aea7ceb013f::t_d5e6d33cd2a6eb 1-15,20-144,146-220,222-260,266-339,344-452,456-483,489-497,502-523,527-542,547-657,659-666,675-685,690-696,709-859
+  s_446aea7ceb013f::t_875945f821e659 658
+  s_446aea7ceb013f::t_37e4957ad66fa5 145
+  s_446aea7ceb013f::t_441a9dd1a070de 17-19
+scripts/parity-diff.sh
+  s_446aea7ceb013f::t_3b179796582f27 125-129
+  s_446aea7ceb013f::t_f22830b849fb66 99-115
+crates/ask/src/commands/mod.rs
+  s_446aea7ceb013f::t_aec9018521d0c6 7
+crates/ask/src/cli.rs
+  s_446aea7ceb013f::t_006327a2dd26ca 218-263
+  s_446aea7ceb013f::t_cb0b779be5cfc2 61-64,67
+  s_446aea7ceb013f::t_f10b92267fb9cf 207
+Cargo.lock
+  s_446aea7ceb013f::t_fda5f081054483 82,91,187-199,263-273,304-309,821-826,909-917,924-935,1001-1006,1130-1138
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "3d3342e30f0be958bd6d5f80a69f022d55bc006c",
+  "prompts": {},
+  "sessions": {
+    "s_446aea7ceb013f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dd704e3f-30cf-4e3a-8e00-08f1c3e22797",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Minsu Lee <minsu.lee@pleaseai.dev>"
+    }
+  }
+}
