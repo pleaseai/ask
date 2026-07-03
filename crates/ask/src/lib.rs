@@ -8,6 +8,7 @@
 
 pub mod ask_json;
 pub mod cli;
+pub mod http;
 pub mod io;
 pub mod lockfiles;
 pub mod markers;
