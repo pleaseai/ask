@@ -127,6 +127,15 @@ pub struct SearchArgs {
     pub spec: String,
     /// The search query.
     pub query: String,
+    /// csp content filter(s), comma-separated: code | docs | config | all.
+    #[arg(long)]
+    pub content: Option<String>,
+    /// Max results to return (csp --top-k).
+    #[arg(long = "top-k")]
+    pub top_k: Option<String>,
+    /// Return a cache hit only — exit 1 on cache miss.
+    #[arg(long = "no-fetch")]
+    pub no_fetch: bool,
 }
 
 #[derive(Debug, Args)]
@@ -205,7 +214,7 @@ pub fn run(cli: Cli) -> anyhow::Result<()> {
         Command::Src(args) => run_src_cmd(args),
         Command::Docs(args) => run_docs_cmd(args),
         Command::Fetch(args) => run_fetch_cmd(args),
-        Command::Search(_) => Err(NotPorted::new("search").into()),
+        Command::Search(args) => run_search_cmd(args),
         Command::Skills(_) => Err(NotPorted::new("skills").into()),
         Command::Cache(_) => Err(NotPorted::new("cache").into()),
     }
@@ -256,6 +265,59 @@ fn run_fetch_cmd(args: FetchArgs) -> anyhow::Result<()> {
         std::process::exit(1);
     }
     Ok(())
+}
+
+/// `ask search <spec> <query>` — delegate a semantic search to csp (optional).
+fn run_search_cmd(args: SearchArgs) -> anyhow::Result<()> {
+    use crate::commands::resolve_csp::resolve_csp_default;
+    use crate::commands::search::{run_search, spawn_csp, RunSearchOptions, SearchDeps};
+
+    let content: Vec<String> = args
+        .content
+        .as_deref()
+        .filter(|s| !s.is_empty())
+        .map(|s| {
+            s.split(',')
+                .map(|p| p.trim().to_string())
+                .filter(|p| !p.is_empty())
+                .collect()
+        })
+        .unwrap_or_default();
+    // Don't silently drop a garbage --top-k: warn so the user knows csp ran with
+    // its own default rather than the value they typed.
+    let top_k = match args.top_k.as_deref().filter(|s| !s.is_empty()) {
+        Some(raw) => match raw.parse::<u64>() {
+            Ok(n) => Some(n),
+            Err(_) => {
+                eprintln!("ask: ignoring invalid --top-k '{raw}' (not a number)");
+                None
+            }
+        },
+        None => None,
+    };
+
+    let client = crate::http::UreqClient::new();
+    let deps = SearchDeps {
+        checkout: Default::default(),
+        resolve_csp: &resolve_csp_default,
+        run_csp: &spawn_csp,
+    };
+    let options = RunSearchOptions {
+        spec: args.spec,
+        query: args.query,
+        project_dir: current_dir()?,
+        no_fetch: args.no_fetch,
+        content,
+        top_k,
+    };
+    let report = run_search(&client, &options, &deps);
+    for line in &report.stdout {
+        println!("{line}");
+    }
+    for line in &report.stderr {
+        eprintln!("{line}");
+    }
+    std::process::exit(report.exit_code);
 }
 
 /// `ask remove <name>` — drop a library from ask.json and tear down its skill.

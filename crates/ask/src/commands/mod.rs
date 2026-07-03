@@ -9,4 +9,6 @@ pub mod ensure_checkout;
 pub mod fetch;
 pub mod find_doc_paths;
 pub mod remove;
+pub mod resolve_csp;
+pub mod search;
 pub mod src;
