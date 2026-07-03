@@ -6,6 +6,7 @@
 //! the `rust-port-20260704` track). Until a command is ported it reports a
 //! "not yet ported" notice via [`NotPorted`].
 
+pub mod agents;
 pub mod ask_json;
 pub mod cli;
 pub mod http;
@@ -15,6 +16,7 @@ pub mod markers;
 pub mod registry;
 pub mod resolved;
 pub mod resolvers;
+pub mod skill;
 pub mod sources;
 pub mod spec;
 pub mod storage;
