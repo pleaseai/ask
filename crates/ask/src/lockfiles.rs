@@ -8,10 +8,10 @@
 //! The first hit wins; the `package.json` fallback returns a *range* (not an
 //! exact pin), so callers can decide whether to normalize it via a resolver.
 //!
-//! **Port status:** `bun.lock`, `package-lock.json`, and `package.json` readers
-//! are ported. The format-aware `pnpm-lock.yaml` / `yarn.lock` parsers (the
-//! gotcha-heavy ones) are still TODO — [`npm_ecosystem_chain`] marks exactly
-//! where they slot in, so wiring them later restores full priority parity.
+//! **Port status:** `bun.lock`, `package-lock.json`, `yarn.lock`, and
+//! `package.json` readers are ported. The `pnpm-lock.yaml` indent-aware stack
+//! parser is still TODO — [`NPM_ECOSYSTEM_CHAIN`] marks exactly where it slots
+//! in, so wiring it later restores full priority parity.
 
 use std::path::Path;
 
@@ -189,6 +189,94 @@ fn package_json_read(name: &str, project_dir: &Path) -> Option<LockfileHit> {
     })
 }
 
+/// Block-based `yarn.lock` parser handling both classic v1 and Berry v2+ in one
+/// path (port of `parseYarnLock`, itself from opensrc's `core/version.rs`).
+///
+/// Blocks are separated by blank lines. For each block whose header mentions
+/// `pkg` in ANY comma-separated specifier, the nearest body `version` line wins
+/// — unless it is a workspace sentinel / protocol string, in which case a later
+/// block may still provide a real version.
+pub fn parse_yarn_lock(text: &str, pkg: &str) -> Option<String> {
+    // Split into blocks on blank lines (CR-stripped).
+    let mut blocks: Vec<Vec<&str>> = Vec::new();
+    let mut current: Vec<&str> = Vec::new();
+    for raw in text.split('\n') {
+        let line = raw.strip_suffix('\r').unwrap_or(raw);
+        if line.trim().is_empty() {
+            if !current.is_empty() {
+                blocks.push(std::mem::take(&mut current));
+            }
+        } else {
+            current.push(line);
+        }
+    }
+    if !current.is_empty() {
+        blocks.push(current);
+    }
+
+    for block in blocks {
+        let mut header: Option<&str> = None;
+        let mut body: Vec<&str> = Vec::new();
+
+        for line in block {
+            if line.trim_start().starts_with('#') {
+                continue;
+            }
+            let first_is_ws = line.chars().next().is_some_and(char::is_whitespace);
+            if header.is_none() && !first_is_ws {
+                header = Some(line);
+            } else {
+                body.push(line);
+            }
+        }
+
+        let Some(header) = header else { continue };
+        if header.starts_with("__metadata:") || !header.ends_with(':') {
+            continue;
+        }
+        let header_body = &header[..header.len() - 1];
+
+        // Split on `, ` to cover v1 multi-specifier headers and Berry's
+        // `foo@npm:^1, foo@workspace:*`; trim_quotes handles the outer quotes.
+        let matched = header_body.split(", ").any(|s| {
+            let spec = trim_quotes(s.trim());
+            split_pkg_spec(spec).is_some_and(|(name, _)| name == pkg)
+        });
+        if !matched {
+            continue;
+        }
+
+        for line in body {
+            let trimmed = line.trim_start();
+            let Some(rest) = trimmed.strip_prefix("version") else {
+                continue;
+            };
+            // Must be followed by `:` (Berry) or whitespace (v1) — not `versions:`.
+            match rest.chars().next() {
+                Some(':') | Some(' ') | Some('\t') => {}
+                _ => continue,
+            }
+            let rest = rest.trim_start();
+            let rest = rest.strip_prefix(':').unwrap_or(rest);
+            let stripped = strip_peer_suffix(clean_value(rest));
+            if is_registry_version(stripped) {
+                return Some(stripped.to_string());
+            }
+        }
+    }
+
+    None
+}
+
+fn yarn_read(name: &str, project_dir: &Path) -> Option<LockfileHit> {
+    let content = read_file(project_dir, "yarn.lock")?;
+    parse_yarn_lock(&content, name).map(|version| LockfileHit {
+        version,
+        source: "yarn.lock".to_string(),
+        exact: true,
+    })
+}
+
 pub const BUN_LOCK_READER: LockfileReader = LockfileReader {
     file: "bun.lock",
     exact: true,
@@ -204,14 +292,24 @@ pub const PACKAGE_JSON_READER: LockfileReader = LockfileReader {
     exact: false,
     read: package_json_read,
 };
+pub const YARN_LOCK_READER: LockfileReader = LockfileReader {
+    file: "yarn.lock",
+    exact: true,
+    read: yarn_read,
+};
 
 /// The npm-ecosystem chain in priority order.
 ///
-/// TODO(rust-port): insert `pnpm-lock.yaml` then `yarn.lock` readers between
-/// `NPM_LOCK_READER` and `PACKAGE_JSON_READER` once their format-aware parsers
-/// are ported — that restores full priority parity with lockfiles/index.ts.
-pub const NPM_ECOSYSTEM_CHAIN: &[LockfileReader] =
-    &[BUN_LOCK_READER, NPM_LOCK_READER, PACKAGE_JSON_READER];
+/// TODO(rust-port): insert the `pnpm-lock.yaml` reader between `NPM_LOCK_READER`
+/// and `YARN_LOCK_READER` once its indent-aware stack parser is ported — that
+/// restores full priority parity with lockfiles/index.ts
+/// (bun → package-lock → pnpm → yarn → package.json).
+pub const NPM_ECOSYSTEM_CHAIN: &[LockfileReader] = &[
+    BUN_LOCK_READER,
+    NPM_LOCK_READER,
+    YARN_LOCK_READER,
+    PACKAGE_JSON_READER,
+];
 
 /// Probe the npm-ecosystem chain in order; return the first hit.
 pub fn npm_ecosystem_read(name: &str, project_dir: &Path) -> Option<LockfileHit> {
@@ -317,6 +415,52 @@ mod tests {
         assert_eq!(parse_package_json(json, "vitest").as_deref(), Some("1.2.3"));
         assert_eq!(parse_package_json(json, "linked"), None); // protocol skipped
         assert_eq!(parse_package_json(json, "absent"), None);
+    }
+
+    // ---- yarn ----
+
+    #[test]
+    fn yarn_v1_multi_specifier_header() {
+        let text = "\
+# yarn lockfile v1
+
+
+\"next@^15.0.0\", \"next@~15.0.3\":
+  version \"15.0.3\"
+  resolved \"https://...\"
+";
+        assert_eq!(parse_yarn_lock(text, "next").as_deref(), Some("15.0.3"));
+    }
+
+    #[test]
+    fn yarn_berry_and_peer_suffix_and_protocol_skip() {
+        // Berry header form + a peer suffix on the version; workspace sentinel
+        // block is skipped in favor of the real one.
+        let text = "\
+__metadata:
+  version: 8
+
+\"root@workspace:.\":
+  version: 0.0.0-use.local
+
+\"react@npm:^18.0.0, react@npm:^18.2.0\":
+  version: 18.2.0(loose)
+";
+        assert_eq!(parse_yarn_lock(text, "react").as_deref(), Some("18.2.0"));
+        // The workspace root resolves to a sentinel → no registry version.
+        assert_eq!(parse_yarn_lock(text, "root"), None);
+    }
+
+    #[test]
+    fn yarn_versions_key_is_not_the_version_key() {
+        // `versions:` (plural) must not be mistaken for the `version` key.
+        let text = "\
+\"pkg@^1.0.0\":
+  versions:
+    - 1.0.0
+  version \"1.0.0\"
+";
+        assert_eq!(parse_yarn_lock(text, "pkg").as_deref(), Some("1.0.0"));
     }
 
     // ---- facade ----
