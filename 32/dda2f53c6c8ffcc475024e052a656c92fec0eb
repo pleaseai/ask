@@ -1,0 +1,29 @@
+npm/scripts/generate-platform-packages.mjs
+  s_446aea7ceb013f::t_5c6b44019ba551 1-114
+npm/ask/lib/resolve.js
+  s_446aea7ceb013f::t_d96087959a948b 1-131
+npm/ask/install.js
+  s_446aea7ceb013f::t_15f1403669e409 1-94
+npm/README.md
+  s_446aea7ceb013f::t_973703ffff933a 1-85
+npm/ask/bin/ask.js
+  s_446aea7ceb013f::t_95077ac29fff2b 1-92
+npm/ask/package.json
+  s_446aea7ceb013f::t_4111a167de00a8 1-45
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "32dda2f53c6c8ffcc475024e052a656c92fec0eb",
+  "prompts": {},
+  "sessions": {
+    "s_446aea7ceb013f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dd704e3f-30cf-4e3a-8e00-08f1c3e22797",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Minsu Lee <minsu.lee@pleaseai.dev>"
+    }
+  }
+}
