@@ -33,6 +33,7 @@ walkdir = "2"
 ignore = "0.4"
 tar = "0.4"
 flate2 = "1"
+url = "2"
 # HTTP client for registry / npm / github metadata (rustls, no OpenSSL system dep).
 ureq = { version = "3", features = ["json"] }
 

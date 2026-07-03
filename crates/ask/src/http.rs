@@ -25,11 +25,32 @@ impl HttpResponse {
     }
 }
 
-/// A GET-only HTTP client. `get` performs the request and reads the full body;
-/// a transport failure (DNS, connect, timeout, read) is an `Err`, while any
-/// HTTP status (including 4xx/5xx) is an `Ok(HttpResponse)`.
+/// A completed HTTP response with a binary body (for archive downloads).
+#[derive(Debug, Clone)]
+pub struct BytesResponse {
+    pub status: u16,
+    pub body: Vec<u8>,
+}
+
+impl BytesResponse {
+    /// `true` for a 2xx status (parity with `fetch`'s `response.ok`).
+    pub fn ok(&self) -> bool {
+        (200..300).contains(&self.status)
+    }
+}
+
+/// Upper bound on a downloaded archive body (50 MiB) — well above any docs
+/// tarball, but a guard against a runaway/hostile response.
+const MAX_ARCHIVE_BYTES: u64 = 50 * 1024 * 1024;
+
+/// A GET-only HTTP client. `get` reads the body as text; `get_bytes` reads it as
+/// raw bytes with optional request headers (used for GitHub/npm tarball
+/// downloads). A transport failure (DNS, connect, timeout, read) is an `Err`,
+/// while any HTTP status (including 4xx/5xx) is an `Ok`.
 pub trait HttpClient {
     fn get(&self, url: &str) -> anyhow::Result<HttpResponse>;
+
+    fn get_bytes(&self, url: &str, headers: &[(&str, &str)]) -> anyhow::Result<BytesResponse>;
 }
 
 /// The production client: a ureq agent with a 10s global timeout (parity with
@@ -63,6 +84,21 @@ impl HttpClient for UreqClient {
         let body = response.body_mut().read_to_string()?;
         Ok(HttpResponse { status, body })
     }
+
+    fn get_bytes(&self, url: &str, headers: &[(&str, &str)]) -> anyhow::Result<BytesResponse> {
+        let mut request = self.agent.get(url);
+        for (name, value) in headers {
+            request = request.header(*name, *value);
+        }
+        let mut response = request.call()?;
+        let status = response.status().as_u16();
+        let body = response
+            .body_mut()
+            .with_config()
+            .limit(MAX_ARCHIVE_BYTES)
+            .read_to_vec()?;
+        Ok(BytesResponse { status, body })
+    }
 }
 
 /// Percent-encode a string the way JavaScript's `encodeURIComponent` does:
@@ -95,11 +131,12 @@ pub fn encode_uri_component(input: &str) -> String {
 pub mod mock {
     use std::collections::HashMap;
 
-    use super::{HttpClient, HttpResponse};
+    use super::{BytesResponse, HttpClient, HttpResponse};
 
     #[derive(Default)]
     pub struct MockClient {
         responses: HashMap<String, HttpResponse>,
+        bytes: HashMap<String, BytesResponse>,
     }
 
     impl MockClient {
@@ -118,6 +155,13 @@ pub mod mock {
             );
             self
         }
+
+        /// Register a canned binary response for an exact URL.
+        pub fn with_bytes(mut self, url: &str, status: u16, body: Vec<u8>) -> Self {
+            self.bytes
+                .insert(url.to_string(), BytesResponse { status, body });
+            self
+        }
     }
 
     impl HttpClient for MockClient {
@@ -126,6 +170,12 @@ pub mod mock {
                 .get(url)
                 .cloned()
                 .ok_or_else(|| anyhow::anyhow!("MockClient: no response registered for {url}"))
+        }
+
+        fn get_bytes(&self, url: &str, _headers: &[(&str, &str)]) -> anyhow::Result<BytesResponse> {
+            self.bytes.get(url).cloned().ok_or_else(|| {
+                anyhow::anyhow!("MockClient: no bytes response registered for {url}")
+            })
         }
     }
 }

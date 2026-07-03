@@ -15,6 +15,7 @@ pub mod markers;
 pub mod registry;
 pub mod resolved;
 pub mod resolvers;
+pub mod sources;
 pub mod spec;
 pub mod store;
 
