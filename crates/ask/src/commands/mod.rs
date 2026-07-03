@@ -8,4 +8,5 @@ pub mod docs;
 pub mod ensure_checkout;
 pub mod fetch;
 pub mod find_doc_paths;
+pub mod remove;
 pub mod src;

@@ -201,7 +201,7 @@ pub fn run(cli: Cli) -> anyhow::Result<()> {
         }
         Command::List(args) => run_list(args),
         Command::Add(_) => Err(NotPorted::new("add").into()),
-        Command::Remove(_) => Err(NotPorted::new("remove").into()),
+        Command::Remove(args) => run_remove_cmd(args),
         Command::Src(args) => run_src_cmd(args),
         Command::Docs(args) => run_docs_cmd(args),
         Command::Fetch(args) => run_fetch_cmd(args),
@@ -254,6 +254,23 @@ fn run_fetch_cmd(args: FetchArgs) -> anyhow::Result<()> {
     }
     if report.had_errors {
         std::process::exit(1);
+    }
+    Ok(())
+}
+
+/// `ask remove <name>` — drop a library from ask.json and tear down its skill.
+fn run_remove_cmd(args: RemoveArgs) -> anyhow::Result<()> {
+    use crate::commands::remove::{run_remove, RemoveOutcome};
+    match run_remove(&current_dir()?, &args.name)? {
+        RemoveOutcome::NoAskJson => {
+            eprintln!("No ask.json found — nothing to remove");
+        }
+        RemoveOutcome::NoMatch(target) => {
+            eprintln!("No ask.json entry matches '{target}'");
+        }
+        RemoveOutcome::Removed(spec) => {
+            eprintln!("Removed {spec}");
+        }
     }
     Ok(())
 }

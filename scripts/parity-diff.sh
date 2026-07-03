@@ -56,9 +56,14 @@ run_case() {
   mkdir -p "$ts" "$rs"
   "seed_$name" "$ts"
   "seed_$name" "$rs"
+  # Each remaining arg is ONE command line (word-split here), run in order in
+  # both copies — supports sequences like `install` then `remove react`.
   # Scrub env so inherited BUN_*/TTY state cannot perturb either side.
-  ( cd "$ts" && env -i PATH="$PATH" HOME="$HOME" NO_COLOR=1 node "$TS_CLI" "$@" >/dev/null 2>&1 ) || true
-  ( cd "$rs" && env -i PATH="$PATH" HOME="$HOME" NO_COLOR=1 "$RS_CLI" "$@" >/dev/null 2>&1 ) || true
+  local cmd
+  for cmd in "$@"; do
+    ( cd "$ts" && env -i PATH="$PATH" HOME="$HOME" NO_COLOR=1 node "$TS_CLI" $cmd >/dev/null 2>&1 ) || true
+    ( cd "$rs" && env -i PATH="$PATH" HOME="$HOME" NO_COLOR=1 "$RS_CLI" $cmd >/dev/null 2>&1 ) || true
+  done
   if diff -r "$ts" "$rs" >"$WORK/$name.diff" 2>&1; then
     echo "  ok   $name ($*)"
   else
@@ -87,12 +92,19 @@ seed_empty() {
   printf '{\n  "libraries": []\n}\n' >"$1/ask.json"
 }
 
+# Reuse the same seeds for the install-then-remove sequences.
+seed_npm_and_github_rm() { seed_npm_and_github "$1"; }
+seed_github_only_rm() { seed_github_only "$1"; }
+
 # --- cases -----------------------------------------------------------------
 
 echo "==> running parity cases"
 run_case github_only install
 run_case npm_and_github install
 run_case empty install
+# Sequences: install then remove — exercises skill teardown + AGENTS.md regen.
+run_case npm_and_github_rm install "remove react"
+run_case github_only_rm install "remove next.js"
 
 if [[ "$fail" == 0 ]]; then
   echo "ALL PARITY CASES IDENTICAL"
