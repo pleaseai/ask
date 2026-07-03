@@ -1,0 +1,32 @@
+crates/ask/src/resolvers/pub_dev.rs
+  s_446aea7ceb013f::t_848a004f10c216 1-39,45-56,63-71,77-120,125-134,137-140
+  s_446aea7ceb013f::t_c97eb7b608ab6b 40-44,57-62,72-76,121-124,135-136
+crates/ask/src/resolvers/npm.rs
+  s_446aea7ceb013f::t_0ffe4dc44097be 1-52,56-76,82-88,94-149,155-234
+  s_446aea7ceb013f::t_c97eb7b608ab6b 53-55,77-81,89-93,150-154
+crates/ask/src/resolvers/maven.rs
+  s_446aea7ceb013f::t_c97eb7b608ab6b 100-104,111-114,144-151,166-169,179-182,186-190,193-201,206-209,217-222,228-233,262-265,316-317,348-357,365-366,369-373
+  s_446aea7ceb013f::t_1f582a90097e75 1-99,105-110,115-143,152-165,170-178,183-185,191-192,202-205,210-216,223-227,234-261,266-315,318-347,358-364,367-368,374-377
+crates/ask/src/resolvers/mod.rs
+  s_446aea7ceb013f::t_8a9d5621e4fc98 1-47,63,69,92,101,109-110
+  s_446aea7ceb013f::t_aa8211af308895 48
+crates/ask/src/resolvers/pypi.rs
+  s_446aea7ceb013f::t_c97eb7b608ab6b 24-31,34-38,48-52,119-120
+  s_446aea7ceb013f::t_870d560c59415c 1-23,32-33,39-47,53-118,121-124
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "4b029dbd8404a415f1e8d070184272fc6c28bd9c",
+  "prompts": {},
+  "sessions": {
+    "s_446aea7ceb013f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dd704e3f-30cf-4e3a-8e00-08f1c3e22797",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Minsu Lee <minsu.lee@pleaseai.dev>"
+    }
+  }
+}
