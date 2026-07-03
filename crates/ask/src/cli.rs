@@ -216,7 +216,7 @@ pub fn run(cli: Cli) -> anyhow::Result<()> {
         Command::Fetch(args) => run_fetch_cmd(args),
         Command::Search(args) => run_search_cmd(args),
         Command::Skills(_) => Err(NotPorted::new("skills").into()),
-        Command::Cache(_) => Err(NotPorted::new("cache").into()),
+        Command::Cache(args) => run_cache_cmd(args),
     }
 }
 
@@ -263,6 +263,143 @@ fn run_fetch_cmd(args: FetchArgs) -> anyhow::Result<()> {
     }
     if report.had_errors {
         std::process::exit(1);
+    }
+    Ok(())
+}
+
+/// `ask cache {ls|gc|clean}` — inspect and prune the global ASK store.
+fn run_cache_cmd(args: CacheArgs) -> anyhow::Result<()> {
+    use crate::store::cache::{
+        build_cache_gc_model, build_cache_ls_model, cache_clean_legacy, cache_gc, cache_ls,
+        detect_legacy_layout, format_bytes, parse_duration, CacheGcOptions, CacheKind,
+    };
+    use crate::store::resolve_ask_home;
+
+    let ask_home = resolve_ask_home();
+
+    match args.command {
+        CacheCommand::Ls(a) => {
+            let filter = match a.kind.as_deref() {
+                Some(k) => match CacheKind::parse(k) {
+                    Some(kind) => Some(kind),
+                    None => {
+                        eprintln!(
+                            "Invalid --kind '{k}'. Must be one of: npm, github, web, llms-txt"
+                        );
+                        std::process::exit(1);
+                    }
+                },
+                None => None,
+            };
+            if a.json {
+                let model = build_cache_ls_model(&ask_home, filter);
+                println!("{}", serde_json::to_string_pretty(&model)?);
+                return Ok(());
+            }
+            let entries = cache_ls(&ask_home, filter);
+            if entries.is_empty() {
+                eprintln!("No entries in store at {}", ask_home.display());
+                return Ok(());
+            }
+            eprintln!("Store: {}", ask_home.display());
+            eprintln!(
+                "{} entr{}:\n",
+                entries.len(),
+                if entries.len() == 1 { "y" } else { "ies" }
+            );
+            for e in &entries {
+                println!(
+                    "  {}/{}  {}",
+                    e.kind.as_str(),
+                    e.key,
+                    format_bytes(e.size_bytes)
+                );
+            }
+            let total: u64 = entries.iter().map(|e| e.size_bytes).sum();
+            eprintln!("\nTotal: {}", format_bytes(total));
+        }
+        CacheCommand::Gc(a) => {
+            let scan_roots = std::env::var("ASK_GC_SCAN_ROOTS")
+                .ok()
+                .map(|v| v.split(':').map(std::path::PathBuf::from).collect());
+            let older_than = match a.older_than.as_deref() {
+                Some(raw) => match parse_duration(raw) {
+                    Some(ms) => Some(ms),
+                    None => {
+                        eprintln!(
+                            "Invalid --older-than value '{raw}'. Use format like 30d, 12h, 90m, 60s."
+                        );
+                        std::process::exit(1);
+                    }
+                },
+                None => None,
+            };
+            let opts = CacheGcOptions {
+                dry_run: a.dry_run,
+                scan_roots,
+                older_than,
+                silent: a.json,
+            };
+            if a.json {
+                let model = build_cache_gc_model(&ask_home, &opts);
+                println!("{}", serde_json::to_string_pretty(&model)?);
+                return Ok(());
+            }
+            let result = cache_gc(&ask_home, &opts);
+            if result.removed.is_empty() {
+                eprintln!("Store is clean — no unreferenced entries.");
+                return Ok(());
+            }
+            let n = result.removed.len();
+            let plural = if n == 1 { "y" } else { "ies" };
+            if a.dry_run {
+                eprintln!(
+                    "Would remove {n} entr{plural} ({}):",
+                    format_bytes(result.freed_bytes)
+                );
+                for e in &result.removed {
+                    println!(
+                        "  {}/{}  {}",
+                        e.kind.as_str(),
+                        e.key,
+                        format_bytes(e.size_bytes)
+                    );
+                }
+            } else {
+                eprintln!(
+                    "Removed {n} entr{plural}, freed {}.",
+                    format_bytes(result.freed_bytes)
+                );
+            }
+        }
+        CacheCommand::Clean(a) => {
+            if !a.legacy {
+                eprintln!(
+                    "ask cache clean requires a mode. Pass --legacy to remove pre-v2 github store dirs."
+                );
+                std::process::exit(1);
+            }
+            if !detect_legacy_layout(&ask_home) {
+                eprintln!(
+                    "No legacy github store detected at {}. Nothing to clean.",
+                    ask_home.display()
+                );
+                return Ok(());
+            }
+            let removed = cache_clean_legacy(&ask_home);
+            if removed.is_empty() {
+                eprintln!("No legacy paths removed.");
+                return Ok(());
+            }
+            eprintln!(
+                "Removed {} legacy path{}:",
+                removed.len(),
+                if removed.len() == 1 { "" } else { "s" }
+            );
+            for p in &removed {
+                println!("  {}", p.display());
+            }
+        }
     }
     Ok(())
 }

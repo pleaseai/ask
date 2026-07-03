@@ -4,6 +4,7 @@
 //! The `github/db` and `github/checkouts` legacy layouts are intentionally NOT
 //! reintroduced (see CLAUDE.md); only cache cleanup references them by name.
 
+pub mod cache;
 mod paths;
 
 pub use paths::{
