@@ -3,6 +3,20 @@
 Phased migration. TS (`packages/cli/`) stays the published product until the
 Rust line reaches parity (mirrors code-search ADR-0003 cut-over).
 
+## Progress
+
+- [x] Phase 0 — workspace + clap CLI skeleton (all subcommands, stubs, `--version`).
+- [x] Phase 1 — npm copy-over shim (`npm/ask/`, generator). Launcher + generator
+  verified locally.
+- [x] Phase 2 — release-rust.yml, release-cargo.yml, release-please version sync.
+  `cargo publish --dry-run` passes locally. NOT wired to auto-publish yet.
+- [ ] Phase 3 — logic port (in progress):
+  - [x] `spec` (parse_spec / slugify_npm_name) — 9 parity tests.
+  - [ ] schemas / ask.json, io, registry, sources, resolvers, lockfiles, store,
+    discovery, agents/skills, commands.
+- [ ] Cut-over — swap release.yml binary source from Bun compile to Rust; retire
+  the TS compile job.
+
 ## Phase 0 — Scaffold + walking skeleton  ← current
 
 - Root `Cargo.toml` workspace (`members = ["crates/ask"]`), `workspace.package`
