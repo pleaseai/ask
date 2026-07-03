@@ -1,0 +1,22 @@
+crates/ask/src/lockfiles.rs
+  s_446aea7ceb013f::t_713fd6f8572cce 11-14
+  s_446aea7ceb013f::t_97e052a2745e6b 192-279
+  s_446aea7ceb013f::t_37b0f483c9bd0c 420-465
+  s_446aea7ceb013f::t_505450bfc1fb6d 295-299,303-312
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "1e27111d2e06fd724e83762ae767b73649133c9a",
+  "prompts": {},
+  "sessions": {
+    "s_446aea7ceb013f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dd704e3f-30cf-4e3a-8e00-08f1c3e22797",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Minsu Lee <minsu.lee@pleaseai.dev>"
+    }
+  }
+}
