@@ -22,6 +22,7 @@ pub mod registry;
 pub mod resolved;
 pub mod resolvers;
 pub mod skill;
+pub mod skills;
 pub mod sources;
 pub mod spec;
 pub mod storage;

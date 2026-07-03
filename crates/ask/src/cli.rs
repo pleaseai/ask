@@ -1,14 +1,11 @@
 //! Command-line surface for `ask`, mirroring `packages/cli/src/index.ts`.
 //!
 //! The parser is the real, stable contract (`ask --help` lists every command);
-//! command *bodies* are filled in per migration phase. Un-ported commands return
-//! [`NotPorted`](crate::NotPorted) so the surface is honest about what works.
+//! every command body is now backed by its ported implementation.
 
 use std::env::current_dir;
 
 use clap::{Args, Parser, Subcommand};
-
-use crate::NotPorted;
 
 /// Agent Skills Kit — download version-specific library docs for AI coding agents.
 #[derive(Debug, Parser)]
@@ -136,17 +133,56 @@ pub struct SearchArgs {
 #[derive(Debug, Args)]
 pub struct SkillsArgs {
     #[command(subcommand)]
-    pub command: SkillsCommand,
+    pub command: Option<SkillsCommand>,
+    /// `ask skills <spec>` shorthand for `ask skills list <spec>`.
+    #[arg(value_name = "SPEC")]
+    pub spec: Option<String>,
+    /// Return cache hit only — exit 1 on cache miss (shorthand form).
+    #[arg(long = "no-fetch")]
+    pub no_fetch: bool,
 }
 
 #[derive(Debug, Subcommand)]
 pub enum SkillsCommand {
-    /// Install standalone skills.
-    Install,
-    /// Remove standalone skills.
-    Remove,
-    /// List installed standalone skills.
-    List,
+    /// Print candidate producer-side skill paths for a spec.
+    List(SkillsListArgs),
+    /// Vendor producer-side skills and symlink them into detected agents.
+    Install(SkillsInstallArgs),
+    /// Remove a previously-installed skill set by spec.
+    Remove(SkillsRemoveArgs),
+}
+
+#[derive(Debug, Args)]
+pub struct SkillsListArgs {
+    /// Library spec (e.g. react, npm:react@18.2.0, github:facebook/react@v18.2.0).
+    pub spec: String,
+    /// Return cache hit only — exit 1 on cache miss.
+    #[arg(long = "no-fetch")]
+    pub no_fetch: bool,
+}
+
+#[derive(Debug, Args)]
+pub struct SkillsInstallArgs {
+    /// Library spec (e.g. react, npm:react@18.2.0, github:facebook/react@v18.2.0).
+    pub spec: String,
+    /// Return cache hit only — exit 1 on cache miss.
+    #[arg(long = "no-fetch")]
+    pub no_fetch: bool,
+    /// Overwrite conflicting entries in agent skills dirs.
+    #[arg(long)]
+    pub force: bool,
+    /// Explicit agent targets (CSV): claude,cursor,opencode,codex.
+    #[arg(long)]
+    pub agent: Option<String>,
+}
+
+#[derive(Debug, Args)]
+pub struct SkillsRemoveArgs {
+    /// Spec (same as used with install) or spec-key.
+    pub spec: String,
+    /// Silently succeed if the spec has no lock entry.
+    #[arg(long = "ignore-missing")]
+    pub ignore_missing: bool,
 }
 
 #[derive(Debug, Args)]
@@ -195,8 +231,7 @@ pub struct CacheCleanArgs {
     pub legacy: bool,
 }
 
-/// Dispatch a parsed [`Cli`] to its command. Ported commands run their real
-/// logic; the rest still return [`NotPorted`] until their migration phase.
+/// Dispatch a parsed [`Cli`] to its command implementation.
 pub fn run(cli: Cli) -> anyhow::Result<()> {
     match cli.command {
         Command::Install => {
@@ -210,7 +245,7 @@ pub fn run(cli: Cli) -> anyhow::Result<()> {
         Command::Docs(args) => run_docs_cmd(args),
         Command::Fetch(args) => run_fetch_cmd(args),
         Command::Search(args) => run_search_cmd(args),
-        Command::Skills(_) => Err(NotPorted::new("skills").into()),
+        Command::Skills(args) => run_skills_cmd(args),
         Command::Cache(args) => run_cache_cmd(args),
     }
 }
@@ -259,6 +294,81 @@ fn run_add_cmd(args: AddArgs) -> anyhow::Result<()> {
             std::process::exit(1);
         }
     }
+}
+
+/// `ask skills {list|install|remove}` — surface and vendor producer-side agent
+/// skills. `ask skills <spec>` with no subcommand is a shorthand for `list`.
+fn run_skills_cmd(args: SkillsArgs) -> anyhow::Result<()> {
+    use crate::commands::skills::{
+        run_skills_install, run_skills_list, run_skills_remove, RunSkillsInstallOptions,
+        RunSkillsListOptions, RunSkillsRemoveOptions, SkillsReport,
+    };
+    let client = crate::http::UreqClient::new();
+    let project_dir = current_dir()?;
+
+    let report: SkillsReport = match args.command {
+        None => {
+            // Bare `ask skills` with no spec is a no-op (matches citty's run()).
+            let Some(spec) = args.spec else {
+                return Ok(());
+            };
+            run_skills_list(
+                &client,
+                &RunSkillsListOptions {
+                    spec,
+                    project_dir,
+                    no_fetch: args.no_fetch,
+                },
+                &Default::default(),
+            )
+        }
+        Some(SkillsCommand::List(a)) => run_skills_list(
+            &client,
+            &RunSkillsListOptions {
+                spec: a.spec,
+                project_dir,
+                no_fetch: a.no_fetch,
+            },
+            &Default::default(),
+        ),
+        Some(SkillsCommand::Install(a)) => {
+            let agents = a.agent.as_deref().and_then(|s| {
+                let v: Vec<String> = s
+                    .split(',')
+                    .map(|x| x.trim().to_string())
+                    .filter(|x| !x.is_empty())
+                    .collect();
+                (!v.is_empty()).then_some(v)
+            });
+            run_skills_install(
+                &client,
+                &RunSkillsInstallOptions {
+                    spec: a.spec,
+                    project_dir,
+                    no_fetch: a.no_fetch,
+                    force: a.force,
+                    agents,
+                },
+                &Default::default(),
+            )?
+        }
+        Some(SkillsCommand::Remove(a)) => run_skills_remove(&RunSkillsRemoveOptions {
+            spec: a.spec,
+            project_dir,
+            ignore_missing: a.ignore_missing,
+        })?,
+    };
+
+    for line in &report.stdout {
+        println!("{line}");
+    }
+    for line in &report.stderr {
+        eprintln!("{line}");
+    }
+    if report.exit_code != 0 {
+        std::process::exit(report.exit_code);
+    }
+    Ok(())
 }
 
 /// `ask src <spec>` — print the cached source path (lazy fetch on miss).
@@ -594,6 +704,11 @@ mod tests {
         Cli::try_parse_from(["ask", "list", "--json"]).unwrap();
         Cli::try_parse_from(["ask", "fetch", "npm:next", "github:a/b", "-q"]).unwrap();
         Cli::try_parse_from(["ask", "cache", "gc", "--dry-run", "--older-than", "30d"]).unwrap();
-        Cli::try_parse_from(["ask", "skills", "list"]).unwrap();
+        Cli::try_parse_from(["ask", "skills", "list", "react"]).unwrap();
+        Cli::try_parse_from(["ask", "skills", "install", "react", "--agent", "claude"]).unwrap();
+        Cli::try_parse_from(["ask", "skills", "remove", "react", "--ignore-missing"]).unwrap();
+        // Shorthand: bare `ask skills <spec>` and no-arg `ask skills` both parse.
+        Cli::try_parse_from(["ask", "skills", "react"]).unwrap();
+        Cli::try_parse_from(["ask", "skills"]).unwrap();
     }
 }

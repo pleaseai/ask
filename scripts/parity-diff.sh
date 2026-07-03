@@ -128,6 +128,43 @@ run_case add_docs_paths "add npm:react --docs-paths docs,api"
 run_case add_clear "add npm:react --clear-docs-paths"
 run_case add_github_bare "add vercel/next.js@v15.0.3"
 
+# `ask skills install` — needs a bespoke harness (not run_case) for three
+# reasons the advisor flagged: (1) a pre-warmed checkout under a shared ASK_HOME
+# so ensureCheckout is a cache hit with no network; (2) skills-lock.json embeds
+# a volatile `installedAt` timestamp that must be normalized before diffing;
+# (3) the agent symlink's relative target is compared structurally by `diff -r`
+# (both sides create the identical relative link, so it collapses to equal).
+skills_install_parity() {
+  local name="skills_install"
+  local ts="$WORK/$name-ts" rs="$WORK/$name-rs" home="$WORK/$name-home"
+  # Shared store: install only READS the checkout, so both CLIs can point at it.
+  local checkout="$home/github/github.com/o/r/v1.0.0"
+  mkdir -p "$ts" "$rs" "$checkout/skills/my-skill"
+  printf '# my-skill\n\nProducer-side skill.\n' >"$checkout/skills/my-skill/SKILL.md"
+  local d
+  for d in "$ts" "$rs"; do
+    printf '{\n  "libraries": []\n}\n' >"$d/ask.json"
+    mkdir -p "$d/.claude"
+    printf 'node_modules\n' >"$d/.gitignore"
+  done
+  ( cd "$ts" && env -i PATH="$PATH" HOME="$HOME" ASK_HOME="$home" NO_COLOR=1 node "$TS_CLI" skills install github:o/r@v1.0.0 --agent claude >/dev/null 2>&1 ) || true
+  ( cd "$rs" && env -i PATH="$PATH" HOME="$HOME" ASK_HOME="$home" NO_COLOR=1 "$RS_CLI" skills install github:o/r@v1.0.0 --agent claude >/dev/null 2>&1 ) || true
+  for d in "$ts" "$rs"; do
+    if [[ -f "$d/.ask/skills-lock.json" ]]; then
+      sed -i.bak 's/"installedAt": "[^"]*"/"installedAt": "NORM"/' "$d/.ask/skills-lock.json"
+      rm -f "$d/.ask/skills-lock.json.bak"
+    fi
+  done
+  if diff -r "$ts" "$rs" >"$WORK/$name.diff" 2>&1; then
+    echo "  ok   $name (skills install --agent claude; lock installedAt normalized)"
+  else
+    echo "  FAIL $name"
+    sed 's/^/       /' "$WORK/$name.diff"
+    fail=1
+  fi
+}
+skills_install_parity
+
 if [[ "$fail" == 0 ]]; then
   echo "ALL PARITY CASES IDENTICAL"
 else
