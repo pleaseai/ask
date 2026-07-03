@@ -1,0 +1,26 @@
+crates/ask/src/resolvers.rs
+  s_446aea7ceb013f::t_b6257c26e75814 50-54
+  s_446aea7ceb013f::t_a2b9cf1d129139 1-49,55-74
+crates/ask/Cargo.toml
+  s_446aea7ceb013f::t_ba3f77cb0423a5 34
+crates/ask/src/lib.rs
+  s_446aea7ceb013f::t_8994c566c628ba 16
+Cargo.lock
+  s_446aea7ceb013f::t_681cb2fbd5da4b 5-13,76,308-336
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "8fc5c6de75770cc827a315af1e4d8be1c1248d46",
+  "prompts": {},
+  "sessions": {
+    "s_446aea7ceb013f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dd704e3f-30cf-4e3a-8e00-08f1c3e22797",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Minsu Lee <minsu.lee@pleaseai.dev>"
+    }
+  }
+}
