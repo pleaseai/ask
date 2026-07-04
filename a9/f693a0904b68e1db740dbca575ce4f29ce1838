@@ -1,0 +1,42 @@
+crates/ask/src/agents.rs
+  s_446aea7ceb013f::t_44e34745aa3fb9 127,131,137,140,143,146
+  s_446aea7ceb013f::t_b3c8795a11d6e9 164,186,198,212,227,235
+  s_446aea7ceb013f::t_708d2a1e46f29f 94,96,110,112
+  s_446aea7ceb013f::t_d65068f94fad3e 76,79,82,86,89-90
+  s_446aea7ceb013f::t_58b754962e9f3a 20-23,27-28
+crates/ask/src/sources/llms_txt.rs
+  s_446aea7ceb013f::t_d13c7c09512919 73
+  s_446aea7ceb013f::t_f93330e9c52bf7 66-69,74
+  s_446aea7ceb013f::t_15b95c4d3c2311 136-139
+crates/ask/src/skills/vendor.rs
+  s_446aea7ceb013f::t_aa5bdeb3b11b0f 160-179
+  s_446aea7ceb013f::t_906f40d41a11d9 30-40,43
+crates/ask/src/install.rs
+  s_446aea7ceb013f::t_b15013bb8ede4b 65
+  s_446aea7ceb013f::t_3d120fab179b57 97
+crates/ask/src/io.rs
+  s_446aea7ceb013f::t_bd01904a362f6e 8
+  s_446aea7ceb013f::t_93f04ec169b403 153
+  s_446aea7ceb013f::t_f6a77ea7396030 76-91
+  s_446aea7ceb013f::t_dce2bff4819c84 189
+crates/ask/src/main.rs
+  s_446aea7ceb013f::t_bda8c16ca949dd 3,14-17,20
+.github/workflows/release.yml
+  s_446aea7ceb013f::t_00c359451f6c9a 150-154,160
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "a9f693a0904b68e1db740dbca575ce4f29ce1838",
+  "prompts": {},
+  "sessions": {
+    "s_446aea7ceb013f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dd704e3f-30cf-4e3a-8e00-08f1c3e22797",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Minsu Lee <minsu.lee@pleaseai.dev>"
+    }
+  }
+}
