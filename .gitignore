@@ -10,6 +10,11 @@ dist/
 # Turbo
 .turbo/
 
+# Rust
+/target/
+# npm distribution build output (generated platform packages)
+/npm/dist/
+
 # Environment
 .env
 .env.*

@@ -30,7 +30,9 @@
     "cloudflare@cloudflare": true,
     "typescript-lsp@code-intelligence": true,
     "eslint-lsp@code-intelligence": true,
-    "gardening@passionfactory": true
+    "gardening@passionfactory": true,
+    "github-actions@passionfactory": true,
+    "plannotator@passionfactory": true
   },
   "extraKnownMarketplaces": {
     "passionfactory": {

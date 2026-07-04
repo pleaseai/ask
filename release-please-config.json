@@ -16,7 +16,18 @@
       "package-name": "@pleaseai/ask",
       "changelog-path": "CHANGELOG.md",
       "bump-minor-pre-major": true,
-      "bump-patch-for-minor-pre-major": true
+      "bump-patch-for-minor-pre-major": true,
+      "extra-files": [
+        {
+          "type": "generic",
+          "path": "/Cargo.toml"
+        },
+        {
+          "type": "json",
+          "path": "/npm/ask/package.json",
+          "jsonpath": "$.version"
+        }
+      ]
     },
     ".": {
       "release-type": "simple",

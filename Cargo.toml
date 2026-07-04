@@ -1,0 +1,49 @@
+# Cargo workspace for the Rust port of @pleaseai/ask (track rust-port-20260704).
+#
+# Phase 0 scaffold. The TypeScript implementation under `packages/cli/` remains
+# the source of truth and the published product until the Rust line reaches
+# behavioral parity, at which point the release pipeline cuts over to the Rust
+# binary (same GitHub-release asset names, so the Homebrew tap is unaffected).
+[workspace]
+resolver = "2"
+members = ["crates/ask"]
+
+[workspace.package]
+version = "0.4.8" # x-release-please-version
+edition = "2021"
+license = "MIT"
+repository = "https://github.com/pleaseai/ask"
+authors = ["ask maintainers"]
+
+# Dependencies are added per migration phase (see the track plan). Listing here
+# does not fetch; member crates opt in with `<dep>.workspace = true`.
+[workspace.dependencies]
+clap = { version = "4", features = ["derive"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+anyhow = "1"
+thiserror = "2"
+regex = "1"
+fancy-regex = "0.16"
+semver = "1"
+sha2 = "0.10"
+time = { version = "0.3", features = ["formatting", "parsing"] }
+tempfile = "3"
+walkdir = "2"
+ignore = "0.4"
+tar = "0.4"
+flate2 = "1"
+url = "2"
+# HTTP client for registry / npm / github metadata (rustls, no OpenSSL system dep).
+ureq = { version = "3", features = ["json"] }
+# Interactive prompts for `ask add` (bare) and the docs-path multiselect. TTY-only
+# leaf — the non-interactive contract (`--docs-paths`, `--clear-docs-paths`) is
+# what gets byte-parity tested; the prompt path is seamed out in unit tests.
+dialoguer = { version = "0.11", default-features = false }
+
+# Single-binary release profile (small, fast-to-start native binary — the whole
+# point of the port over the Bun-compiled artifact).
+[profile.release]
+lto = true
+codegen-units = 1
+strip = true

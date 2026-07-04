@@ -1,0 +1,145 @@
+# Rust release pipeline (track rust-port-20260704, Phase 2).
+#
+# Cross-compiles the `ask` binary from the Rust workspace (crates/ask) for every
+# supported target. Runs two ways: **manually** (workflow_dispatch) for ad-hoc
+# rebuilds/validation, and **as a reusable workflow** (workflow_call) to be wired
+# into release.yml at the cut-over that makes the Rust binary the published
+# product (replacing the Bun-compiled TypeScript binary).
+#
+# The unix asset names (ask-darwin-arm64, ask-darwin-x64, ask-linux-x64,
+# ask-linux-arm64) are IDENTICAL to what the current Bun pipeline emits and what
+# the pleaseai/homebrew-tap `ask.rb` formula downloads — so the Homebrew tap
+# keeps working unchanged after cut-over. Do not rename them. The extra targets
+# (linux-x64-musl, windows-x64) are for the npm platform packages.
+
+name: Release (Rust)
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to upload assets to (e.g. ask-v0.4.8). Leave blank to only build + upload artifacts.'
+        required: false
+        type: string
+  workflow_call:
+    inputs:
+      tag:
+        description: Release tag to upload assets to (e.g. ask-v0.4.8).
+        required: false
+        type: string
+
+concurrency:
+  group: release-rust-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-14 # Apple Silicon
+            target: aarch64-apple-darwin
+            asset: ask-darwin-arm64
+          - os: macos-15-intel # Intel (macos-13 was retired; macos-15-intel is the current Intel label)
+            target: x86_64-apple-darwin
+            asset: ask-darwin-x64
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            asset: ask-linux-x64
+          - os: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-gnu
+            asset: ask-linux-arm64
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+            asset: ask-linux-x64-musl
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            asset: ask-windows-x64.exe
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      # rust-toolchain.toml pins the channel; rustup honors it. Add the target
+      # triple so cross-target builds resolve their std.
+      - name: Add target
+        run: rustup target add ${{ matrix.target }}
+
+      # The static musl target needs musl-tools for the linker. The crate tree is
+      # currently pure-Rust (no C/C++ deps), so plain cargo build suffices — if a
+      # C-linking dependency is added later this may need cargo-zigbuild (see the
+      # code-search release-rust.yml for that pattern).
+      - name: Install musl tools
+        if: ${{ endsWith(matrix.target, '-musl') }}
+        run: sudo apt-get update && sudo apt-get install -y musl-tools
+
+      - name: Build release binary
+        run: cargo build --release --locked -p ask-please --target ${{ matrix.target }}
+
+      - name: Stage asset (unix)
+        if: ${{ !startsWith(matrix.os, 'windows') }}
+        run: |
+          cp "target/${{ matrix.target }}/release/ask" "${{ matrix.asset }}"
+          ./${{ matrix.asset }} --version
+          shasum -a 256 "${{ matrix.asset }}" > "${{ matrix.asset }}.sha256"
+
+      - name: Stage asset (windows)
+        if: ${{ startsWith(matrix.os, 'windows') }}
+        shell: bash
+        run: |
+          cp "target/${{ matrix.target }}/release/ask.exe" "${{ matrix.asset }}"
+          ./${{ matrix.asset }} --version
+          sha256sum "${{ matrix.asset }}" > "${{ matrix.asset }}.sha256"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ matrix.asset }}
+          path: |
+            ${{ matrix.asset }}
+            ${{ matrix.asset }}.sha256
+          if-no-files-found: error
+
+  # Resilient by design: runs even if some build legs failed (always()), so the
+  # targets that did build still reach the release. Fails only if NOTHING built.
+  upload-release-assets:
+    needs: build
+    if: ${{ always() && inputs.tag != '' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          path: artifacts
+
+      - name: Prepare release assets
+        run: |
+          mkdir -p release
+          find artifacts -type f -exec cp {} release/ \; 2>/dev/null || true
+          count=$(find release -type f | wc -l | tr -d ' ')
+          echo "staged $count asset file(s):"
+          ls -lh release/ || true
+          if [ "$count" -eq 0 ]; then
+            echo "::error::no built assets to upload — every build leg failed" >&2
+            exit 1
+          fi
+
+      - name: Upload to release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          # Validate the tag format before use so an untrusted dispatch input
+          # can't inject shell. ask uses monorepo component tags: ask-v<semver>.
+          [[ "$RELEASE_TAG" =~ ^ask-v[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]] || {
+            echo "Invalid release tag format: $RELEASE_TAG (expected ask-v<semver>)" >&2
+            exit 1
+          }
+          gh release upload "$RELEASE_TAG" release/* --clobber

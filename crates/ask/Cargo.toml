@@ -1,0 +1,44 @@
+# Published to crates.io as `ask-please` because the short names `ask` and
+# `ask-cli` are already taken (verified via the crates.io sparse index). The
+# library name stays `ask` (see `[lib]`) and the binary is `ask`, so
+# `cargo install ask-please` yields an `ask` command — matching the npm
+# (`@pleaseai/ask`) and Homebrew (`ask`) entrypoints. This mirrors code-search's
+# `code-search-please` crate / `csp` binary split.
+[package]
+name = "ask-please"
+description = "Agent Skills Kit — download version-specific library docs for AI coding agents (Rust port of @pleaseai/ask)."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+homepage = "https://github.com/pleaseai/ask"
+documentation = "https://docs.rs/ask-please"
+readme = "README.md"
+keywords = ["agents", "documentation", "skills", "cli", "llm"]
+categories = ["command-line-utilities", "development-tools"]
+
+[lib]
+name = "ask"
+
+[[bin]]
+name = "ask"
+path = "src/main.rs"
+
+[dependencies]
+clap = { workspace = true }
+anyhow = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+regex = { workspace = true }
+semver = { workspace = true }
+sha2 = { workspace = true }
+time = { workspace = true }
+ureq = { workspace = true }
+walkdir = { workspace = true }
+url = { workspace = true }
+tar = { workspace = true }
+flate2 = { workspace = true }
+tempfile = { workspace = true }
+dialoguer = { workspace = true }
