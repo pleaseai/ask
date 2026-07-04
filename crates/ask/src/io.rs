@@ -5,6 +5,7 @@
 //! materialized, gitignored output (docs + the resolved cache).
 
 use std::collections::BTreeMap;
+use std::io::Write as _;
 use std::path::{Path, PathBuf};
 
 use serde::Serialize;
@@ -72,6 +73,22 @@ pub fn content_hash(files: &[HashableFile]) -> String {
     format!("sha256-{:x}", hash.finalize())
 }
 
+/// Crash-safe write: stage the bytes in a sibling temp file, fsync, then rename
+/// into place. `std::fs::write` truncates the target first, so a crash/kill/full
+/// disk mid-write leaves a truncated file — fatal for `ask.json` (the declarative
+/// source of truth, which has no self-heal path). The rename is atomic on the
+/// same filesystem, so a reader ever sees either the old file or the complete
+/// new one. Same final bytes as `fs::write`, so parity is unaffected.
+fn write_atomic(path: &Path, contents: &str) -> anyhow::Result<()> {
+    let dir = path.parent().unwrap_or_else(|| Path::new("."));
+    std::fs::create_dir_all(dir)?;
+    let mut tmp = tempfile::NamedTempFile::new_in(dir)?;
+    tmp.write_all(contents.as_bytes())?;
+    tmp.as_file().sync_all()?;
+    tmp.persist(path).map_err(|e| e.error)?;
+    Ok(())
+}
+
 pub fn get_ask_dir(project_dir: &Path) -> PathBuf {
     project_dir.join(ASK_DIR)
 }
@@ -133,11 +150,7 @@ pub fn read_ask_json(project_dir: &Path) -> anyhow::Result<Option<AskJson>> {
 pub fn write_ask_json(project_dir: &Path, ask_json: &AskJson) -> anyhow::Result<()> {
     ask_json.validate()?;
     let file = get_ask_json_path(project_dir);
-    if let Some(parent) = file.parent() {
-        std::fs::create_dir_all(parent)?;
-    }
-    std::fs::write(&file, sorted_json(ask_json))?;
-    Ok(())
+    write_atomic(&file, &sorted_json(ask_json))
 }
 
 /// Read and validate `.ask/resolved.json`. Returns the default empty cache when
@@ -173,11 +186,7 @@ pub fn empty_resolved() -> ResolvedJson {
 pub fn write_resolved_json(project_dir: &Path, resolved: &ResolvedJson) -> anyhow::Result<()> {
     resolved.validate()?;
     let file = get_resolved_json_path(project_dir);
-    if let Some(parent) = file.parent() {
-        std::fs::create_dir_all(parent)?;
-    }
-    std::fs::write(&file, sorted_json(resolved))?;
-    Ok(())
+    write_atomic(&file, &sorted_json(resolved))
 }
 
 /// Upsert a single entry into `.ask/resolved.json`. Skips the rewrite when

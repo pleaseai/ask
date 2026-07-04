@@ -25,13 +25,22 @@ fn copy_dir_recursive(src: &Path, dst: &Path) -> std::io::Result<()> {
     std::fs::create_dir_all(dst)?;
     for entry in std::fs::read_dir(src)? {
         let entry = entry?;
-        let ft = entry.file_type()?;
         let from = entry.path();
         let to = dst.join(entry.file_name());
-        if ft.is_dir() {
+        // Stat the TARGET (follow symlinks), not the link itself: entry.file_type()
+        // reports the link's own type, so a symlink pointing at a directory would
+        // take the copy branch and std::fs::copy would fail (it cannot read a
+        // directory as file bytes). Node's fs.cpSync(recursive) dereferences here,
+        // so a symlinked subdir must recurse. Fall back to the entry type when the
+        // target is unreadable (e.g. a dangling symlink) so std::fs::copy surfaces
+        // the original error as before.
+        let is_dir = std::fs::metadata(&from)
+            .map(|m| m.is_dir())
+            .unwrap_or_else(|_| entry.file_type().map(|ft| ft.is_dir()).unwrap_or(false));
+        if is_dir {
             copy_dir_recursive(&from, &to)?;
         } else {
-            // Symlinks are dereferenced by std::fs::copy, matching Node's default.
+            // Regular files (and file symlinks) are dereferenced by std::fs::copy.
             std::fs::copy(&from, &to)?;
         }
     }
@@ -147,5 +156,25 @@ mod tests {
         assert!(!proj.path().join(".ask/skills/k").exists());
         // Second removal is a no-op.
         remove_vendor_dir(proj.path(), "k").unwrap();
+    }
+
+    // A symlink pointing at a directory must be dereferenced and copied as a
+    // tree (Node fs.cpSync behaviour), not hit std::fs::copy (which errors on a
+    // directory). entry.file_type() reports the link's type, so the fix stats
+    // the target.
+    #[cfg(unix)]
+    #[test]
+    fn copies_through_a_directory_symlink() {
+        let dir = tempfile::tempdir().unwrap();
+        let src = dir.path().join("src");
+        let real = src.join("real");
+        std::fs::create_dir_all(&real).unwrap();
+        std::fs::write(real.join("a.md"), "A").unwrap();
+        std::os::unix::fs::symlink("real", src.join("link")).unwrap();
+        let dst = dir.path().join("dst");
+        copy_dir_recursive(&src, &dst).unwrap();
+        assert_eq!(std::fs::read_to_string(dst.join("real/a.md")).unwrap(), "A");
+        // The symlinked directory's contents are copied through.
+        assert_eq!(std::fs::read_to_string(dst.join("link/a.md")).unwrap(), "A");
     }
 }

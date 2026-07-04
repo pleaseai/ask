@@ -63,15 +63,15 @@ pub fn fetch(
     })
 }
 
-/// The last non-empty path segment of `url`, or `llms.txt` (parity with TS
-/// `urlObj.pathname.split('/').pop() || 'llms.txt'`).
+/// The last path segment of `url`, or `llms.txt` (parity with TS
+/// `urlObj.pathname.split('/').pop() || 'llms.txt'`). TS's `pop()` takes the
+/// LAST segment even when it is empty (a trailing slash), so `.../docs/` falls
+/// back to `llms.txt` — using `rfind(non-empty)` here would wrongly yield `docs`.
 fn url_last_segment(url: &str) -> String {
     url::Url::parse(url)
         .ok()
-        .and_then(|u| {
-            let mut segs = u.path_segments()?;
-            segs.rfind(|seg: &&str| !seg.is_empty()).map(str::to_string)
-        })
+        .and_then(|u| u.path_segments()?.next_back().map(str::to_string))
+        .filter(|seg| !seg.is_empty())
         .unwrap_or_else(|| "llms.txt".to_string())
 }
 
@@ -133,5 +133,9 @@ mod tests {
     fn root_path_falls_back_to_llms_txt() {
         assert_eq!(url_last_segment("https://x.io/"), "llms.txt");
         assert_eq!(url_last_segment("https://x.io/a/b/guide.md"), "guide.md");
+        // A NON-root trailing slash also falls back (TS `pop()` yields "" here).
+        // The previous `rfind(non-empty)` wrongly returned "docs".
+        assert_eq!(url_last_segment("https://x.io/docs/"), "llms.txt");
+        assert_eq!(url_last_segment("https://x.io/a/b/"), "llms.txt");
     }
 }

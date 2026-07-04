@@ -62,7 +62,7 @@ pub fn run_install(
         // Full install after the last library was removed still needs to strip
         // the AGENTS.md block and ignore markers.
         if options.only_specs.is_none() {
-            generate_agents_md(project_dir, &[]);
+            generate_agents_md(project_dir, &[])?;
             manage_ignore_files(project_dir, IgnoreMode::Remove)?;
         }
         eprintln!("No libraries to install.");
@@ -94,7 +94,7 @@ pub fn run_install(
     } else {
         resolved
     };
-    generate_agents_md(project_dir, &all_resolved);
+    generate_agents_md(project_dir, &all_resolved)?;
     manage_ignore_files(project_dir, IgnoreMode::Install)?;
 
     eprintln!(

@@ -147,12 +147,17 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           GH_TOKEN: ${{ github.token }}
+          # Pass the tag through env rather than interpolating the expression
+          # directly into the script body — the same safe pattern used by
+          # update-homebrew-formula — so static analysis doesn't flag it as a
+          # script-injection sink.
+          CLI_TAG_NAME: ${{ needs.release-please.outputs.cli_tag_name }}
         run: |
           set -euo pipefail
 
           # Resolve the release tag: the release path passes it through from
           # release-please; publish_only re-derives it from the current version.
-          TAG="${{ needs.release-please.outputs.cli_tag_name }}"
+          TAG="$CLI_TAG_NAME"
           if [ -z "$TAG" ]; then
             TAG="ask-v$(node -p "require('./packages/cli/package.json').version")"
           fi

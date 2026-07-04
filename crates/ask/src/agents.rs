@@ -17,12 +17,15 @@ pub struct LazyLibraryInfo {
 /// Regenerate the ask-docs block in `AGENTS.md`. With no libraries, strips a
 /// previously generated block (removing the file if it becomes empty). Returns
 /// the AGENTS.md path (empty string when the file was left absent/untouched).
-pub fn generate_agents_md(project_dir: &Path, libraries: &[LazyLibraryInfo]) -> String {
+pub fn generate_agents_md(
+    project_dir: &Path,
+    libraries: &[LazyLibraryInfo],
+) -> anyhow::Result<String> {
     let agents_path = project_dir.join("AGENTS.md");
 
     if libraries.is_empty() {
-        strip_block(project_dir, &agents_path);
-        return String::new();
+        strip_block(project_dir, &agents_path)?;
+        return Ok(String::new());
     }
 
     let sections: Vec<String> = libraries
@@ -70,27 +73,27 @@ pub fn generate_agents_md(project_dir: &Path, libraries: &[LazyLibraryInfo]) -> 
                     &existing[..begin],
                     &existing[end + END_MARKER.len()..]
                 );
-                let _ = std::fs::write(&agents_path, updated);
+                std::fs::write(&agents_path, updated)?;
             }
             _ => {
-                let _ = std::fs::write(
+                std::fs::write(
                     &agents_path,
                     format!("{}\n\n{generated_block}\n", existing.trim_end()),
-                );
+                )?;
             }
         }
     } else {
-        let _ = std::fs::write(&agents_path, format!("{generated_block}\n"));
+        std::fs::write(&agents_path, format!("{generated_block}\n"))?;
     }
 
-    update_claude_md(project_dir);
-    agents_path.to_string_lossy().into_owned()
+    update_claude_md(project_dir)?;
+    Ok(agents_path.to_string_lossy().into_owned())
 }
 
 /// Strip a previously generated block for the empty-libraries case.
-fn strip_block(project_dir: &Path, agents_path: &Path) {
+fn strip_block(project_dir: &Path, agents_path: &Path) -> anyhow::Result<()> {
     let Ok(existing) = std::fs::read_to_string(agents_path) else {
-        return;
+        return Ok(());
     };
     match (existing.find(BEGIN_MARKER), existing.find(END_MARKER)) {
         (Some(begin), Some(end)) => {
@@ -104,9 +107,9 @@ fn strip_block(project_dir: &Path, agents_path: &Path) {
                 format!("{head}\n\n{tail}")
             };
             if stripped.is_empty() {
-                let _ = std::fs::remove_file(agents_path);
+                std::fs::remove_file(agents_path)?;
             } else {
-                let _ = std::fs::write(agents_path, stripped);
+                std::fs::write(agents_path, stripped)?;
             }
         }
         (Some(_), None) | (None, Some(_)) => {
@@ -121,24 +124,26 @@ fn strip_block(project_dir: &Path, agents_path: &Path) {
         }
         (None, None) => {}
     }
+    Ok(())
 }
 
 /// Ensure `CLAUDE.md` references `@AGENTS.md`.
-fn update_claude_md(project_dir: &Path) {
+fn update_claude_md(project_dir: &Path) -> anyhow::Result<()> {
     let claude_path = project_dir.join("CLAUDE.md");
     let claude_ref = "@AGENTS.md";
     match std::fs::read_to_string(&claude_path) {
         Ok(content) if content.contains(claude_ref) => {}
         Ok(content) => {
-            let _ = std::fs::write(
+            std::fs::write(
                 &claude_path,
                 format!("{}\n{claude_ref}\n", content.trim_end()),
-            );
+            )?;
         }
         Err(_) => {
-            let _ = std::fs::write(&claude_path, format!("{claude_ref}\n"));
+            std::fs::write(&claude_path, format!("{claude_ref}\n"))?;
         }
     }
+    Ok(())
 }
 
 #[cfg(test)]
@@ -156,7 +161,7 @@ mod tests {
     #[test]
     fn generates_block_and_claude_ref() {
         let dir = tempfile::tempdir().unwrap();
-        let path = generate_agents_md(dir.path(), &[lib("next", "15.0.3")]);
+        let path = generate_agents_md(dir.path(), &[lib("next", "15.0.3")]).unwrap();
         assert!(!path.is_empty());
         let content = std::fs::read_to_string(dir.path().join("AGENTS.md")).unwrap();
         assert!(content.starts_with(BEGIN_MARKER));
@@ -178,7 +183,7 @@ mod tests {
             format!("# My Project\n\nIntro.\n\n{BEGIN_MARKER}\nold\n{END_MARKER}\n\n## Footer\n"),
         )
         .unwrap();
-        generate_agents_md(dir.path(), &[lib("vue", "3.4.0")]);
+        generate_agents_md(dir.path(), &[lib("vue", "3.4.0")]).unwrap();
         let content = std::fs::read_to_string(dir.path().join("AGENTS.md")).unwrap();
         assert!(content.starts_with("# My Project"));
         assert!(content.contains("## Footer"));
@@ -190,7 +195,7 @@ mod tests {
     fn appends_block_when_no_markers_present() {
         let dir = tempfile::tempdir().unwrap();
         std::fs::write(dir.path().join("AGENTS.md"), "# Existing\n").unwrap();
-        generate_agents_md(dir.path(), &[lib("next", "1.0.0")]);
+        generate_agents_md(dir.path(), &[lib("next", "1.0.0")]).unwrap();
         let content = std::fs::read_to_string(dir.path().join("AGENTS.md")).unwrap();
         assert!(content.starts_with("# Existing"));
         assert!(content.contains(BEGIN_MARKER));
@@ -204,7 +209,7 @@ mod tests {
             format!("# Head\n\n{BEGIN_MARKER}\nx\n{END_MARKER}\n\n## Tail\n"),
         )
         .unwrap();
-        let result = generate_agents_md(dir.path(), &[]);
+        let result = generate_agents_md(dir.path(), &[]).unwrap();
         assert_eq!(result, "");
         let content = std::fs::read_to_string(dir.path().join("AGENTS.md")).unwrap();
         assert_eq!(content, "# Head\n\n## Tail\n");
@@ -219,7 +224,7 @@ mod tests {
             format!("{BEGIN_MARKER}\nx\n{END_MARKER}"),
         )
         .unwrap();
-        generate_agents_md(dir.path(), &[]);
+        generate_agents_md(dir.path(), &[]).unwrap();
         assert!(!dir.path().join("AGENTS.md").exists());
     }
 
@@ -227,7 +232,7 @@ mod tests {
     fn does_not_duplicate_claude_ref() {
         let dir = tempfile::tempdir().unwrap();
         std::fs::write(dir.path().join("CLAUDE.md"), "# Rules\n@AGENTS.md\n").unwrap();
-        generate_agents_md(dir.path(), &[lib("next", "1.0.0")]);
+        generate_agents_md(dir.path(), &[lib("next", "1.0.0")]).unwrap();
         let content = std::fs::read_to_string(dir.path().join("CLAUDE.md")).unwrap();
         assert_eq!(content.matches("@AGENTS.md").count(), 1);
     }
