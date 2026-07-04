@@ -22,6 +22,21 @@ pub struct VendorResult {
 /// Follows the Node `fs.cpSync(recursive)` default (regular file contents; no
 /// verbatim-symlink preservation — producer skills are plain trees).
 fn copy_dir_recursive(src: &Path, dst: &Path) -> std::io::Result<()> {
+    // Containment root: a dereferenced directory symlink must not escape the copy
+    // source. Seed `visited` with the root so a self-loop (`ln -s . loop`) is a
+    // cycle hit, not a fresh descent.
+    let root = std::fs::canonicalize(src).unwrap_or_else(|_| src.to_path_buf());
+    let mut visited: std::collections::HashSet<PathBuf> = std::collections::HashSet::new();
+    visited.insert(root.clone());
+    copy_dir_inner(&root, src, dst, &mut visited)
+}
+
+fn copy_dir_inner(
+    root: &Path,
+    src: &Path,
+    dst: &Path,
+    visited: &mut std::collections::HashSet<PathBuf>,
+) -> std::io::Result<()> {
     std::fs::create_dir_all(dst)?;
     for entry in std::fs::read_dir(src)? {
         let entry = entry?;
@@ -38,7 +53,20 @@ fn copy_dir_recursive(src: &Path, dst: &Path) -> std::io::Result<()> {
             .map(|m| m.is_dir())
             .unwrap_or_else(|_| entry.file_type().map(|ft| ft.is_dir()).unwrap_or(false));
         if is_dir {
-            copy_dir_recursive(&from, &to)?;
+            // Because directory symlinks are now followed, guard against symlink
+            // cycles (`ln -s . loop` → infinite recursion → stack overflow) and
+            // outbound escapes (a symlink to `/` would copy arbitrary external
+            // data into the vendor dir). Resolve the real path: skip it when it
+            // leaves the copy root, is already on the current descent (cycle), or
+            // cannot be resolved. `visited` is stack-scoped (removed after the
+            // subtree) so legitimate DAG repeats via distinct paths still copy.
+            match std::fs::canonicalize(&from) {
+                Ok(real) if real.starts_with(root) && visited.insert(real.clone()) => {
+                    copy_dir_inner(root, &from, &to, visited)?;
+                    visited.remove(&real);
+                }
+                _ => {}
+            }
         } else {
             // Regular files (and file symlinks) are dereferenced by std::fs::copy.
             std::fs::copy(&from, &to)?;
@@ -176,5 +204,30 @@ mod tests {
         assert_eq!(std::fs::read_to_string(dst.join("real/a.md")).unwrap(), "A");
         // The symlinked directory's contents are copied through.
         assert_eq!(std::fs::read_to_string(dst.join("link/a.md")).unwrap(), "A");
+    }
+
+    // Following directory symlinks must not hang on a cycle or copy external data
+    // through an outbound symlink.
+    #[cfg(unix)]
+    #[test]
+    fn symlink_cycle_and_escape_are_guarded() {
+        let dir = tempfile::tempdir().unwrap();
+        let src = dir.path().join("src");
+        std::fs::create_dir_all(&src).unwrap();
+        std::fs::write(src.join("a.md"), "A").unwrap();
+        // Self-loop — would infinite-recurse without the cycle guard.
+        std::os::unix::fs::symlink(".", src.join("loop")).unwrap();
+        // Outbound escape to a sibling outside the copy root.
+        let outside = dir.path().join("outside");
+        std::fs::create_dir_all(&outside).unwrap();
+        std::fs::write(outside.join("secret.md"), "SECRET").unwrap();
+        std::os::unix::fs::symlink(&outside, src.join("escape")).unwrap();
+
+        let dst = dir.path().join("dst");
+        // Must terminate (no stack overflow)…
+        copy_dir_recursive(&src, &dst).unwrap();
+        assert_eq!(std::fs::read_to_string(dst.join("a.md")).unwrap(), "A");
+        // …and the escaping symlink's target is not pulled in.
+        assert!(!dst.join("escape/secret.md").exists());
     }
 }
