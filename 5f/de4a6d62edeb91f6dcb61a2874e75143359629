@@ -1,0 +1,22 @@
+.claude/skills/run-ask-rust/SKILL.md
+  s_5f526f78d0afbf::t_48bc97b666a87d 1-115
+.claude/skills/run-ask-rust/smoke.sh
+  s_5f526f78d0afbf::t_99c4763b1f598f 1-16,20-45,48-58,61-69,72-74,77-79,82-99,102-104,107-109
+  s_5f526f78d0afbf::t_2a3a0afdf6f664 17-19,46-47,59-60,70-71,75-76,80-81,100-101,105-106
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "5fde4a6d62edeb91f6dcb61a2874e75143359629",
+  "prompts": {},
+  "sessions": {
+    "s_5f526f78d0afbf": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "902fcf8b-0b37-4a6d-9e61-0d3e9da76239",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Minsu Lee <minsu.lee@pleaseai.dev>"
+    }
+  }
+}
