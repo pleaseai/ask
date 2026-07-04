@@ -65,7 +65,7 @@ Logic lives in the lib (`crates/ask/src/`), fully unit-tested offline (HTTP via
 handle is the module's test filter, not the binary:
 
 ```bash
-cargo test -p ask-please                    # full suite (285 tests, <1s after build)
+cargo test -p ask-please                    # full suite (<1s after build)
 cargo test -p ask-please lockfiles::        # one module
 ```
 
