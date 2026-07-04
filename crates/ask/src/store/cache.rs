@@ -321,11 +321,12 @@ pub struct CacheGcResult {
 /// still kept.
 pub fn cache_gc(ask_home: &Path, options: &CacheGcOptions) -> CacheGcResult {
     let scan_roots = options.scan_roots.clone().unwrap_or_else(|| {
-        std::env::var("HOME")
-            .ok()
-            .filter(|h| !h.is_empty())
-            .map(|h| vec![PathBuf::from(h)])
-            .unwrap_or_default()
+        // Platform-aware home (USERPROFILE on Windows, $HOME on unix), matching
+        // TS's os.homedir(). Defaulting to only $HOME leaves scan_roots EMPTY on
+        // native Windows → collect_referenced_store_paths returns an empty set →
+        // every entry looks unreferenced → a non-dry-run `ask cache gc` deletes
+        // the whole store, including in-use entries.
+        vec![super::paths::home_dir()]
     });
 
     let referenced = collect_referenced_store_paths(&scan_roots, ask_home);

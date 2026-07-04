@@ -44,7 +44,7 @@ jobs:
           - os: macos-14 # Apple Silicon
             target: aarch64-apple-darwin
             asset: ask-darwin-arm64
-          - os: macos-15-intel # Intel
+          - os: macos-15-intel # Intel (macos-13 was retired; macos-15-intel is the current Intel label)
             target: x86_64-apple-darwin
             asset: ask-darwin-x64
           - os: ubuntu-latest

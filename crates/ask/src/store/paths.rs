@@ -21,7 +21,7 @@ pub fn resolve_ask_home() -> PathBuf {
 }
 
 /// Best-effort home directory (`$HOME` on unix, `%USERPROFILE%` on Windows).
-fn home_dir() -> PathBuf {
+pub(crate) fn home_dir() -> PathBuf {
     #[cfg(windows)]
     let key = "USERPROFILE";
     #[cfg(not(windows))]
