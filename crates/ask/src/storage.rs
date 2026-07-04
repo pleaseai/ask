@@ -61,7 +61,14 @@ pub fn save_docs(
     if options.store_mode == StoreMode::Link {
         if let Some(sp) = &options.store_path {
             let link_target = effective_store_path(sp, options.store_subpath.as_deref());
-            if docs_dir.exists() {
+            // Use symlink_metadata (examines the link itself), not exists (which
+            // follows it): a DANGLING symlink — left behind when `ask cache gc`
+            // deletes the store target — reports exists()==false, so the cleanup
+            // would be skipped and the following symlink_dir would fail EEXIST with
+            // a confusing "Failed to create symlink". remove_dir_all removes the
+            // link itself (verified for both live and dangling links), so the stale
+            // link is cleanly replaced.
+            if docs_dir.symlink_metadata().is_ok() {
                 std::fs::remove_dir_all(&docs_dir)?;
             }
             if let Some(parent) = docs_dir.parent() {

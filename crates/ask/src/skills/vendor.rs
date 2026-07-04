@@ -68,8 +68,21 @@ fn copy_dir_inner(
                 _ => {}
             }
         } else {
-            // Regular files (and file symlinks) are dereferenced by std::fs::copy.
-            std::fs::copy(&from, &to)?;
+            // std::fs::copy dereferences a file symlink, so a link pointing at an
+            // outbound target (`→ /etc/passwd`) would copy external bytes into the
+            // vendor dir — the same escape the directory branch guards. A regular
+            // file is physically inside the tree, so only symlinks need the check.
+            let is_symlink = entry.file_type().map(|ft| ft.is_symlink()).unwrap_or(false);
+            if is_symlink {
+                match std::fs::canonicalize(&from) {
+                    Ok(real) if real.starts_with(root) => {
+                        std::fs::copy(&from, &to)?;
+                    }
+                    _ => {} // escapes the root or unresolvable → skip
+                }
+            } else {
+                std::fs::copy(&from, &to)?;
+            }
         }
     }
     Ok(())
@@ -217,17 +230,21 @@ mod tests {
         std::fs::write(src.join("a.md"), "A").unwrap();
         // Self-loop — would infinite-recurse without the cycle guard.
         std::os::unix::fs::symlink(".", src.join("loop")).unwrap();
-        // Outbound escape to a sibling outside the copy root.
+        // Outbound escape to a sibling outside the copy root (directory symlink).
         let outside = dir.path().join("outside");
         std::fs::create_dir_all(&outside).unwrap();
         std::fs::write(outside.join("secret.md"), "SECRET").unwrap();
         std::os::unix::fs::symlink(&outside, src.join("escape")).unwrap();
+        // Outbound FILE symlink — std::fs::copy would dereference it.
+        std::fs::write(outside.join("secret.txt"), "FILESECRET").unwrap();
+        std::os::unix::fs::symlink(outside.join("secret.txt"), src.join("leak.md")).unwrap();
 
         let dst = dir.path().join("dst");
         // Must terminate (no stack overflow)…
         copy_dir_recursive(&src, &dst).unwrap();
         assert_eq!(std::fs::read_to_string(dst.join("a.md")).unwrap(), "A");
-        // …and the escaping symlink's target is not pulled in.
+        // …and neither the escaping directory nor file symlink's target is pulled in.
         assert!(!dst.join("escape/secret.md").exists());
+        assert!(!dst.join("leak.md").exists());
     }
 }
