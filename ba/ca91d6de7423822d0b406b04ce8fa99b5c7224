@@ -1,0 +1,47 @@
+packages/cli/test/resolvers/npm.test.ts
+  s_555214458307ca::t_f722bdd21bb2df 165,177-199
+crates/ask/src/store/paths.rs
+  s_555214458307ca::t_c89e28d4b975ba 98-108,121-124,126-130
+  s_555214458307ca::t_0aeeb83f8d6d6a 216-238
+  s_555214458307ca::t_15b5bc37f62bf9 215
+crates/ask/src/sources/github.rs
+  s_555214458307ca::t_341de68d36d425 333-336,338
+  s_555214458307ca::t_987a895df8e157 760-804
+  s_555214458307ca::t_a2677d9034a9a2 759
+packages/cli/src/store/index.ts
+  s_555214458307ca::t_2b79168b01d42a 98-112,123-126
+  s_555214458307ca::t_9cba0b6fcf11ef 128
+packages/cli/test/sources/github-monorepo.test.ts
+  s_555214458307ca::t_a4d43849a02509 183,198-199,203,220-271
+  s_555214458307ca::t_2f34352c186b67 272
+packages/cli/src/resolvers/npm.ts
+  s_555214458307ca::t_4e65141185da14 87-89,92-94
+packages/cli/test/store/index.test.ts
+  s_555214458307ca::t_8c1be08fc8fde6 98-112
+packages/cli/src/commands/ensure-checkout.ts
+  s_555214458307ca::t_660fa0cea5a825 260-267
+crates/ask/src/commands/ensure_checkout.rs
+  s_555214458307ca::t_72ba6acaf8cd45 256-260,264-271
+packages/cli/src/sources/github.ts
+  s_555214458307ca::t_6fbf2ea8c43973 356-360
+crates/ask/src/resolvers/npm.rs
+  s_555214458307ca::t_8784257d4dde38 127-130,133-138,140-142
+  s_555214458307ca::t_8b70c0f8456f1a 234-237,249-253
+  s_555214458307ca::t_b6906e26c09936 213-233,238-248,254-255
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "baca91d6de7423822d0b406b04ce8fa99b5c7224",
+  "prompts": {},
+  "sessions": {
+    "s_555214458307ca": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "fc3b1e0e-03d2-4a04-a80c-a61bd368ae6c",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Minsu Lee <minsu.lee@pleaseai.dev>"
+    }
+  }
+}
