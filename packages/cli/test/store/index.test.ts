@@ -95,6 +95,21 @@ describe('path helpers', () => {
       .toThrow(/Unsafe path/)
   })
 
+  it('githubStorePath encodes slash-containing scoped monorepo tags (#121)', () => {
+    expect(githubStorePath(home, 'github.com', 'TanStack', 'query', '@tanstack/react-query@5.101.2'))
+      .toBe('/home/user/.ask/github/github.com/TanStack/query/@tanstack__react-query@5.101.2')
+  })
+
+  it('githubStorePath encodes slash-containing branch refs', () => {
+    expect(githubStorePath(home, 'github.com', 'foo', 'bar', 'release/v1.2.3'))
+      .toBe('/home/user/.ask/github/github.com/foo/bar/release__v1.2.3')
+  })
+
+  it('githubStorePath still rejects traversal hidden inside a slash-containing tag', () => {
+    expect(() => githubStorePath(home, 'github.com', 'foo', 'bar', '@scope/../../escape'))
+      .toThrow(/Unsafe path/)
+  })
+
   it('githubStorePath rejects path traversal via host', () => {
     expect(() => githubStorePath(home, '../malicious', 'foo', 'bar', 'v1.0.0'))
       .toThrow(/Unsafe path/)

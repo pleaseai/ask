@@ -253,14 +253,22 @@ pub fn ensure_checkout(
         .and_then(|r| r.store_path.clone())
         .unwrap_or_else(|| checkout_dir.clone());
 
-    // Keep `ref` consistent with the actual checkout dir (its basename), so the
-    // `ask src --json` contract never reports a ref that disagrees with the path.
+    // Keep `ref` consistent with the actual checkout dir. Prefer the
+    // fetcher's `meta.ref` (the real winning ref) over the checkout's
+    // basename — slash-containing tags like `@tanstack/react-query@5.101.2`
+    // are encoded (`/` → `__`) in the directory name, so the basename is
+    // only a fallback for fetchers that do not report `meta.ref`.
     let actual_ref = if resolved_checkout_dir == checkout_dir {
         reference
     } else {
-        resolved_checkout_dir
-            .file_name()
-            .map(|n| n.to_string_lossy().into_owned())
+        fetch_result
+            .as_ref()
+            .and_then(|r| r.meta.ref_.clone())
+            .or_else(|| {
+                resolved_checkout_dir
+                    .file_name()
+                    .map(|n| n.to_string_lossy().into_owned())
+            })
             .unwrap_or(reference)
     };
 

@@ -330,8 +330,12 @@ pub fn fetch(
                 store_path: Some(store_dir),
                 store_subpath: opts.docs_path.clone(),
                 from_store_cache: true,
+                // Report the WINNING candidate, not the requested ref — the
+                // store dir is keyed by the candidate, and slash-containing
+                // tags are encoded in the path, so callers cannot recover
+                // the real ref from the directory basename.
                 meta: FetchMeta {
-                    ref_: Some(reference.clone()),
+                    ref_: Some(candidate),
                     ..Default::default()
                 },
             });
@@ -750,6 +754,52 @@ mod tests {
             std::fs::read_to_string(result.store_path.unwrap().join("docs/guide.md")).unwrap(),
             "# Guide v3\n"
         );
+    }
+
+    #[test]
+    fn scoped_monorepo_tag_clones_into_encoded_store_dir() {
+        // pleaseai/ask#121: tags like `@tanstack/react-query@5.101.2` contain
+        // `/` — the clone must succeed and land under the encoded dir name,
+        // while meta.ref reports the REAL tag.
+        if !has_git() {
+            return;
+        }
+        let tmp = tempfile::tempdir().unwrap();
+        let remote = create_local_remote(tmp.path());
+        let scoped_tag = "@tanstack/react-query@5.101.2";
+        git(&["tag", scoped_tag, "v1.0.0"], &tmp.path().join("work"));
+        // Re-push the new tag into the bare remote.
+        git(
+            &["push", remote.to_str().unwrap(), scoped_tag],
+            &tmp.path().join("work"),
+        );
+        let ask_home = tmp.path().join("ask-home");
+        let opts = GithubOptions {
+            name: "react-query".into(),
+            version: "5.101.2".into(),
+            repo: "TanStack/query".into(),
+            tag: Some("v5.101.2".into()),
+            fallback_refs: vec![scoped_tag.to_string()],
+            docs_path: Some("docs".into()),
+            remote_url: Some(remote.to_string_lossy().into_owned()),
+            ..Default::default()
+        };
+        let result = fetch(&no_client(), &opts, &ask_home).unwrap();
+
+        let store_path = result.store_path.clone().unwrap();
+        assert_eq!(
+            store_path.file_name().unwrap().to_str().unwrap(),
+            "@tanstack__react-query@5.101.2"
+        );
+        assert_eq!(result.meta.ref_.as_deref(), Some(scoped_tag));
+        assert!(store_path.join("docs/guide.md").exists());
+
+        // Second fetch: store-cache hit on the same encoded path, still
+        // reporting the real tag.
+        let cached = fetch(&no_client(), &opts, &ask_home).unwrap();
+        assert!(cached.from_store_cache);
+        assert_eq!(cached.store_path.as_deref(), Some(store_path.as_path()));
+        assert_eq!(cached.meta.ref_.as_deref(), Some(scoped_tag));
     }
 
     #[test]

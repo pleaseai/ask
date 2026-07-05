@@ -162,7 +162,7 @@ describe('NpmResolver', () => {
       expect(result.fallbackRefs).toEqual(['4.17.21'])
     })
 
-    it('uses unscoped name for scoped packages like @vercel/ai', async () => {
+    it('tries the full scoped name before the unscoped name for scoped packages', async () => {
       mockFetchJson({
         'repository': {
           type: 'git',
@@ -174,11 +174,29 @@ describe('NpmResolver', () => {
       })
 
       const result = await resolver.resolve('@vercel/ai', '6.0.158')
-      // unscoped name is 'ai'
-      expect(result.fallbackRefs).toContain('ai@6.0.158')
-      expect(result.fallbackRefs).toContain('ai@v6.0.158')
-      // scoped form should NOT appear
-      expect(result.fallbackRefs!.every(r => !r.startsWith('@'))).toBe(true)
+      expect(result.fallbackRefs).toEqual([
+        '@vercel/ai@6.0.158',
+        '@vercel/ai@v6.0.158',
+        'ai@6.0.158',
+        'ai@v6.0.158',
+        '6.0.158',
+      ])
+    })
+
+    it('generates scoped monorepo tags for @tanstack/react-query (#121)', async () => {
+      mockFetchJson({
+        'repository': {
+          type: 'git',
+          url: 'git+https://github.com/TanStack/query.git',
+          directory: 'packages/react-query',
+        },
+        'dist-tags': { latest: '5.101.2' },
+        'versions': { '5.101.2': {} },
+      })
+
+      const result = await resolver.resolve('@tanstack/react-query', '5.101.2')
+      // The real tag on TanStack/query is `@tanstack/react-query@5.101.2`.
+      expect(result.fallbackRefs![0]).toBe('@tanstack/react-query@5.101.2')
     })
   })
 })

@@ -95,6 +95,21 @@ function assertSafeSegment(name: string, value: string): void {
   }
 }
 
+const RE_PATH_SEPARATORS = /[/\\]/g
+
+/**
+ * Encode a git ref for use as a single store-path segment. Git refs may
+ * legitimately contain `/` — scoped monorepo tags like
+ * `@tanstack/react-query@5.101.2` and branch names like `release/v1.2.3`
+ * — but the store layout maps each ref to exactly one directory name.
+ * Encode separators as `__` (same convention as the skills spec-key
+ * encoding) instead of rejecting them; `..` and other traversal inputs
+ * are still rejected by `assertSafeSegment` after encoding.
+ */
+export function encodeRefSegment(ref: string): string {
+  return ref.replace(RE_PATH_SEPARATORS, '__')
+}
+
 export function githubStorePath(
   askHome: string,
   host: string,
@@ -105,9 +120,12 @@ export function githubStorePath(
   assertSafeSegment('host', host)
   assertSafeSegment('owner', owner)
   assertSafeSegment('repo', repo)
-  assertSafeSegment('tag', tag)
+  // Refs may contain `/` (scoped monorepo tags, `release/*` branches) —
+  // encode to a single directory name, then run the traversal guard.
+  const encodedTag = encodeRefSegment(tag)
+  assertSafeSegment('tag', encodedTag)
   const githubRoot = path.join(askHome, 'github')
-  const candidate = path.join(githubRoot, host, owner, repo, tag)
+  const candidate = path.join(githubRoot, host, owner, repo, encodedTag)
   return assertContained(githubRoot, candidate)
 }
 
