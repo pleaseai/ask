@@ -98,12 +98,24 @@ pub fn npm_store_path(ask_home: &Path, pkg: &str, version: &str) -> anyhow::Resu
 /// Encode a git ref for use as a single store-path segment. Git refs may
 /// legitimately contain `/` — scoped monorepo tags like
 /// `@tanstack/react-query@5.101.2` and branch names like `release/v1.2.3` —
-/// but the store layout maps each ref to exactly one directory name. Encode
-/// separators as `__` (same convention as the skills spec-key encoding)
-/// instead of rejecting them; `..` and other traversal inputs are still
+/// but the store layout maps each ref to exactly one directory name.
+/// Separators become `__` (same convention as the skills spec-key encoding)
+/// instead of being rejected; `..` and other traversal inputs are still
 /// rejected by [`assert_safe_segment`] after encoding.
+///
+/// The `__` substitution alone is not injective (`release/v1.0.0` and a
+/// literal `release__v1.0.0` tag would share a cache dir, silently shadowing
+/// each other), so separator-containing refs also get a short hash of the
+/// ORIGINAL ref appended. Refs without separators — the overwhelmingly
+/// common case — map to themselves unchanged.
 pub fn encode_ref_segment(reference: &str) -> String {
-    reference.replace(['/', '\\'], "__")
+    if !reference.contains(['/', '\\']) {
+        return reference.to_string();
+    }
+    let mut hasher = Sha256::new();
+    hasher.update(reference.as_bytes());
+    let hash = format!("{:x}", hasher.finalize());
+    format!("{}-{}", reference.replace(['/', '\\'], "__"), &hash[..8])
 }
 
 /// The PM-style nested layout for a github entry:
@@ -215,7 +227,7 @@ mod tests {
     #[test]
     fn github_path_encodes_slash_containing_refs() {
         // pleaseai/ask#121: scoped monorepo tags and `release/*` branches
-        // contain `/` — encoded to `__` in the store dir name.
+        // contain `/` — encoded to `__` + 8-char sha256 of the original ref.
         let home = Path::new("/store");
         assert_eq!(
             github_store_path(
@@ -226,14 +238,29 @@ mod tests {
                 "@tanstack/react-query@5.101.2"
             )
             .unwrap(),
-            PathBuf::from("/store/github/github.com/TanStack/query/@tanstack__react-query@5.101.2")
+            PathBuf::from(
+                "/store/github/github.com/TanStack/query/@tanstack__react-query@5.101.2-8cd04c22"
+            )
         );
         assert_eq!(
             github_store_path(home, "github.com", "o", "repo", "release/v1.2.3").unwrap(),
-            PathBuf::from("/store/github/github.com/o/repo/release__v1.2.3")
+            PathBuf::from("/store/github/github.com/o/repo/release__v1.2.3-3101f387")
         );
         // Traversal hidden inside a slash-containing ref is still rejected.
         assert!(github_store_path(home, "github.com", "o", "repo", "@scope/../../escape").is_err());
+    }
+
+    #[test]
+    fn encode_ref_segment_is_injective_for_underscore_twins() {
+        // A literal `release__v1.2.3` tag (no separator) maps to itself;
+        // `release/v1.2.3` carries a hash suffix — never the same dir.
+        assert_eq!(encode_ref_segment("release__v1.2.3"), "release__v1.2.3");
+        assert_ne!(
+            encode_ref_segment("release__v1.2.3"),
+            encode_ref_segment("release/v1.2.3")
+        );
+        // Plain tags are unchanged.
+        assert_eq!(encode_ref_segment("v1.0.0"), "v1.0.0");
     }
 
     #[test]

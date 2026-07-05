@@ -96,13 +96,24 @@ describe('path helpers', () => {
   })
 
   it('githubStorePath encodes slash-containing scoped monorepo tags (#121)', () => {
+    // `__` substitution + 8-char sha256 of the original ref (injectivity)
     expect(githubStorePath(home, 'github.com', 'TanStack', 'query', '@tanstack/react-query@5.101.2'))
-      .toBe('/home/user/.ask/github/github.com/TanStack/query/@tanstack__react-query@5.101.2')
+      .toBe('/home/user/.ask/github/github.com/TanStack/query/@tanstack__react-query@5.101.2-8cd04c22')
   })
 
   it('githubStorePath encodes slash-containing branch refs', () => {
     expect(githubStorePath(home, 'github.com', 'foo', 'bar', 'release/v1.2.3'))
+      .toBe('/home/user/.ask/github/github.com/foo/bar/release__v1.2.3-3101f387')
+  })
+
+  it('githubStorePath keeps a literal __ tag distinct from its slash twin', () => {
+    // `release__v1.2.3` (no separator) maps to itself; `release/v1.2.3`
+    // carries a hash suffix — the two never share a cache dir.
+    expect(githubStorePath(home, 'github.com', 'foo', 'bar', 'release__v1.2.3'))
       .toBe('/home/user/.ask/github/github.com/foo/bar/release__v1.2.3')
+    expect(githubStorePath(home, 'github.com', 'foo', 'bar', 'release__v1.2.3'))
+      .not
+      .toBe(githubStorePath(home, 'github.com', 'foo', 'bar', 'release/v1.2.3'))
   })
 
   it('githubStorePath still rejects traversal hidden inside a slash-containing tag', () => {

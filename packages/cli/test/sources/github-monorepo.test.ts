@@ -248,8 +248,8 @@ describe('integration: full pipeline — NpmResolver + GithubSource', () => {
       remoteUrl,
     } as any)
 
-    // Slash in the tag is encoded to `__` in the store path
-    expect(path.basename(fetchResult.storePath!)).toBe('@tanstack__react-query@5.101.2')
+    // Slash in the tag is encoded (`__` + short hash of the real ref)
+    expect(path.basename(fetchResult.storePath!)).toBe('@tanstack__react-query@5.101.2-8cd04c22')
     // ...but meta.ref reports the REAL winning tag
     expect(fetchResult.meta?.ref).toBe(scopedTag)
     expect(fs.existsSync(path.join(fetchResult.storePath!, 'docs', 'intro.md'))).toBe(true)

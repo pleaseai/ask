@@ -789,7 +789,7 @@ mod tests {
         let store_path = result.store_path.clone().unwrap();
         assert_eq!(
             store_path.file_name().unwrap().to_str().unwrap(),
-            "@tanstack__react-query@5.101.2"
+            "@tanstack__react-query@5.101.2-8cd04c22"
         );
         assert_eq!(result.meta.ref_.as_deref(), Some(scoped_tag));
         assert!(store_path.join("docs/guide.md").exists());

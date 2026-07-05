@@ -102,12 +102,21 @@ const RE_PATH_SEPARATORS = /[/\\]/g
  * legitimately contain `/` — scoped monorepo tags like
  * `@tanstack/react-query@5.101.2` and branch names like `release/v1.2.3`
  * — but the store layout maps each ref to exactly one directory name.
- * Encode separators as `__` (same convention as the skills spec-key
- * encoding) instead of rejecting them; `..` and other traversal inputs
+ * Separators become `__` (same convention as the skills spec-key
+ * encoding) instead of being rejected; `..` and other traversal inputs
  * are still rejected by `assertSafeSegment` after encoding.
+ *
+ * The `__` substitution alone is not injective (`release/v1.0.0` and a
+ * literal `release__v1.0.0` tag would share a cache dir, silently
+ * shadowing each other), so separator-containing refs also get a short
+ * hash of the ORIGINAL ref appended. Refs without separators — the
+ * overwhelmingly common case — map to themselves unchanged.
  */
 export function encodeRefSegment(ref: string): string {
-  return ref.replace(RE_PATH_SEPARATORS, '__')
+  if (!ref.includes('/') && !ref.includes('\\'))
+    return ref
+  const hash = crypto.createHash('sha256').update(ref).digest('hex').slice(0, 8)
+  return `${ref.replace(RE_PATH_SEPARATORS, '__')}-${hash}`
 }
 
 export function githubStorePath(
