@@ -84,9 +84,14 @@ export class NpmResolver implements EcosystemResolver {
 
     // For monorepo packages (those with repository.directory), prepend pkg-name@version tags.
     // Changesets convention uses `<pkgName>@<version>` and `<pkgName>@v<version>`.
-    // Scoped packages like `@vercel/ai` use only the unscoped part (e.g. `ai`).
+    // Scoped monorepos (`@tanstack/*`, `@trpc/*`, ...) tag with the FULL scoped
+    // name (`@tanstack/react-query@5.101.2`) — try that first, then the
+    // unscoped part (`react-query@5.101.2`) used by repos like `vercel/ai`.
     const monorepoFallbacks: string[] = []
     if (typeof repoField === 'object' && repoField?.directory) {
+      if (name.startsWith('@')) {
+        monorepoFallbacks.push(`${name}@${resolvedVersion}`, `${name}@v${resolvedVersion}`)
+      }
       const unscopedName = name.startsWith('@') ? name.split('/')[1] : name
       monorepoFallbacks.push(`${unscopedName}@${resolvedVersion}`, `${unscopedName}@v${resolvedVersion}`)
     }

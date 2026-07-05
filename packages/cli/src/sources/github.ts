@@ -353,7 +353,11 @@ export class GithubSource implements DocSource {
           storePath: storeDir,
           storeSubpath: docsPath,
           fromStoreCache: true,
-          meta: { ref },
+          // Report the WINNING candidate, not the requested ref — the
+          // store dir is keyed by the candidate, and slash-containing
+          // tags are encoded in the path, so callers cannot recover the
+          // real ref from the directory basename.
+          meta: { ref: candidate },
         }
       }
       quarantineEntry(askHome, storeDir)

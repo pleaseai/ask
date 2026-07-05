@@ -257,12 +257,14 @@ export async function ensureCheckout(
   const resolvedCheckoutDir = fetchResult?.storePath ?? checkoutDir
 
   // When a fallbackRef (or a `v`-rescued ref) wins, the store dir lives
-  // under the WINNING ref, not the requested one. The store layout ends
-  // in `.../<owner>/<repo>/<ref>/`, so the actual ref is the checkout's
-  // basename. Keep `ref` consistent with `checkoutDir` — otherwise the
-  // `ask src --json` contract would report a `ref` that disagrees with
-  // the path downstream tools actually index.
-  const actualRef = resolvedCheckoutDir === checkoutDir ? ref : path.basename(resolvedCheckoutDir)
+  // under the WINNING ref, not the requested one. Prefer the fetcher's
+  // `meta.ref` (the real winning ref) over the checkout's basename —
+  // slash-containing tags like `@tanstack/react-query@5.101.2` are
+  // encoded (`/` → `__`) in the directory name, so the basename is only
+  // a fallback for fetchers that do not report `meta.ref`.
+  const actualRef = resolvedCheckoutDir === checkoutDir
+    ? ref
+    : fetchResult?.meta?.ref ?? path.basename(resolvedCheckoutDir)
 
   // `GithubSource.fetch` can satisfy the request from its own store-hit
   // path (a ref-candidate variant like `v<ref>` or `master`) with zero

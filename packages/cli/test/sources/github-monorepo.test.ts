@@ -180,7 +180,7 @@ describe('integration: full pipeline — NpmResolver + GithubSource', () => {
     expect(fs.existsSync(path.join(fetchResult.storePath!, 'docs', 'api.md'))).toBe(true)
   })
 
-  it('scoped package @vercel/ai: resolver uses unscoped name "ai" in fallbackRefs', async () => {
+  it('scoped package @vercel/ai: unscoped tag wins when the repo only ships unscoped tags', async () => {
     // Mock npm registry for @vercel/ai with repository.directory
     mockNpmFetch({
       'repository': {
@@ -195,13 +195,12 @@ describe('integration: full pipeline — NpmResolver + GithubSource', () => {
     const resolver = new NpmResolver()
     const resolveResult = await resolver.resolve('@vercel/ai', '6.0.158')
 
-    // Unscoped name must be used — NOT @vercel/ai@6.0.158
+    // Both scoped and unscoped candidates, scoped first
+    expect(resolveResult.fallbackRefs).toContain('@vercel/ai@6.0.158')
     expect(resolveResult.fallbackRefs).toContain('ai@6.0.158')
     expect(resolveResult.fallbackRefs).toContain('ai@v6.0.158')
-    // Scoped form must NOT appear
-    expect(resolveResult.fallbackRefs!.every(r => !r.startsWith('@'))).toBe(true)
 
-    // Verify the unscoped tag pattern works with GithubSource
+    // The remote only has the unscoped tag — the chain must fall through to it
     const remoteUrl = createMonorepoRemote('ai@6.0.158')
     const source = new GithubSource()
     const fetchResult = await source.fetch({
@@ -217,5 +216,58 @@ describe('integration: full pipeline — NpmResolver + GithubSource', () => {
 
     expect(fetchResult.storePath).toContain('ai@6.0.158')
     expect(fetchResult.resolvedVersion).toBe('6.0.158')
+  })
+
+  it('scoped monorepo tag @tanstack/react-query@5.101.2: clone lands in the encoded store dir (#121)', async () => {
+    const scopedTag = '@tanstack/react-query@5.101.2'
+    const remoteUrl = createMonorepoRemote(scopedTag)
+
+    mockNpmFetch({
+      'repository': {
+        type: 'git',
+        url: 'git+https://github.com/TanStack/query.git',
+        directory: 'packages/react-query',
+      },
+      'dist-tags': { latest: '5.101.2' },
+      'versions': { '5.101.2': {} },
+    })
+
+    const resolver = new NpmResolver()
+    const resolveResult = await resolver.resolve('@tanstack/react-query', '5.101.2')
+    expect(resolveResult.fallbackRefs![0]).toBe(scopedTag)
+
+    const source = new GithubSource()
+    const fetchResult = await source.fetch({
+      source: 'github',
+      name: 'react-query',
+      version: resolveResult.resolvedVersion,
+      repo: resolveResult.repo,
+      tag: resolveResult.ref,
+      docsPath: 'docs',
+      fallbackRefs: resolveResult.fallbackRefs,
+      remoteUrl,
+    } as any)
+
+    // Slash in the tag is encoded (`__` + short hash of the real ref)
+    expect(path.basename(fetchResult.storePath!)).toBe('@tanstack__react-query@5.101.2-8cd04c22')
+    // ...but meta.ref reports the REAL winning tag
+    expect(fetchResult.meta?.ref).toBe(scopedTag)
+    expect(fs.existsSync(path.join(fetchResult.storePath!, 'docs', 'intro.md'))).toBe(true)
+
+    // Second fetch is a store-cache hit on the same encoded path,
+    // still reporting the real tag.
+    const cached = await source.fetch({
+      source: 'github',
+      name: 'react-query',
+      version: resolveResult.resolvedVersion,
+      repo: resolveResult.repo,
+      tag: resolveResult.ref,
+      docsPath: 'docs',
+      fallbackRefs: resolveResult.fallbackRefs,
+      remoteUrl,
+    } as any)
+    expect(cached.fromStoreCache).toBe(true)
+    expect(cached.storePath).toBe(fetchResult.storePath!)
+    expect(cached.meta?.ref).toBe(scopedTag)
   })
 })

@@ -124,17 +124,22 @@ pub fn resolve(
     })?;
 
     // Monorepo packages (repository.directory present) use changesets-style
-    // `<pkgName>@<version>` / `@v<version>` tags; scoped names use the unscoped
-    // part (`@vercel/ai` → `ai`).
+    // `<pkgName>@<version>` / `@v<version>` tags. Scoped monorepos
+    // (`@tanstack/*`, `@trpc/*`, ...) tag with the FULL scoped name
+    // (`@tanstack/react-query@5.101.2`) — try that first, then the unscoped
+    // part (`react-query@5.101.2`) used by repos like `vercel/ai`.
     let mut fallback_refs = Vec::new();
     if repo_field.and_then(RepoField::directory).is_some() {
-        let unscoped = if let Some(rest) = name.strip_prefix('@') {
-            rest.split_once('/').map(|(_, n)| n).unwrap_or(rest)
+        if let Some(rest) = name.strip_prefix('@') {
+            fallback_refs.push(format!("{name}@{resolved_version}"));
+            fallback_refs.push(format!("{name}@v{resolved_version}"));
+            let unscoped = rest.split_once('/').map(|(_, n)| n).unwrap_or(rest);
+            fallback_refs.push(format!("{unscoped}@{resolved_version}"));
+            fallback_refs.push(format!("{unscoped}@v{resolved_version}"));
         } else {
-            name
-        };
-        fallback_refs.push(format!("{unscoped}@{resolved_version}"));
-        fallback_refs.push(format!("{unscoped}@v{resolved_version}"));
+            fallback_refs.push(format!("{name}@{resolved_version}"));
+            fallback_refs.push(format!("{name}@v{resolved_version}"));
+        }
     }
     fallback_refs.push(resolved_version.clone());
 
@@ -205,7 +210,49 @@ mod tests {
         let c = MockClient::new().with("https://registry.npmjs.org/@vercel/ai", 200, meta);
         let r = resolve(&c, "@vercel/ai", "latest").unwrap();
         assert_eq!(r.repo, "vercel/ai");
-        assert_eq!(r.fallback_refs, vec!["ai@5.0.0", "ai@v5.0.0", "5.0.0"]);
+        assert_eq!(
+            r.fallback_refs,
+            vec![
+                "@vercel/ai@5.0.0",
+                "@vercel/ai@v5.0.0",
+                "ai@5.0.0",
+                "ai@v5.0.0",
+                "5.0.0"
+            ]
+        );
+    }
+
+    #[test]
+    fn monorepo_unscoped_package_has_no_scoped_fallbacks() {
+        let meta = r#"{
+            "dist-tags": { "latest": "6.0.158" },
+            "versions": { "6.0.158": {} },
+            "repository": { "url": "https://github.com/vercel/ai.git", "directory": "packages/ai" }
+        }"#;
+        let c = MockClient::new().with("https://registry.npmjs.org/ai", 200, meta);
+        let r = resolve(&c, "ai", "latest").unwrap();
+        assert_eq!(
+            r.fallback_refs,
+            vec!["ai@6.0.158", "ai@v6.0.158", "6.0.158"]
+        );
+    }
+
+    #[test]
+    fn scoped_monorepo_tag_candidate_matches_tanstack_convention() {
+        // pleaseai/ask#121: the real tag on TanStack/query is
+        // `@tanstack/react-query@5.101.2` (full scoped name, contains `/`).
+        let meta = r#"{
+            "dist-tags": { "latest": "5.101.2" },
+            "versions": { "5.101.2": {} },
+            "repository": { "url": "https://github.com/TanStack/query.git", "directory": "packages/react-query" }
+        }"#;
+        let c = MockClient::new().with(
+            "https://registry.npmjs.org/@tanstack/react-query",
+            200,
+            meta,
+        );
+        let r = resolve(&c, "@tanstack/react-query", "latest").unwrap();
+        assert_eq!(r.fallback_refs[0], "@tanstack/react-query@5.101.2");
     }
 
     #[test]
