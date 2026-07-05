@@ -1,0 +1,30 @@
+packages/cli/test/store/index.test.ts
+  s_555214458307ca::t_1c4f167a635ba9 99,101,106-112,114
+  s_555214458307ca::t_bda4743d6ba921 115-116
+crates/ask/src/sources/github.rs
+  s_555214458307ca::t_bef1e65c4a74ab 792
+packages/cli/src/store/index.ts
+  s_555214458307ca::t_be1c8f5379bc5b 105-106,108-113,116-119
+packages/cli/test/sources/github-monorepo.test.ts
+  s_555214458307ca::t_f43a6b75554991 251-252
+crates/ask/src/store/paths.rs
+  s_555214458307ca::t_046153b2c9d3ec 101-103,105-110,112-118,264
+  s_555214458307ca::t_76838e98db8986 230,241-243,247,253-263
+  s_555214458307ca::t_5257e3e8550cbc 265
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "716d71653fa330a6bc0c8d79f8f647940d0808f5",
+  "prompts": {},
+  "sessions": {
+    "s_555214458307ca": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "fc3b1e0e-03d2-4a04-a80c-a61bd368ae6c",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Minsu Lee <minsu.lee@pleaseai.dev>"
+    }
+  }
+}
