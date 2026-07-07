@@ -6,7 +6,7 @@
   "homepage": "https://github.com/pleaseai/ask",
   "repository": {
     "type": "git",
-    "url": "https://github.com/pleaseai/ask.git"
+    "url": "git+https://github.com/pleaseai/ask.git"
   },
   "bugs": {
     "url": "https://github.com/pleaseai/ask/issues"
