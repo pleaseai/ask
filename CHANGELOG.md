@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.11](https://github.com/pleaseai/ask/compare/ask-plugin-v0.4.10...ask-plugin-v0.4.11) (2026-07-02)
+
+
+### Features
+
+* **cli:** port recent opensrc features (fetch command, lockfile parsers, GITHUB_TOKEN auth) ([#117](https://github.com/pleaseai/ask/issues/117)) ([de0e942](https://github.com/pleaseai/ask/commit/de0e942a80fa48d0a9bbf91e1201a3a8a9fcdcd1))
+* **plugin:** WebFetch hook suggesting ask CLI for GitHub and library docs URLs ([#116](https://github.com/pleaseai/ask/issues/116)) ([f4c8057](https://github.com/pleaseai/ask/commit/f4c8057cfb225470f2c6232cb828b99e67accf56))
+
 ## [0.4.10](https://github.com/pleaseai/ask/compare/ask-plugin-v0.4.9...ask-plugin-v0.4.10) (2026-07-01)
 
 

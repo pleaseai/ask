@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.9](https://github.com/pleaseai/ask/compare/ask-v0.4.8...ask-v0.4.9) (2026-07-02)
+
+
+### Features
+
+* **cli:** port recent opensrc features (fetch command, lockfile parsers, GITHUB_TOKEN auth) ([#117](https://github.com/pleaseai/ask/issues/117)) ([de0e942](https://github.com/pleaseai/ask/commit/de0e942a80fa48d0a9bbf91e1201a3a8a9fcdcd1))
+
 ## [0.4.8](https://github.com/pleaseai/ask/compare/ask-v0.4.7...ask-v0.4.8) (2026-07-01)
 
 
