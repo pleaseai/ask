@@ -1,0 +1,33 @@
+{
+  "name": "ask",
+  "version": "0.4.11",
+  "description": "ASK (Agent Skills Kit) — AI agent skills for managing library documentation registry entries",
+  "author": {
+    "name": "Minsu Lee",
+    "url": "https://github.com/amondnet"
+  },
+  "interface": {
+    "displayName": "Ask",
+    "shortDescription": "ASK (Agent Skills Kit) — AI agent skills for managing library documentation registry entries",
+    "longDescription": "ASK (Agent Skills Kit) — AI agent skills for managing library documentation registry entries",
+    "developerName": "Minsu Lee",
+    "category": "Development",
+    "capabilities": [
+      "Skill"
+    ],
+    "defaultPrompt": [
+      "Help me use Ask for my current task."
+    ],
+    "websiteURL": "https://github.com/pleaseai/ask"
+  },
+  "homepage": "https://github.com/pleaseai/ask",
+  "repository": "https://github.com/pleaseai/ask",
+  "license": "MIT",
+  "keywords": [
+    "documentation",
+    "registry",
+    "library",
+    "agent-skills",
+    "ask"
+  ]
+}
