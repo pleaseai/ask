@@ -1,0 +1,28 @@
+.codex-plugin/plugin.json
+  s_00114ff7c26e1f::t_973122f868e97e 1-33
+hooks.json
+  s_00114ff7c26e1f::t_64bc716b5bfdd3 1-16
+plugin.json
+  s_00114ff7c26e1f::t_64bc716b5bfdd3 1-19
+.cursor-plugin/plugin.json
+  s_00114ff7c26e1f::t_64bc716b5bfdd3 1-24
+release-please-config.json
+  s_00114ff7c26e1f::t_81f461b489eace 43-47
+  s_00114ff7c26e1f::t_46c5193da0d91d 48-57
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "60091a11d53f49cf601392f0a4ec70e10f7d004a",
+  "prompts": {},
+  "sessions": {
+    "s_00114ff7c26e1f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "fa1a0cea-e926-4285-9f69-c1ee36399a33",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Minsu Lee <minsu.lee@pleaseai.dev>"
+    }
+  }
+}
