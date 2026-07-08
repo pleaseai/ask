@@ -1,0 +1,16 @@
+{
+  "description": "Suggest ask CLI commands when WebFetch targets GitHub or a known library docs site",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "WebFetch",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"./hooks/fetch-hint.mjs\""
+          }
+        ]
+      }
+    ]
+  }
+}
