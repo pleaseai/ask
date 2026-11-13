@@ -194,6 +194,7 @@ mod tests {
         EnsureCheckoutDeps {
             ask_home: Some(home.to_path_buf()),
             fetcher: None,
+            revalidator: None,
         }
     }
 

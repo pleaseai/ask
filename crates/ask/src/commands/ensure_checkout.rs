@@ -14,7 +14,9 @@ use anyhow::{bail, Result};
 use crate::http::HttpClient;
 use crate::lockfiles::npm_ecosystem_read;
 use crate::resolvers::get_resolver;
-use crate::sources::github::{self, GithubOptions};
+use crate::sources::github::{
+    self, entry_cache_date, report_cache_status, Freshness, GithubOptions, Revalidation,
+};
 use crate::sources::FetchResult;
 use crate::spec::{parse_spec, split_explicit_version, ParsedSpec};
 use crate::store::{github_store_path, resolve_ask_home};
@@ -88,6 +90,33 @@ impl CheckoutFetcher for GithubCheckoutFetcher {
     }
 }
 
+/// The upstream freshness check for a cached checkout, injected so tests stay
+/// offline. The production impl forwards to [`github::revalidate_entry`].
+pub trait CacheRevalidator {
+    fn revalidate(
+        &self,
+        client: &dyn HttpClient,
+        repo: &str,
+        reference: &str,
+        entry_dir: &Path,
+    ) -> Revalidation;
+}
+
+/// Production revalidator: probes the real upstream for branch refs.
+pub struct GithubCacheRevalidator;
+
+impl CacheRevalidator for GithubCacheRevalidator {
+    fn revalidate(
+        &self,
+        client: &dyn HttpClient,
+        repo: &str,
+        reference: &str,
+        entry_dir: &Path,
+    ) -> Revalidation {
+        github::revalidate_entry(client, repo, None, entry_dir, reference)
+    }
+}
+
 /// Test seams — production callers pass [`EnsureCheckoutDeps::default`].
 #[derive(Default)]
 pub struct EnsureCheckoutDeps<'a> {
@@ -95,6 +124,8 @@ pub struct EnsureCheckoutDeps<'a> {
     pub ask_home: Option<PathBuf>,
     /// Override the fetch step (default: [`GithubCheckoutFetcher`]).
     pub fetcher: Option<&'a dyn CheckoutFetcher>,
+    /// Override the cache freshness check (default: [`GithubCacheRevalidator`]).
+    pub revalidator: Option<&'a dyn CacheRevalidator>,
 }
 
 /// Ensure the GitHub checkout for `spec` exists in the store and return its
@@ -108,6 +139,8 @@ pub fn ensure_checkout(
     let ask_home = deps.ask_home.clone().unwrap_or_else(resolve_ask_home);
     let default_fetcher = GithubCheckoutFetcher;
     let fetcher: &dyn CheckoutFetcher = deps.fetcher.unwrap_or(&default_fetcher);
+    let default_revalidator = GithubCacheRevalidator;
+    let revalidator: &dyn CacheRevalidator = deps.revalidator.unwrap_or(&default_revalidator);
 
     // 1. Split @version from the spec, then 2. parse the body.
     let (spec_body, explicit_version) = split_explicit_version(&options.spec);
@@ -197,18 +230,39 @@ pub fn ensure_checkout(
     let checkout_dir =
         github_store_path(&ask_home, DEFAULT_GITHUB_HOST, &owner, &repo, &reference)?;
 
-    // 5. Cache hit short-circuit.
+    // 5. Cache hit short-circuit — unless a branch ref moved upstream (#127).
+    //    A stale entry falls through to the fetch below, which re-probes,
+    //    reports the staleness and atomically replaces the entry.
     if checkout_dir.exists() {
-        return Ok(EnsureCheckoutResult {
-            parsed,
-            owner,
-            repo,
-            reference,
-            resolved_version,
-            checkout_dir,
-            npm_package_name,
-            from_cache: true,
-        });
+        let slug = format!("{owner}/{repo}");
+        let check = if options.no_fetch {
+            None
+        } else {
+            Some(revalidator.revalidate(client, &slug, &reference, &checkout_dir))
+        };
+        let stale = matches!(
+            check.as_ref().map(|c| &c.freshness),
+            Some(Freshness::Stale { .. })
+        );
+        if !stale {
+            match &check {
+                Some(c) => report_cache_status(&slug, &reference, c),
+                None => eprintln!(
+                    "  Using cached {slug}@{reference} from {}",
+                    entry_cache_date(&checkout_dir)
+                ),
+            }
+            return Ok(EnsureCheckoutResult {
+                parsed,
+                owner,
+                repo,
+                reference,
+                resolved_version,
+                checkout_dir,
+                npm_package_name,
+                from_cache: true,
+            });
+        }
     }
 
     // 6. Cache miss + no_fetch → error.
@@ -355,6 +409,7 @@ mod tests {
         let deps = EnsureCheckoutDeps {
             ask_home: Some(home.path().to_path_buf()),
             fetcher: None,
+            revalidator: None,
         };
         let res = ensure_checkout(
             &no_http(),
@@ -370,6 +425,81 @@ mod tests {
         assert!(res.npm_package_name.is_none());
     }
 
+    /// Revalidator stub returning a fixed verdict; offline.
+    struct StubRevalidator(Freshness);
+    impl CacheRevalidator for StubRevalidator {
+        fn revalidate(
+            &self,
+            _client: &dyn HttpClient,
+            _repo: &str,
+            _reference: &str,
+            _entry_dir: &Path,
+        ) -> Revalidation {
+            Revalidation {
+                freshness: self.0.clone(),
+                cached_on: "2026-01-02".into(),
+            }
+        }
+    }
+
+    /// Revalidator that must never run (the `no_fetch` path is network-free).
+    struct PanicRevalidator;
+    impl CacheRevalidator for PanicRevalidator {
+        fn revalidate(
+            &self,
+            _client: &dyn HttpClient,
+            _repo: &str,
+            _reference: &str,
+            _entry_dir: &Path,
+        ) -> Revalidation {
+            panic!("revalidate must not be called under no_fetch");
+        }
+    }
+
+    #[test]
+    fn stale_branch_cache_triggers_fetch_and_no_fetch_skips_revalidation() {
+        let home = tempfile::tempdir().unwrap();
+        let proj = tempfile::tempdir().unwrap();
+        let dir =
+            github_store_path(home.path(), DEFAULT_GITHUB_HOST, "owner", "repo", "main").unwrap();
+        std::fs::create_dir_all(&dir).unwrap();
+
+        let stale = StubRevalidator(Freshness::Stale {
+            cached: None,
+            upstream: "a".repeat(40),
+        });
+        let fetcher = MkdirFetcher {
+            from_store_cache: false,
+        };
+        let deps = EnsureCheckoutDeps {
+            ask_home: Some(home.path().to_path_buf()),
+            fetcher: Some(&fetcher),
+            revalidator: Some(&stale),
+        };
+        let res = ensure_checkout(
+            &no_http(),
+            &opts("github:owner/repo", proj.path(), false),
+            &deps,
+        )
+        .unwrap();
+        assert!(!res.from_cache, "stale entry must go through the fetcher");
+
+        // no_fetch: the cache is returned without any revalidation.
+        let panics = PanicRevalidator;
+        let deps = EnsureCheckoutDeps {
+            ask_home: Some(home.path().to_path_buf()),
+            fetcher: None,
+            revalidator: Some(&panics),
+        };
+        let res = ensure_checkout(
+            &no_http(),
+            &opts("github:owner/repo", proj.path(), true),
+            &deps,
+        )
+        .unwrap();
+        assert!(res.from_cache);
+    }
+
     #[test]
     fn github_bare_spec_defaults_to_main() {
         let home = tempfile::tempdir().unwrap();
@@ -378,9 +508,11 @@ mod tests {
             github_store_path(home.path(), DEFAULT_GITHUB_HOST, "owner", "repo", "main").unwrap();
         std::fs::create_dir_all(&dir).unwrap();
 
+        let fresh = StubRevalidator(Freshness::Fresh);
         let deps = EnsureCheckoutDeps {
             ask_home: Some(home.path().to_path_buf()),
             fetcher: None,
+            revalidator: Some(&fresh),
         };
         let res = ensure_checkout(
             &no_http(),
@@ -400,6 +532,7 @@ mod tests {
         let deps = EnsureCheckoutDeps {
             ask_home: Some(home.path().to_path_buf()),
             fetcher: None,
+            revalidator: None,
         };
         let err = ensure_checkout(
             &no_http(),
@@ -438,6 +571,7 @@ mod tests {
         let deps = EnsureCheckoutDeps {
             ask_home: Some(home.path().to_path_buf()),
             fetcher: None,
+            revalidator: None,
         };
         let res = ensure_checkout(
             &client,
@@ -463,6 +597,7 @@ mod tests {
         let deps = EnsureCheckoutDeps {
             ask_home: Some(home.path().to_path_buf()),
             fetcher: Some(&fetcher),
+            revalidator: None,
         };
         let res = ensure_checkout(
             &no_http(),
@@ -499,6 +634,7 @@ mod tests {
         let deps = EnsureCheckoutDeps {
             ask_home: Some(home.path().to_path_buf()),
             fetcher: None,
+            revalidator: None,
         };
         // Bare `react` (no ecosystem prefix) → npm resolver.
         let res =

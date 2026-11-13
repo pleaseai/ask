@@ -125,6 +125,7 @@ mod tests {
         let deps = EnsureCheckoutDeps {
             ask_home: Some(home.path().to_path_buf()),
             fetcher: None,
+            revalidator: None,
         };
         let groups =
             gather_docs_candidates(&client, "npm:react@18.3.1", proj.path(), &deps).unwrap();
@@ -143,6 +144,7 @@ mod tests {
         let deps = EnsureCheckoutDeps {
             ask_home: Some(home.path().to_path_buf()),
             fetcher: None,
+            revalidator: None,
         };
         let groups =
             gather_docs_candidates(&MockClient::new(), "github:o/r@v1.0.0", proj.path(), &deps)
@@ -158,6 +160,7 @@ mod tests {
         let deps = EnsureCheckoutDeps {
             ask_home: Some(home.path().to_path_buf()),
             fetcher: None,
+            revalidator: None,
         };
         // Uncached github spec, no node_modules → zero groups, no error.
         let groups =

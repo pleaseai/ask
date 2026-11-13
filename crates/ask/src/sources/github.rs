@@ -13,6 +13,8 @@ use std::sync::LazyLock;
 use anyhow::{bail, Result};
 use flate2::read::GzDecoder;
 use regex::Regex;
+use time::format_description::well_known::Rfc3339;
+use time::OffsetDateTime;
 use url::Url;
 
 use super::{extract_docs_from_dir, FetchMeta, FetchResult, GITHUB_DOC_CANDIDATES};
@@ -30,6 +32,11 @@ static RE_SAFE_REPO: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$").unwrap());
 static RE_SAFE_REF: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^[A-Za-z0-9._/@-]+$").unwrap());
 static RE_SHA40: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^[0-9a-f]{40}$").unwrap());
+static RE_VERSION_LIKE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^v?[0-9]").unwrap());
+static RE_SCOPED_VERSION: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"@v?[0-9]").unwrap());
+
+/// Per-entry metadata file written next to the content (covered by `.ask-hash`).
+const ENTRY_META_FILE: &str = ".ask-meta.json";
 
 /// Default-branch fallbacks tried (after `main`) when neither tag nor branch was
 /// given.
@@ -117,6 +124,253 @@ fn has_git() -> bool {
         .status()
         .map(|s| s.success())
         .unwrap_or(false)
+}
+
+// ── Cache revalidation (pleaseai/ask#127) ────────────────────────────
+
+/// Result of asking the remote where a branch currently points.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum HeadProbe {
+    /// `refs/heads/<ref>` exists and points at this commit.
+    Branch(String),
+    /// The remote answered, but the ref is not a branch (a tag, SHA, or absent).
+    NotBranch,
+    /// The remote could not be asked; carries a token-redacted reason.
+    Unknown(String),
+}
+
+/// Whether a cached entry still matches its upstream ref.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Freshness {
+    /// Immutable ref (version tag, SHA, non-branch) — never checked over the network.
+    Pinned,
+    /// Branch head equals the commit recorded when the entry was fetched.
+    Fresh,
+    /// Branch moved (or the entry predates `.ask-meta.json`).
+    Stale {
+        cached: Option<String>,
+        upstream: String,
+    },
+    /// The upstream check failed; the cache is used as-is.
+    Unknown(String),
+}
+
+/// A [`Freshness`] verdict plus the entry's cache date (`YYYY-MM-DD`, UTC).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Revalidation {
+    pub freshness: Freshness,
+    pub cached_on: String,
+}
+
+/// Whether a ref names an immutable release: a 40-hex SHA, a `v?<digit>` tag, or
+/// a scoped monorepo tag containing `@v?<digit>` (`pkg@1.2.3`).
+pub fn looks_pinned(reference: &str) -> bool {
+    RE_SHA40.is_match(reference)
+        || RE_VERSION_LIKE.is_match(reference)
+        || RE_SCOPED_VERSION.is_match(reference)
+}
+
+/// Whether `remote_url` points somewhere other than github.com (so the
+/// GitHub REST API cannot answer for it).
+fn is_custom_remote(remote_url: Option<&str>) -> bool {
+    let Some(url) = remote_url else {
+        return false;
+    };
+    Url::parse(url)
+        .ok()
+        .and_then(|u| u.host_str().map(str::to_ascii_lowercase))
+        .as_deref()
+        != Some(DEFAULT_GITHUB_HOST)
+}
+
+/// Ask the remote where branch `reference` points: `git ls-remote` when git is
+/// available, otherwise the GitHub branches API.
+fn probe_branch_head(
+    client: &dyn HttpClient,
+    repo: &str,
+    remote_url: Option<&str>,
+    reference: &str,
+    token: Option<&str>,
+) -> HeadProbe {
+    if has_git() {
+        let url = remote_url
+            .map(str::to_string)
+            .unwrap_or_else(|| format!("https://github.com/{repo}.git"));
+        let want = format!("refs/heads/{reference}");
+        let output = Command::new("git")
+            .arg("ls-remote")
+            .arg(authenticated_clone_url(&url, token))
+            .arg(&want)
+            .env("GIT_TERMINAL_PROMPT", "0")
+            .stdin(std::process::Stdio::null())
+            .stdout(std::process::Stdio::piped())
+            .stderr(std::process::Stdio::piped())
+            .output();
+        let output = match output {
+            Ok(o) => o,
+            Err(e) => return HeadProbe::Unknown(redact_token(&e.to_string(), token)),
+        };
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            let reason = stderr.lines().next().unwrap_or("git ls-remote failed");
+            return HeadProbe::Unknown(redact_token(reason.trim(), token));
+        }
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        for line in stdout.lines() {
+            let mut parts = line.split_whitespace();
+            if let (Some(sha), Some(name)) = (parts.next(), parts.next()) {
+                if name == want && RE_SHA40.is_match(sha) {
+                    return HeadProbe::Branch(sha.to_string());
+                }
+            }
+        }
+        return HeadProbe::NotBranch;
+    }
+
+    if is_custom_remote(remote_url) {
+        return HeadProbe::Unknown("git is not available for a custom remote".into());
+    }
+    let api_url = format!("https://api.github.com/repos/{repo}/branches/{reference}");
+    let auth = token.map(|t| format!("Bearer {t}"));
+    let headers: Vec<(&str, &str)> = auth
+        .as_deref()
+        .map(|v| vec![("Authorization", v)])
+        .unwrap_or_default();
+    let response = match client.get_bytes(&api_url, &headers) {
+        Ok(r) => r,
+        Err(e) => return HeadProbe::Unknown(redact_token(&e.to_string(), token)),
+    };
+    match response.status {
+        200 => {
+            let sha = serde_json::from_slice::<serde_json::Value>(&response.body)
+                .ok()
+                .and_then(|v| v["commit"]["sha"].as_str().map(str::to_string))
+                .filter(|s| RE_SHA40.is_match(s));
+            match sha {
+                Some(sha) => HeadProbe::Branch(sha),
+                None => HeadProbe::Unknown("unexpected GitHub API response".into()),
+            }
+        }
+        404 => HeadProbe::NotBranch,
+        status => HeadProbe::Unknown(format!("GitHub API returned HTTP {status}")),
+    }
+}
+
+/// Write `.ask-meta.json` (`commit` omitted when unknown) into a store entry.
+/// Must run before `stamp_entry` so the content hash covers it.
+fn write_entry_meta(entry_dir: &Path, commit: Option<&str>) -> Result<()> {
+    let fetched_at = OffsetDateTime::now_utc().format(&Rfc3339)?;
+    let mut meta = serde_json::Map::new();
+    if let Some(c) = commit {
+        meta.insert("commit".into(), c.into());
+    }
+    meta.insert("fetchedAt".into(), fetched_at.into());
+    std::fs::write(
+        entry_dir.join(ENTRY_META_FILE),
+        serde_json::to_string(&meta)?,
+    )?;
+    Ok(())
+}
+
+/// `(commit, fetchedAt)` recorded in an entry's `.ask-meta.json`, if readable.
+fn read_entry_meta(entry_dir: &Path) -> (Option<String>, Option<String>) {
+    let parsed = std::fs::read_to_string(entry_dir.join(ENTRY_META_FILE))
+        .ok()
+        .and_then(|t| serde_json::from_str::<serde_json::Value>(&t).ok());
+    let field = |name: &str| {
+        parsed
+            .as_ref()
+            .and_then(|v| v[name].as_str())
+            .map(str::to_string)
+    };
+    (field("commit"), field("fetchedAt"))
+}
+
+/// The date an entry was cached, `YYYY-MM-DD` in UTC: `fetchedAt` from the meta
+/// file, else the `.ask-hash` mtime, else the entry directory's mtime.
+pub fn entry_cache_date(entry_dir: &Path) -> String {
+    let from_meta = read_entry_meta(entry_dir)
+        .1
+        .and_then(|t| OffsetDateTime::parse(&t, &Rfc3339).ok());
+    let mtime = |p: &Path| {
+        std::fs::metadata(p)
+            .and_then(|m| m.modified())
+            .ok()
+            .map(OffsetDateTime::from)
+    };
+    from_meta
+        .or_else(|| mtime(&entry_dir.join(".ask-hash")))
+        .or_else(|| mtime(entry_dir))
+        .map(|d| {
+            let d = d.to_offset(time::UtcOffset::UTC);
+            format!("{:04}-{:02}-{:02}", d.year(), u8::from(d.month()), d.day())
+        })
+        .unwrap_or_else(|| "an unknown date".to_string())
+}
+
+/// Decide whether a cached entry is still current for `reference`. Pinned refs
+/// and non-branch refs never reach the network beyond the branch probe.
+pub fn revalidate_entry(
+    client: &dyn HttpClient,
+    repo: &str,
+    remote_url: Option<&str>,
+    entry_dir: &Path,
+    reference: &str,
+) -> Revalidation {
+    let cached_on = entry_cache_date(entry_dir);
+    let freshness = if looks_pinned(reference) {
+        Freshness::Pinned
+    } else {
+        match probe_branch_head(
+            client,
+            repo,
+            remote_url,
+            reference,
+            github_token().as_deref(),
+        ) {
+            HeadProbe::NotBranch => Freshness::Pinned,
+            HeadProbe::Unknown(reason) => Freshness::Unknown(reason),
+            HeadProbe::Branch(sha) => {
+                let cached = read_entry_meta(entry_dir).0;
+                if cached.as_deref() == Some(sha.as_str()) {
+                    Freshness::Fresh
+                } else {
+                    Freshness::Stale {
+                        cached,
+                        upstream: sha,
+                    }
+                }
+            }
+        }
+    };
+    Revalidation {
+        freshness,
+        cached_on,
+    }
+}
+
+/// Print the one-line cache status for an entry to stderr.
+pub fn report_cache_status(repo: &str, reference: &str, check: &Revalidation) {
+    let date = &check.cached_on;
+    match &check.freshness {
+        Freshness::Stale { cached, upstream } => {
+            let short = |s: &str| s.chars().take(7).collect::<String>();
+            let old = cached
+                .as_deref()
+                .map(short)
+                .unwrap_or_else(|| "unknown".into());
+            eprintln!(
+                "  Cached {repo}@{reference} from {date} is behind upstream ({old}→{}); re-fetching",
+                short(upstream)
+            );
+        }
+        Freshness::Unknown(reason) => eprintln!(
+            "  Using cached {repo}@{reference} from {date} (could not check upstream: {reason})"
+        ),
+        Freshness::Pinned | Freshness::Fresh => {
+            eprintln!("  Using cached {repo}@{reference} from {date}");
+        }
+    }
 }
 
 /// Remove the contents of `dir` (keeping `dir`) so a failed clone can be retried.
@@ -313,6 +567,19 @@ pub fn fetch(
             continue;
         }
         if verify_entry(&store_dir) {
+            let check = revalidate_entry(
+                client,
+                &opts.repo,
+                opts.remote_url.as_deref(),
+                &store_dir,
+                &candidate,
+            );
+            report_cache_status(&opts.repo, &candidate, &check);
+            if matches!(check.freshness, Freshness::Stale { .. }) {
+                // The branch moved: fall through to the network fetch, which
+                // atomically replaces this entry (no quarantine).
+                break;
+            }
             let files = if opts.skip_doc_extraction {
                 Vec::new()
             } else {
@@ -410,6 +677,7 @@ fn fetch_via_shallow_clone(
             std::fs::create_dir_all(parent)?;
         }
         cp_dir_atomic(tmp.path(), &store_dir)?;
+        write_entry_meta(&store_dir, Some(&commit))?;
         stamp_entry(&store_dir)?;
         drop(lock);
     }
@@ -507,6 +775,22 @@ fn fetch_from_tar_gz(
                 std::fs::create_dir_all(parent)?;
             }
             cp_dir_atomic(&extracted_dir, &store_dir)?;
+            // Record the branch head the archive was cut from (branches only).
+            let head = if looks_pinned(candidate) {
+                None
+            } else {
+                match probe_branch_head(
+                    client,
+                    &opts.repo,
+                    opts.remote_url.as_deref(),
+                    candidate,
+                    token.as_deref(),
+                ) {
+                    HeadProbe::Branch(sha) => Some(sha),
+                    _ => None,
+                }
+            };
+            write_entry_meta(&store_dir, head.as_deref())?;
             stamp_entry(&store_dir)?;
             drop(lock);
         }
@@ -826,6 +1110,129 @@ mod tests {
         let second = fetch(&no_client(), &opts, &ask_home).unwrap();
         assert!(second.from_store_cache);
         assert_eq!(second.files.len(), 1);
+    }
+
+    // ── cache revalidation (pleaseai/ask#127) ────────────────────────
+
+    fn branch_opts(remote: &Path) -> GithubOptions {
+        GithubOptions {
+            name: "r".into(),
+            version: "main".into(),
+            repo: "test/repo".into(),
+            branch: Some("main".into()),
+            docs_path: Some("docs".into()),
+            remote_url: Some(remote.to_string_lossy().into_owned()),
+            ..Default::default()
+        }
+    }
+
+    /// Commit on the local `work` repo (changes `docs/guide.md`, deletes
+    /// `README.md`) and push `main` to the bare remote.
+    fn push_upstream_change(tmp: &Path, remote: &Path) {
+        let work = tmp.join("work");
+        std::fs::write(work.join("docs/guide.md"), "# Guide moved\n").unwrap();
+        git(&["rm", "README.md"], &work);
+        git(&["add", "-A"], &work);
+        git(&["commit", "-m", "move"], &work);
+        git(&["push", remote.to_str().unwrap(), "main"], &work);
+    }
+
+    #[test]
+    fn looks_pinned_recognizes_immutable_refs() {
+        for pinned in [
+            "v1.2.3",
+            "1.2.3",
+            "0123456789abcdef0123456789abcdef01234567",
+            "@tanstack/react-query@5.101.2",
+            "ai@v6.0.0",
+        ] {
+            assert!(looks_pinned(pinned), "{pinned}");
+        }
+        for mutable in [
+            "main",
+            "master",
+            "develop",
+            "feature/x",
+            "vmain",
+            "@scope/pkg",
+        ] {
+            assert!(!looks_pinned(mutable), "{mutable}");
+        }
+    }
+
+    #[test]
+    fn branch_entry_is_refetched_when_upstream_moves() {
+        if !has_git() {
+            return;
+        }
+        let tmp = tempfile::tempdir().unwrap();
+        let remote = create_local_remote(tmp.path());
+        let ask_home = tmp.path().join("ask-home");
+        let opts = branch_opts(&remote);
+        let first = fetch(&no_client(), &opts, &ask_home).unwrap();
+        let entry = first.store_path.clone().unwrap();
+        assert!(entry.join("README.md").exists());
+        let meta = std::fs::read_to_string(entry.join(ENTRY_META_FILE)).unwrap();
+        assert!(meta.contains(first.meta.commit.as_deref().unwrap()));
+
+        push_upstream_change(tmp.path(), &remote);
+        let second = fetch(&no_client(), &opts, &ask_home).unwrap();
+        assert!(!second.from_store_cache);
+        assert_eq!(
+            std::fs::read_to_string(entry.join("docs/guide.md")).unwrap(),
+            "# Guide moved\n"
+        );
+        assert!(!entry.join("README.md").exists(), "deleted file must go");
+        assert!(verify_entry(&entry));
+    }
+
+    #[test]
+    fn branch_entry_with_unchanged_head_hits_the_cache() {
+        if !has_git() {
+            return;
+        }
+        let tmp = tempfile::tempdir().unwrap();
+        let remote = create_local_remote(tmp.path());
+        let ask_home = tmp.path().join("ask-home");
+        let opts = branch_opts(&remote);
+        fetch(&no_client(), &opts, &ask_home).unwrap();
+        let second = fetch(&no_client(), &opts, &ask_home).unwrap();
+        assert!(second.from_store_cache);
+    }
+
+    #[test]
+    fn legacy_branch_entry_without_meta_is_refetched() {
+        if !has_git() {
+            return;
+        }
+        let tmp = tempfile::tempdir().unwrap();
+        let remote = create_local_remote(tmp.path());
+        let ask_home = tmp.path().join("ask-home");
+        let opts = branch_opts(&remote);
+        let first = fetch(&no_client(), &opts, &ask_home).unwrap();
+        let entry = first.store_path.unwrap();
+        std::fs::remove_file(entry.join(ENTRY_META_FILE)).unwrap();
+        stamp_entry(&entry).unwrap();
+        assert!(verify_entry(&entry));
+
+        let second = fetch(&no_client(), &opts, &ask_home).unwrap();
+        assert!(!second.from_store_cache);
+        assert!(entry.join(ENTRY_META_FILE).exists());
+    }
+
+    #[test]
+    fn unreachable_remote_falls_back_to_the_cached_branch_entry() {
+        if !has_git() {
+            return;
+        }
+        let tmp = tempfile::tempdir().unwrap();
+        let remote = create_local_remote(tmp.path());
+        let ask_home = tmp.path().join("ask-home");
+        let opts = branch_opts(&remote);
+        fetch(&no_client(), &opts, &ask_home).unwrap();
+        std::fs::remove_dir_all(&remote).unwrap();
+        let second = fetch(&no_client(), &opts, &ask_home).unwrap();
+        assert!(second.from_store_cache);
     }
 
     #[test]
