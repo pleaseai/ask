@@ -15,7 +15,8 @@ use crate::http::HttpClient;
 use crate::lockfiles::npm_ecosystem_read;
 use crate::resolvers::get_resolver;
 use crate::sources::github::{
-    self, entry_cache_date, report_cache_status, Freshness, GithubOptions, Revalidation,
+    self, cache_notices_enabled, entry_cache_date, report_cache_status, Freshness, GithubOptions,
+    Revalidation,
 };
 use crate::sources::FetchResult;
 use crate::spec::{parse_spec, split_explicit_version, ParsedSpec};
@@ -247,10 +248,11 @@ pub fn ensure_checkout(
         if !stale {
             match &check {
                 Some(c) => report_cache_status(&slug, &reference, c),
-                None => eprintln!(
+                None if cache_notices_enabled() => eprintln!(
                     "  Using cached {slug}@{reference} from {}",
                     entry_cache_date(&checkout_dir)
                 ),
+                None => {}
             }
             return Ok(EnsureCheckoutResult {
                 parsed,

@@ -8,6 +8,7 @@
 use std::io::Cursor;
 use std::path::Path;
 use std::process::Command;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::LazyLock;
 use std::time::{Duration, Instant};
 
@@ -21,8 +22,9 @@ use url::Url;
 use super::{extract_docs_from_dir, FetchMeta, FetchResult, GITHUB_DOC_CANDIDATES};
 use crate::http::HttpClient;
 use crate::store::{
-    acquire_entry_lock, acquire_entry_lock_to_replace, cp_dir_atomic, github_store_path,
-    quarantine_entry, stamp_entry, verify_entry,
+    acquire_entry_lock, acquire_entry_lock_to_replace, cp_dir_atomic, entry_lock_held,
+    entry_lock_path, github_store_path, quarantine_entry, stamp_entry, verify_entry,
+    write_store_file,
 };
 
 const DEFAULT_GITHUB_HOST: &str = "github.com";
@@ -33,8 +35,10 @@ static RE_SAFE_REPO: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$").unwrap());
 static RE_SAFE_REF: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^[A-Za-z0-9._/@-]+$").unwrap());
 static RE_SHA40: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^[0-9a-f]{40}$").unwrap());
-static RE_VERSION_LIKE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^v?[0-9]").unwrap());
-static RE_SCOPED_VERSION: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"@v?[0-9]").unwrap());
+static RE_VERSION_LIKE: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"^v?[0-9]+\.[0-9]+\.[0-9]+([-+][0-9A-Za-z.+-]*)?$").unwrap());
+static RE_SCOPED_VERSION: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"@v?[0-9]+\.[0-9]+\.[0-9]+([-+][0-9A-Za-z.+-]*)?$").unwrap());
 
 /// Per-entry metadata file written next to the content (covered by `.ask-hash`).
 const ENTRY_META_FILE: &str = ".ask-meta.json";
@@ -163,8 +167,10 @@ pub struct Revalidation {
     pub cached_on: String,
 }
 
-/// Whether a ref names an immutable release: a 40-hex SHA, a `v?<digit>` tag, or
-/// a scoped monorepo tag containing `@v?<digit>` (`pkg@1.2.3`).
+/// Whether a ref names an immutable release without asking the remote: a 40-hex
+/// SHA, a full `v?X.Y.Z` version tag, or a scoped monorepo tag (`pkg@1.2.3`).
+/// Shorter version-like names (`12.x`, `7.3`, `7-1-stable`) are often
+/// maintenance branches, so they are probed like any other ref.
 pub fn looks_pinned(reference: &str) -> bool {
     RE_SHA40.is_match(reference)
         || RE_VERSION_LIKE.is_match(reference)
@@ -195,6 +201,13 @@ fn ls_remote_head(url: &str, want: &str, token: Option<&str>, timeout: Duration)
         .arg(authenticated_clone_url(url, token))
         .arg(want)
         .env("GIT_TERMINAL_PROMPT", "0")
+        // Killing `git` leaves its transport helper running; make curl in the
+        // helper give up on a silent server by itself.
+        .env("GIT_HTTP_LOW_SPEED_LIMIT", "1")
+        .env(
+            "GIT_HTTP_LOW_SPEED_TIME",
+            timeout.as_secs().max(1).to_string(),
+        )
         .stdin(std::process::Stdio::null())
         .stdout(std::process::Stdio::piped())
         .stderr(std::process::Stdio::piped())
@@ -203,30 +216,41 @@ fn ls_remote_head(url: &str, want: &str, token: Option<&str>, timeout: Duration)
         Ok(c) => c,
         Err(e) => return HeadProbe::Unknown(redact_token(&e.to_string(), token)),
     };
+    // Drain both pipes while waiting, so a verbose stderr (GIT_TRACE) cannot
+    // fill the pipe and stall git until the timeout.
+    let drain = |pipe: Option<Box<dyn std::io::Read + Send>>| {
+        std::thread::spawn(move || {
+            let mut buf = Vec::new();
+            if let Some(mut p) = pipe {
+                let _ = p.read_to_end(&mut buf);
+            }
+            buf
+        })
+    };
+    let stdout_reader = drain(child.stdout.take().map(|p| Box::new(p) as _));
+    let stderr_reader = drain(child.stderr.take().map(|p| Box::new(p) as _));
     let deadline = Instant::now() + timeout;
-    loop {
+    let status = loop {
         match child.try_wait() {
-            Ok(Some(_)) => break,
+            Ok(Some(status)) => break status,
             Ok(None) if Instant::now() >= deadline => {
                 let _ = child.kill();
                 let _ = child.wait();
+                // The readers are left to finish when the helper exits.
                 return HeadProbe::Unknown(format!("git ls-remote timed out after {timeout:?}"));
             }
             Ok(None) => std::thread::sleep(Duration::from_millis(50)),
             Err(e) => return HeadProbe::Unknown(redact_token(&e.to_string(), token)),
         }
-    }
-    // The output is one line at most, so it never fills the pipe while we poll.
-    let output = match child.wait_with_output() {
-        Ok(o) => o,
-        Err(e) => return HeadProbe::Unknown(redact_token(&e.to_string(), token)),
     };
-    if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr);
+    let stdout = stdout_reader.join().unwrap_or_default();
+    let stderr = stderr_reader.join().unwrap_or_default();
+    if !status.success() {
+        let stderr = String::from_utf8_lossy(&stderr);
         let reason = stderr.lines().next().unwrap_or("git ls-remote failed");
         return HeadProbe::Unknown(redact_token(reason.trim(), token));
     }
-    let stdout = String::from_utf8_lossy(&output.stdout);
+    let stdout = String::from_utf8_lossy(&stdout);
     for line in stdout.lines() {
         let mut parts = line.split_whitespace();
         if let (Some(sha), Some(name)) = (parts.next(), parts.next()) {
@@ -247,8 +271,9 @@ fn lock_store_entry(store_dir: &Path) -> Result<Option<crate::store::EntryLock>>
     let lock = acquire_entry_lock_to_replace(store_dir)?;
     if lock.is_none() {
         eprintln!(
-            "  Warning: another ask process still holds the lock for {}; using the existing entry",
-            store_dir.display()
+            "  Warning: {} is locked by another ask process; using the existing entry. \
+             Remove the lock file if no other ask process is running.",
+            entry_lock_path(store_dir).display()
         );
     }
     Ok(lock)
@@ -309,9 +334,9 @@ fn write_entry_meta(entry_dir: &Path, commit: Option<&str>) -> Result<()> {
         meta.insert("commit".into(), c.into());
     }
     meta.insert("fetchedAt".into(), fetched_at.into());
-    std::fs::write(
-        entry_dir.join(ENTRY_META_FILE),
-        serde_json::to_string(&meta)?,
+    write_store_file(
+        &entry_dir.join(ENTRY_META_FILE),
+        serde_json::to_string(&meta)?.as_bytes(),
     )?;
     Ok(())
 }
@@ -394,7 +419,22 @@ pub fn revalidate_entry(
 }
 
 /// Print the one-line cache status for an entry to stderr.
+static QUIET_CACHE_NOTICES: AtomicBool = AtomicBool::new(false);
+
+/// Silence the per-spec cache lines (`ask fetch --quiet`). Warnings still print.
+pub fn set_quiet_cache_notices(quiet: bool) {
+    QUIET_CACHE_NOTICES.store(quiet, Ordering::Relaxed);
+}
+
+/// Whether the per-spec cache lines should print.
+pub fn cache_notices_enabled() -> bool {
+    !QUIET_CACHE_NOTICES.load(Ordering::Relaxed)
+}
+
 pub fn report_cache_status(repo: &str, reference: &str, check: &Revalidation) {
+    if !cache_notices_enabled() {
+        return;
+    }
     let date = &check.cached_on;
     match &check.freshness {
         Freshness::Stale { cached, upstream } => {
@@ -604,11 +644,17 @@ pub fn fetch(
     };
 
     // Store-hit path: check each candidate key, verify, quarantine on tamper.
+    let mut stale_entry: Option<(String, std::path::PathBuf, String)> = None;
     for candidate in ref_candidates(&reference, &opts.fallback_refs, &tail) {
         let store_dir =
             github_store_path(ask_home, DEFAULT_GITHUB_HOST, owner, repo_name, &candidate)?;
         if !store_dir.exists() {
             continue;
+        }
+        if entry_lock_held(&store_dir) && !verify_entry(&store_dir) {
+            // Another process is publishing this entry and has not stamped it
+            // yet. Do not quarantine its work; the fetch below waits for it.
+            break;
         }
         if verify_entry(&store_dir) {
             let check = revalidate_entry(
@@ -622,38 +668,84 @@ pub fn fetch(
             if matches!(check.freshness, Freshness::Stale { .. }) {
                 // The branch moved: fall through to the network fetch, which
                 // atomically replaces this entry (no quarantine).
+                stale_entry = Some((candidate, store_dir, check.cached_on));
                 break;
             }
-            let files = if opts.skip_doc_extraction {
-                Vec::new()
-            } else {
-                extract_docs_from_dir(
-                    &store_dir,
-                    &opts.repo,
-                    &reference,
-                    opts.docs_path.as_deref(),
-                    GITHUB_DOC_CANDIDATES,
-                )?
-            };
-            return Ok(FetchResult {
-                files,
-                resolved_version,
-                store_path: Some(store_dir),
-                store_subpath: opts.docs_path.clone(),
-                from_store_cache: true,
-                // Report the WINNING candidate, not the requested ref — the
-                // store dir is keyed by the candidate, and slash-containing
-                // tags are encoded in the path, so callers cannot recover
-                // the real ref from the directory basename.
-                meta: FetchMeta {
-                    ref_: Some(candidate),
-                    ..Default::default()
-                },
-            });
+            return store_hit(opts, &reference, resolved_version, store_dir, candidate);
         }
         quarantine_entry(ask_home, &store_dir);
     }
 
+    let fetched = fetch_from_network(
+        client,
+        opts,
+        owner,
+        repo_name,
+        &reference,
+        &resolved_version,
+        ask_home,
+        &tail,
+    );
+    match (fetched, stale_entry) {
+        (Err(e), Some((candidate, store_dir, cached_on))) if verify_entry(&store_dir) => {
+            eprintln!(
+                "  Warning: could not re-fetch {}@{candidate}: {e}. Using the cached entry from {cached_on}.",
+                opts.repo
+            );
+            store_hit(opts, &reference, resolved_version, store_dir, candidate)
+        }
+        (result, _) => result,
+    }
+}
+
+/// The result for a store entry served as-is.
+fn store_hit(
+    opts: &GithubOptions,
+    reference: &str,
+    resolved_version: String,
+    store_dir: std::path::PathBuf,
+    candidate: String,
+) -> Result<FetchResult> {
+    let files = if opts.skip_doc_extraction {
+        Vec::new()
+    } else {
+        extract_docs_from_dir(
+            &store_dir,
+            &opts.repo,
+            reference,
+            opts.docs_path.as_deref(),
+            GITHUB_DOC_CANDIDATES,
+        )?
+    };
+    Ok(FetchResult {
+        files,
+        resolved_version,
+        store_path: Some(store_dir),
+        store_subpath: opts.docs_path.clone(),
+        from_store_cache: true,
+        // Report the WINNING candidate, not the requested ref — the
+        // store dir is keyed by the candidate, and slash-containing
+        // tags are encoded in the path, so callers cannot recover
+        // the real ref from the directory basename.
+        meta: FetchMeta {
+            ref_: Some(candidate),
+            ..Default::default()
+        },
+    })
+}
+
+/// Shallow clone when git is available, falling back to the tarball.
+#[allow(clippy::too_many_arguments)]
+fn fetch_from_network(
+    client: &dyn HttpClient,
+    opts: &GithubOptions,
+    owner: &str,
+    repo_name: &str,
+    reference: &str,
+    resolved_version: &str,
+    ask_home: &Path,
+    tail: &[String],
+) -> Result<FetchResult> {
     let remote_url = opts
         .remote_url
         .clone()
@@ -664,11 +756,11 @@ pub fn fetch(
             opts,
             owner,
             repo_name,
-            &reference,
-            &resolved_version,
+            reference,
+            resolved_version,
             &remote_url,
             ask_home,
-            &tail,
+            tail,
         ) {
             Ok(result) => return Ok(result),
             Err(e) => {
@@ -685,10 +777,10 @@ pub fn fetch(
         opts,
         owner,
         repo_name,
-        &reference,
-        &resolved_version,
+        reference,
+        resolved_version,
         ask_home,
-        &tail,
+        tail,
     )
 }
 
@@ -716,15 +808,20 @@ fn fetch_via_shallow_clone(
     )?;
     let store_dir = github_store_path(ask_home, DEFAULT_GITHUB_HOST, owner, repo_name, &winning)?;
 
-    if let Some(lock) = lock_store_entry(&store_dir)? {
-        if let Some(parent) = store_dir.parent() {
-            std::fs::create_dir_all(parent)?;
+    // Without the lock the entry on disk is another process's, not this clone.
+    let wrote = match lock_store_entry(&store_dir)? {
+        Some(lock) => {
+            if let Some(parent) = store_dir.parent() {
+                std::fs::create_dir_all(parent)?;
+            }
+            cp_dir_atomic(tmp.path(), &store_dir)?;
+            write_entry_meta(&store_dir, Some(&commit))?;
+            stamp_entry(&store_dir)?;
+            drop(lock);
+            true
         }
-        cp_dir_atomic(tmp.path(), &store_dir)?;
-        write_entry_meta(&store_dir, Some(&commit))?;
-        stamp_entry(&store_dir)?;
-        drop(lock);
-    }
+        None => false,
+    };
 
     let files = if opts.skip_doc_extraction {
         Vec::new()
@@ -742,9 +839,9 @@ fn fetch_via_shallow_clone(
         resolved_version: resolved_version.to_string(),
         store_path: Some(store_dir),
         store_subpath: opts.docs_path.clone(),
-        from_store_cache: false,
+        from_store_cache: !wrote,
         meta: FetchMeta {
-            commit: Some(commit),
+            commit: wrote.then_some(commit),
             ref_: Some(winning),
             ..Default::default()
         },
@@ -768,6 +865,23 @@ fn fetch_from_tar_gz(
     let mut last_err = String::from("no candidates");
 
     for candidate in &candidates {
+        // Read the branch head BEFORE downloading: if the branch moves in
+        // between, the recorded commit is older than the archive and the next
+        // revalidation re-fetches, instead of marking old content fresh.
+        let head = if looks_pinned(candidate) {
+            None
+        } else {
+            match probe_branch_head(
+                client,
+                &opts.repo,
+                opts.remote_url.as_deref(),
+                candidate,
+                token.as_deref(),
+            ) {
+                HeadProbe::Branch(sha) => Some(sha),
+                _ => None,
+            }
+        };
         let is_tag_candidate = opts.tag.is_some() && !tail.iter().any(|t| t == candidate);
         let archive_url = if token.is_some() {
             format!(
@@ -814,30 +928,19 @@ fn fetch_from_tar_gz(
 
         let store_dir =
             github_store_path(ask_home, DEFAULT_GITHUB_HOST, owner, repo_name, candidate)?;
-        if let Some(lock) = lock_store_entry(&store_dir)? {
-            if let Some(parent) = store_dir.parent() {
-                std::fs::create_dir_all(parent)?;
-            }
-            cp_dir_atomic(&extracted_dir, &store_dir)?;
-            // Record the branch head the archive was cut from (branches only).
-            let head = if looks_pinned(candidate) {
-                None
-            } else {
-                match probe_branch_head(
-                    client,
-                    &opts.repo,
-                    opts.remote_url.as_deref(),
-                    candidate,
-                    token.as_deref(),
-                ) {
-                    HeadProbe::Branch(sha) => Some(sha),
-                    _ => None,
+        let wrote = match lock_store_entry(&store_dir)? {
+            Some(lock) => {
+                if let Some(parent) = store_dir.parent() {
+                    std::fs::create_dir_all(parent)?;
                 }
-            };
-            write_entry_meta(&store_dir, head.as_deref())?;
-            stamp_entry(&store_dir)?;
-            drop(lock);
-        }
+                cp_dir_atomic(&extracted_dir, &store_dir)?;
+                write_entry_meta(&store_dir, head.as_deref())?;
+                stamp_entry(&store_dir)?;
+                drop(lock);
+                true
+            }
+            None => false,
+        };
 
         let files = if opts.skip_doc_extraction {
             Vec::new()
@@ -855,7 +958,7 @@ fn fetch_from_tar_gz(
             resolved_version: resolved_version.to_string(),
             store_path: Some(store_dir),
             store_subpath: opts.docs_path.clone(),
-            from_store_cache: false,
+            from_store_cache: !wrote,
             meta: FetchMeta {
                 ref_: Some(candidate.clone()),
                 ..Default::default()
@@ -1199,6 +1302,10 @@ mod tests {
             "feature/x",
             "vmain",
             "@scope/pkg",
+            "12.x",
+            "7.3",
+            "v20.x",
+            "7-1-stable",
         ] {
             assert!(!looks_pinned(mutable), "{mutable}");
         }
@@ -1206,7 +1313,11 @@ mod tests {
 
     #[test]
     fn ls_remote_gives_up_on_a_remote_that_never_answers() {
-        if !has_git() {
+        // A proxy answers (or refuses) on the silent server's behalf.
+        let proxied = ["http_proxy", "HTTP_PROXY", "all_proxy", "ALL_PROXY"]
+            .iter()
+            .any(|k| std::env::var_os(k).is_some_and(|v| !v.is_empty()));
+        if !has_git() || proxied {
             return;
         }
         // The kernel accepts the connection into the backlog; nothing replies.
@@ -1295,6 +1406,78 @@ mod tests {
         std::fs::remove_dir_all(&remote).unwrap();
         let second = fetch(&no_client(), &opts, &ask_home).unwrap();
         assert!(second.from_store_cache);
+    }
+
+    #[test]
+    fn failed_refresh_falls_back_to_the_stale_entry() {
+        if !has_git() {
+            return;
+        }
+        let tmp = tempfile::tempdir().unwrap();
+        let remote = create_local_remote(tmp.path());
+        let ask_home = tmp.path().join("ask-home");
+        let opts = branch_opts(&remote);
+        let first = fetch(&no_client(), &opts, &ask_home).unwrap();
+        let entry = first.store_path.unwrap();
+
+        // The head moves, but its objects are gone: ls-remote still answers,
+        // the clone fails, and `no_client` fails the tarball fallback.
+        push_upstream_change(tmp.path(), &remote);
+        let objects = remote.join("objects");
+        std::fs::remove_dir_all(&objects).unwrap();
+        std::fs::create_dir_all(objects.join("info")).unwrap();
+        std::fs::create_dir_all(objects.join("pack")).unwrap();
+
+        let second = fetch(&no_client(), &opts, &ask_home).unwrap();
+        assert!(second.from_store_cache);
+        assert!(entry.join("README.md").exists());
+    }
+
+    #[test]
+    fn unstamped_entry_under_a_live_lock_is_not_quarantined() {
+        if !has_git() {
+            return;
+        }
+        let tmp = tempfile::tempdir().unwrap();
+        let remote = create_local_remote(tmp.path());
+        let ask_home = tmp.path().join("ask-home");
+        let opts = branch_opts(&remote);
+        let entry = fetch(&no_client(), &opts, &ask_home)
+            .unwrap()
+            .store_path
+            .unwrap();
+
+        // Simulate another writer mid-publish: entry swapped in, not stamped.
+        std::fs::remove_file(entry.join(".ask-hash")).unwrap();
+        let lock = entry_lock_path(&entry);
+        std::fs::File::create(&lock).unwrap();
+        let writer = std::thread::spawn(move || {
+            std::thread::sleep(Duration::from_millis(300));
+            std::fs::remove_file(lock).unwrap();
+        });
+
+        let result = fetch(&no_client(), &opts, &ask_home).unwrap();
+        writer.join().unwrap();
+        assert!(!result.from_store_cache);
+        assert!(!ask_home.join(".quarantine").exists());
+        assert!(verify_entry(&entry));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn entry_meta_replaces_a_symlink_instead_of_following_it() {
+        let tmp = tempfile::tempdir().unwrap();
+        let outside = tmp.path().join("outside.txt");
+        std::fs::write(&outside, "keep").unwrap();
+        let entry = tmp.path().join("entry");
+        std::fs::create_dir_all(&entry).unwrap();
+        std::os::unix::fs::symlink(&outside, entry.join(ENTRY_META_FILE)).unwrap();
+
+        write_entry_meta(&entry, Some("0123456789abcdef0123456789abcdef01234567")).unwrap();
+
+        assert_eq!(std::fs::read_to_string(&outside).unwrap(), "keep");
+        let meta = std::fs::symlink_metadata(entry.join(ENTRY_META_FILE)).unwrap();
+        assert!(meta.file_type().is_file());
     }
 
     #[test]

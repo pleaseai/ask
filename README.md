@@ -190,14 +190,15 @@ cache hit. They share the same
 the prefetch counterpart for setup scripts — it also warms the cache
 that `ask add`'s offline-first docs-path prompt reads from.
 
-A cache hit on a branch ref (`main`, `master`, …) is checked against the
-branch's current head first, with `git ls-remote` or the GitHub API, and
-re-fetched when the branch has moved. Tags, versions, and full commit SHAs
-are reused without a network check. Every cache hit prints the date the
-entry was fetched to stderr, for example
-`Using cached vercel/next.js@canary from 2026-11-13`. When the remote
-cannot be reached, the cached entry is used and the reason is printed
-alongside the date.
+A cache hit on a branch ref (`main`, `master`, `12.x`, …) is checked
+against the branch's current head first, with `git ls-remote` or the GitHub
+API, and re-fetched when the branch has moved. Full version tags
+(`v1.2.3`, `pkg@1.2.3`) and commit SHAs are reused without a network check,
+and any other ref that turns out not to be a branch upstream is reused as
+well. Every cache hit prints the date the entry was fetched to stderr, for
+example `Using cached vercel/next.js@canary from 2026-11-13`
+(`ask fetch -q` omits it). When the remote cannot be reached or the
+re-fetch fails, the cached entry is used and the reason is printed.
 
 Private GitHub repositories are supported by setting `GITHUB_TOKEN` in
 the environment; the token is attached only to exact `https://github.com`
