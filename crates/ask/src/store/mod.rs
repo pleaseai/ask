@@ -117,6 +117,33 @@ pub fn cp_dir_atomic(source_dir: &Path, target_dir: &Path) -> anyhow::Result<()>
     result
 }
 
+/// Like [`cp_dir_atomic`], but the copy is finished before it becomes visible:
+/// `prepare` adds ask's own files to it and it is stamped, then swapped in. A
+/// reader therefore never sees an unstamped entry and never quarantines a
+/// publication in progress. The copy is a sibling of `target_dir`, so relative
+/// symlinks resolve the same way and the stamp still matches after the swap.
+pub fn publish_entry(
+    source_dir: &Path,
+    target_dir: &Path,
+    prepare: impl FnOnce(&Path) -> anyhow::Result<()>,
+) -> anyhow::Result<()> {
+    let tmp_dir = sibling(target_dir, ".tmp-");
+    if let Some(parent) = tmp_dir.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    let result = (|| -> anyhow::Result<()> {
+        copy_tree_verbatim(source_dir, source_dir, &tmp_dir)?;
+        prepare(&tmp_dir)?;
+        stamp_entry(&tmp_dir)?;
+        atomic_swap(&tmp_dir, target_dir)?;
+        Ok(())
+    })();
+    if result.is_err() {
+        let _ = std::fs::remove_dir_all(&tmp_dir);
+    }
+    result
+}
+
 /// Recursively copy `src` into `dst`, copying symlinks as symlinks (verbatim
 /// target) rather than following them.
 fn copy_tree_verbatim(root: &Path, src: &Path, dst: &Path) -> anyhow::Result<()> {
@@ -235,8 +262,9 @@ fn lock_abandoned(lock: &std::fs::Metadata) -> bool {
 
 /// Like [`acquire_entry_lock`], but for replacing an entry that already
 /// exists: an existing target does not mean the holder is done, so wait for
-/// the lock itself. Returns `Ok(None)`, leaving the existing entry in place,
-/// on timeout or at once when the lock was abandoned by a killed process.
+/// the lock itself. A lock older than the lock timeout was left by a killed
+/// process and is taken over. Returns `Ok(None)`, leaving the existing entry
+/// in place, only on timeout.
 pub fn acquire_entry_lock_to_replace(entry_dir: &Path) -> anyhow::Result<Option<EntryLock>> {
     acquire_lock(entry_dir, true, LOCK_TIMEOUT)
 }
@@ -267,11 +295,12 @@ fn acquire_lock(
                 if !replacing && entry_dir.exists() {
                     return Ok(None);
                 }
-                if replacing
-                    && entry_dir.exists()
-                    && std::fs::metadata(&lock_path).is_ok_and(|m| lock_abandoned(&m))
-                {
-                    return Ok(None);
+                if replacing && std::fs::metadata(&lock_path).is_ok_and(|m| lock_abandoned(&m)) {
+                    // Entries are published fully stamped (`publish_entry`), so
+                    // even a slow live writer that loses its lock here cannot
+                    // leave a corrupt entry behind.
+                    let _ = std::fs::remove_file(&lock_path);
+                    continue;
                 }
                 if Instant::now() >= deadline {
                     if replacing && entry_dir.exists() {
@@ -295,8 +324,12 @@ fn acquire_lock(
 
 /// Compute and record a content hash for a finalized entry (`.ask-hash`).
 pub fn stamp_entry(entry_dir: &Path) -> anyhow::Result<String> {
+    // Clear the reserved path first, so a `.ask-hash` directory in the fetched
+    // tree is not hashed and then deleted.
+    let hash_path = entry_dir.join(HASH_FILE);
+    remove_store_path(&hash_path)?;
     let hash = hash_dir(entry_dir)?;
-    write_store_file(&entry_dir.join(HASH_FILE), hash.as_bytes())?;
+    std::fs::write(&hash_path, &hash)?;
     Ok(hash)
 }
 
@@ -304,13 +337,18 @@ pub fn stamp_entry(entry_dir: &Path) -> anyhow::Result<String> {
 /// at that path (a symlink in particular) is removed first, so the write can
 /// never follow a link out of the store.
 pub fn write_store_file(path: &Path, contents: &[u8]) -> std::io::Result<()> {
-    match std::fs::symlink_metadata(path) {
-        Ok(m) if m.is_dir() => std::fs::remove_dir_all(path)?,
-        Ok(_) => std::fs::remove_file(path)?,
-        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
-        Err(e) => return Err(e),
-    }
+    remove_store_path(path)?;
     std::fs::write(path, contents)
+}
+
+/// Remove whatever is at `path` without following a symlink.
+fn remove_store_path(path: &Path) -> std::io::Result<()> {
+    match std::fs::symlink_metadata(path) {
+        Ok(m) if m.is_dir() => std::fs::remove_dir_all(path),
+        Ok(_) => std::fs::remove_file(path),
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(()),
+        Err(e) => Err(e),
+    }
 }
 
 /// Whether an entry's recorded `.ask-hash` matches its recomputed hash.
@@ -524,7 +562,7 @@ mod tests {
     }
 
     #[test]
-    fn replacing_does_not_wait_for_an_abandoned_lock() {
+    fn replacing_takes_over_an_abandoned_lock() {
         let dir = tempfile::tempdir().unwrap();
         let entry = dir.path().join("e");
         std::fs::create_dir_all(&entry).unwrap();
@@ -533,10 +571,47 @@ mod tests {
             .unwrap();
         assert!(!entry_lock_held(&entry));
         let started = Instant::now();
-        assert!(acquire_lock(&entry, true, Duration::from_secs(10))
-            .unwrap()
-            .is_none());
+        let taken = acquire_lock(&entry, true, Duration::from_secs(10)).unwrap();
+        assert!(taken.is_some());
+        assert!(entry_lock_held(&entry));
         assert!(started.elapsed() < Duration::from_secs(2));
+    }
+
+    #[test]
+    fn published_entry_is_stamped_before_it_replaces_the_old_one() {
+        let dir = tempfile::tempdir().unwrap();
+        let target = dir.path().join("e");
+        std::fs::create_dir_all(&target).unwrap();
+        std::fs::write(target.join("old.txt"), "old").unwrap();
+        stamp_entry(&target).unwrap();
+        let src = dir.path().join("src");
+        std::fs::create_dir_all(&src).unwrap();
+        std::fs::write(src.join("new.txt"), "new").unwrap();
+
+        publish_entry(&src, &target, |staged| {
+            // Still the old, valid entry while the new one is prepared.
+            assert!(target.join("old.txt").exists());
+            assert!(verify_entry(&target));
+            std::fs::write(staged.join(".ask-meta.json"), "{}")?;
+            Ok(())
+        })
+        .unwrap();
+
+        assert!(target.join("new.txt").exists());
+        assert!(target.join(".ask-meta.json").exists());
+        assert!(!target.join("old.txt").exists());
+        assert!(verify_entry(&target));
+    }
+
+    #[test]
+    fn stamping_ignores_a_hash_directory_from_the_fetched_tree() {
+        let dir = tempfile::tempdir().unwrap();
+        let entry = dir.path().join("e");
+        std::fs::create_dir_all(entry.join(HASH_FILE)).unwrap();
+        std::fs::write(entry.join(HASH_FILE).join("x"), "x").unwrap();
+        std::fs::write(entry.join("a.txt"), "a").unwrap();
+        stamp_entry(&entry).unwrap();
+        assert!(verify_entry(&entry));
     }
 
     #[cfg(unix)]

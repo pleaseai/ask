@@ -22,9 +22,8 @@ use url::Url;
 use super::{extract_docs_from_dir, FetchMeta, FetchResult, GITHUB_DOC_CANDIDATES};
 use crate::http::HttpClient;
 use crate::store::{
-    acquire_entry_lock, acquire_entry_lock_to_replace, cp_dir_atomic, entry_lock_held,
-    entry_lock_path, github_store_path, quarantine_entry, stamp_entry, verify_entry,
-    write_store_file,
+    acquire_entry_lock, acquire_entry_lock_to_replace, entry_lock_held, entry_lock_path,
+    github_store_path, publish_entry, quarantine_entry, verify_entry, write_store_file,
 };
 
 const DEFAULT_GITHUB_HOST: &str = "github.com";
@@ -270,6 +269,13 @@ fn lock_store_entry(store_dir: &Path) -> Result<Option<crate::store::EntryLock>>
     }
     let lock = acquire_entry_lock_to_replace(store_dir)?;
     if lock.is_none() {
+        if !verify_entry(store_dir) {
+            bail!(
+                "{} is locked by another ask process and its entry does not verify. \
+                 Remove the lock file if no other ask process is running.",
+                entry_lock_path(store_dir).display()
+            );
+        }
         eprintln!(
             "  Warning: {} is locked by another ask process; using the existing entry. \
              Remove the lock file if no other ask process is running.",
@@ -814,9 +820,9 @@ fn fetch_via_shallow_clone(
             if let Some(parent) = store_dir.parent() {
                 std::fs::create_dir_all(parent)?;
             }
-            cp_dir_atomic(tmp.path(), &store_dir)?;
-            write_entry_meta(&store_dir, Some(&commit))?;
-            stamp_entry(&store_dir)?;
+            publish_entry(tmp.path(), &store_dir, |staged| {
+                write_entry_meta(staged, Some(&commit))
+            })?;
             drop(lock);
             true
         }
@@ -933,9 +939,9 @@ fn fetch_from_tar_gz(
                 if let Some(parent) = store_dir.parent() {
                     std::fs::create_dir_all(parent)?;
                 }
-                cp_dir_atomic(&extracted_dir, &store_dir)?;
-                write_entry_meta(&store_dir, head.as_deref())?;
-                stamp_entry(&store_dir)?;
+                publish_entry(&extracted_dir, &store_dir, |staged| {
+                    write_entry_meta(staged, head.as_deref())
+                })?;
                 drop(lock);
                 true
             }
@@ -983,6 +989,7 @@ fn unpack_tar_gz(bytes: &[u8], dest: &Path) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::store::stamp_entry;
 
     const TOKEN: &str = "ghp_test_token";
 
