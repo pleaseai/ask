@@ -208,6 +208,22 @@ impl Drop for EntryLock {
 /// waiting (another process finished the write — treat as a hit). Errors on
 /// timeout without deleting the live lock.
 pub fn acquire_entry_lock(entry_dir: &Path) -> anyhow::Result<Option<EntryLock>> {
+    acquire_lock(entry_dir, false, LOCK_TIMEOUT)
+}
+
+/// Like [`acquire_entry_lock`], but for replacing an entry that already
+/// exists: an existing target does not mean the holder is done, so wait for
+/// the lock itself. Returns `Ok(None)` only on timeout, leaving the existing
+/// entry in place.
+pub fn acquire_entry_lock_to_replace(entry_dir: &Path) -> anyhow::Result<Option<EntryLock>> {
+    acquire_lock(entry_dir, true, LOCK_TIMEOUT)
+}
+
+fn acquire_lock(
+    entry_dir: &Path,
+    replacing: bool,
+    timeout: Duration,
+) -> anyhow::Result<Option<EntryLock>> {
     let lock_path = {
         let name = entry_dir
             .file_name()
@@ -219,7 +235,7 @@ pub fn acquire_entry_lock(entry_dir: &Path) -> anyhow::Result<Option<EntryLock>>
         std::fs::create_dir_all(parent)?;
     }
 
-    let deadline = Instant::now() + LOCK_TIMEOUT;
+    let deadline = Instant::now() + timeout;
     let mut delay = LOCK_INITIAL_DELAY;
 
     loop {
@@ -232,10 +248,13 @@ pub fn acquire_entry_lock(entry_dir: &Path) -> anyhow::Result<Option<EntryLock>>
             Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {
                 // Held elsewhere. If the target now exists, another process
                 // finished — treat as a store hit.
-                if entry_dir.exists() {
+                if !replacing && entry_dir.exists() {
                     return Ok(None);
                 }
                 if Instant::now() >= deadline {
+                    if replacing && entry_dir.exists() {
+                        return Ok(None);
+                    }
                     anyhow::bail!(
                         "Timed out waiting for lock: {}. Another ask install may be in progress. \
                          If no other process is running, remove it manually.",
@@ -436,6 +455,37 @@ mod tests {
             .open(dir.path().join("e.lock"))
             .unwrap();
         assert!(acquire_entry_lock(&entry).unwrap().is_none());
+    }
+
+    #[test]
+    fn replacing_waits_for_the_holder_even_when_the_entry_exists() {
+        let dir = tempfile::tempdir().unwrap();
+        let entry = dir.path().join("e");
+        std::fs::create_dir_all(&entry).unwrap();
+        let lock_path = dir.path().join("e.lock");
+        std::fs::File::create(&lock_path).unwrap();
+
+        let releaser = {
+            let lock_path = lock_path.clone();
+            std::thread::spawn(move || {
+                std::thread::sleep(Duration::from_millis(300));
+                std::fs::remove_file(lock_path).unwrap();
+            })
+        };
+        let lock = acquire_lock(&entry, true, Duration::from_secs(10)).unwrap();
+        releaser.join().unwrap();
+        assert!(lock.is_some());
+        assert!(lock_path.exists());
+    }
+
+    #[test]
+    fn replacing_keeps_the_existing_entry_when_the_lock_never_frees() {
+        let dir = tempfile::tempdir().unwrap();
+        let entry = dir.path().join("e");
+        std::fs::create_dir_all(&entry).unwrap();
+        std::fs::File::create(dir.path().join("e.lock")).unwrap();
+        let lock = acquire_lock(&entry, true, Duration::from_millis(200)).unwrap();
+        assert!(lock.is_none());
     }
 
     #[test]

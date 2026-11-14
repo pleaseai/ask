@@ -9,6 +9,7 @@ use std::io::Cursor;
 use std::path::Path;
 use std::process::Command;
 use std::sync::LazyLock;
+use std::time::{Duration, Instant};
 
 use anyhow::{bail, Result};
 use flate2::read::GzDecoder;
@@ -20,8 +21,8 @@ use url::Url;
 use super::{extract_docs_from_dir, FetchMeta, FetchResult, GITHUB_DOC_CANDIDATES};
 use crate::http::HttpClient;
 use crate::store::{
-    acquire_entry_lock, cp_dir_atomic, github_store_path, quarantine_entry, stamp_entry,
-    verify_entry,
+    acquire_entry_lock, acquire_entry_lock_to_replace, cp_dir_atomic, github_store_path,
+    quarantine_entry, stamp_entry, verify_entry,
 };
 
 const DEFAULT_GITHUB_HOST: &str = "github.com";
@@ -183,6 +184,76 @@ fn is_custom_remote(remote_url: Option<&str>) -> bool {
         != Some(DEFAULT_GITHUB_HOST)
 }
 
+/// Upper bound for the freshness probe, matching the HTTP client's timeout.
+const LS_REMOTE_TIMEOUT: Duration = Duration::from_secs(10);
+
+/// Run `git ls-remote <url> <want>` and kill it after `timeout`, so a remote
+/// that accepts the connection but never answers cannot stall a cache hit.
+fn ls_remote_head(url: &str, want: &str, token: Option<&str>, timeout: Duration) -> HeadProbe {
+    let spawned = Command::new("git")
+        .arg("ls-remote")
+        .arg(authenticated_clone_url(url, token))
+        .arg(want)
+        .env("GIT_TERMINAL_PROMPT", "0")
+        .stdin(std::process::Stdio::null())
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped())
+        .spawn();
+    let mut child = match spawned {
+        Ok(c) => c,
+        Err(e) => return HeadProbe::Unknown(redact_token(&e.to_string(), token)),
+    };
+    let deadline = Instant::now() + timeout;
+    loop {
+        match child.try_wait() {
+            Ok(Some(_)) => break,
+            Ok(None) if Instant::now() >= deadline => {
+                let _ = child.kill();
+                let _ = child.wait();
+                return HeadProbe::Unknown(format!("git ls-remote timed out after {timeout:?}"));
+            }
+            Ok(None) => std::thread::sleep(Duration::from_millis(50)),
+            Err(e) => return HeadProbe::Unknown(redact_token(&e.to_string(), token)),
+        }
+    }
+    // The output is one line at most, so it never fills the pipe while we poll.
+    let output = match child.wait_with_output() {
+        Ok(o) => o,
+        Err(e) => return HeadProbe::Unknown(redact_token(&e.to_string(), token)),
+    };
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        let reason = stderr.lines().next().unwrap_or("git ls-remote failed");
+        return HeadProbe::Unknown(redact_token(reason.trim(), token));
+    }
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    for line in stdout.lines() {
+        let mut parts = line.split_whitespace();
+        if let (Some(sha), Some(name)) = (parts.next(), parts.next()) {
+            if name == want && RE_SHA40.is_match(sha) {
+                return HeadProbe::Branch(sha.to_string());
+            }
+        }
+    }
+    HeadProbe::NotBranch
+}
+
+/// Take the store lock for `store_dir`. An entry that already exists is being
+/// refreshed, so wait for any other writer instead of reusing its old content.
+fn lock_store_entry(store_dir: &Path) -> Result<Option<crate::store::EntryLock>> {
+    if !store_dir.exists() {
+        return acquire_entry_lock(store_dir);
+    }
+    let lock = acquire_entry_lock_to_replace(store_dir)?;
+    if lock.is_none() {
+        eprintln!(
+            "  Warning: another ask process still holds the lock for {}; using the existing entry",
+            store_dir.display()
+        );
+    }
+    Ok(lock)
+}
+
 /// Ask the remote where branch `reference` points: `git ls-remote` when git is
 /// available, otherwise the GitHub branches API.
 fn probe_branch_head(
@@ -197,34 +268,7 @@ fn probe_branch_head(
             .map(str::to_string)
             .unwrap_or_else(|| format!("https://github.com/{repo}.git"));
         let want = format!("refs/heads/{reference}");
-        let output = Command::new("git")
-            .arg("ls-remote")
-            .arg(authenticated_clone_url(&url, token))
-            .arg(&want)
-            .env("GIT_TERMINAL_PROMPT", "0")
-            .stdin(std::process::Stdio::null())
-            .stdout(std::process::Stdio::piped())
-            .stderr(std::process::Stdio::piped())
-            .output();
-        let output = match output {
-            Ok(o) => o,
-            Err(e) => return HeadProbe::Unknown(redact_token(&e.to_string(), token)),
-        };
-        if !output.status.success() {
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            let reason = stderr.lines().next().unwrap_or("git ls-remote failed");
-            return HeadProbe::Unknown(redact_token(reason.trim(), token));
-        }
-        let stdout = String::from_utf8_lossy(&output.stdout);
-        for line in stdout.lines() {
-            let mut parts = line.split_whitespace();
-            if let (Some(sha), Some(name)) = (parts.next(), parts.next()) {
-                if name == want && RE_SHA40.is_match(sha) {
-                    return HeadProbe::Branch(sha.to_string());
-                }
-            }
-        }
-        return HeadProbe::NotBranch;
+        return ls_remote_head(&url, &want, token, LS_REMOTE_TIMEOUT);
     }
 
     if is_custom_remote(remote_url) {
@@ -672,7 +716,7 @@ fn fetch_via_shallow_clone(
     )?;
     let store_dir = github_store_path(ask_home, DEFAULT_GITHUB_HOST, owner, repo_name, &winning)?;
 
-    if let Some(lock) = acquire_entry_lock(&store_dir)? {
+    if let Some(lock) = lock_store_entry(&store_dir)? {
         if let Some(parent) = store_dir.parent() {
             std::fs::create_dir_all(parent)?;
         }
@@ -770,7 +814,7 @@ fn fetch_from_tar_gz(
 
         let store_dir =
             github_store_path(ask_home, DEFAULT_GITHUB_HOST, owner, repo_name, candidate)?;
-        if let Some(lock) = acquire_entry_lock(&store_dir)? {
+        if let Some(lock) = lock_store_entry(&store_dir)? {
             if let Some(parent) = store_dir.parent() {
                 std::fs::create_dir_all(parent)?;
             }
@@ -1158,6 +1202,24 @@ mod tests {
         ] {
             assert!(!looks_pinned(mutable), "{mutable}");
         }
+    }
+
+    #[test]
+    fn ls_remote_gives_up_on_a_remote_that_never_answers() {
+        if !has_git() {
+            return;
+        }
+        // The kernel accepts the connection into the backlog; nothing replies.
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let url = format!("http://{}/silent.git", listener.local_addr().unwrap());
+        let started = Instant::now();
+        let probe = ls_remote_head(&url, "refs/heads/main", None, Duration::from_millis(500));
+        assert!(
+            matches!(&probe, HeadProbe::Unknown(reason) if reason.contains("timed out")),
+            "{probe:?}"
+        );
+        assert!(started.elapsed() < Duration::from_secs(5));
+        drop(listener);
     }
 
     #[test]
