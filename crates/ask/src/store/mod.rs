@@ -52,9 +52,9 @@ fn atomic_swap(tmp_dir: &Path, target: &Path) -> std::io::Result<()> {
         let backup = sibling(target, ".bak-");
         std::fs::rename(target, &backup)?;
         if let Err(e) = std::fs::rename(tmp_dir, target) {
-            // Restoring fails only when another publisher already put its own
-            // (stamped) entry here; then the backup is just garbage.
-            if std::fs::rename(&backup, target).is_err() {
+            // If another publisher already put its own (stamped) entry here,
+            // the backup is garbage. Any other restore failure keeps it.
+            if std::fs::rename(&backup, target).is_err() && target.exists() {
                 let _ = std::fs::remove_dir_all(&backup);
             }
             return Err(e);
@@ -223,16 +223,64 @@ const LOCK_TIMEOUT: Duration = Duration::from_secs(60);
 const LOCK_INITIAL_DELAY: Duration = Duration::from_millis(100);
 const LOCK_MAX_DELAY: Duration = Duration::from_millis(1600);
 
-/// An acquired entry lock; removes its lock file on drop. The file carries an
-/// owner token so a holder whose lock was taken over (see
-/// [`acquire_entry_lock_to_replace`]) does not delete its successor's lock.
+/// How often a held lock refreshes its mtime. Well under [`LOCK_TIMEOUT`], so
+/// only a lock whose owner died (or is frozen) ever looks abandoned.
+const LOCK_HEARTBEAT: Duration = Duration::from_secs(10);
+
+/// An acquired entry lock; removes its lock file on drop. While held, a
+/// heartbeat thread keeps the lock's mtime fresh, so a slow but live writer is
+/// never taken over. The file also carries an owner token, so a holder that
+/// was frozen long enough to be taken over does not delete its successor's
+/// lock.
 pub struct EntryLock {
     lock_path: PathBuf,
     token: String,
+    stop: std::sync::Arc<std::sync::atomic::AtomicBool>,
+    heartbeat: Option<std::thread::JoinHandle<()>>,
+}
+
+impl EntryLock {
+    fn new(lock_path: PathBuf, token: String) -> Self {
+        let stop = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+        let heartbeat = {
+            let (lock_path, token, stop) = (lock_path.clone(), token.clone(), stop.clone());
+            std::thread::spawn(move || {
+                let tick = Duration::from_millis(200);
+                let mut since = Duration::ZERO;
+                while !stop.load(Ordering::Relaxed) {
+                    std::thread::sleep(tick);
+                    since += tick;
+                    if since >= LOCK_HEARTBEAT {
+                        since = Duration::ZERO;
+                        touch_own_lock(&lock_path, &token);
+                    }
+                }
+            })
+        };
+        EntryLock {
+            lock_path,
+            token,
+            stop,
+            heartbeat: Some(heartbeat),
+        }
+    }
+}
+
+/// Refresh the lock's mtime, only while it is still ours.
+fn touch_own_lock(lock_path: &Path, token: &str) {
+    if std::fs::read_to_string(lock_path).is_ok_and(|t| t == token) {
+        if let Ok(f) = std::fs::OpenOptions::new().write(true).open(lock_path) {
+            let _ = f.set_modified(SystemTime::now());
+        }
+    }
 }
 
 impl Drop for EntryLock {
     fn drop(&mut self) {
+        self.stop.store(true, Ordering::Relaxed);
+        if let Some(h) = self.heartbeat.take() {
+            let _ = h.join();
+        }
         if std::fs::read_to_string(&self.lock_path).is_ok_and(|t| t == self.token) {
             let _ = std::fs::remove_file(&self.lock_path);
         }
@@ -271,9 +319,9 @@ fn lock_abandoned(lock: &std::fs::Metadata) -> bool {
 
 /// Like [`acquire_entry_lock`], but for replacing an entry that already
 /// exists: an existing target does not mean the holder is done, so wait for
-/// the lock itself. A lock older than the lock timeout was left by a killed
-/// process and is taken over. Returns `Ok(None)`, leaving the existing entry
-/// in place, only on timeout.
+/// the lock itself. Returns `Ok(None)`, leaving the existing entry in place,
+/// only on timeout. In both modes a lock older than the lock timeout (no
+/// heartbeat, so its owner died) is taken over.
 pub fn acquire_entry_lock_to_replace(entry_dir: &Path) -> anyhow::Result<Option<EntryLock>> {
     acquire_lock(entry_dir, true, LOCK_TIMEOUT)
 }
@@ -300,8 +348,12 @@ fn acquire_lock(
             Ok(mut file) => {
                 use std::io::Write;
                 let token = format!("{}-{}", std::process::id(), rand_hex8());
-                file.write_all(token.as_bytes())?;
-                return Ok(Some(EntryLock { lock_path, token }));
+                if let Err(e) = file.write_all(token.as_bytes()) {
+                    drop(file);
+                    let _ = std::fs::remove_file(&lock_path);
+                    return Err(e.into());
+                }
+                return Ok(Some(EntryLock::new(lock_path, token)));
             }
             Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {
                 // Held elsewhere. If the target now exists, another process
@@ -309,8 +361,7 @@ fn acquire_lock(
                 if !replacing && entry_dir.exists() {
                     return Ok(None);
                 }
-                if replacing
-                    && std::fs::metadata(&lock_path).is_ok_and(|m| lock_abandoned(&m))
+                if std::fs::metadata(&lock_path).is_ok_and(|m| lock_abandoned(&m))
                     && take_over_abandoned_lock(&lock_path)
                 {
                     continue;
@@ -662,6 +713,49 @@ mod tests {
         std::fs::set_permissions(&parent, std::fs::Permissions::from_mode(0o755)).unwrap();
         assert!(result.unwrap().is_none());
         assert!(started.elapsed() < Duration::from_secs(5));
+    }
+
+    #[test]
+    fn a_held_lock_keeps_its_heartbeat_and_is_never_abandoned() {
+        let dir = tempfile::tempdir().unwrap();
+        let entry = dir.path().join("e");
+        let lock = acquire_entry_lock(&entry).unwrap().unwrap();
+        let lock_path = entry_lock_path(&entry);
+        // Pretend the lock was created long ago; the heartbeat refreshes it.
+        std::fs::OpenOptions::new()
+            .write(true)
+            .open(&lock_path)
+            .unwrap()
+            .set_modified(SystemTime::now() - LOCK_TIMEOUT * 2)
+            .unwrap();
+        touch_own_lock(&lock_path, &lock.token);
+        assert!(entry_lock_held(&entry));
+        // A stranger's token is never refreshed.
+        std::fs::write(&lock_path, "stranger").unwrap();
+        std::fs::OpenOptions::new()
+            .write(true)
+            .open(&lock_path)
+            .unwrap()
+            .set_modified(SystemTime::now() - LOCK_TIMEOUT * 2)
+            .unwrap();
+        touch_own_lock(&lock_path, &lock.token);
+        assert!(!entry_lock_held(&entry));
+        drop(lock);
+        assert!(lock_path.exists(), "a stranger's lock is not removed");
+    }
+
+    #[test]
+    fn a_first_fetch_takes_over_an_abandoned_lock() {
+        let dir = tempfile::tempdir().unwrap();
+        let entry = dir.path().join("e");
+        let lock = std::fs::File::create(dir.path().join("e.lock")).unwrap();
+        lock.set_modified(SystemTime::now() - LOCK_TIMEOUT * 2)
+            .unwrap();
+        let started = Instant::now();
+        assert!(acquire_lock(&entry, false, Duration::from_secs(10))
+            .unwrap()
+            .is_some());
+        assert!(started.elapsed() < Duration::from_secs(2));
     }
 
     #[test]

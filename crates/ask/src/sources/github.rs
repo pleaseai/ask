@@ -427,7 +427,8 @@ pub fn revalidate_entry(
 /// Print the one-line cache status for an entry to stderr.
 static QUIET_CACHE_NOTICES: AtomicBool = AtomicBool::new(false);
 
-/// Silence the per-spec cache lines (`ask fetch --quiet`). Warnings still print.
+/// Silence the per-spec cache lines (`ask fetch --quiet`). Warnings, including
+/// an upstream check that could not run, still print.
 pub fn set_quiet_cache_notices(quiet: bool) {
     QUIET_CACHE_NOTICES.store(quiet, Ordering::Relaxed);
 }
@@ -438,7 +439,8 @@ pub fn cache_notices_enabled() -> bool {
 }
 
 pub fn report_cache_status(repo: &str, reference: &str, check: &Revalidation) {
-    if !cache_notices_enabled() {
+    // Quiet hides progress, not the warning that freshness went unchecked.
+    if !cache_notices_enabled() && !matches!(check.freshness, Freshness::Unknown(_)) {
         return;
     }
     let date = &check.cached_on;
@@ -889,7 +891,15 @@ fn fetch_from_tar_gz(
             }
         };
         let is_tag_candidate = opts.tag.is_some() && !tail.iter().any(|t| t == candidate);
-        let archive_url = if token.is_some() {
+        let archive_url = if let Some(sha) = &head {
+            // Download exactly the probed commit: the archive then matches the
+            // recorded head, whether the ref was passed as a tag or a branch.
+            if token.is_some() {
+                format!("https://api.github.com/repos/{}/tarball/{sha}", opts.repo)
+            } else {
+                format!("https://github.com/{}/archive/{sha}.tar.gz", opts.repo)
+            }
+        } else if token.is_some() {
             format!(
                 "https://api.github.com/repos/{}/tarball/{candidate}",
                 opts.repo
@@ -1413,6 +1423,77 @@ mod tests {
         std::fs::remove_dir_all(&remote).unwrap();
         let second = fetch(&no_client(), &opts, &ask_home).unwrap();
         assert!(second.from_store_cache);
+    }
+
+    #[test]
+    fn tarball_fallback_downloads_the_probed_commit_for_an_explicit_ref() {
+        if !has_git() {
+            return;
+        }
+        let tmp = tempfile::tempdir().unwrap();
+        let remote = create_local_remote(tmp.path());
+        let sha = String::from_utf8(
+            Command::new("git")
+                .args(["rev-parse", "main"])
+                .current_dir(&remote)
+                .output()
+                .unwrap()
+                .stdout,
+        )
+        .unwrap()
+        .trim()
+        .to_string();
+
+        let mut archive = tar::Builder::new(flate2::write::GzEncoder::new(
+            Vec::new(),
+            flate2::Compression::default(),
+        ));
+        let body = b"# from the probed commit\n";
+        let mut header = tar::Header::new_gnu();
+        header.set_size(body.len() as u64);
+        header.set_mode(0o644);
+        header.set_cksum();
+        archive
+            .append_data(&mut header, "repo-x/README.md", &body[..])
+            .unwrap();
+        let bytes = archive.into_inner().unwrap().finish().unwrap();
+        // Only the commit URLs are served; a refs/tags/main request would fail.
+        let client = no_client()
+            .with_bytes(
+                &format!("https://github.com/test/repo/archive/{sha}.tar.gz"),
+                200,
+                bytes.clone(),
+            )
+            .with_bytes(
+                &format!("https://api.github.com/repos/test/repo/tarball/{sha}"),
+                200,
+                bytes,
+            );
+        // An explicit `@main` arrives as a tag (see `ensure_checkout`).
+        let opts = GithubOptions {
+            tag: Some("main".into()),
+            branch: None,
+            skip_doc_extraction: true,
+            ..branch_opts(&remote)
+        };
+        let ask_home = tmp.path().join("ask-home");
+        let result = fetch_from_tar_gz(
+            &client,
+            &opts,
+            "test",
+            "repo",
+            "main",
+            "main",
+            &ask_home,
+            &[],
+        )
+        .unwrap();
+        let entry = result.store_path.unwrap();
+        assert!(std::fs::read_to_string(entry.join("README.md"))
+            .unwrap()
+            .contains("probed commit"));
+        let meta = std::fs::read_to_string(entry.join(ENTRY_META_FILE)).unwrap();
+        assert!(meta.contains(&sha));
     }
 
     #[test]
