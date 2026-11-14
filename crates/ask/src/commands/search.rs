@@ -277,6 +277,7 @@ mod tests {
             checkout: EnsureCheckoutDeps {
                 ask_home: Some(home.path().to_path_buf()),
                 fetcher: None,
+                revalidator: None,
             },
             resolve_csp: &no_csp,
             run_csp: &never_run,
@@ -302,6 +303,7 @@ mod tests {
             checkout: EnsureCheckoutDeps {
                 ask_home: Some(home.path().to_path_buf()),
                 fetcher: None,
+                revalidator: None,
             },
             resolve_csp: &have_csp,
             run_csp: &run,
@@ -321,6 +323,7 @@ mod tests {
             checkout: EnsureCheckoutDeps {
                 ask_home: Some(home.path().to_path_buf()),
                 fetcher: None,
+                revalidator: None,
             },
             resolve_csp: &have_csp,
             run_csp: &run,
@@ -341,6 +344,7 @@ mod tests {
             checkout: EnsureCheckoutDeps {
                 ask_home: Some(home.path().to_path_buf()),
                 fetcher: None,
+                revalidator: None,
             },
             resolve_csp: &no_csp,
             run_csp: &never_run,

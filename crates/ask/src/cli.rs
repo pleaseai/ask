@@ -405,6 +405,7 @@ fn run_fetch_cmd(args: FetchArgs) -> anyhow::Result<()> {
         project_dir: current_dir()?,
         quiet: args.quiet,
     };
+    crate::sources::github::set_quiet_cache_notices(args.quiet);
     let report = run_fetch(&client, &options);
     for line in &report.stdout {
         println!("{line}");

@@ -52,7 +52,11 @@ fn atomic_swap(tmp_dir: &Path, target: &Path) -> std::io::Result<()> {
         let backup = sibling(target, ".bak-");
         std::fs::rename(target, &backup)?;
         if let Err(e) = std::fs::rename(tmp_dir, target) {
-            let _ = std::fs::rename(&backup, target);
+            // If another publisher already put its own (stamped) entry here,
+            // the backup is garbage. Any other restore failure keeps it.
+            if std::fs::rename(&backup, target).is_err() && target.exists() {
+                let _ = std::fs::remove_dir_all(&backup);
+            }
             return Err(e);
         }
         let _ = std::fs::remove_dir_all(&backup);
@@ -108,6 +112,33 @@ pub fn cp_dir_atomic(source_dir: &Path, target_dir: &Path) -> anyhow::Result<()>
         // `source_dir` is the containment root: a (non-unix) symlink whose target
         // dereferences outside it must not pull unrelated files into the entry.
         copy_tree_verbatim(source_dir, source_dir, &tmp_dir)?;
+        atomic_swap(&tmp_dir, target_dir)?;
+        Ok(())
+    })();
+    if result.is_err() {
+        let _ = std::fs::remove_dir_all(&tmp_dir);
+    }
+    result
+}
+
+/// Like [`cp_dir_atomic`], but the copy is finished before it becomes visible:
+/// `prepare` adds ask's own files to it and it is stamped, then swapped in. A
+/// reader therefore never sees an unstamped entry and never quarantines a
+/// publication in progress. The copy is a sibling of `target_dir`, so relative
+/// symlinks resolve the same way and the stamp still matches after the swap.
+pub fn publish_entry(
+    source_dir: &Path,
+    target_dir: &Path,
+    prepare: impl FnOnce(&Path) -> anyhow::Result<()>,
+) -> anyhow::Result<()> {
+    let tmp_dir = sibling(target_dir, ".tmp-");
+    if let Some(parent) = tmp_dir.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    let result = (|| -> anyhow::Result<()> {
+        copy_tree_verbatim(source_dir, source_dir, &tmp_dir)?;
+        prepare(&tmp_dir)?;
+        stamp_entry(&tmp_dir)?;
         atomic_swap(&tmp_dir, target_dir)?;
         Ok(())
     })();
@@ -192,14 +223,67 @@ const LOCK_TIMEOUT: Duration = Duration::from_secs(60);
 const LOCK_INITIAL_DELAY: Duration = Duration::from_millis(100);
 const LOCK_MAX_DELAY: Duration = Duration::from_millis(1600);
 
-/// An acquired entry lock; removes its lock file on drop.
+/// How often a held lock refreshes its mtime. Well under [`LOCK_TIMEOUT`], so
+/// only a lock whose owner died (or is frozen) ever looks abandoned.
+const LOCK_HEARTBEAT: Duration = Duration::from_secs(10);
+
+/// An acquired entry lock; removes its lock file on drop. While held, a
+/// heartbeat thread keeps the lock's mtime fresh, so a slow but live writer is
+/// never taken over. The file also carries an owner token, so a holder that
+/// was frozen long enough to be taken over does not delete its successor's
+/// lock.
 pub struct EntryLock {
     lock_path: PathBuf,
+    token: String,
+    stop: std::sync::Arc<std::sync::atomic::AtomicBool>,
+    heartbeat: Option<std::thread::JoinHandle<()>>,
+}
+
+impl EntryLock {
+    fn new(lock_path: PathBuf, token: String) -> Self {
+        let stop = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+        let heartbeat = {
+            let (lock_path, token, stop) = (lock_path.clone(), token.clone(), stop.clone());
+            std::thread::spawn(move || {
+                let tick = Duration::from_millis(200);
+                let mut since = Duration::ZERO;
+                while !stop.load(Ordering::Relaxed) {
+                    std::thread::sleep(tick);
+                    since += tick;
+                    if since >= LOCK_HEARTBEAT {
+                        since = Duration::ZERO;
+                        touch_own_lock(&lock_path, &token);
+                    }
+                }
+            })
+        };
+        EntryLock {
+            lock_path,
+            token,
+            stop,
+            heartbeat: Some(heartbeat),
+        }
+    }
+}
+
+/// Refresh the lock's mtime, only while it is still ours.
+fn touch_own_lock(lock_path: &Path, token: &str) {
+    if std::fs::read_to_string(lock_path).is_ok_and(|t| t == token) {
+        if let Ok(f) = std::fs::OpenOptions::new().write(true).open(lock_path) {
+            let _ = f.set_modified(SystemTime::now());
+        }
+    }
 }
 
 impl Drop for EntryLock {
     fn drop(&mut self) {
-        let _ = std::fs::remove_file(&self.lock_path);
+        self.stop.store(true, Ordering::Relaxed);
+        if let Some(h) = self.heartbeat.take() {
+            let _ = h.join();
+        }
+        if std::fs::read_to_string(&self.lock_path).is_ok_and(|t| t == self.token) {
+            let _ = std::fs::remove_file(&self.lock_path);
+        }
     }
 }
 
@@ -208,18 +292,51 @@ impl Drop for EntryLock {
 /// waiting (another process finished the write — treat as a hit). Errors on
 /// timeout without deleting the live lock.
 pub fn acquire_entry_lock(entry_dir: &Path) -> anyhow::Result<Option<EntryLock>> {
-    let lock_path = {
-        let name = entry_dir
-            .file_name()
-            .map(|n| n.to_string_lossy().into_owned())
-            .unwrap_or_default();
-        entry_dir.with_file_name(format!("{name}.lock"))
-    };
+    acquire_lock(entry_dir, false, LOCK_TIMEOUT)
+}
+
+/// The `<entry>.lock` path guarding `entry_dir`.
+pub fn entry_lock_path(entry_dir: &Path) -> PathBuf {
+    let name = entry_dir
+        .file_name()
+        .map(|n| n.to_string_lossy().into_owned())
+        .unwrap_or_default();
+    entry_dir.with_file_name(format!("{name}.lock"))
+}
+
+/// Whether another process is writing `entry_dir` right now. A lock older than
+/// the lock timeout was left behind by a killed process and does not count.
+pub fn entry_lock_held(entry_dir: &Path) -> bool {
+    std::fs::metadata(entry_lock_path(entry_dir)).is_ok_and(|m| !lock_abandoned(&m))
+}
+
+fn lock_abandoned(lock: &std::fs::Metadata) -> bool {
+    lock.modified()
+        .ok()
+        .and_then(|t| t.elapsed().ok())
+        .is_some_and(|age| age > LOCK_TIMEOUT)
+}
+
+/// Like [`acquire_entry_lock`], but for replacing an entry that already
+/// exists: an existing target does not mean the holder is done, so wait for
+/// the lock itself. Returns `Ok(None)`, leaving the existing entry in place,
+/// only on timeout. In both modes a lock older than the lock timeout (no
+/// heartbeat, so its owner died) is taken over.
+pub fn acquire_entry_lock_to_replace(entry_dir: &Path) -> anyhow::Result<Option<EntryLock>> {
+    acquire_lock(entry_dir, true, LOCK_TIMEOUT)
+}
+
+fn acquire_lock(
+    entry_dir: &Path,
+    replacing: bool,
+    timeout: Duration,
+) -> anyhow::Result<Option<EntryLock>> {
+    let lock_path = entry_lock_path(entry_dir);
     if let Some(parent) = lock_path.parent() {
         std::fs::create_dir_all(parent)?;
     }
 
-    let deadline = Instant::now() + LOCK_TIMEOUT;
+    let deadline = Instant::now() + timeout;
     let mut delay = LOCK_INITIAL_DELAY;
 
     loop {
@@ -228,14 +345,31 @@ pub fn acquire_entry_lock(entry_dir: &Path) -> anyhow::Result<Option<EntryLock>>
             .create_new(true)
             .open(&lock_path)
         {
-            Ok(_) => return Ok(Some(EntryLock { lock_path })),
+            Ok(mut file) => {
+                use std::io::Write;
+                let token = format!("{}-{}", std::process::id(), rand_hex8());
+                if let Err(e) = file.write_all(token.as_bytes()) {
+                    drop(file);
+                    let _ = std::fs::remove_file(&lock_path);
+                    return Err(e.into());
+                }
+                return Ok(Some(EntryLock::new(lock_path, token)));
+            }
             Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {
                 // Held elsewhere. If the target now exists, another process
                 // finished — treat as a store hit.
-                if entry_dir.exists() {
+                if !replacing && entry_dir.exists() {
                     return Ok(None);
                 }
+                if std::fs::metadata(&lock_path).is_ok_and(|m| lock_abandoned(&m))
+                    && take_over_abandoned_lock(&lock_path)
+                {
+                    continue;
+                }
                 if Instant::now() >= deadline {
+                    if replacing && entry_dir.exists() {
+                        return Ok(None);
+                    }
                     anyhow::bail!(
                         "Timed out waiting for lock: {}. Another ask install may be in progress. \
                          If no other process is running, remove it manually.",
@@ -250,25 +384,84 @@ pub fn acquire_entry_lock(entry_dir: &Path) -> anyhow::Result<Option<EntryLock>>
     }
 }
 
+/// Move an abandoned lock out of the way. Renaming is atomic, so of several
+/// processes taking over at once only one moves the file; the moved file is
+/// checked again in case a fresh lock was created in between, and put back
+/// if so. Returns false when nothing was taken over (permissions, a lock that
+/// turned out to be live), so the caller falls back to the bounded wait.
+/// Entries are published fully stamped (`publish_entry`), so even a slow live
+/// writer that loses its lock this way cannot leave a corrupt entry behind.
+fn take_over_abandoned_lock(lock_path: &Path) -> bool {
+    let moved = sibling(lock_path, ".stale-");
+    if std::fs::rename(lock_path, &moved).is_err() {
+        return false;
+    }
+    if std::fs::metadata(&moved).is_ok_and(|m| lock_abandoned(&m)) {
+        let _ = std::fs::remove_file(&moved);
+        return true;
+    }
+    // A live lock was moved: put it back without overwriting a newer one.
+    if std::fs::hard_link(&moved, lock_path).is_ok() {
+        let _ = std::fs::remove_file(&moved);
+    }
+    false
+}
+
 // ── Content verification ───────────────────────────────────────────
 
 /// Compute and record a content hash for a finalized entry (`.ask-hash`).
 pub fn stamp_entry(entry_dir: &Path) -> anyhow::Result<String> {
+    // Clear the reserved path first, so a `.ask-hash` directory in the fetched
+    // tree is not hashed and then deleted.
+    let hash_path = entry_dir.join(HASH_FILE);
+    remove_store_path(&hash_path)?;
     let hash = hash_dir(entry_dir)?;
-    std::fs::write(entry_dir.join(HASH_FILE), &hash)?;
+    std::fs::write(&hash_path, &hash)?;
     Ok(hash)
 }
 
+/// Write a file ask owns inside a store entry. Whatever the fetched tree put
+/// at that path (a symlink in particular) is removed first, so the write can
+/// never follow a link out of the store.
+pub fn write_store_file(path: &Path, contents: &[u8]) -> std::io::Result<()> {
+    remove_store_path(path)?;
+    std::fs::write(path, contents)
+}
+
+/// Remove whatever is at `path` without following a symlink.
+fn remove_store_path(path: &Path) -> std::io::Result<()> {
+    match std::fs::symlink_metadata(path) {
+        Ok(m) if m.is_dir() => std::fs::remove_dir_all(path),
+        Ok(_) => std::fs::remove_file(path),
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(()),
+        Err(e) => Err(e),
+    }
+}
+
 /// Whether an entry's recorded `.ask-hash` matches its recomputed hash.
+///
+/// A publisher may swap the entry while it is being hashed. When the recorded
+/// hash changed or the entry briefly vanished during the check, the check is
+/// repeated, so a valid replacement is not reported (and quarantined) as
+/// corrupt.
 pub fn verify_entry(entry_dir: &Path) -> bool {
     let hash_path = entry_dir.join(HASH_FILE);
-    let Ok(recorded) = std::fs::read_to_string(&hash_path) else {
-        return false;
-    };
-    match hash_dir(entry_dir) {
-        Ok(actual) => recorded.trim() == actual,
-        Err(_) => false,
+    for attempt in 0..3 {
+        if attempt > 0 {
+            std::thread::sleep(Duration::from_millis(50));
+        }
+        let recorded = std::fs::read_to_string(&hash_path).ok();
+        if let (Some(recorded), Ok(actual)) = (&recorded, hash_dir(entry_dir)) {
+            if recorded.trim() == actual {
+                return true;
+            }
+        }
+        let swapped = !entry_dir.exists() || std::fs::read_to_string(&hash_path).ok() != recorded;
+        if !swapped {
+            return false;
+        }
     }
+    false
 }
 
 /// sha256 over the sorted relative file list, `<relpath>\0<bytes>\0` per file,
@@ -436,6 +629,188 @@ mod tests {
             .open(dir.path().join("e.lock"))
             .unwrap();
         assert!(acquire_entry_lock(&entry).unwrap().is_none());
+    }
+
+    #[test]
+    fn replacing_waits_for_the_holder_even_when_the_entry_exists() {
+        let dir = tempfile::tempdir().unwrap();
+        let entry = dir.path().join("e");
+        std::fs::create_dir_all(&entry).unwrap();
+        let lock_path = dir.path().join("e.lock");
+        std::fs::File::create(&lock_path).unwrap();
+
+        let releaser = {
+            let lock_path = lock_path.clone();
+            std::thread::spawn(move || {
+                std::thread::sleep(Duration::from_millis(300));
+                std::fs::remove_file(lock_path).unwrap();
+            })
+        };
+        let lock = acquire_lock(&entry, true, Duration::from_secs(10)).unwrap();
+        releaser.join().unwrap();
+        assert!(lock.is_some());
+        assert!(lock_path.exists());
+    }
+
+    #[test]
+    fn replacing_keeps_the_existing_entry_when_the_lock_never_frees() {
+        let dir = tempfile::tempdir().unwrap();
+        let entry = dir.path().join("e");
+        std::fs::create_dir_all(&entry).unwrap();
+        std::fs::File::create(dir.path().join("e.lock")).unwrap();
+        let lock = acquire_lock(&entry, true, Duration::from_millis(200)).unwrap();
+        assert!(lock.is_none());
+    }
+
+    #[test]
+    fn replacing_takes_over_an_abandoned_lock() {
+        let dir = tempfile::tempdir().unwrap();
+        let entry = dir.path().join("e");
+        std::fs::create_dir_all(&entry).unwrap();
+        let lock = std::fs::File::create(dir.path().join("e.lock")).unwrap();
+        lock.set_modified(SystemTime::now() - LOCK_TIMEOUT * 2)
+            .unwrap();
+        assert!(!entry_lock_held(&entry));
+        let started = Instant::now();
+        let taken = acquire_lock(&entry, true, Duration::from_secs(10)).unwrap();
+        assert!(taken.is_some());
+        assert!(entry_lock_held(&entry));
+        assert!(started.elapsed() < Duration::from_secs(2));
+    }
+
+    #[test]
+    fn a_lock_taken_over_is_not_deleted_by_its_previous_owner() {
+        let dir = tempfile::tempdir().unwrap();
+        let entry = dir.path().join("e");
+        let old_owner = acquire_entry_lock(&entry).unwrap().unwrap();
+        // Another process takes the lock over and writes its own token.
+        let lock_path = entry_lock_path(&entry);
+        std::fs::remove_file(&lock_path).unwrap();
+        std::fs::write(&lock_path, "successor").unwrap();
+        drop(old_owner);
+        assert_eq!(std::fs::read_to_string(&lock_path).unwrap(), "successor");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn an_abandoned_lock_that_cannot_be_moved_times_out_instead_of_spinning() {
+        use std::os::unix::fs::PermissionsExt;
+        let dir = tempfile::tempdir().unwrap();
+        let parent = dir.path().join("repo");
+        let entry = parent.join("e");
+        std::fs::create_dir_all(&entry).unwrap();
+        let lock = std::fs::File::create(parent.join("e.lock")).unwrap();
+        lock.set_modified(SystemTime::now() - LOCK_TIMEOUT * 2)
+            .unwrap();
+        std::fs::set_permissions(&parent, std::fs::Permissions::from_mode(0o555)).unwrap();
+        if std::fs::File::create(parent.join("probe")).is_ok() {
+            // Running as root: permissions do not block the takeover here.
+            std::fs::set_permissions(&parent, std::fs::Permissions::from_mode(0o755)).unwrap();
+            return;
+        }
+        let started = Instant::now();
+        let result = acquire_lock(&entry, true, Duration::from_millis(300));
+        std::fs::set_permissions(&parent, std::fs::Permissions::from_mode(0o755)).unwrap();
+        assert!(result.unwrap().is_none());
+        assert!(started.elapsed() < Duration::from_secs(5));
+    }
+
+    #[test]
+    fn a_held_lock_keeps_its_heartbeat_and_is_never_abandoned() {
+        let dir = tempfile::tempdir().unwrap();
+        let entry = dir.path().join("e");
+        let lock = acquire_entry_lock(&entry).unwrap().unwrap();
+        let lock_path = entry_lock_path(&entry);
+        // Pretend the lock was created long ago; the heartbeat refreshes it.
+        std::fs::OpenOptions::new()
+            .write(true)
+            .open(&lock_path)
+            .unwrap()
+            .set_modified(SystemTime::now() - LOCK_TIMEOUT * 2)
+            .unwrap();
+        touch_own_lock(&lock_path, &lock.token);
+        assert!(entry_lock_held(&entry));
+        // A stranger's token is never refreshed.
+        std::fs::write(&lock_path, "stranger").unwrap();
+        std::fs::OpenOptions::new()
+            .write(true)
+            .open(&lock_path)
+            .unwrap()
+            .set_modified(SystemTime::now() - LOCK_TIMEOUT * 2)
+            .unwrap();
+        touch_own_lock(&lock_path, &lock.token);
+        assert!(!entry_lock_held(&entry));
+        drop(lock);
+        assert!(lock_path.exists(), "a stranger's lock is not removed");
+    }
+
+    #[test]
+    fn a_first_fetch_takes_over_an_abandoned_lock() {
+        let dir = tempfile::tempdir().unwrap();
+        let entry = dir.path().join("e");
+        let lock = std::fs::File::create(dir.path().join("e.lock")).unwrap();
+        lock.set_modified(SystemTime::now() - LOCK_TIMEOUT * 2)
+            .unwrap();
+        let started = Instant::now();
+        assert!(acquire_lock(&entry, false, Duration::from_secs(10))
+            .unwrap()
+            .is_some());
+        assert!(started.elapsed() < Duration::from_secs(2));
+    }
+
+    #[test]
+    fn published_entry_is_stamped_before_it_replaces_the_old_one() {
+        let dir = tempfile::tempdir().unwrap();
+        let target = dir.path().join("e");
+        std::fs::create_dir_all(&target).unwrap();
+        std::fs::write(target.join("old.txt"), "old").unwrap();
+        stamp_entry(&target).unwrap();
+        let src = dir.path().join("src");
+        std::fs::create_dir_all(&src).unwrap();
+        std::fs::write(src.join("new.txt"), "new").unwrap();
+
+        publish_entry(&src, &target, |staged| {
+            // Still the old, valid entry while the new one is prepared.
+            assert!(target.join("old.txt").exists());
+            assert!(verify_entry(&target));
+            std::fs::write(staged.join(".ask-meta.json"), "{}")?;
+            Ok(())
+        })
+        .unwrap();
+
+        assert!(target.join("new.txt").exists());
+        assert!(target.join(".ask-meta.json").exists());
+        assert!(!target.join("old.txt").exists());
+        assert!(verify_entry(&target));
+    }
+
+    #[test]
+    fn stamping_ignores_a_hash_directory_from_the_fetched_tree() {
+        let dir = tempfile::tempdir().unwrap();
+        let entry = dir.path().join("e");
+        std::fs::create_dir_all(entry.join(HASH_FILE)).unwrap();
+        std::fs::write(entry.join(HASH_FILE).join("x"), "x").unwrap();
+        std::fs::write(entry.join("a.txt"), "a").unwrap();
+        stamp_entry(&entry).unwrap();
+        assert!(verify_entry(&entry));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn stamping_replaces_a_hash_symlink_instead_of_following_it() {
+        let dir = tempfile::tempdir().unwrap();
+        let outside = dir.path().join("outside.txt");
+        std::fs::write(&outside, "keep").unwrap();
+        let entry = dir.path().join("e");
+        std::fs::create_dir_all(&entry).unwrap();
+        std::os::unix::fs::symlink(&outside, entry.join(HASH_FILE)).unwrap();
+
+        stamp_entry(&entry).unwrap();
+
+        assert_eq!(std::fs::read_to_string(&outside).unwrap(), "keep");
+        let meta = std::fs::symlink_metadata(entry.join(HASH_FILE)).unwrap();
+        assert!(meta.file_type().is_file());
+        assert!(verify_entry(&entry));
     }
 
     #[test]

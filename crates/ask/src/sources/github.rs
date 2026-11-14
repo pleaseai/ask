@@ -8,18 +8,22 @@
 use std::io::Cursor;
 use std::path::Path;
 use std::process::Command;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::LazyLock;
+use std::time::{Duration, Instant};
 
 use anyhow::{bail, Result};
 use flate2::read::GzDecoder;
 use regex::Regex;
+use time::format_description::well_known::Rfc3339;
+use time::OffsetDateTime;
 use url::Url;
 
 use super::{extract_docs_from_dir, FetchMeta, FetchResult, GITHUB_DOC_CANDIDATES};
 use crate::http::HttpClient;
 use crate::store::{
-    acquire_entry_lock, cp_dir_atomic, github_store_path, quarantine_entry, stamp_entry,
-    verify_entry,
+    acquire_entry_lock, acquire_entry_lock_to_replace, entry_lock_held, entry_lock_path,
+    github_store_path, publish_entry, quarantine_entry, verify_entry, write_store_file,
 };
 
 const DEFAULT_GITHUB_HOST: &str = "github.com";
@@ -30,6 +34,13 @@ static RE_SAFE_REPO: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$").unwrap());
 static RE_SAFE_REF: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^[A-Za-z0-9._/@-]+$").unwrap());
 static RE_SHA40: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^[0-9a-f]{40}$").unwrap());
+static RE_VERSION_LIKE: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"^v?[0-9]+\.[0-9]+\.[0-9]+([-+][0-9A-Za-z.+-]*)?$").unwrap());
+static RE_SCOPED_VERSION: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"@v?[0-9]+\.[0-9]+\.[0-9]+([-+][0-9A-Za-z.+-]*)?$").unwrap());
+
+/// Per-entry metadata file written next to the content (covered by `.ask-hash`).
+const ENTRY_META_FILE: &str = ".ask-meta.json";
 
 /// Default-branch fallbacks tried (after `main`) when neither tag nor branch was
 /// given.
@@ -117,6 +128,341 @@ fn has_git() -> bool {
         .status()
         .map(|s| s.success())
         .unwrap_or(false)
+}
+
+// ── Cache revalidation (pleaseai/ask#127) ────────────────────────────
+
+/// Result of asking the remote where a branch currently points.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum HeadProbe {
+    /// `refs/heads/<ref>` exists and points at this commit.
+    Branch(String),
+    /// The remote answered, but the ref is not a branch (a tag, SHA, or absent).
+    NotBranch,
+    /// The remote could not be asked; carries a token-redacted reason.
+    Unknown(String),
+}
+
+/// Whether a cached entry still matches its upstream ref.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Freshness {
+    /// Immutable ref (version tag, SHA, non-branch) — never checked over the network.
+    Pinned,
+    /// Branch head equals the commit recorded when the entry was fetched.
+    Fresh,
+    /// Branch moved (or the entry predates `.ask-meta.json`).
+    Stale {
+        cached: Option<String>,
+        upstream: String,
+    },
+    /// The upstream check failed; the cache is used as-is.
+    Unknown(String),
+}
+
+/// A [`Freshness`] verdict plus the entry's cache date (`YYYY-MM-DD`, UTC).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Revalidation {
+    pub freshness: Freshness,
+    pub cached_on: String,
+}
+
+/// Whether a ref names an immutable release without asking the remote: a 40-hex
+/// SHA, a full `v?X.Y.Z` version tag, or a scoped monorepo tag (`pkg@1.2.3`).
+/// Shorter version-like names (`12.x`, `7.3`, `7-1-stable`) are often
+/// maintenance branches, so they are probed like any other ref.
+pub fn looks_pinned(reference: &str) -> bool {
+    RE_SHA40.is_match(reference)
+        || RE_VERSION_LIKE.is_match(reference)
+        || RE_SCOPED_VERSION.is_match(reference)
+}
+
+/// Whether `remote_url` points somewhere other than github.com (so the
+/// GitHub REST API cannot answer for it).
+fn is_custom_remote(remote_url: Option<&str>) -> bool {
+    let Some(url) = remote_url else {
+        return false;
+    };
+    Url::parse(url)
+        .ok()
+        .and_then(|u| u.host_str().map(str::to_ascii_lowercase))
+        .as_deref()
+        != Some(DEFAULT_GITHUB_HOST)
+}
+
+/// Upper bound for the freshness probe, matching the HTTP client's timeout.
+const LS_REMOTE_TIMEOUT: Duration = Duration::from_secs(10);
+
+/// Run `git ls-remote <url> <want>` and kill it after `timeout`, so a remote
+/// that accepts the connection but never answers cannot stall a cache hit.
+fn ls_remote_head(url: &str, want: &str, token: Option<&str>, timeout: Duration) -> HeadProbe {
+    let spawned = Command::new("git")
+        .arg("ls-remote")
+        .arg(authenticated_clone_url(url, token))
+        .arg(want)
+        .env("GIT_TERMINAL_PROMPT", "0")
+        // Killing `git` leaves its transport helper running; make curl in the
+        // helper give up on a silent server by itself.
+        .env("GIT_HTTP_LOW_SPEED_LIMIT", "1")
+        .env(
+            "GIT_HTTP_LOW_SPEED_TIME",
+            timeout.as_secs().max(1).to_string(),
+        )
+        .stdin(std::process::Stdio::null())
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped())
+        .spawn();
+    let mut child = match spawned {
+        Ok(c) => c,
+        Err(e) => return HeadProbe::Unknown(redact_token(&e.to_string(), token)),
+    };
+    // Drain both pipes while waiting, so a verbose stderr (GIT_TRACE) cannot
+    // fill the pipe and stall git until the timeout.
+    let drain = |pipe: Option<Box<dyn std::io::Read + Send>>| {
+        std::thread::spawn(move || {
+            let mut buf = Vec::new();
+            if let Some(mut p) = pipe {
+                let _ = p.read_to_end(&mut buf);
+            }
+            buf
+        })
+    };
+    let stdout_reader = drain(child.stdout.take().map(|p| Box::new(p) as _));
+    let stderr_reader = drain(child.stderr.take().map(|p| Box::new(p) as _));
+    let deadline = Instant::now() + timeout;
+    let status = loop {
+        match child.try_wait() {
+            Ok(Some(status)) => break status,
+            Ok(None) if Instant::now() >= deadline => {
+                let _ = child.kill();
+                let _ = child.wait();
+                // The readers are left to finish when the helper exits.
+                return HeadProbe::Unknown(format!("git ls-remote timed out after {timeout:?}"));
+            }
+            Ok(None) => std::thread::sleep(Duration::from_millis(50)),
+            Err(e) => return HeadProbe::Unknown(redact_token(&e.to_string(), token)),
+        }
+    };
+    let stdout = stdout_reader.join().unwrap_or_default();
+    let stderr = stderr_reader.join().unwrap_or_default();
+    if !status.success() {
+        let stderr = String::from_utf8_lossy(&stderr);
+        let reason = stderr.lines().next().unwrap_or("git ls-remote failed");
+        return HeadProbe::Unknown(redact_token(reason.trim(), token));
+    }
+    let stdout = String::from_utf8_lossy(&stdout);
+    for line in stdout.lines() {
+        let mut parts = line.split_whitespace();
+        if let (Some(sha), Some(name)) = (parts.next(), parts.next()) {
+            if name == want && RE_SHA40.is_match(sha) {
+                return HeadProbe::Branch(sha.to_string());
+            }
+        }
+    }
+    HeadProbe::NotBranch
+}
+
+/// Take the store lock for `store_dir`. An entry that already exists is being
+/// refreshed, so wait for any other writer instead of reusing its old content.
+fn lock_store_entry(store_dir: &Path) -> Result<Option<crate::store::EntryLock>> {
+    if !store_dir.exists() {
+        return acquire_entry_lock(store_dir);
+    }
+    let lock = acquire_entry_lock_to_replace(store_dir)?;
+    if lock.is_none() {
+        if !verify_entry(store_dir) {
+            bail!(
+                "{} is locked by another ask process and its entry does not verify. \
+                 Remove the lock file if no other ask process is running.",
+                entry_lock_path(store_dir).display()
+            );
+        }
+        eprintln!(
+            "  Warning: {} is locked by another ask process; using the existing entry. \
+             Remove the lock file if no other ask process is running.",
+            entry_lock_path(store_dir).display()
+        );
+    }
+    Ok(lock)
+}
+
+/// Ask the remote where branch `reference` points: `git ls-remote` when git is
+/// available, otherwise the GitHub branches API.
+fn probe_branch_head(
+    client: &dyn HttpClient,
+    repo: &str,
+    remote_url: Option<&str>,
+    reference: &str,
+    token: Option<&str>,
+) -> HeadProbe {
+    if has_git() {
+        let url = remote_url
+            .map(str::to_string)
+            .unwrap_or_else(|| format!("https://github.com/{repo}.git"));
+        let want = format!("refs/heads/{reference}");
+        return ls_remote_head(&url, &want, token, LS_REMOTE_TIMEOUT);
+    }
+
+    if is_custom_remote(remote_url) {
+        return HeadProbe::Unknown("git is not available for a custom remote".into());
+    }
+    let api_url = format!("https://api.github.com/repos/{repo}/branches/{reference}");
+    let auth = token.map(|t| format!("Bearer {t}"));
+    let headers: Vec<(&str, &str)> = auth
+        .as_deref()
+        .map(|v| vec![("Authorization", v)])
+        .unwrap_or_default();
+    let response = match client.get_bytes(&api_url, &headers) {
+        Ok(r) => r,
+        Err(e) => return HeadProbe::Unknown(redact_token(&e.to_string(), token)),
+    };
+    match response.status {
+        200 => {
+            let sha = serde_json::from_slice::<serde_json::Value>(&response.body)
+                .ok()
+                .and_then(|v| v["commit"]["sha"].as_str().map(str::to_string))
+                .filter(|s| RE_SHA40.is_match(s));
+            match sha {
+                Some(sha) => HeadProbe::Branch(sha),
+                None => HeadProbe::Unknown("unexpected GitHub API response".into()),
+            }
+        }
+        404 => HeadProbe::NotBranch,
+        status => HeadProbe::Unknown(format!("GitHub API returned HTTP {status}")),
+    }
+}
+
+/// Write `.ask-meta.json` (`commit` omitted when unknown) into a store entry.
+/// Must run before `stamp_entry` so the content hash covers it.
+fn write_entry_meta(entry_dir: &Path, commit: Option<&str>) -> Result<()> {
+    let fetched_at = OffsetDateTime::now_utc().format(&Rfc3339)?;
+    let mut meta = serde_json::Map::new();
+    if let Some(c) = commit {
+        meta.insert("commit".into(), c.into());
+    }
+    meta.insert("fetchedAt".into(), fetched_at.into());
+    write_store_file(
+        &entry_dir.join(ENTRY_META_FILE),
+        serde_json::to_string(&meta)?.as_bytes(),
+    )?;
+    Ok(())
+}
+
+/// `(commit, fetchedAt)` recorded in an entry's `.ask-meta.json`, if readable.
+fn read_entry_meta(entry_dir: &Path) -> (Option<String>, Option<String>) {
+    let parsed = std::fs::read_to_string(entry_dir.join(ENTRY_META_FILE))
+        .ok()
+        .and_then(|t| serde_json::from_str::<serde_json::Value>(&t).ok());
+    let field = |name: &str| {
+        parsed
+            .as_ref()
+            .and_then(|v| v[name].as_str())
+            .map(str::to_string)
+    };
+    (field("commit"), field("fetchedAt"))
+}
+
+/// The date an entry was cached, `YYYY-MM-DD` in UTC: `fetchedAt` from the meta
+/// file, else the `.ask-hash` mtime, else the entry directory's mtime.
+pub fn entry_cache_date(entry_dir: &Path) -> String {
+    let from_meta = read_entry_meta(entry_dir)
+        .1
+        .and_then(|t| OffsetDateTime::parse(&t, &Rfc3339).ok());
+    let mtime = |p: &Path| {
+        std::fs::metadata(p)
+            .and_then(|m| m.modified())
+            .ok()
+            .map(OffsetDateTime::from)
+    };
+    from_meta
+        .or_else(|| mtime(&entry_dir.join(".ask-hash")))
+        .or_else(|| mtime(entry_dir))
+        .map(|d| {
+            let d = d.to_offset(time::UtcOffset::UTC);
+            format!("{:04}-{:02}-{:02}", d.year(), u8::from(d.month()), d.day())
+        })
+        .unwrap_or_else(|| "an unknown date".to_string())
+}
+
+/// Decide whether a cached entry is still current for `reference`. Pinned refs
+/// and non-branch refs never reach the network beyond the branch probe.
+pub fn revalidate_entry(
+    client: &dyn HttpClient,
+    repo: &str,
+    remote_url: Option<&str>,
+    entry_dir: &Path,
+    reference: &str,
+) -> Revalidation {
+    let cached_on = entry_cache_date(entry_dir);
+    let freshness = if looks_pinned(reference) {
+        Freshness::Pinned
+    } else {
+        match probe_branch_head(
+            client,
+            repo,
+            remote_url,
+            reference,
+            github_token().as_deref(),
+        ) {
+            HeadProbe::NotBranch => Freshness::Pinned,
+            HeadProbe::Unknown(reason) => Freshness::Unknown(reason),
+            HeadProbe::Branch(sha) => {
+                let cached = read_entry_meta(entry_dir).0;
+                if cached.as_deref() == Some(sha.as_str()) {
+                    Freshness::Fresh
+                } else {
+                    Freshness::Stale {
+                        cached,
+                        upstream: sha,
+                    }
+                }
+            }
+        }
+    };
+    Revalidation {
+        freshness,
+        cached_on,
+    }
+}
+
+/// Print the one-line cache status for an entry to stderr.
+static QUIET_CACHE_NOTICES: AtomicBool = AtomicBool::new(false);
+
+/// Silence the per-spec cache lines (`ask fetch --quiet`). Warnings, including
+/// an upstream check that could not run, still print.
+pub fn set_quiet_cache_notices(quiet: bool) {
+    QUIET_CACHE_NOTICES.store(quiet, Ordering::Relaxed);
+}
+
+/// Whether the per-spec cache lines should print.
+pub fn cache_notices_enabled() -> bool {
+    !QUIET_CACHE_NOTICES.load(Ordering::Relaxed)
+}
+
+pub fn report_cache_status(repo: &str, reference: &str, check: &Revalidation) {
+    // Quiet hides progress, not the warning that freshness went unchecked.
+    if !cache_notices_enabled() && !matches!(check.freshness, Freshness::Unknown(_)) {
+        return;
+    }
+    let date = &check.cached_on;
+    match &check.freshness {
+        Freshness::Stale { cached, upstream } => {
+            let short = |s: &str| s.chars().take(7).collect::<String>();
+            let old = cached
+                .as_deref()
+                .map(short)
+                .unwrap_or_else(|| "unknown".into());
+            eprintln!(
+                "  Cached {repo}@{reference} from {date} is behind upstream ({old}→{}); re-fetching",
+                short(upstream)
+            );
+        }
+        Freshness::Unknown(reason) => eprintln!(
+            "  Using cached {repo}@{reference} from {date} (could not check upstream: {reason})"
+        ),
+        Freshness::Pinned | Freshness::Fresh => {
+            eprintln!("  Using cached {repo}@{reference} from {date}");
+        }
+    }
 }
 
 /// Remove the contents of `dir` (keeping `dir`) so a failed clone can be retried.
@@ -306,43 +652,108 @@ pub fn fetch(
     };
 
     // Store-hit path: check each candidate key, verify, quarantine on tamper.
+    let mut stale_entry: Option<(String, std::path::PathBuf, String)> = None;
     for candidate in ref_candidates(&reference, &opts.fallback_refs, &tail) {
         let store_dir =
             github_store_path(ask_home, DEFAULT_GITHUB_HOST, owner, repo_name, &candidate)?;
         if !store_dir.exists() {
             continue;
         }
+        if entry_lock_held(&store_dir) && !verify_entry(&store_dir) {
+            // Another process is publishing this entry and has not stamped it
+            // yet. Do not quarantine its work; the fetch below waits for it.
+            break;
+        }
         if verify_entry(&store_dir) {
-            let files = if opts.skip_doc_extraction {
-                Vec::new()
-            } else {
-                extract_docs_from_dir(
-                    &store_dir,
-                    &opts.repo,
-                    &reference,
-                    opts.docs_path.as_deref(),
-                    GITHUB_DOC_CANDIDATES,
-                )?
-            };
-            return Ok(FetchResult {
-                files,
-                resolved_version,
-                store_path: Some(store_dir),
-                store_subpath: opts.docs_path.clone(),
-                from_store_cache: true,
-                // Report the WINNING candidate, not the requested ref — the
-                // store dir is keyed by the candidate, and slash-containing
-                // tags are encoded in the path, so callers cannot recover
-                // the real ref from the directory basename.
-                meta: FetchMeta {
-                    ref_: Some(candidate),
-                    ..Default::default()
-                },
-            });
+            let check = revalidate_entry(
+                client,
+                &opts.repo,
+                opts.remote_url.as_deref(),
+                &store_dir,
+                &candidate,
+            );
+            report_cache_status(&opts.repo, &candidate, &check);
+            if matches!(check.freshness, Freshness::Stale { .. }) {
+                // The branch moved: fall through to the network fetch, which
+                // atomically replaces this entry (no quarantine).
+                stale_entry = Some((candidate, store_dir, check.cached_on));
+                break;
+            }
+            return store_hit(opts, &reference, resolved_version, store_dir, candidate);
         }
         quarantine_entry(ask_home, &store_dir);
     }
 
+    let fetched = fetch_from_network(
+        client,
+        opts,
+        owner,
+        repo_name,
+        &reference,
+        &resolved_version,
+        ask_home,
+        &tail,
+    );
+    match (fetched, stale_entry) {
+        (Err(e), Some((candidate, store_dir, cached_on))) if verify_entry(&store_dir) => {
+            eprintln!(
+                "  Warning: could not re-fetch {}@{candidate}: {e}. Using the cached entry from {cached_on}.",
+                opts.repo
+            );
+            store_hit(opts, &reference, resolved_version, store_dir, candidate)
+        }
+        (result, _) => result,
+    }
+}
+
+/// The result for a store entry served as-is.
+fn store_hit(
+    opts: &GithubOptions,
+    reference: &str,
+    resolved_version: String,
+    store_dir: std::path::PathBuf,
+    candidate: String,
+) -> Result<FetchResult> {
+    let files = if opts.skip_doc_extraction {
+        Vec::new()
+    } else {
+        extract_docs_from_dir(
+            &store_dir,
+            &opts.repo,
+            reference,
+            opts.docs_path.as_deref(),
+            GITHUB_DOC_CANDIDATES,
+        )?
+    };
+    Ok(FetchResult {
+        files,
+        resolved_version,
+        store_path: Some(store_dir),
+        store_subpath: opts.docs_path.clone(),
+        from_store_cache: true,
+        // Report the WINNING candidate, not the requested ref — the
+        // store dir is keyed by the candidate, and slash-containing
+        // tags are encoded in the path, so callers cannot recover
+        // the real ref from the directory basename.
+        meta: FetchMeta {
+            ref_: Some(candidate),
+            ..Default::default()
+        },
+    })
+}
+
+/// Shallow clone when git is available, falling back to the tarball.
+#[allow(clippy::too_many_arguments)]
+fn fetch_from_network(
+    client: &dyn HttpClient,
+    opts: &GithubOptions,
+    owner: &str,
+    repo_name: &str,
+    reference: &str,
+    resolved_version: &str,
+    ask_home: &Path,
+    tail: &[String],
+) -> Result<FetchResult> {
     let remote_url = opts
         .remote_url
         .clone()
@@ -353,11 +764,11 @@ pub fn fetch(
             opts,
             owner,
             repo_name,
-            &reference,
-            &resolved_version,
+            reference,
+            resolved_version,
             &remote_url,
             ask_home,
-            &tail,
+            tail,
         ) {
             Ok(result) => return Ok(result),
             Err(e) => {
@@ -374,10 +785,10 @@ pub fn fetch(
         opts,
         owner,
         repo_name,
-        &reference,
-        &resolved_version,
+        reference,
+        resolved_version,
         ask_home,
-        &tail,
+        tail,
     )
 }
 
@@ -405,14 +816,20 @@ fn fetch_via_shallow_clone(
     )?;
     let store_dir = github_store_path(ask_home, DEFAULT_GITHUB_HOST, owner, repo_name, &winning)?;
 
-    if let Some(lock) = acquire_entry_lock(&store_dir)? {
-        if let Some(parent) = store_dir.parent() {
-            std::fs::create_dir_all(parent)?;
+    // Without the lock the entry on disk is another process's, not this clone.
+    let wrote = match lock_store_entry(&store_dir)? {
+        Some(lock) => {
+            if let Some(parent) = store_dir.parent() {
+                std::fs::create_dir_all(parent)?;
+            }
+            publish_entry(tmp.path(), &store_dir, |staged| {
+                write_entry_meta(staged, Some(&commit))
+            })?;
+            drop(lock);
+            true
         }
-        cp_dir_atomic(tmp.path(), &store_dir)?;
-        stamp_entry(&store_dir)?;
-        drop(lock);
-    }
+        None => false,
+    };
 
     let files = if opts.skip_doc_extraction {
         Vec::new()
@@ -430,9 +847,9 @@ fn fetch_via_shallow_clone(
         resolved_version: resolved_version.to_string(),
         store_path: Some(store_dir),
         store_subpath: opts.docs_path.clone(),
-        from_store_cache: false,
+        from_store_cache: !wrote,
         meta: FetchMeta {
-            commit: Some(commit),
+            commit: wrote.then_some(commit),
             ref_: Some(winning),
             ..Default::default()
         },
@@ -456,8 +873,33 @@ fn fetch_from_tar_gz(
     let mut last_err = String::from("no candidates");
 
     for candidate in &candidates {
+        // Read the branch head BEFORE downloading: if the branch moves in
+        // between, the recorded commit is older than the archive and the next
+        // revalidation re-fetches, instead of marking old content fresh.
+        let head = if looks_pinned(candidate) {
+            None
+        } else {
+            match probe_branch_head(
+                client,
+                &opts.repo,
+                opts.remote_url.as_deref(),
+                candidate,
+                token.as_deref(),
+            ) {
+                HeadProbe::Branch(sha) => Some(sha),
+                _ => None,
+            }
+        };
         let is_tag_candidate = opts.tag.is_some() && !tail.iter().any(|t| t == candidate);
-        let archive_url = if token.is_some() {
+        let archive_url = if let Some(sha) = &head {
+            // Download exactly the probed commit: the archive then matches the
+            // recorded head, whether the ref was passed as a tag or a branch.
+            if token.is_some() {
+                format!("https://api.github.com/repos/{}/tarball/{sha}", opts.repo)
+            } else {
+                format!("https://github.com/{}/archive/{sha}.tar.gz", opts.repo)
+            }
+        } else if token.is_some() {
             format!(
                 "https://api.github.com/repos/{}/tarball/{candidate}",
                 opts.repo
@@ -502,14 +944,19 @@ fn fetch_from_tar_gz(
 
         let store_dir =
             github_store_path(ask_home, DEFAULT_GITHUB_HOST, owner, repo_name, candidate)?;
-        if let Some(lock) = acquire_entry_lock(&store_dir)? {
-            if let Some(parent) = store_dir.parent() {
-                std::fs::create_dir_all(parent)?;
+        let wrote = match lock_store_entry(&store_dir)? {
+            Some(lock) => {
+                if let Some(parent) = store_dir.parent() {
+                    std::fs::create_dir_all(parent)?;
+                }
+                publish_entry(&extracted_dir, &store_dir, |staged| {
+                    write_entry_meta(staged, head.as_deref())
+                })?;
+                drop(lock);
+                true
             }
-            cp_dir_atomic(&extracted_dir, &store_dir)?;
-            stamp_entry(&store_dir)?;
-            drop(lock);
-        }
+            None => false,
+        };
 
         let files = if opts.skip_doc_extraction {
             Vec::new()
@@ -527,7 +974,7 @@ fn fetch_from_tar_gz(
             resolved_version: resolved_version.to_string(),
             store_path: Some(store_dir),
             store_subpath: opts.docs_path.clone(),
-            from_store_cache: false,
+            from_store_cache: !wrote,
             meta: FetchMeta {
                 ref_: Some(candidate.clone()),
                 ..Default::default()
@@ -552,6 +999,7 @@ fn unpack_tar_gz(bytes: &[u8], dest: &Path) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::store::stamp_entry;
 
     const TOKEN: &str = "ghp_test_token";
 
@@ -826,6 +1274,298 @@ mod tests {
         let second = fetch(&no_client(), &opts, &ask_home).unwrap();
         assert!(second.from_store_cache);
         assert_eq!(second.files.len(), 1);
+    }
+
+    // ── cache revalidation (pleaseai/ask#127) ────────────────────────
+
+    fn branch_opts(remote: &Path) -> GithubOptions {
+        GithubOptions {
+            name: "r".into(),
+            version: "main".into(),
+            repo: "test/repo".into(),
+            branch: Some("main".into()),
+            docs_path: Some("docs".into()),
+            remote_url: Some(remote.to_string_lossy().into_owned()),
+            ..Default::default()
+        }
+    }
+
+    /// Commit on the local `work` repo (changes `docs/guide.md`, deletes
+    /// `README.md`) and push `main` to the bare remote.
+    fn push_upstream_change(tmp: &Path, remote: &Path) {
+        let work = tmp.join("work");
+        std::fs::write(work.join("docs/guide.md"), "# Guide moved\n").unwrap();
+        git(&["rm", "README.md"], &work);
+        git(&["add", "-A"], &work);
+        git(&["commit", "-m", "move"], &work);
+        git(&["push", remote.to_str().unwrap(), "main"], &work);
+    }
+
+    #[test]
+    fn looks_pinned_recognizes_immutable_refs() {
+        for pinned in [
+            "v1.2.3",
+            "1.2.3",
+            "0123456789abcdef0123456789abcdef01234567",
+            "@tanstack/react-query@5.101.2",
+            "ai@v6.0.0",
+        ] {
+            assert!(looks_pinned(pinned), "{pinned}");
+        }
+        for mutable in [
+            "main",
+            "master",
+            "develop",
+            "feature/x",
+            "vmain",
+            "@scope/pkg",
+            "12.x",
+            "7.3",
+            "v20.x",
+            "7-1-stable",
+        ] {
+            assert!(!looks_pinned(mutable), "{mutable}");
+        }
+    }
+
+    #[test]
+    fn ls_remote_gives_up_on_a_remote_that_never_answers() {
+        // A proxy answers (or refuses) on the silent server's behalf.
+        let proxied = ["http_proxy", "HTTP_PROXY", "all_proxy", "ALL_PROXY"]
+            .iter()
+            .any(|k| std::env::var_os(k).is_some_and(|v| !v.is_empty()));
+        if !has_git() || proxied {
+            return;
+        }
+        // The kernel accepts the connection into the backlog; nothing replies.
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let url = format!("http://{}/silent.git", listener.local_addr().unwrap());
+        let started = Instant::now();
+        let probe = ls_remote_head(&url, "refs/heads/main", None, Duration::from_millis(500));
+        assert!(
+            matches!(&probe, HeadProbe::Unknown(reason) if reason.contains("timed out")),
+            "{probe:?}"
+        );
+        assert!(started.elapsed() < Duration::from_secs(5));
+        drop(listener);
+    }
+
+    #[test]
+    fn branch_entry_is_refetched_when_upstream_moves() {
+        if !has_git() {
+            return;
+        }
+        let tmp = tempfile::tempdir().unwrap();
+        let remote = create_local_remote(tmp.path());
+        let ask_home = tmp.path().join("ask-home");
+        let opts = branch_opts(&remote);
+        let first = fetch(&no_client(), &opts, &ask_home).unwrap();
+        let entry = first.store_path.clone().unwrap();
+        assert!(entry.join("README.md").exists());
+        let meta = std::fs::read_to_string(entry.join(ENTRY_META_FILE)).unwrap();
+        assert!(meta.contains(first.meta.commit.as_deref().unwrap()));
+
+        push_upstream_change(tmp.path(), &remote);
+        let second = fetch(&no_client(), &opts, &ask_home).unwrap();
+        assert!(!second.from_store_cache);
+        assert_eq!(
+            std::fs::read_to_string(entry.join("docs/guide.md")).unwrap(),
+            "# Guide moved\n"
+        );
+        assert!(!entry.join("README.md").exists(), "deleted file must go");
+        assert!(verify_entry(&entry));
+    }
+
+    #[test]
+    fn branch_entry_with_unchanged_head_hits_the_cache() {
+        if !has_git() {
+            return;
+        }
+        let tmp = tempfile::tempdir().unwrap();
+        let remote = create_local_remote(tmp.path());
+        let ask_home = tmp.path().join("ask-home");
+        let opts = branch_opts(&remote);
+        fetch(&no_client(), &opts, &ask_home).unwrap();
+        let second = fetch(&no_client(), &opts, &ask_home).unwrap();
+        assert!(second.from_store_cache);
+    }
+
+    #[test]
+    fn legacy_branch_entry_without_meta_is_refetched() {
+        if !has_git() {
+            return;
+        }
+        let tmp = tempfile::tempdir().unwrap();
+        let remote = create_local_remote(tmp.path());
+        let ask_home = tmp.path().join("ask-home");
+        let opts = branch_opts(&remote);
+        let first = fetch(&no_client(), &opts, &ask_home).unwrap();
+        let entry = first.store_path.unwrap();
+        std::fs::remove_file(entry.join(ENTRY_META_FILE)).unwrap();
+        stamp_entry(&entry).unwrap();
+        assert!(verify_entry(&entry));
+
+        let second = fetch(&no_client(), &opts, &ask_home).unwrap();
+        assert!(!second.from_store_cache);
+        assert!(entry.join(ENTRY_META_FILE).exists());
+    }
+
+    #[test]
+    fn unreachable_remote_falls_back_to_the_cached_branch_entry() {
+        if !has_git() {
+            return;
+        }
+        let tmp = tempfile::tempdir().unwrap();
+        let remote = create_local_remote(tmp.path());
+        let ask_home = tmp.path().join("ask-home");
+        let opts = branch_opts(&remote);
+        fetch(&no_client(), &opts, &ask_home).unwrap();
+        std::fs::remove_dir_all(&remote).unwrap();
+        let second = fetch(&no_client(), &opts, &ask_home).unwrap();
+        assert!(second.from_store_cache);
+    }
+
+    #[test]
+    fn tarball_fallback_downloads_the_probed_commit_for_an_explicit_ref() {
+        if !has_git() {
+            return;
+        }
+        let tmp = tempfile::tempdir().unwrap();
+        let remote = create_local_remote(tmp.path());
+        let sha = String::from_utf8(
+            Command::new("git")
+                .args(["rev-parse", "main"])
+                .current_dir(&remote)
+                .output()
+                .unwrap()
+                .stdout,
+        )
+        .unwrap()
+        .trim()
+        .to_string();
+
+        let mut archive = tar::Builder::new(flate2::write::GzEncoder::new(
+            Vec::new(),
+            flate2::Compression::default(),
+        ));
+        let body = b"# from the probed commit\n";
+        let mut header = tar::Header::new_gnu();
+        header.set_size(body.len() as u64);
+        header.set_mode(0o644);
+        header.set_cksum();
+        archive
+            .append_data(&mut header, "repo-x/README.md", &body[..])
+            .unwrap();
+        let bytes = archive.into_inner().unwrap().finish().unwrap();
+        // Only the commit URLs are served; a refs/tags/main request would fail.
+        let client = no_client()
+            .with_bytes(
+                &format!("https://github.com/test/repo/archive/{sha}.tar.gz"),
+                200,
+                bytes.clone(),
+            )
+            .with_bytes(
+                &format!("https://api.github.com/repos/test/repo/tarball/{sha}"),
+                200,
+                bytes,
+            );
+        // An explicit `@main` arrives as a tag (see `ensure_checkout`).
+        let opts = GithubOptions {
+            tag: Some("main".into()),
+            branch: None,
+            skip_doc_extraction: true,
+            ..branch_opts(&remote)
+        };
+        let ask_home = tmp.path().join("ask-home");
+        let result = fetch_from_tar_gz(
+            &client,
+            &opts,
+            "test",
+            "repo",
+            "main",
+            "main",
+            &ask_home,
+            &[],
+        )
+        .unwrap();
+        let entry = result.store_path.unwrap();
+        assert!(std::fs::read_to_string(entry.join("README.md"))
+            .unwrap()
+            .contains("probed commit"));
+        let meta = std::fs::read_to_string(entry.join(ENTRY_META_FILE)).unwrap();
+        assert!(meta.contains(&sha));
+    }
+
+    #[test]
+    fn failed_refresh_falls_back_to_the_stale_entry() {
+        if !has_git() {
+            return;
+        }
+        let tmp = tempfile::tempdir().unwrap();
+        let remote = create_local_remote(tmp.path());
+        let ask_home = tmp.path().join("ask-home");
+        let opts = branch_opts(&remote);
+        let first = fetch(&no_client(), &opts, &ask_home).unwrap();
+        let entry = first.store_path.unwrap();
+
+        // The head moves, but its objects are gone: ls-remote still answers,
+        // the clone fails, and `no_client` fails the tarball fallback.
+        push_upstream_change(tmp.path(), &remote);
+        let objects = remote.join("objects");
+        std::fs::remove_dir_all(&objects).unwrap();
+        std::fs::create_dir_all(objects.join("info")).unwrap();
+        std::fs::create_dir_all(objects.join("pack")).unwrap();
+
+        let second = fetch(&no_client(), &opts, &ask_home).unwrap();
+        assert!(second.from_store_cache);
+        assert!(entry.join("README.md").exists());
+    }
+
+    #[test]
+    fn unstamped_entry_under_a_live_lock_is_not_quarantined() {
+        if !has_git() {
+            return;
+        }
+        let tmp = tempfile::tempdir().unwrap();
+        let remote = create_local_remote(tmp.path());
+        let ask_home = tmp.path().join("ask-home");
+        let opts = branch_opts(&remote);
+        let entry = fetch(&no_client(), &opts, &ask_home)
+            .unwrap()
+            .store_path
+            .unwrap();
+
+        // Simulate another writer mid-publish: entry swapped in, not stamped.
+        std::fs::remove_file(entry.join(".ask-hash")).unwrap();
+        let lock = entry_lock_path(&entry);
+        std::fs::File::create(&lock).unwrap();
+        let writer = std::thread::spawn(move || {
+            std::thread::sleep(Duration::from_millis(300));
+            std::fs::remove_file(lock).unwrap();
+        });
+
+        let result = fetch(&no_client(), &opts, &ask_home).unwrap();
+        writer.join().unwrap();
+        assert!(!result.from_store_cache);
+        assert!(!ask_home.join(".quarantine").exists());
+        assert!(verify_entry(&entry));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn entry_meta_replaces_a_symlink_instead_of_following_it() {
+        let tmp = tempfile::tempdir().unwrap();
+        let outside = tmp.path().join("outside.txt");
+        std::fs::write(&outside, "keep").unwrap();
+        let entry = tmp.path().join("entry");
+        std::fs::create_dir_all(&entry).unwrap();
+        std::os::unix::fs::symlink(&outside, entry.join(ENTRY_META_FILE)).unwrap();
+
+        write_entry_meta(&entry, Some("0123456789abcdef0123456789abcdef01234567")).unwrap();
+
+        assert_eq!(std::fs::read_to_string(&outside).unwrap(), "keep");
+        let meta = std::fs::symlink_metadata(entry.join(ENTRY_META_FILE)).unwrap();
+        assert!(meta.file_type().is_file());
     }
 
     #[test]
