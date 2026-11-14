@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.12](https://github.com/pleaseai/ask/compare/ask-plugin-v0.4.11...ask-plugin-v0.4.12) (2026-11-14)
+
+
+### Bug Fixes
+
+* **cli:** re-fetch branch caches that moved upstream and report the cache date ([#128](https://github.com/pleaseai/ask/issues/128)) ([cd88a55](https://github.com/pleaseai/ask/commit/cd88a554fdb0738862748af7487498692e7fbc01))
+* **npm:** normalize repository.url to git+https form to silence npm publish warning ([#123](https://github.com/pleaseai/ask/issues/123)) ([9ce5801](https://github.com/pleaseai/ask/commit/9ce58011685cf4c42be270748e89aedfbe304f62))
+
 ## [0.4.11](https://github.com/pleaseai/ask/compare/ask-plugin-v0.4.10...ask-plugin-v0.4.11) (2026-07-02)
 
 
